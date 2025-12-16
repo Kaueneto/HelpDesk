@@ -1,0 +1,29 @@
+# informacoes do sistema
+APP=""
+PORT=
+JWT_SECRET=
+EMAIL_ADM=
+
+# Configurações do banco de dados
+DB_DIALECT=""
+DB_HOST=
+DB_PORT=
+DB_USER=rot
+DB_PASSWORD=
+DB_DATABASE=
+
+# Credenciais do servidor de email
+EMAIL_FROM=
+EMAIL_HOST=
+EMAIL_PORT=
+EMAIL_USER=
+EMAIL_PASS=
+
+
+DB_DIALECT="postgres"
+
+DB_HOST=
+DB_PORT=
+DB_USER=
+DB_PASSWORD=
+DB_DATABASE=
