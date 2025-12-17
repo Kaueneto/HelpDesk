@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # API HelpDesk
 
 sistema de gerenciamento de chamados (tickets) | helpdesk
@@ -143,8 +142,3 @@ desenvolvido com **Node.js**, **Express**, **TypeORM** e **PostgreSQL**.
 ### Proteção de Dados
 - Senhas nunca retornadas em JSON
 - Na resposta de encerramento, apenas `id` e `name` dos usuários são retornados
-
----
-=======
-
->>>>>>> b712fda078fddad6525812125630da3e7abf00fb
