@@ -1,39 +1,29 @@
 import express, { Request, Response } from "express";
 import { AppDataSource } from "../data-source";
-import { Situations } from "../entities/Situations";
-import { PaginationService } from "../services/PaginationService";
+import { SituationsUsers } from "../entities/SituationsUsers";
 import * as yup from "yup";
 import { Not } from "typeorm";
 
-//importar o arquivo com as credenciais do banco de dados
 
 //criar aplicacao express
 const router = express.Router();
 
 // rota principal da aplicação
-router.get("/Situations", async (req: Request, res: Response) => {
+router.get("/SituationsUsers", async (req: Request, res: Response) => {
   try {
     // obter o respositorio da entidade situation
-    const situationRepository = AppDataSource.getRepository(Situations);
+    const situationRepository = AppDataSource.getRepository(SituationsUsers);
 
-    //receber o numero de pagina e definir pagina 1 como padrao
-    const page = Number(req.query.page) || 1;
-    //definir o limite de registros por pagina
-    const limit = Number(req.query.limit) || 10;
+    const situations = await situationRepository.find();
 
-    const result = await PaginationService.paginate(
-      situationRepository,
-      page,
-      limit,
-      { id: "DESC" }
-    );
-
-    //retornar a resposta com os dados e infromações de paginação
-    res.status(200).json(result);
+    //retornar a resposta com os dados
+    res.status(200).json(situations);
     return;
   } catch (error) {
+    console.error("Erro ao listar SituationsUsers:", error);
     res.status(500).json({
       mensagem: "Erro ao listar situação",
+      erro: error instanceof Error ? error.message : "Erro desconhecido"
     });
     return;
   }
@@ -41,11 +31,11 @@ router.get("/Situations", async (req: Request, res: Response) => {
 
 //crir a visualizacao d oitem cadastrado em situacao
 
-router.get("/Situations/:id", async (req: Request, res: Response) => {
+router.get("/SituationsUsers/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    const situationRepository = AppDataSource.getRepository(Situations);
+    const situationRepository = AppDataSource.getRepository(SituationsUsers);
 
     const situations = await situationRepository.findOneBy({
       id: parseInt(id),
@@ -67,21 +57,22 @@ router.get("/Situations/:id", async (req: Request, res: Response) => {
     return;
   }
 });
-//atualiza
-router.put("/Situations/:id", async (req: Request, res: Response) => {
+
+//atualizar situacao
+router.put("/SituationsUsers/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     var data = req.body;
 
     const schema = yup.object().shape({
-      nameSituation: yup
+      nomeSituacao: yup
         .string()
         .required("o campo nome é obrigatório!")
         .min(3, "o campo nome deve conter no minimo 3 caracteres!"),
     });
     await schema.validate(data, { abortEarly: false });
 
-    const situationRepository = AppDataSource.getRepository(Situations);
+    const situationRepository = AppDataSource.getRepository(SituationsUsers);
 
     const situations = await situationRepository.findOneBy({
       id: parseInt(id),
@@ -97,7 +88,7 @@ router.put("/Situations/:id", async (req: Request, res: Response) => {
     //valida duplicidade
     const existingSituation = await situationRepository.findOne({
       where: {
-        nameSituation: data.nameSituation,
+        nomeSituacao: data.nomeSituacao,
         id: Not(parseInt(id)) 
       },
     });
@@ -134,11 +125,11 @@ router.put("/Situations/:id", async (req: Request, res: Response) => {
 });
 
 // remove o item cadastrado do banco
-router.delete("/Situations/:id", async (req: Request, res: Response) => {
+router.delete("/SituationsUsers/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    const situationRepository = AppDataSource.getRepository(Situations);
+    const situationRepository = AppDataSource.getRepository(SituationsUsers);
 
     const situations = await situationRepository.findOneBy({
       id: parseInt(id),
@@ -165,12 +156,12 @@ router.delete("/Situations/:id", async (req: Request, res: Response) => {
 });
 
 // cria o item
-router.post("/Situations", async (req: Request, res: Response) => {
+router.post("/SituationsUsers", async (req: Request, res: Response) => {
   try {
     var data = req.body;
 
     const schema = yup.object().shape({
-      nameSituation: yup
+      nomeSituacao: yup
         .string()
         .required("o campo nome da situação é obrigatório!")
         .min(3, "o campo nome da situação deve conter no minimo 3 caracteres!"),
@@ -178,11 +169,11 @@ router.post("/Situations", async (req: Request, res: Response) => {
 
     await schema.validate(data, { abortEarly: false });
 
-    const situationRepository = AppDataSource.getRepository(Situations);
+    const situationRepository = AppDataSource.getRepository(SituationsUsers);
 
     //valida duplicidade
     const existingSituation = await situationRepository.findOne({
-      where: { nameSituation: data.nameSituation },
+      where: { nomeSituacao: data.nomeSituacao },
     });
     if (existingSituation) {
       res.status(400).json({

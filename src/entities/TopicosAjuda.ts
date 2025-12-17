@@ -13,8 +13,10 @@ export class TopicosAjuda {
 
   @Column({ length: 100 })
   nome!: string;
-  @Column({ name: "ativo", length: 100 })
-  ativo!: string;
+
+  @Column({ default: true })
+  ativo!: boolean;
+  
   @OneToMany(() => Chamados, chamado => chamado.topicoAjuda)
   chamados!: Chamados[];
 }

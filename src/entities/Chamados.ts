@@ -18,7 +18,7 @@ export class Chamados {
   @PrimaryGeneratedColumn({ name: "id_chamado" })
   id!: number;
 
-  // Usuário que abriu o chamado
+  // usuario que abriu o chamado
   @ManyToOne(() => Users, user => user.chamados)
   @JoinColumn({ name: "id_user" })
   usuario!: Users;
@@ -57,12 +57,12 @@ export class Chamados {
   @Column({ name: "descricao_chamado", type: "text" })
   descricaoChamado!: string;
 
-  // Usuário responsável pelo atendimento
+  // usuario responsável pelo atendimento
   @ManyToOne(() => Users, user => user.chamadosResponsavel, { nullable: true })
   @JoinColumn({ name: "id_user_responsavel" })
   userResponsavel!: Users;
 
-  // Usuário que fechou o chamado
+  // usuario que fechou o chamado
   @ManyToOne(() => Users, user => user.chamadosFechados, { nullable: true })
   @JoinColumn({ name: "id_user_finalizou" })
   userFechamento!: Users;

@@ -3,6 +3,8 @@ import {
   PrimaryGeneratedColumn,
   Column,
   OneToMany,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from "typeorm";
 import { Chamados } from "./Chamados";
 
@@ -23,24 +25,27 @@ export class Users {
   @Column({ name: "role_id" })
   roleId!: number;
 
-  @Column()
+  @Column({ default: true })
   ativo!: boolean;
 
-  @Column({ name: "created_at", type: "timestamp" })
+  @Column({ name: "recoverPassword", type: "varchar", nullable: true })
+  recoverPassword!: string | null;
+
+  @CreateDateColumn({ name: "created_at" })
   createdAt!: Date;
 
-  @Column({ name: "updated_at", type: "timestamp" })
+  @UpdateDateColumn({ name: "updated_at" })
   updatedAt!: Date;
 
-  // Chamados abertos pelo usuário
+  // chamados abertos pelo usuario
   @OneToMany(() => Chamados, chamado => chamado.usuario)
   chamados!: Chamados[];
 
-  // Chamados que o usuário atende
+  // chamados que o usuario atende
   @OneToMany(() => Chamados, chamado => chamado.userResponsavel)
   chamadosResponsavel!: Chamados[];
 
-  // Chamados que o usuário fechou
+  // chamados que o usuario fechou
   @OneToMany(() => Chamados, chamado => chamado.userFechamento)
   chamadosFechados!: Chamados[];
 }

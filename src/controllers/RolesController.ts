@@ -49,20 +49,22 @@ router.post("/roles", async (req: Request, res: Response) => {
     }
 
     const rolesRepository = AppDataSource.getRepository(Roles);
-
-    const novoRole = rolesRepository.create({
+    const newRole = rolesRepository.create({
       nome,
+
     });
 
-    await rolesRepository.save(novoRole);
+    await rolesRepository.save(newRole);
 
     return res.status(201).json({
       mensagem: "Role criado com sucesso!",
-      role: novoRole,
+      role: newRole,
     });
   } catch (error) {
+    console.error("Erro ao criar role:", error);
     return res.status(500).json({
       mensagem: "Erro ao criar role",
+      error: error instanceof Error ? error.message : String(error)
     });
   }
 });
@@ -88,6 +90,7 @@ router.put("/roles/:id", async (req: Request, res: Response) => {
     }
 
     role.nome = nome;
+
     await rolesRepository.save(role);
 
     return res.status(200).json({
@@ -101,7 +104,7 @@ router.put("/roles/:id", async (req: Request, res: Response) => {
   }
 });
 
-
+//rota pra deletar
 router.delete("/roles/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;

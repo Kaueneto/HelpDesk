@@ -7,6 +7,7 @@ import {
 } from "typeorm";
 import { Chamados } from "./Chamados";
 import { Users } from "./Users";
+import { StatusChamado } from "./StatusChamado";
 
 @Entity("chamado_historico")
 export class ChamadoHistorico {
@@ -27,6 +28,11 @@ export class ChamadoHistorico {
   @Column({ name: "data_mov", type: "date" })
   dataMov!: Date;
 
-  @Column({ type: "varchar", length: 50 })
-  status!: string;
+  @ManyToOne(() => StatusChamado, { nullable: true })
+  @JoinColumn({ name: "status_anterior_id" })
+  statusAnterior!: StatusChamado;
+
+  @ManyToOne(() => StatusChamado, { nullable: true })
+  @JoinColumn({ name: "status_novo_id" })
+  statusNovo!: StatusChamado;
 }
