@@ -4,20 +4,6 @@ sistema de gerenciamento de chamados (tickets) | helpdesk
 desenvolvido com **Node.js**, **Express**, **TypeORM** e **PostgreSQL**.
 ---
 
-## Índice
-
-- [Visão Geral](#-visão-geral)
-- [Tecnologias](#-tecnologias)
-- [Funcionalidades](#-funcionalidades)
-- [Instalação](#-instalação)
-- [Configuração](#-configuração)
-- [Estrutura do Banco de Dados](#-estrutura-do-banco-de-dados)
-- [Rotas da API](#-rotas-da-api)
-- [Regras de Negócio](#-regras-de-negócio)
-- [Segurança](#-segurança)
-
----
-
 ## Tecnologias
 
 ### Core
@@ -28,7 +14,6 @@ desenvolvido com **Node.js**, **Express**, **TypeORM** e **PostgreSQL**.
 
 ### Banco de Dados
 - **PostgreSQL** - Banco de dados relacional
-- **Supabase** - Plataforma de hospedagem PostgreSQL
 
 ### Autenticação & Segurança
 - **jsonwebtoken 9.0.2** - Geração e validação de tokens JWT
