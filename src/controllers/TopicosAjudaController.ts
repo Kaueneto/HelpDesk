@@ -46,17 +46,26 @@ router.get("/topicos_ajuda/:id", async (req: Request, res: Response) => {
 
 router.post("/topicos_ajuda", async (req: Request, res: Response) => {
   try {
-    const { nome } = req.body;
-
+    const { nome, ativo } = req.body;
+    
     if (!nome) {
-      return res.status(400).json({ mensagem: "Nome do tópico é obrigatório" });
+      return res.status(400).json({ mensagem: "O nome do tópico é obrigatório" });
     }
 
     const topicosRepository = AppDataSource.getRepository(TopicosAjuda);
 
+    // validar se existe um topico com o mesmo nome
+    const topicoExistente = await topicosRepository.findOne({
+      where: { nome },
+    });
+
+    if (topicoExistente) {
+      return res.status(409).json({ mensagem: "Já existe um tópico com esse nome" });
+    }
+
     const novoTopico = topicosRepository.create({
       nome,
-      ativo: req.body.ativo || "SIM",
+      ativo: ativo !== undefined ? ativo : true,
     });
 
     await topicosRepository.save(novoTopico);
@@ -89,7 +98,7 @@ router.put("/topicos_ajuda/:id", async (req: Request, res: Response) => {
     });
 
     if (!topico) {
-      return res.status(404).json({ mensagem: "Tópico não encontrado" });
+      return res.status(404).json({ mensagem: "Tópico não encontrado para atualização" });
     }
 
     topico.nome = nome;

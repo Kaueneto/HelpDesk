@@ -9,7 +9,7 @@ import {
 import { Chamados } from "./Chamados";
 import { Users } from "./Users";
 
-@Entity("Chamado_mensagens")
+@Entity("chamados_mensagens")
 export class ChamadoMensagens {
   @PrimaryGeneratedColumn()
   id!: number;

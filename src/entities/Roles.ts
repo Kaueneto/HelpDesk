@@ -9,7 +9,7 @@ export class Roles {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column({ name: "nome", length: 100 })
+  @Column({length: 100 })
   nome!: string;
 
 }

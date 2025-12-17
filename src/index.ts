@@ -24,18 +24,24 @@ app.use(cors());
 
 // importar controllers
 import TestConnectionController from "./controllers/TestConnectionController";
+import AuthController from "./controllers/AuthController";
 import ChamadosController from "./controllers/ChamadosController";
 import UsersController from "./controllers/UsersController";
-import SituationsController from "./controllers/SituationsController";
+import SituationsController from "./controllers/SituationsUsersController";
 import TopicosAjudaController from "./controllers/TopicosAjudaController";
 import rolesRouter from "./controllers/RolesController";
+import TipoPrioridadeController from "./controllers/TipoPrioridadeController";
+import DepartamentosController from "./controllers/DepartamentosController";
 
 // registrar rotas
 app.use("/", TestConnectionController);
+app.use("/", AuthController);
 app.use("/", ChamadosController);
 app.use("/", SituationsController);
 app.use("/", UsersController);
 app.use("/", TopicosAjudaController);
+app.use("/", TipoPrioridadeController);
+app.use("/", DepartamentosController);
 app.use(rolesRouter);
 
 // inicializar banco ANTES de subir o servidor

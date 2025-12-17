@@ -6,9 +6,10 @@ import * as yup from "yup";
 import { Not } from "typeorm";
 const router = express.Router();
 import bcrypt from "bcryptjs"
+import { verifyToken } from "../Middleware/AuthMiddleware";
 
-// Listar todos os usuários
-router.get("/users", /*verifyToken*/ async (req: Request, res: Response) => {
+// listar todos os users
+router.get("/users", verifyToken, async (req: Request, res: Response) => {
   try {
     const userRepository = AppDataSource.getRepository(Users);
     
@@ -21,7 +22,7 @@ router.get("/users", /*verifyToken*/ async (req: Request, res: Response) => {
   }
 });
 
-// Buscar usuário pelo ID
+// bsucar usuario pelo id 
 router.get("/users/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -40,7 +41,7 @@ router.get("/users/:id", async (req: Request, res: Response) => {
   }
 });
 
-// Criar novo usuário
+// criar novo usuario
 router.post("/users", async (req: Request, res: Response) => {
   try {
     const data = req.body;
@@ -66,24 +67,19 @@ router.post("/users", async (req: Request, res: Response) => {
     const existingUserName = await userRepository.findOne({
       where: { name: data.name },
     });
-    if (existingUserName) {
-      return res.status(400).json({
-        mensagem: "Um usuário com esse nome já existe.",
-      });
-    }
-
+ 
     // valida duplicidade do email
     const existingUserEmail = await userRepository.findOne({
       where: { email: data.email },
     });
     if (existingUserEmail) {
       return res.status(400).json({
-        mensagem: "Este e-mail já está cadastrado para outro usuário.",
+        mensagem: "Este e-mail já está cadastrado para outro usuário. Se você esqueceu sua senha, utilize a opção de recuperação de senha.",
       });
     }
 
     // criptografar senha antes de salvar
-    //data.password = await bcrypt.hash(data.password, 10);
+    data.password = await bcrypt.hash(data.password, 10);
 
     // cria o usuário
     const newUser = userRepository.create({
@@ -107,64 +103,83 @@ router.post("/users", async (req: Request, res: Response) => {
 });
 
 
-// Atualizar usuário
-router.put("/users/:id",/*verifyToken*/ async (req: Request, res: Response) => {
+
+// atualizar user 
+router.put("/users/:id",  verifyToken,  async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { name, email, password } = req.body;
+    const { name, email, roleId, ativo } = req.body;
 
     const schema = yup.object().shape({
-      name: yup.string().required("o nome do usuario é obrigatório!").min(3, "o nome do usuario deve conter no minimo 3 caracteres!"),
-      email: yup.string().email("formato de email inválido").required("o email do usuario é obrigatório!"),
-      password: yup.string().required("a senha do usuario é obrigatoria!").min(6, "a senha deve conter pelo menos 6 caracteres."),
+      name: yup
+        .string()
+        .required("O nome do usuário é obrigatório!")
+        .min(3, "O nome do usuário deve conter no mínimo 3 caracteres!"),
+      email: yup
+        .string()
+        .email("Formato de e-mail inválido")
+        .required("O e-mail do usuário é obrigatório!"),
     });
 
     await schema.validate(req.body, { abortEarly: false });
 
     const userRepository = AppDataSource.getRepository(Users);
 
-    const user = await userRepository.findOneBy({ id: parseInt(id) });
-    if (!user)
-      return res.status(404).json({ mensagem: "Usuário não encontrado" });
-
-   //valida duplicidade do nome
-    const existingUserName = await userRepository.findOne({
-      where: { name: req.body.name },
-    });
-    if (existingUserName) {
-      res.status(400).json({
-        mensagem: "um usuario com esse nome ja existe.",
+    // verificar se o usuario existe
+    const user = await userRepository.findOneBy({ id: Number(id) });
+    if (!user) {
+      return res.status(404).json({
+        mensagem: "Usuário não encontrado",
       });
-      return;
     }
 
-    //valida duplicidade do email
-    const existingUserEmail = await userRepository.findOne({
-      where: { email: req.body.email },
+
+    const emailExistente = await userRepository.findOne({
+      where: {
+        email,
+        id: Not(Number(id)),
+      },
     });
-    if (existingUserEmail) {
-      res.status(400).json({
-        mensagem: "este email ja esta cadastrado para outro usuario.",
+
+    if (emailExistente) {
+      return res.status(400).json({
+        mensagem: "Já existe outro usuário com este e-mail.",
       });
-      return;
     }
 
-    if (name) user.name = name;
-    if (email) user.email = email;
+    // preparar dados para atualização (update parcial)
+    const updateData: Partial<Users> = {
+      name,
+      email,
+      updatedAt: new Date(),
+    };
+
+    if (roleId !== undefined) updateData.roleId = roleId;
+    if (ativo !== undefined) updateData.ativo = ativo;
+
+    // atualizar dados
+    userRepository.merge(user, updateData);
 
     const updatedUser = await userRepository.save(user);
 
-    res.status(200).json({ mensagem: "Usuário atualizado", user: updatedUser });
+    return res.status(200).json({
+      mensagem: "Usuário atualizado com sucesso",
+      user: updatedUser,
+    });
   } catch (error) {
     if (error instanceof yup.ValidationError) {
-      res.status(400).json({
+      return res.status(400).json({
         mensagem: error.errors,
       });
-      return;
     }
-    res.status(500).json({ mensagem: "Erro ao atualizar usuário" });
+
+    console.error("Erro ao atualizar usuário:", error);
+    return res.status(500).json({
+      mensagem: "Erro ao atualizar usuário",  
+    });
   }
 });
+
 
 router.put("/users-password/:id", async (req: Request, res: Response) => {
   
@@ -196,7 +211,7 @@ try {
     }
 
     //criptografar a senha antes de salvar
-    // data.password = await bcrypt.hash(data.password, 10);
+    data.password = await bcrypt.hash(data.password, 10);
      //atualizar dados do user
      userRepository.merge( user, data );
      //salvar os dados atualizados no banco
@@ -221,7 +236,7 @@ try {
 
 
 
-// Remover usuário
+//remover usuario
 router.delete("/users/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -233,7 +248,7 @@ router.delete("/users/:id", async (req: Request, res: Response) => {
 
     await userRepository.remove(user);
 
-    res.status(200).json({ mensagem: "Usuário removido com sucesso" });
+    res.status(200).json({ mensagem: "Usuário excluído com sucesso" });
   } catch (error) {
     res.status(500).json({ mensagem: "Erro ao remover usuário" });
   }
