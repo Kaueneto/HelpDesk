@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import Image from 'next/image';
 
 export default function PainelInicialUsuario() {
   const { user, isAuthenticated, isLoading, logout } = useAuth();
@@ -44,37 +45,37 @@ export default function PainelInicialUsuario() {
           </div>
 
           {/* Tabs de Navegação */}
-          <div className="bg-gray-300 px-8">
-            <div className="flex gap-1">
+          <div className="px-8 py-4">
+            <div className="h-12 items-center justify-center rounded-lg bg-gray-200/60 p-1 grid grid-cols-3 gap-1">
               <button
                 onClick={() => setActiveTab('home')}
-                className={`px-6 py-3 text-sm font-medium transition rounded-t-lg flex items-center gap-2 ${
+                className={`inline-flex items-center justify-center whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium transition-all duration-200 gap-2 ${
                   activeTab === 'home'
-                    ? 'bg-white text-gray-900'
-                    : 'bg-gray-400 text-gray-700 hover:bg-gray-350'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                <span>🏠</span> Pagina Inicial
+                <Image src="/icons/iconhome.svg" alt="" width={20} height={20} /> Pagina Inicial
               </button>
               <button
                 onClick={() => setActiveTab('novo')}
-                className={`px-6 py-3 text-sm font-medium transition rounded-t-lg flex items-center gap-2 ${
+                className={`inline-flex items-center justify-center whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium transition-all duration-200 gap-2 ${
                   activeTab === 'novo'
-                    ? 'bg-white text-gray-900'
-                    : 'bg-gray-400 text-gray-700 hover:bg-gray-350'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                <span>🆕</span> Abrir novo Chamado
+                <Image src="/icons/iconabrirnovochamado.svg" alt="" width={20} height={20} /> Abrir novo Chamado
               </button>
               <button
                 onClick={() => setActiveTab('acompanhar')}
-                className={`px-6 py-3 text-sm font-medium transition rounded-t-lg flex items-center gap-2 ${
+                className={`inline-flex items-center justify-center whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium transition-all duration-200 gap-2 ${
                   activeTab === 'acompanhar'
-                    ? 'bg-white text-gray-900'
-                    : 'bg-gray-400 text-gray-700 hover:bg-gray-350'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                <span>📋</span> Acompanhar Chamado
+                <Image src="/icons/iconacompanhar.svg" alt="" width={20} height={20} /> Acompanhar Chamado
               </button>
             </div>
           </div>
@@ -82,24 +83,26 @@ export default function PainelInicialUsuario() {
           {/* Conteúdo Principal */}
           <div className="flex-1 px-8 py-12 flex flex-col">
             {activeTab === 'home' && (
-              <div className="flex flex-col h-full">
-                <div className="mb-12">
-                  <h2 className="text-3xl font-bold text-gray-900 mb-2">Bem vindo!</h2>
-                  <p className="text-xl text-gray-700">Escolha uma opção</p>
+              <div className="flex items-center justify-between h-full gap-16">
+                {/* Texto à esquerda */}
+                <div className="flex-shrink-0">
+                  <h2 className="text-4xl font-bold text-gray-900 mb-2">Bem vindo!</h2>
+                  <p className="text-2xl text-gray-900">Escolha uma opção</p>
                 </div>
 
-                <div className="flex-1 flex flex-col justify-center items-center gap-6 max-w-md mx-auto w-full">
+                {/* Botões à direita */}
+                <div className="flex flex-col gap-8 max-w-sm w-full">
                   <button
                     onClick={() => setActiveTab('novo')}
-                    className="w-full px-8 py-6 bg-blue-500 hover:bg-blue-600 text-white text-lg font-semibold rounded-lg shadow-md transition flex items-center justify-center gap-3"
+                    className="w-full px-8 py-8 bg-cyan-400 hover:bg-cyan-500 text-white text-xl font-semibold rounded-lg shadow-md transition flex items-center justify-center gap-3"
                   >
-                    <span className="text-2xl">+</span>
+                    <span className="text-2xl font-bold">+</span>
                     <span>Abrir novo chamado</span>
                   </button>
 
                   <button
                     onClick={() => setActiveTab('acompanhar')}
-                    className="w-full px-8 py-6 bg-green-800 hover:bg-green-900 text-white text-lg font-semibold rounded-lg shadow-md transition"
+                    className="w-full px-8 py-8 bg-green-800 hover:bg-green-900 text-white text-xl font-semibold rounded-lg shadow-md transition leading-tight"
                   >
                     <div>Verificar andamento</div>
                     <div>do chamado</div>
@@ -126,10 +129,10 @@ export default function PainelInicialUsuario() {
       </div>
 
       {/* Rodapé fixo */}
-      <div className="bg-gray-100 py-4 text-center">
+      <div className="bg-gray-200 py-4 px-8 flex justify-end">
         <button
           onClick={logout}
-          className="text-red-600 hover:text-red-700 font-medium text-sm"
+          className="text-red-600 hover:text-red-700 font-semibold text-base"
         >
           Sair | Deslogar
         </button>
