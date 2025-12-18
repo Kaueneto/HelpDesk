@@ -106,16 +106,98 @@ router.get("/chamados/meus", verifyToken, async (req: AuthenticatedRequest, res:
 
 
 
-//rotar para obter os chamados
+//rotar para obter os chamados com filtros (usuarios comuns e administradores)
 router.get("/chamados", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const chamados = await AppDataSource.getRepository(Chamados).find({
-      relations: ["usuario", "tipoPrioridade", "departamento", "topicoAjuda", "status"],
-      order: { dataAbertura: "DESC" },
-    });
+    const { status, topicoAjudaId, palavraChave, departamentoId, prioridadeId, usuarioId, dataInicio, dataFim } = req.query;
+    const userRoleId = req.userRoleId; // role do usuario logado
+    const userId = req.userId; // id do usuario logado
 
-    return res.status(200).json(chamados);
+    const chamadoRepository = AppDataSource.getRepository(Chamados);
+    const queryBuilder = chamadoRepository
+      .createQueryBuilder("chamado")
+      .leftJoinAndSelect("chamado.usuario", "usuario")
+      .leftJoinAndSelect("chamado.tipoPrioridade", "tipoPrioridade")
+      .leftJoinAndSelect("chamado.departamento", "departamento")
+      .leftJoinAndSelect("chamado.topicoAjuda", "topicoAjuda")
+      .leftJoinAndSelect("chamado.status", "status")
+      .leftJoinAndSelect("chamado.userResponsavel", "userResponsavel")
+      .leftJoinAndSelect("chamado.userFechamento", "userFechamento");
+
+    // Filtro obrigatorio: usuarios comuns veem apenas seus proprios chamados
+    if (userRoleId !== 1) {
+      queryBuilder.andWhere("chamado.id_user = :userId", { userId });
+    }
+
+    // Filtros disponiveis para todos os usuarios
+    if (status) {
+      queryBuilder.andWhere("chamado.id_status = :status", { status });
+    }
+
+    if (topicoAjudaId) {
+      queryBuilder.andWhere("chamado.id_topico_ajuda = :topicoAjudaId", { topicoAjudaId });
+    }
+
+    if (palavraChave) {
+      queryBuilder.andWhere(
+        "(chamado.resumo_chamado ILIKE :palavraChave OR chamado.descricao_chamado ILIKE :palavraChave)",
+        { palavraChave: `%${palavraChave}%` }
+      );
+    }
+
+    // Filtros extras apenas para administradores (roleId = 1)
+    if (userRoleId === 1) {
+      if (departamentoId) {
+        queryBuilder.andWhere("chamado.id_departamento = :departamentoId", { departamentoId });
+      }
+
+      if (prioridadeId) {
+        queryBuilder.andWhere("chamado.id_prioridade = :prioridadeId", { prioridadeId });
+      }
+
+      if (usuarioId) {
+        queryBuilder.andWhere("chamado.id_user = :usuarioId", { usuarioId });
+      }
+
+      if (dataInicio && dataFim) {
+        queryBuilder.andWhere("chamado.data_abertura BETWEEN :dataInicio AND :dataFim", {
+          dataInicio,
+          dataFim,
+        });
+      } else if (dataInicio) {
+        queryBuilder.andWhere("chamado.data_abertura >= :dataInicio", { dataInicio });
+      } else if (dataFim) {
+        queryBuilder.andWhere("chamado.data_abertura <= :dataFim", { dataFim });
+      }
+    }
+
+    // Ordenar por data de abertura (mais recentes primeiro)
+    queryBuilder.orderBy("chamado.data_abertura", "DESC");
+
+    const chamados = await queryBuilder.getMany();
+
+    // Formatar resposta para retornar apenas dados essenciais dos usuarios
+    const chamadosFormatados = chamados.map((chamado) => ({
+      id: chamado.id,
+      numeroChamado: chamado.numeroChamado,
+      ramal: chamado.ramal,
+      resumoChamado: chamado.resumoChamado,
+      descricaoChamado: chamado.descricaoChamado,
+      dataAbertura: chamado.dataAbertura,
+      dataAtribuicao: chamado.dataAtribuicao,
+      dataFechamento: chamado.dataFechamento,
+      usuario: chamado.usuario ? { id: chamado.usuario.id, name: chamado.usuario.name } : null,
+      tipoPrioridade: chamado.tipoPrioridade,
+      departamento: chamado.departamento,
+      topicoAjuda: chamado.topicoAjuda,
+      status: chamado.status,
+      userResponsavel: chamado.userResponsavel ? { id: chamado.userResponsavel.id, name: chamado.userResponsavel.name } : null,
+      userFechamento: chamado.userFechamento ? { id: chamado.userFechamento.id, name: chamado.userFechamento.name } : null,
+    }));
+
+    return res.status(200).json(chamadosFormatados);
   } catch (error) {
+    console.error("Erro ao listar chamados:", error);
     return res.status(500).json({
       mensagem: "Erro ao listar chamados",
     });
