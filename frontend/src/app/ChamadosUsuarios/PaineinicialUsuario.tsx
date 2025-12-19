@@ -293,16 +293,23 @@ export default function DashboardPage() {
   };
 
   const formatarDataBrasilia = (data: string) => {
+    // Cria objeto Date que interpreta a string (se tiver Z, vem como UTC)
     const date = new Date(data);
-    // Converter para horário de Brasília (UTC-3)
-    return date.toLocaleString('pt-BR', {
-      timeZone: 'America/Sao_Paulo',
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+    
+    // Adiciona 3 horas se a data original tinha Z (estava em UTC)
+    // Para compensar e mostrar o horário correto de Brasília
+    if (data.includes('Z')) {
+      date.setHours(date.getHours() + 3);
+    }
+    
+    // Formata a data
+    const dia = String(date.getDate()).padStart(2, '0');
+    const mes = String(date.getMonth() + 1).padStart(2, '0');
+    const ano = date.getFullYear();
+    const hora = String(date.getHours()).padStart(2, '0');
+    const minuto = String(date.getMinutes()).padStart(2, '0');
+    
+    return `${dia}/${mes}/${ano} ${hora}:${minuto}`;
   };
 
   const removeFile = (index: number) => {
