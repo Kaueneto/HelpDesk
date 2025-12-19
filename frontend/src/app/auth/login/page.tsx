@@ -103,51 +103,53 @@ export default function LoginPage() {
         {/* Container Tabs */}
         <div className="w-full">
           {/* Barra de Tabs */}
-          <div className="h-11 items-center justify-center rounded-lg bg-gray-200/60 p-1 grid grid-cols-2 gap-1 mb-3">
+          <div className="h-10 items-center justify-center rounded-md bg-gray-200/70 p-1 text-gray-500 grid w-full grid-cols-2" role="tablist">
             <button
               type="button"
+              role="tab"
               onClick={() => {
                 setActiveTab('entrar');
                 setError('');
                 setCadastroError('');
               }}
-              className={`inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium transition-all duration-200 ${
+              className={`inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium transition-all duration-200 ${
                 activeTab === 'entrar'
                   ? 'bg-white text-gray-900 shadow-sm'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              Entrar
+              entrar
             </button>
             <button
               type="button"
+              role="tab"
               onClick={() => {
                 setActiveTab('cadastrar');
                 setError('');
                 setCadastroError('');
               }}
-              className={`inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium transition-all duration-200 ${
+              className={`inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium transition-all duration-200 ${
                 activeTab === 'cadastrar'
                   ? 'bg-white text-gray-900 shadow-sm'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              Cadastrar
+              cadastrar
             </button>
           </div>
 
           {/* Conteúdo das Tabs */}
-          <div className="rounded-lg border border-gray-200 bg-white shadow-md transition-shadow hover:shadow-lg">
+          <div className="mt-2 rounded-lg border border-gray-200 bg-white shadow-sm transition-shadow">
             {/* Tab Entrar */}
             {activeTab === 'entrar' && (
-              <div className="p-6 space-y-4 animate-in fade-in duration-300">
+              <div className="p-6 pt-6 space-y-4">
                 <form onSubmit={handleLoginSubmit} className="space-y-4">
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     <label
                       htmlFor="login-email"
                       className="text-sm font-medium leading-none text-gray-700"
                     >
-                      E-mail
+                      e-mail
                     </label>
                     <input
                       id="login-email"
@@ -161,12 +163,12 @@ export default function LoginPage() {
                     />
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     <label
                       htmlFor="login-password"
-                      className="text-sm font-medium leading-none text-black-700"
+                      className="text-sm font-medium leading-none text-gray-700"
                     >
-                      Senha
+                      senha
                     </label>
                     <input
                       id="login-password"
@@ -189,33 +191,24 @@ export default function LoginPage() {
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-semibold transition-all duration-200 bg-blue-600 text-white shadow hover:bg-blue-700 hover:shadow-md hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2 w-full"
+                    className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-200 bg-blue-600 text-white shadow hover:bg-blue-700 hover:shadow-md hover:-translate-y-px focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2 w-full"
                   >
-                    {isLoading ? 'Entrando...' : 'Entrar'}
+                    {isLoading ? 'entrando...' : 'entrar'}
                   </button>
-
-                  <div className="text-center pt-2">
-                    <a
-                      href="/recuperar-senha"
-                      className="text-sm text-blue-600 hover:underline"
-                    >
-                      Esqueci minha senha
-                    </a>
-                  </div>
                 </form>
               </div>
             )}
 
             {/* Tab Cadastrar */}
             {activeTab === 'cadastrar' && (
-              <div className="p-6 space-y-4 animate-in fade-in duration-300">
+              <div className="p-6 pt-6 space-y-4">
                 <form onSubmit={handleCadastroSubmit} className="space-y-4">
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     <label
                       htmlFor="register-name"
                       className="text-sm font-medium leading-none text-gray-700"
                     >
-                      Nome completo
+                      nome completo
                     </label>
                     <input
                       id="register-name"
@@ -225,17 +218,17 @@ export default function LoginPage() {
                       required
                       minLength={3}
                       className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                      placeholder="Seu nome completo"
+                      placeholder="seu nome completo"
                       disabled={cadastroLoading}
                     />
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     <label
                       htmlFor="register-email"
                       className="text-sm font-medium leading-none text-gray-700"
                     >
-                      E-mail
+                      e-mail
                     </label>
                     <input
                       id="register-email"
@@ -249,12 +242,12 @@ export default function LoginPage() {
                     />
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     <label
                       htmlFor="register-password"
                       className="text-sm font-medium leading-none text-gray-700"
                     >
-                      Senha
+                      senha
                     </label>
                     <input
                       id="register-password"
@@ -264,17 +257,17 @@ export default function LoginPage() {
                       required
                       minLength={6}
                       className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                      placeholder="Mínimo 6 caracteres"
+                      placeholder="mínimo 6 caracteres"
                       disabled={cadastroLoading}
                     />
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     <label
                       htmlFor="register-confirm"
                       className="text-sm font-medium leading-none text-gray-700"
                     >
-                      Confirmar senha
+                      confirmar senha
                     </label>
                     <input
                       id="register-confirm"
@@ -284,7 +277,7 @@ export default function LoginPage() {
                       required
                       minLength={6}
                       className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                      placeholder="Repita sua senha"
+                      placeholder="repita sua senha"
                       disabled={cadastroLoading}
                     />
                   </div>
@@ -298,23 +291,24 @@ export default function LoginPage() {
                   <button
                     type="submit"
                     disabled={cadastroLoading}
-                    className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-semibold transition-all duration-200 bg-blue-600 text-white shadow hover:bg-blue-700 hover:shadow-md hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2 w-full"
+                    className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-200 bg-blue-600 text-white shadow hover:bg-blue-700 hover:shadow-md hover:-translate-y-px focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2 w-full"
                   >
-                    {cadastroLoading ? 'Cadastrando...' : 'Cadastrar'}
+                    {cadastroLoading ? 'cadastrando...' : 'cadastrar'}
                   </button>
-
-                  <div className="text-center pt-2">
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab('entrar')}
-                      className="text-sm text-blue-600 hover:underline"
-                    >
-                      Já tenho conta
-                    </button>
-                  </div>
                 </form>
               </div>
             )}
+          </div>
+
+          {/* Botão Voltar */}
+          <div className="text-center mt-6">
+            <button
+              type="button"
+              onClick={() => router.push('/')}
+              className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-200 underline-offset-4 hover:underline text-gray-500 h-auto p-0"
+            >
+              voltar para o início
+            </button>
           </div>
         </div>
       </div>
