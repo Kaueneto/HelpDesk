@@ -22,6 +22,9 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
+// servir arquivos estáticos da pasta uploads
+app.use('/uploads', express.static('uploads'));
+
 // importar controllers
 import TestConnectionController from "./controllers/TestConnectionController";
 import AuthController from "./controllers/AuthController";
@@ -32,6 +35,7 @@ import TopicosAjudaController from "./controllers/TopicosAjudaController";
 import rolesRouter from "./controllers/RolesController";
 import TipoPrioridadeController from "./controllers/TipoPrioridadeController";
 import DepartamentosController from "./controllers/DepartamentosController";
+import ChamadoAnexosController from "./controllers/ChamadoAnexosController";
 
 // registrar rotas
 app.use("/", TestConnectionController);
@@ -42,6 +46,7 @@ app.use("/", UsersController);
 app.use("/", TopicosAjudaController);
 app.use("/", TipoPrioridadeController);
 app.use("/", DepartamentosController);
+app.use("/", ChamadoAnexosController);
 app.use(rolesRouter);
 
 // inicializar banco ANTES de subir o servidor

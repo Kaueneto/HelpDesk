@@ -3,6 +3,7 @@ import {
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
+  OneToMany,
   JoinColumn,
   CreateDateColumn,
 } from "typeorm";
@@ -11,6 +12,7 @@ import { TipoPrioridade } from "./TipoPrioridade";
 import { TopicosAjuda } from "./TopicosAjuda";
 import { Departamentos } from "./Departamentos";
 import { StatusChamado } from "./StatusChamado";
+import { ChamadoAnexos } from "./ChamadoAnexos";
 
 @Entity({ name: "chamados", schema: "public" })
 export class Chamados {
@@ -69,4 +71,7 @@ export class Chamados {
 
   @Column({ name: "data_fechamento", type: "date", nullable: true })
   dataFechamento!: Date;
+
+  @OneToMany(() => ChamadoAnexos, anexo => anexo.chamado)
+  anexos!: ChamadoAnexos[];
 }
