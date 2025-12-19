@@ -391,4 +391,28 @@ router.post("/chamados/:id/mensagens", verifyToken, async (req: AuthenticatedReq
   }
 });
 
+// Buscar lista de status
+router.get("/status", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const statusRepository = AppDataSource.getRepository(StatusChamado);
+    const statusList = await statusRepository.find({
+      order: { id: "ASC" },
+    });
+
+    // Mapear para incluir descricaoStatus (compatibilidade com frontend)
+    const statusFormatted = statusList.map(status => ({
+      id: status.id,
+      descricaoStatus: status.nome,
+      nome: status.nome,
+    }));
+
+    return res.status(200).json(statusFormatted);
+  } catch (error) {
+    console.error("Erro ao buscar status:", error);
+    return res.status(500).json({
+      mensagem: "Erro ao buscar status",
+    });
+  }
+});
+
 export default router;
