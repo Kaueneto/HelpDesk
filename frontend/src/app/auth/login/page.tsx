@@ -96,10 +96,12 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-start justify-center bg-gradient-to-br from-gray-50 to-gray-100">
       <div className="mt-24 w-full max-w-md px-4">
         {/* Título */}
-        <h1 className="text-3xl font-bold text-center text-gray-900 mb-10">
+        <h1 className="text-3xl font-bold text-center text-gray-900 mb-2">
           Sistema de Chamados
         </h1>
-
+          <h3 className="text-xl font-bold text-center text-gray-900 mb-3">
+          HelpDesk
+        </h3>
         {/* Container Tabs */}
         <div className="w-full">
           {/* Barra de Tabs */}
@@ -118,7 +120,7 @@ export default function LoginPage() {
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              entrar
+              Fazer Login
             </button>
             <button
               type="button"
@@ -134,7 +136,7 @@ export default function LoginPage() {
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              cadastrar
+              Cadastre-se
             </button>
           </div>
 
@@ -149,7 +151,7 @@ export default function LoginPage() {
                       htmlFor="login-email"
                       className="text-sm font-medium leading-none text-gray-700"
                     >
-                      e-mail
+                      E-mail
                     </label>
                     <input
                       id="login-email"
@@ -168,7 +170,7 @@ export default function LoginPage() {
                       htmlFor="login-password"
                       className="text-sm font-medium leading-none text-gray-700"
                     >
-                      senha
+                      Senha
                     </label>
                     <input
                       id="login-password"
@@ -180,6 +182,14 @@ export default function LoginPage() {
                       placeholder="••••••••"
                       disabled={isLoading}
                     />
+                    <div className="text-center">
+                      <button
+                        type="button"
+                        className="text-sm text-blue-600 hover:text-blue-700 hover:underline"
+                      >
+                        Esqueci minha senha
+                      </button>
+                    </div>
                   </div>
 
                   {error && (
@@ -193,8 +203,22 @@ export default function LoginPage() {
                     disabled={isLoading}
                     className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-200 bg-blue-600 text-white shadow hover:bg-blue-700 hover:shadow-md hover:-translate-y-px focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2 w-full"
                   >
-                    {isLoading ? 'entrando...' : 'entrar'}
+                    {isLoading ? 'Entrando...' : 'Entrar'}
                   </button>
+
+                  <div className="text-center text-sm text-gray-600">
+                    Novo por aqui?{' '}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTab('cadastrar');
+                        setError('');
+                      }}
+                      className="text-blue-600 hover:text-blue-700 hover:underline font-medium"
+                    >
+                      Cadastre-se
+                    </button>
+                  </div>
                 </form>
               </div>
             )}
@@ -208,7 +232,7 @@ export default function LoginPage() {
                       htmlFor="register-name"
                       className="text-sm font-medium leading-none text-gray-700"
                     >
-                      nome completo
+                      Nome completo
                     </label>
                     <input
                       id="register-name"
@@ -228,7 +252,7 @@ export default function LoginPage() {
                       htmlFor="register-email"
                       className="text-sm font-medium leading-none text-gray-700"
                     >
-                      e-mail
+                      E-mail
                     </label>
                     <input
                       id="register-email"
@@ -247,7 +271,7 @@ export default function LoginPage() {
                       htmlFor="register-password"
                       className="text-sm font-medium leading-none text-gray-700"
                     >
-                      senha
+                      Senha
                     </label>
                     <input
                       id="register-password"
@@ -267,7 +291,7 @@ export default function LoginPage() {
                       htmlFor="register-confirm"
                       className="text-sm font-medium leading-none text-gray-700"
                     >
-                      confirmar senha
+                      Confirmar senha
                     </label>
                     <input
                       id="register-confirm"
@@ -295,21 +319,25 @@ export default function LoginPage() {
                   >
                     {cadastroLoading ? 'cadastrando...' : 'cadastrar'}
                   </button>
+
+                  <div className="text-center text-sm text-gray-600">
+                    Já tem uma conta?{' '}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTab('entrar');
+                        setCadastroError('');
+                      }}
+                      className="text-blue-600 hover:text-blue-700 hover:underline font-medium"
+                    >
+                      Faça login
+                    </button>
+                  </div>
                 </form>
               </div>
             )}
           </div>
-
-          {/* Botão Voltar */}
-          <div className="text-center mt-6">
-            <button
-              type="button"
-              onClick={() => router.push('/')}
-              className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-200 underline-offset-4 hover:underline text-gray-500 h-auto p-0"
-            >
-              voltar para o início
-            </button>
-          </div>
+     
         </div>
       </div>
     </div>
