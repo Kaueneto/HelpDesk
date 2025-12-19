@@ -10,7 +10,16 @@ export default function PainelAdmin() {
   const router = useRouter();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeMenu, setActiveMenu] = useState('inicio');
-   
+  
+ 
+  // filtros do dashboard
+  const [dataInicio, setDataInicio] = useState('');
+  const [dataFim, setDataFim] = useState('');
+  const [chamadosAbertos, setChamadosAbertos] = useState(0);
+  const [chamadosFinalizados, setChamadosFinalizados] = useState(0);
+  const [dadosPrioridade, setDadosPrioridade] = useState<any[]>([]);
+  const [dadosDepartamento, setDadosDepartamento] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -20,9 +29,89 @@ export default function PainelAdmin() {
     }
   }, [isAuthenticated, isLoading, user, router]);
 
-  
+  // colocar as datas do mes atual ao carregar pra nao sobrecarregar
+  useEffect(() => {
+    if (isAuthenticated && user?.roleId === 1) {
+      const hoje = new Date();
+      const primeiroDia = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+      const ultimoDia = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
+      
+      setDataInicio(primeiroDia.toISOString().split('T')[0]);
+      setDataFim(ultimoDia.toISOString().split('T')[0]);
+    }
+  }, [isAuthenticated, user]);
 
-  // Carregar dados quando as datas estiverem definidas
+  // carregar dados quando as datas estiverem definidas
+  useEffect(() => {
+    if (dataInicio && dataFim) {
+      carregarDados();
+    }
+  }, [dataInicio, dataFim]);
+
+  const carregarDados = async () => {
+    setLoading(true);
+    try {
+      // Buscar chamados do período
+      const response = await api.get('/chamados', {
+        params: {
+          dataInicio,
+          dataFim,
+        }
+      });
+
+      const chamados = response.data.chamados || response.data;
+
+      // contar abertos e finalizados
+      const abertos = chamados.filter((c: any) => c.status?.id === 1).length;
+      const finalizados = chamados.filter((c: any) => c.status?.id !== 1).length;
+      
+      setChamadosAbertos(abertos);
+      setChamadosFinalizados(finalizados);
+
+      // processar dados por prioridade
+      const prioridadeMap = new Map();
+      chamados.forEach((c: any) => {
+        if (c.status?.id === 1) { // Apenas abertos
+          const prioridadeNome = c.tipoPrioridade?.nome || 'Sem prioridade';
+          const prioridadeCor = c.tipoPrioridade?.cor || '#999999';
+          const count = prioridadeMap.get(prioridadeNome) || { count: 0, cor: prioridadeCor };
+          prioridadeMap.set(prioridadeNome, { count: count.count + 1, cor: prioridadeCor });
+        }
+      });
+
+      const prioridadeData = Array.from(prioridadeMap.entries()).map(([nome, data]: [string, any]) => ({
+        nome,
+        valor: data.count,
+        cor: data.cor,
+      }));
+      setDadosPrioridade(prioridadeData);
+
+      // processar dados por departamento
+      const departamentoMap = new Map();
+      chamados.forEach((c: any) => {
+        const deptNome = c.departamento?.name || 'Sem departamento';
+        departamentoMap.set(deptNome, (departamentoMap.get(deptNome) || 0) + 1);
+      });
+
+      const total = chamados.length;
+      const departamentoData = Array.from(departamentoMap.entries()).map(([nome, count]) => ({
+        nome,
+        valor: count as number,
+        percentual: total > 0 ? ((count as number / total) * 100).toFixed(1) : 0,
+      })).sort((a, b) => b.valor - a.valor);
+      
+      setDadosDepartamento(departamentoData);
+
+    } catch (error) {
+      console.error('Erro ao carregar dados:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePesquisar = () => {
+    carregarDados();
+  };
 
   if (isLoading) {
     return (
@@ -39,8 +128,8 @@ export default function PainelAdmin() {
   const cores = ['#10B981', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
 
   return (
-    <div className="min-h-screen flex" style={{ backgroundColor: '#EDEDED' }}>
-      {/* sidebar lateral esq */}
+    <div className="h-screen flex overflow-hidden" style={{ backgroundColor: '#EDEDED' }}>
+      {/* Sidebar */}
       <aside
         className={`transition-all duration-300 flex flex-col ${
           sidebarCollapsed ? 'w-16' : 'w-64'
@@ -60,6 +149,7 @@ export default function PainelAdmin() {
                 activeMenu === 'inicio' ? 'bg-gray-600 text-white' : 'text-gray-300 hover:bg-gray-700'
               }`}
             >
+              <img src="/icons/iconHomeAdmin.svg" alt="Inicio" className="w-5 h-5 flex-shrink-0" />
               {!sidebarCollapsed && <span>Inicio</span>}
             </button>
 
@@ -69,7 +159,7 @@ export default function PainelAdmin() {
                 activeMenu === 'chamados' ? 'bg-gray-600 text-white' : 'text-gray-300 hover:bg-gray-700'
               }`}
             >
-
+              <img src="/icons/iconchamados.svg" alt="Chamados" className="w-5 h-5 flex-shrink-0" />
               {!sidebarCollapsed && <span>Chamados</span>}
             </button>
 
@@ -80,7 +170,7 @@ export default function PainelAdmin() {
               }`}
             >
               <div className="flex items-center gap-3">
-
+                <img src="/icons/iconadministrator.svg" alt="Gerencial" className="w-5 h-5 flex-shrink-0" />
                 {!sidebarCollapsed && <span>Gerencial</span>}
               </div>
               {!sidebarCollapsed && <span>&gt;</span>}
@@ -88,7 +178,7 @@ export default function PainelAdmin() {
           </nav>
         </aside>
 
-        {/* area de conteudo principal */}
+        {/* Área de Conteúdo Principal */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Header */}
           <header className="h-14 flex items-center justify-between px-4" style={{ backgroundColor: '#001F3F' }}>
@@ -96,41 +186,157 @@ export default function PainelAdmin() {
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
               className="text-white hover:bg-white/10 p-2 rounded transition"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
+              <img src="/icons/menu.svg" alt="Menu" className="w-6 h-6" />
             </button>
 
             <div className="flex items-center gap-3 text-white">
-             
+              <img src="/icons/iconbook.svg" alt="Book" className="w-8 h-8" />
+              <img src="/icons/iconperfil.svg" alt="Perfil" className="w-8 h-8" />
               <span className="font-medium">{user.name}</span>
             </div>
           </header>
 
-          {/* area de conteudo */}
+          {/* Área de Conteúdo */}
           <main className="flex-1 overflow-auto">
-          {/* faixa do dashboard */}
+          {/* faixa Dashboard */}
           <div className="bg-blue-400 px-6 py-4">
             <h2 className="text-white text-2xl font-semibold">Dashboard</h2>
           </div>
 
           <div className="p-6">
-            {/* Filtros de Data */}
-           
+            {/* filtros de data */}
+            <div className="flex justify-end items-center gap-4 mb-6">
+              <input
+                type="date"
+                value={dataInicio}
+                onChange={(e) => setDataInicio(e.target.value)}
+                className="px-4 py-2 border border-gray-300 rounded text-gray-900"
+              />
+              <span className="text-gray-700">até</span>
+              <input
+                type="date"
+                value={dataFim}
+                onChange={(e) => setDataFim(e.target.value)}
+                className="px-4 py-2 border border-gray-300 rounded text-gray-900"
+              />
+              <button
+                onClick={handlePesquisar}
+                disabled={loading}
+                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition disabled:opacity-50"
+              >
+                {loading ? 'Pesquisando...' : 'Pesquisar'}
+              </button>
+            </div>
 
-            {/* cards do chamado */}
+            {/* cards de chamados */}
             <div className="grid grid-cols-2 gap-6 mb-8">
               <div className="bg-green-500 rounded-lg p-8 flex items-center gap-6 text-white">
-                
+                <img src="/icons/iconabertos.svg" alt="Abertos" className="w-16 h-16" />
+                <div>
+                  <div className="text-5xl font-bold mb-2">{chamadosAbertos}</div>
+                  <div className="text-xl font-medium">ABERTOS</div>
+                </div>
               </div>
 
               <div className="bg-red-500 rounded-lg p-8 flex items-center gap-6 text-white">
+                <img src="/icons/iconfechados.svg" alt="Fechados" className="w-16 h-16" />
                 <div>
-         
+                  <div className="text-5xl font-bold mb-2">{chamadosFinalizados}</div>
+                  <div className="text-xl font-medium">FINALIZADOS</div>
                 </div>
               </div>
             </div>
-            {/* quero implementar os graficos aqui */}
+
+            {/* Gráficos */}
+            <div className="grid grid-cols-2 gap-6">
+              {/* Gráfico de Pizza - Prioridade */}
+              <div className="bg-white rounded-lg border border-gray-300 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-3 border-b">Por prioridade</h3>
+                
+                {dadosPrioridade.length > 0 ? (
+                  <div className="flex flex-col items-center">
+                    <svg viewBox="0 0 200 200" className="w-64 h-64 mb-4">
+                      {(() => {
+                        const total = dadosPrioridade.reduce((sum, item) => sum + item.valor, 0);
+                        let currentAngle = 0;
+                        
+                        return dadosPrioridade.map((item, index) => {
+                          const percentage = (item.valor / total) * 100;
+                          const angle = (percentage / 100) * 360;
+                          const startAngle = currentAngle;
+                          const endAngle = currentAngle + angle;
+                          
+                          const x1 = 100 + 90 * Math.cos((startAngle - 90) * Math.PI / 180);
+                          const y1 = 100 + 90 * Math.sin((startAngle - 90) * Math.PI / 180);
+                          const x2 = 100 + 90 * Math.cos((endAngle - 90) * Math.PI / 180);
+                          const y2 = 100 + 90 * Math.sin((endAngle - 90) * Math.PI / 180);
+                          
+                          const largeArc = angle > 180 ? 1 : 0;
+                          const pathData = `M 100 100 L ${x1} ${y1} A 90 90 0 ${largeArc} 1 ${x2} ${y2} Z`;
+                          
+                          currentAngle += angle;
+                          
+                          return (
+                            <g key={index}>
+                              <path d={pathData} fill={item.cor} stroke="#fff" strokeWidth="2" />
+                              <text
+                                x={100 + 60 * Math.cos(((startAngle + endAngle) / 2 - 90) * Math.PI / 180)}
+                                y={100 + 60 * Math.sin(((startAngle + endAngle) / 2 - 90) * Math.PI / 180)}
+                                textAnchor="middle"
+                                fill="#fff"
+                                fontSize="14"
+                                fontWeight="bold"
+                              >
+                                {item.valor}
+                              </text>
+                            </g>
+                          );
+                        });
+                      })()}
+                    </svg>
+                    
+                    <div className="flex flex-wrap justify-center gap-4">
+                      {dadosPrioridade.map((item, index) => (
+                        <div key={index} className="flex items-center gap-2">
+                          <div className="w-4 h-4 rounded" style={{ backgroundColor: item.cor }}></div>
+                          <span className="text-sm text-gray-700">{item.nome}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-12 text-gray-500">Nenhum chamado aberto no período</div>
+                )}
+              </div>
+
+              {/* Gráfico de Barras - Departamento */}
+              <div className="bg-white rounded-lg border border-gray-300 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-3 border-b">Por Departamento</h3>
+                
+                {dadosDepartamento.length > 0 ? (
+                  <div className="space-y-4">
+                    {dadosDepartamento.map((item, index) => (
+                      <div key={index}>
+                        <div className="flex justify-between text-sm text-gray-700 mb-1">
+                          <span className="font-medium">{item.nome}</span>
+                          <span>{item.percentual}%</span>
+                        </div>
+                        <div className="h-8 bg-gray-200 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-green-500 transition-all duration-500 flex items-center justify-end pr-2"
+                            style={{ width: `${item.percentual}%` }}
+                          >
+                            <span className="text-xs font-bold text-white">{item.valor}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 text-gray-500">Nenhum dado disponível</div>
+                )}
+              </div>
+            </div>
           </div>
         </main>
       </div>
