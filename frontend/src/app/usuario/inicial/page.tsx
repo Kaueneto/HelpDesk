@@ -47,6 +47,17 @@ export default function PainelInicialUsuario() {
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
+  // Estados para acompanhar chamados
+  const [chamados, setChamados] = useState<any[]>([]);
+  const [loadingChamados, setLoadingChamados] = useState(false);
+  const [statusList, setStatusList] = useState<any[]>([]);
+  const [filtroAssunto, setFiltroAssunto] = useState('');
+  const [filtroTopicoId, setFiltroTopicoId] = useState<number>(0);
+  const [filtroStatusId, setFiltroStatusId] = useState<number>(0);
+  const [paginaAtual, setPaginaAtual] = useState(1);
+  const [totalPaginas, setTotalPaginas] = useState(1);
+  const [isDragging, setIsDragging] = useState(false);
+
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       router.push('/auth/login');
@@ -84,6 +95,22 @@ export default function PainelInicialUsuario() {
     }
   }, [isAuthenticated]);
 
+  // Carregar status quando entrar na aba acompanhar
+  useEffect(() => {
+    if (activeTab === 'acompanhar' && isAuthenticated) {
+      const fetchStatus = async () => {
+        try {
+          const statusRes = await api.get('/status');
+          setStatusList(statusRes.data);
+        } catch (error) {
+          console.error('Erro ao carregar status:', error);
+        }
+      };
+      fetchStatus();
+      buscarChamados();
+    }
+  }, [activeTab, isAuthenticated]);
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const filesArray = Array.from(e.target.files);
@@ -98,6 +125,67 @@ export default function PainelInicialUsuario() {
 
   const removeFile = (index: number) => {
     setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    
+    if (e.dataTransfer.files) {
+      const filesArray = Array.from(e.dataTransfer.files);
+      if (filesArray.length > 5) {
+        setErrorMessage('Máximo de 5 arquivos permitidos.');
+        return;
+      }
+      setSelectedFiles(filesArray);
+      setErrorMessage('');
+    }
+  };
+
+  const buscarChamados = async (pagina: number = 1) => {
+    setLoadingChamados(true);
+    try {
+      const params: any = {
+        page: pagina,
+        limit: 10,
+      };
+      
+      if (filtroAssunto) params.palavraChave = filtroAssunto;
+      if (filtroTopicoId > 0) params.topicoAjudaId = filtroTopicoId;
+      if (filtroStatusId > 0) params.status = filtroStatusId;
+
+      const response = await api.get('/chamados', { params });
+      
+      if (response.data.chamados) {
+        setChamados(response.data.chamados);
+        setTotalPaginas(response.data.totalPages || 1);
+        setPaginaAtual(pagina);
+      } else {
+        setChamados(response.data);
+        const total = Math.ceil(response.data.length / 10);
+        setTotalPaginas(total || 1);
+        setPaginaAtual(pagina);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar chamados:', error);
+      setErrorMessage('Erro ao carregar chamados.');
+    } finally {
+      setLoadingChamados(false);
+    }
+  };
+
+  const handlePesquisar = () => {
+    buscarChamados(1);
   };
 
   const handleSubmitChamado = async (e: React.FormEvent) => {
@@ -410,17 +498,28 @@ export default function PainelInicialUsuario() {
                     <label className="block text-sm font-medium text-gray-900 mb-2">
                       Anexos (Opcional)
                     </label>
-                    <div className="flex items-center gap-3">
+                    <div
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                      onDrop={handleDrop}
+                      className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+                        isDragging
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-gray-300 bg-gray-50'
+                      }`}
+                    >
                       <label
                         htmlFor="file-upload"
-                        className="cursor-pointer inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none"
+                        className="cursor-pointer flex flex-col items-center"
                       >
-                        <svg className="mr-2 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="h-12 w-12 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                         </svg>
-                        Anexar arquivos
+                        <p className="text-sm font-medium text-gray-700 mb-1">
+                          Clique para selecionar ou arraste arquivos aqui
+                        </p>
+                        <p className="text-xs text-gray-500">Máximo de 5 arquivos (10MB cada)</p>
                       </label>
-                      <span className="text-xs text-gray-500">Máximo de 5 arquivos</span>
                       <input
                         id="file-upload"
                         type="file"
@@ -496,8 +595,173 @@ export default function PainelInicialUsuario() {
 
             {activeTab === 'acompanhar' && (
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">Acompanhar Chamados</h2>
-                <p className="text-gray-600">Lista de chamados será implementada aqui.</p>
+                {/* Filtros */}
+                <div className="bg-gray-200 p-6 rounded-lg mb-6">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-900 mb-2">
+                        Assunto
+                      </label>
+                      <input
+                        type="text"
+                        value={filtroAssunto}
+                        onChange={(e) => setFiltroAssunto(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Buscar por assunto..."
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-900 mb-2">
+                        Tópico de ajuda
+                      </label>
+                      <select
+                        value={filtroTopicoId}
+                        onChange={(e) => setFiltroTopicoId(Number(e.target.value))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value={0}>Todos</option>
+                        {topicos.map((topico) => (
+                          <option key={topico.id} value={topico.id}>
+                            {topico.nome}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-900 mb-2">
+                        Status
+                      </label>
+                      <select
+                        value={filtroStatusId}
+                        onChange={(e) => setFiltroStatusId(Number(e.target.value))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value={0}>Todos</option>
+                        {statusList.map((status) => (
+                          <option key={status.id} value={status.id}>
+                            {status.descricaoStatus}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <button
+                      onClick={handlePesquisar}
+                      className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition"
+                    >
+                      Pesquisar
+                    </button>
+                  </div>
+                </div>
+
+                {/* Seus chamados */}
+                <h2 className="text-xl font-bold text-gray-900 mb-4">Seus chamados</h2>
+
+                {loadingChamados ? (
+                  <div className="text-center py-8 text-gray-600">Carregando...</div>
+                ) : chamados.length === 0 ? (
+                  <div className="text-center py-8 text-gray-600">Nenhum chamado encontrado.</div>
+                ) : (
+                  <>
+                    {/* Tabela */}
+                    <div className="overflow-x-auto border border-gray-300 rounded-lg">
+                      <table className="min-w-full divide-y divide-gray-300">
+                        <thead className="bg-gray-100">
+                          <tr>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                              Núm.Ticket
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                              Prioridade
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                              Data Criação
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                              Tópico ajuda
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                              Departamento
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                              Status
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                              Assunto
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {chamados.slice((paginaAtual - 1) * 10, paginaAtual * 10).map((chamado) => (
+                            <tr key={chamado.id} className="hover:bg-gray-50">
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-blue-600 font-medium">
+                                {chamado.numeroChamado || chamado.id}
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm">
+                                <div className="flex items-center gap-2">
+                                  <div
+                                    className="w-3 h-3 rounded-full"
+                                    style={{ backgroundColor: chamado.tipoPrioridade?.cor || '#999' }}
+                                    title={chamado.tipoPrioridade?.nome}
+                                  />
+                                  <span className="text-gray-900">{chamado.tipoPrioridade?.nome}</span>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                                {new Date(chamado.dataAbertura).toLocaleString('pt-BR', {
+                                  day: '2-digit',
+                                  month: '2-digit',
+                                  year: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })}
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                                {chamado.topicoAjuda?.nome}
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                                {chamado.departamento?.name}
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                                {chamado.status?.descricaoStatus}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-700 max-w-xs truncate" title={chamado.resumoChamado}>
+                                {chamado.resumoChamado}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Paginação */}
+                    {totalPaginas > 1 && (
+                      <div className="flex justify-center items-center gap-2 mt-6">
+                        <button
+                          onClick={() => buscarChamados(paginaAtual - 1)}
+                          disabled={paginaAtual === 1}
+                          className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Anterior
+                        </button>
+                        
+                        <span className="text-sm text-gray-700">
+                          Página {paginaAtual} de {totalPaginas}
+                        </span>
+                        
+                        <button
+                          onClick={() => buscarChamados(paginaAtual + 1)}
+                          disabled={paginaAtual === totalPaginas}
+                          className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Próxima
+                        </button>
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             )}
           </div>
