@@ -1,21 +1,28 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import api from '@/services/api';
 
 export default function PainelAdmin() {
   const { user, isAuthenticated, isLoading, logout } = useAuth();
   const router = useRouter();
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [activeMenu, setActiveMenu] = useState('inicio');
+   
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       router.push('/auth/login');
     } else if (!isLoading && user && user.roleId !== 1) {
-      // Se não for admin, redireciona para painel de usuário
       router.push('/usuario/inicial');
     }
   }, [isAuthenticated, isLoading, user, router]);
+
+  
+
+  // Carregar dados quando as datas estiverem definidas
 
   if (isLoading) {
     return (
@@ -29,53 +36,103 @@ export default function PainelAdmin() {
     return null;
   }
 
+  const cores = ['#10B981', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
+
   return (
-    <div className="min-h-screen bg-gray-100">
-      <div className="max-w-7xl mx-auto p-8">
-        <div className="bg-white rounded-lg shadow-lg p-8">
-          <div className="flex justify-between items-center mb-8">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Dashboard Administrativo</h1>
-              <p className="text-gray-600 mt-2">Bem-vindo, {user.name}</p>
-            </div>
+    <div className="min-h-screen flex" style={{ backgroundColor: '#EDEDED' }}>
+      {/* sidebar lateral esq */}
+      <aside
+        className={`transition-all duration-300 flex flex-col ${
+          sidebarCollapsed ? 'w-16' : 'w-64'
+        }`}
+        style={{ backgroundColor: '#3F3F3F' }}
+      >
+          <div className="p-4 border-b border-gray-600">
+            <h1 className={`text-white font-bold transition-all ${sidebarCollapsed ? 'text-xs text-center' : 'text-xl'}`}>
+              {sidebarCollapsed ? 'CC' : 'Central de chamados'}
+            </h1>
+          </div>
+
+          <nav className="flex-1 py-4">
             <button
-              onClick={logout}
-              className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition"
+              onClick={() => setActiveMenu('inicio')}
+              className={`w-full px-4 py-3 text-left flex items-center gap-3 transition ${
+                activeMenu === 'inicio' ? 'bg-gray-600 text-white' : 'text-gray-300 hover:bg-gray-700'
+              }`}
             >
-              Sair
+              {!sidebarCollapsed && <span>Inicio</span>}
             </button>
+
+            <button
+              onClick={() => setActiveMenu('chamados')}
+              className={`w-full px-4 py-3 text-left flex items-center gap-3 transition ${
+                activeMenu === 'chamados' ? 'bg-gray-600 text-white' : 'text-gray-300 hover:bg-gray-700'
+              }`}
+            >
+
+              {!sidebarCollapsed && <span>Chamados</span>}
+            </button>
+
+            <button
+              onClick={() => setActiveMenu('gerencial')}
+              className={`w-full px-4 py-3 text-left flex items-center justify-between transition ${
+                activeMenu === 'gerencial' ? 'bg-gray-600 text-white' : 'text-gray-300 hover:bg-gray-700'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+
+                {!sidebarCollapsed && <span>Gerencial</span>}
+              </div>
+              {!sidebarCollapsed && <span>&gt;</span>}
+            </button>
+          </nav>
+        </aside>
+
+        {/* area de conteudo principal */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Header */}
+          <header className="h-14 flex items-center justify-between px-4" style={{ backgroundColor: '#001F3F' }}>
+            <button
+              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              className="text-white hover:bg-white/10 p-2 rounded transition"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+
+            <div className="flex items-center gap-3 text-white">
+             
+              <span className="font-medium">{user.name}</span>
+            </div>
+          </header>
+
+          {/* area de conteudo */}
+          <main className="flex-1 overflow-auto">
+          {/* faixa do dashboard */}
+          <div className="bg-blue-400 px-6 py-4">
+            <h2 className="text-white text-2xl font-semibold">Dashboard</h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div className="bg-blue-50 rounded-lg p-6 text-center border-2 border-blue-200">
-              <div className="text-4xl font-bold text-blue-600 mb-2">0</div>
-              <div className="text-sm font-medium text-gray-700">Chamados Abertos</div>
-            </div>
-            <div className="bg-yellow-50 rounded-lg p-6 text-center border-2 border-yellow-200">
-              <div className="text-4xl font-bold text-yellow-600 mb-2">0</div>
-              <div className="text-sm font-medium text-gray-700">Em Atendimento</div>
-            </div>
-            <div className="bg-green-50 rounded-lg p-6 text-center border-2 border-green-200">
-              <div className="text-4xl font-bold text-green-600 mb-2">0</div>
-              <div className="text-sm font-medium text-gray-700">Encerrados</div>
-            </div>
-          </div>
+          <div className="p-6">
+            {/* Filtros de Data */}
+           
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Gerenciar Usuários</h3>
-              <button className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition">
-                Ver Usuários
-              </button>
+            {/* cards do chamado */}
+            <div className="grid grid-cols-2 gap-6 mb-8">
+              <div className="bg-green-500 rounded-lg p-8 flex items-center gap-6 text-white">
+                
+              </div>
+
+              <div className="bg-red-500 rounded-lg p-8 flex items-center gap-6 text-white">
+                <div>
+         
+                </div>
+              </div>
             </div>
-            <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Todos os Chamados</h3>
-              <button className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition">
-                Ver Chamados
-              </button>
-            </div>
+            {/* quero implementar os graficos aqui */}
           </div>
-        </div>
+        </main>
       </div>
     </div>
   );
