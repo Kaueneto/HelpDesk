@@ -391,6 +391,27 @@ router.post("/chamados/:id/mensagens", verifyToken, async (req: AuthenticatedReq
   }
 });
 
+// Buscar mensagens de um chamado
+router.get("/chamados/:id/mensagens", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    
+    const mensagensRepository = AppDataSource.getRepository(ChamadoMensagens);
+    const mensagens = await mensagensRepository.find({
+      where: { chamado: { id: Number(id) } },
+      relations: ["usuario"],
+      order: { dataEnvio: "ASC" },
+    });
+
+    return res.status(200).json(mensagens);
+  } catch (error) {
+    console.error("Erro ao buscar mensagens:", error);
+    return res.status(500).json({
+      mensagem: "Erro ao buscar mensagens",
+    });
+  }
+});
+
 // Buscar lista de status
 router.get("/status", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
