@@ -5,6 +5,7 @@ import { ChamadoHistorico } from "../entities/ChamadoHistorico";
 import { ChamadoMensagens } from "../entities/ChamadoMensagens";
 import { Users } from "../entities/Users";
 import { StatusChamado } from "../entities/StatusChamado";
+import { ParametrosSistema } from "../entities/ParametrosSistema";
 import { verifyToken } from "../Middleware/AuthMiddleware";
 
 interface AuthenticatedRequest extends Request {
@@ -113,7 +114,19 @@ router.get("/chamados/meus", verifyToken, async (req: AuthenticatedRequest, res:
 //rotar para obter os chamados com filtros (usuarios comuns e administradores)
 router.get("/chamados", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { status, topicoAjudaId, palavraChave, departamentoId, prioridadeId, usuarioId, dataInicio, dataFim } = req.query;
+    const { 
+      statusId, 
+      topicoAjudaId, 
+      assunto, 
+      departamentoId, 
+      prioridadeId, 
+      nomeUsuario,
+      dataAberturaInicio,
+      dataAberturaFim,
+      dataFechamentoInicio,
+      dataFechamentoFim
+    } = req.query;
+    
     const userRoleId = req.userRoleId; // role do usuario logado
     const userId = req.userId; // id do usuario logado
 
@@ -133,45 +146,77 @@ router.get("/chamados", verifyToken, async (req: AuthenticatedRequest, res: Resp
       queryBuilder.andWhere("chamado.id_user = :userId", { userId });
     }
 
-    // Filtros disponiveis para todos os usuarios
-    if (status) {
-      queryBuilder.andWhere("chamado.id_status = :status", { status });
+    // Lógica especial para ATRASADO (statusId = 4)
+    if (statusId === '4') {
+      // Buscar horas para atraso dos parâmetros do sistema
+      const parametrosRepository = AppDataSource.getRepository(ParametrosSistema);
+      const parametros = await parametrosRepository.findOne({ where: { id: 1 } });
+      const horasParaAtraso = parametros?.horasParaAtraso || 24;
+
+      // Calcular a data limite (agora - horasParaAtraso)
+      const dataLimite = new Date();
+      dataLimite.setHours(dataLimite.getHours() - horasParaAtraso);
+
+      // Filtrar chamados ABERTOS (status = 1) que estão abertos há mais tempo que o configurado
+      queryBuilder.andWhere("chamado.id_status = :statusAberto", { statusAberto: 1 });
+      queryBuilder.andWhere("chamado.data_abertura < :dataLimite", { dataLimite });
+    } else if (statusId) {
+      // Status normal (1, 2, 3)
+      queryBuilder.andWhere("chamado.id_status = :statusId", { statusId });
     }
 
+    // Filtro por tópico de ajuda
     if (topicoAjudaId) {
       queryBuilder.andWhere("chamado.id_topico_ajuda = :topicoAjudaId", { topicoAjudaId });
     }
 
-    if (palavraChave) {
+    // Filtro por assunto (resumo ou descrição)
+    if (assunto) {
       queryBuilder.andWhere(
-        "(chamado.resumo_chamado ILIKE :palavraChave OR chamado.descricao_chamado ILIKE :palavraChave)",
-        { palavraChave: `%${palavraChave}%` }
+        "(chamado.resumo_chamado ILIKE :assunto OR chamado.descricao_chamado ILIKE :assunto)",
+        { assunto: `%${assunto}%` }
       );
     }
 
     // Filtros extras apenas para administradores (roleId = 1)
     if (userRoleId === 1) {
+      // Filtro por departamento
       if (departamentoId) {
         queryBuilder.andWhere("chamado.id_departamento = :departamentoId", { departamentoId });
       }
 
+      // Filtro por prioridade
       if (prioridadeId) {
         queryBuilder.andWhere("chamado.id_prioridade = :prioridadeId", { prioridadeId });
       }
 
-      if (usuarioId) {
-        queryBuilder.andWhere("chamado.id_user = :usuarioId", { usuarioId });
+      // Filtro por nome do usuário
+      if (nomeUsuario) {
+        queryBuilder.andWhere("usuario.name ILIKE :nomeUsuario", { nomeUsuario: `%${nomeUsuario}%` });
       }
 
-      if (dataInicio && dataFim) {
-        queryBuilder.andWhere("chamado.data_abertura BETWEEN :dataInicio AND :dataFim", {
-          dataInicio,
-          dataFim,
+      // Filtro por data de abertura
+      if (dataAberturaInicio && dataAberturaFim) {
+        queryBuilder.andWhere("chamado.data_abertura BETWEEN :dataAberturaInicio AND :dataAberturaFim", {
+          dataAberturaInicio,
+          dataAberturaFim,
         });
-      } else if (dataInicio) {
-        queryBuilder.andWhere("chamado.data_abertura >= :dataInicio", { dataInicio });
-      } else if (dataFim) {
-        queryBuilder.andWhere("chamado.data_abertura <= :dataFim", { dataFim });
+      } else if (dataAberturaInicio) {
+        queryBuilder.andWhere("chamado.data_abertura >= :dataAberturaInicio", { dataAberturaInicio });
+      } else if (dataAberturaFim) {
+        queryBuilder.andWhere("chamado.data_abertura <= :dataAberturaFim", { dataAberturaFim });
+      }
+
+      // Filtro por data de fechamento
+      if (dataFechamentoInicio && dataFechamentoFim) {
+        queryBuilder.andWhere("chamado.data_fechamento BETWEEN :dataFechamentoInicio AND :dataFechamentoFim", {
+          dataFechamentoInicio,
+          dataFechamentoFim,
+        });
+      } else if (dataFechamentoInicio) {
+        queryBuilder.andWhere("chamado.data_fechamento >= :dataFechamentoInicio", { dataFechamentoInicio });
+      } else if (dataFechamentoFim) {
+        queryBuilder.andWhere("chamado.data_fechamento <= :dataFechamentoFim", { dataFechamentoFim });
       }
     }
 

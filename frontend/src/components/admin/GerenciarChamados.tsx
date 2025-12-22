@@ -87,26 +87,22 @@ export default function GerenciarChamados() {
 
   const carregarDadosIniciais = async () => {
     try {
-      const [deptosRes, topicosRes, prioridadesRes] = await Promise.all([
+      const [deptosRes, topicosRes, prioridadesRes, statusRes] = await Promise.all([
         api.get('/departamentos'),
         api.get('/topicos_ajuda'),
         api.get('/tipo_prioridade'),
+        api.get('/status'),
       ]);
 
       console.log('Departamentos:', deptosRes.data);
       console.log('Tópicos:', topicosRes.data);
       console.log('Prioridades:', prioridadesRes.data);
+      console.log('Status:', statusRes.data);
 
       setDepartamentos(deptosRes.data);
       setTopicosAjuda(topicosRes.data);
       setPrioridades(prioridadesRes.data);
-
-      // status
-      setStatusList([
-        { id: 1, nome: 'Aberto' },
-        { id: 2, nome: 'Em Andamento' },
-        { id: 3, nome: 'Encerrado' },
-      ]);
+      setStatusList(statusRes.data);
     } catch (error) {
       console.error('Erro ao carregar dados iniciais:', error);
     }
