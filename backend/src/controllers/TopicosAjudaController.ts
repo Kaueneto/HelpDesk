@@ -9,7 +9,8 @@ router.get("/topicos_ajuda", async (req: Request, res: Response) => {
   try {
     const topicosRepository = AppDataSource.getRepository(TopicosAjuda);
     const topicos = await topicosRepository.find({
-      relations: ["chamados"],
+      where: { ativo: true },
+      order: { nome: "ASC" },
     });
 
     return res.status(200).json(topicos);
