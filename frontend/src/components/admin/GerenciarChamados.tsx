@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import api from '@/services/api';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
 interface Chamado {
   id: number;
@@ -11,7 +13,7 @@ interface Chamado {
   resumoChamado: string;
   usuario: {
     id: number;
-    nome: string;
+    name: string;
   };
   tipoPrioridade: {
     id: number;
@@ -25,6 +27,7 @@ interface Chamado {
   departamento: {
     id: number;
     nome: string;
+    name?: string;
   };
   status: {
     id: number;
@@ -55,10 +58,10 @@ interface StatusChamado {
 
 export default function GerenciarChamados() {
   // filtros
-  const [dataAberturaInicio, setDataAberturaInicio] = useState('');
-  const [dataAberturaFim, setDataAberturaFim] = useState('');
-  const [dataFechamentoInicio, setDataFechamentoInicio] = useState('');
-  const [dataFechamentoFim, setDataFechamentoFim] = useState('');
+  const [dataAberturaInicio, setDataAberturaInicio] = useState<Date | null>(null);
+  const [dataAberturaFim, setDataAberturaFim] = useState<Date | null>(null);
+  const [dataFechamentoInicio, setDataFechamentoInicio] = useState<Date | null>(null);
+  const [dataFechamentoFim, setDataFechamentoFim] = useState<Date | null>(null);
   const [departamentoId, setDepartamentoId] = useState('');
   const [topicoAjudaId, setTopicoAjudaId] = useState('');
   const [prioridadeId, setPrioridadeId] = useState('');
@@ -102,7 +105,7 @@ export default function GerenciarChamados() {
       setStatusList([
         { id: 1, nome: 'Aberto' },
         { id: 2, nome: 'Em Andamento' },
-        { id: 3, nome: 'Finalizado' },
+        { id: 3, nome: 'Encerrado' },
       ]);
     } catch (error) {
       console.error('Erro ao carregar dados iniciais:', error);
@@ -114,10 +117,10 @@ export default function GerenciarChamados() {
     try {
       const params: any = {};
       
-      if (dataAberturaInicio) params.dataAberturaInicio = dataAberturaInicio;
-      if (dataAberturaFim) params.dataAberturaFim = dataAberturaFim;
-      if (dataFechamentoInicio) params.dataFechamentoInicio = dataFechamentoInicio;
-      if (dataFechamentoFim) params.dataFechamentoFim = dataFechamentoFim;
+      if (dataAberturaInicio) params.dataAberturaInicio = dataAberturaInicio.toISOString().split('T')[0];
+      if (dataAberturaFim) params.dataAberturaFim = dataAberturaFim.toISOString().split('T')[0];
+      if (dataFechamentoInicio) params.dataFechamentoInicio = dataFechamentoInicio.toISOString().split('T')[0];
+      if (dataFechamentoFim) params.dataFechamentoFim = dataFechamentoFim.toISOString().split('T')[0];
       if (departamentoId) params.departamentoId = departamentoId;
       if (topicoAjudaId) params.topicoAjudaId = topicoAjudaId;
       if (prioridadeId) params.prioridadeId = prioridadeId;
@@ -125,7 +128,10 @@ export default function GerenciarChamados() {
       if (assunto) params.assunto = assunto;
       if (nomeUsuario) params.nomeUsuario = nomeUsuario;
 
+      console.log('Parâmetros de pesquisa:', params);
+
       const response = await api.get('/chamados', { params });
+      console.log('Resposta do backend:', response.data);
       setChamados(response.data);
       setChamadosSelecionados([]);
       setTodosChecados(false);
@@ -138,10 +144,10 @@ export default function GerenciarChamados() {
   };
 
   const limparFiltros = () => {
-    setDataAberturaInicio('');
-    setDataAberturaFim('');
-    setDataFechamentoInicio('');
-    setDataFechamentoFim('');
+    setDataAberturaInicio(null);
+    setDataAberturaFim(null);
+    setDataFechamentoInicio(null);
+    setDataFechamentoFim(null);
     setDepartamentoId('');
     setTopicoAjudaId('');
     setPrioridadeId('');
@@ -236,21 +242,20 @@ export default function GerenciarChamados() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Período de abertura
                 </label>
-                <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
-                  <input
-                    type="date"
-                    value={dataAberturaInicio}
-                    onChange={(e) => setDataAberturaInicio(e.target.value)}
-                    className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900"
-                  />
-                  <span className="text-gray-500 text-sm text-center sm:text-left">até</span>
-                  <input
-                    type="date"
-                    value={dataAberturaFim}
-                    onChange={(e) => setDataAberturaFim(e.target.value)}
-                    className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900"
-                  />
-                </div>
+                <DatePicker
+                  selectsRange={true}
+                  startDate={dataAberturaInicio}
+                  endDate={dataAberturaFim}
+                  onChange={(update) => {
+                    const [start, end] = update;
+                    setDataAberturaInicio(start);
+                    setDataAberturaFim(end);
+                  }}
+                  dateFormat="dd/MM/yyyy"
+                  placeholderText="Selecione o período"
+                  className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900"
+                  isClearable={true}
+                />
               </div>
 
               {/* periodo de fechamento */}
@@ -258,21 +263,20 @@ export default function GerenciarChamados() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Período de fechamento
                 </label>
-                <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
-                  <input
-                    type="date"
-                    value={dataFechamentoInicio}
-                    onChange={(e) => setDataFechamentoInicio(e.target.value)}
-                    className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900"
-                  />
-                  <span className="text-gray-500 text-sm text-center sm:text-left">até</span>
-                  <input
-                    type="date"
-                    value={dataFechamentoFim}
-                    onChange={(e) => setDataFechamentoFim(e.target.value)}
-                    className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900"
-                  />
-                </div>
+                <DatePicker
+                  selectsRange={true}
+                  startDate={dataFechamentoInicio}
+                  endDate={dataFechamentoFim}
+                  onChange={(update) => {
+                    const [start, end] = update;
+                    setDataFechamentoInicio(start);
+                    setDataFechamentoFim(end);
+                  }}
+                  dateFormat="dd/MM/yyyy"
+                  placeholderText="Selecione o período"
+                  className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900"
+                  isClearable={true}
+                />
               </div>
 
               {/* departamento */}
@@ -527,7 +531,7 @@ export default function GerenciarChamados() {
                         {chamado.topicoAjuda?.nome || '-'}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-900">
-                        {chamado.departamento?.nome || '-'}
+                        {chamado.departamento?.nome || chamado.departamento?.name || '-'}
                       </td>
                       <td className="px-4 py-3">
                         <span
@@ -546,7 +550,7 @@ export default function GerenciarChamados() {
                         {chamado.resumoChamado}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-900">
-                        {chamado.usuario?.nome || '-'}
+                        {chamado.usuario?.name || '-'}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-600">
                         {formatarData(chamado.dataAbertura)}
