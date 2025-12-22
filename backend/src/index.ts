@@ -36,6 +36,8 @@ import rolesRouter from "./controllers/RolesController";
 import TipoPrioridadeController from "./controllers/TipoPrioridadeController";
 import DepartamentosController from "./controllers/DepartamentosController";
 import ChamadoAnexosController from "./controllers/ChamadoAnexosController";
+import ParametrosSistemaController from "./controllers/ParametrosSistemaController";
+import LogsSistemaController from "./controllers/LogsSistemaController";
 
 // registrar rotas
 app.use("/", TestConnectionController);
@@ -47,6 +49,8 @@ app.use("/", TopicosAjudaController);
 app.use("/", TipoPrioridadeController);
 app.use("/", DepartamentosController);
 app.use("/", ChamadoAnexosController);
+app.use("/", LogsSistemaController);
+app.use("/", ParametrosSistemaController);
 app.use(rolesRouter);
 
 // inicializar banco ANTES de subir o servidor
