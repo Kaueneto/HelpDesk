@@ -31,14 +31,14 @@ export class Chamados {
   @Column({ name: "numero_chamado", unique: true })
   numeroChamado!: number;
 
-  // Data de abertura (automática)
+  // data de abertura (automatica)
   @CreateDateColumn({
     name: "data_abertura",
     type: "timestamptz",
   })
   dataAbertura!: Date;
 
-  // Data de atribuição
+  // data de atribuicao
   @Column({
     name: "data_atribuicao",
     type: "timestamptz",
@@ -46,7 +46,7 @@ export class Chamados {
   })
   dataAtribuicao!: Date | null;
 
-  // Data de fechamento
+  // data de fechamento
   @Column({
     name: "data_fechamento",
     type: "timestamptz",

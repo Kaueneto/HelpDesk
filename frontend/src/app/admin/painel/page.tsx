@@ -10,6 +10,8 @@ export default function PainelAdmin() {
   const router = useRouter();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeMenu, setActiveMenu] = useState('inicio');
+  const [gerencialExpanded, setGerencialExpanded] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   
  
   // filtros do dashboard
@@ -163,18 +165,71 @@ export default function PainelAdmin() {
               {!sidebarCollapsed && <span>Chamados</span>}
             </button>
 
-            <button
-              onClick={() => setActiveMenu('gerencial')}
-              className={`w-full px-4 py-3 text-left flex items-center justify-between transition ${
-                activeMenu === 'gerencial' ? 'bg-gray-600 text-white' : 'text-gray-300 hover:bg-gray-700'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <img src="/icons/iconadministrator.svg" alt="Gerencial" className="w-5 h-5 flex-shrink-0" />
-                {!sidebarCollapsed && <span>Gerencial</span>}
-              </div>
-              {!sidebarCollapsed && <span>&gt;</span>}
-            </button>
+            <div>
+              <button
+                onClick={() => setGerencialExpanded(!gerencialExpanded)}
+                className={`w-full px-4 py-3 text-left flex items-center justify-between transition ${
+                  activeMenu === 'gerencial' ? 'bg-gray-600 text-white' : 'text-gray-300 hover:bg-gray-700'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <img src="/icons/iconadministrator.svg" alt="Gerencial" className="w-5 h-5 flex-shrink-0" />
+                  {!sidebarCollapsed && <span>Gerencial</span>}
+                </div>
+                {!sidebarCollapsed && (
+                  <img 
+                    src="/icons/arrowpointGerencial.svg" 
+                    alt="Expandir" 
+                    className={`w-4 h-4 transform transition-transform ${gerencialExpanded ? 'rotate-90' : ''}`}
+                  />
+                )}
+              </button>
+
+              {/* submenus do gerencial */}
+              {gerencialExpanded && !sidebarCollapsed && (
+                <div className="bg-gray-800">
+                  {/* adicione mais opcoes de submenu aqui seguindo o mesmo padrao */}
+                  <button
+                    onClick={() => setActiveMenu('usuarios')}
+                    className={`w-full px-4 py-2 pl-12 text-left text-sm transition ${
+                      activeMenu === 'usuarios' ? 'bg-gray-700 text-white' : 'text-gray-300 hover:bg-gray-700'
+                    }`}
+                  >
+                    Usuários
+                  </button>
+
+                  <button
+                    onClick={() => setActiveMenu('topicos')}
+                    className={`w-full px-4 py-2 pl-12 text-left text-sm transition ${
+                      activeMenu === 'topicos' ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-800'
+                    }`}
+                  >
+                    Tópicos de Ajuda
+                  </button>
+                  <button
+                    onClick={() => setActiveMenu('departamentos')}
+                    className={`w-full px-4 py-2 pl-12 text-left text-sm transition ${
+                      activeMenu === 'departamentos' ? 'bg-gray-700 text-white' : 'text-gray-300 hover:bg-gray-700'
+                    }`}
+                  >
+                    Departamentos
+                  </button>
+
+                     <button
+                    onClick={() => setActiveMenu('tiposPrioridade')}
+                    className={`w-full px-4 py-2 pl-12 text-left text-sm transition ${
+                      activeMenu === 'tiposPrioridade' ? 'bg-gray-700 text-white' : 'text-gray-300 hover:bg-gray-700'
+                    }`}
+                  >
+                    Tipos de Prioridade
+                  </button>
+
+
+                      
+
+                </div>
+              )}
+            </div>
           </nav>
         </aside>
 
@@ -189,10 +244,64 @@ export default function PainelAdmin() {
               <img src="/icons/menu.svg" alt="Menu" className="w-6 h-6" />
             </button>
 
-            <div className="flex items-center gap-3 text-white">
-              <img src="/icons/iconbook.svg" alt="Book" className="w-8 h-8" />
-              <img src="/icons/iconperfil.svg" alt="Perfil" className="w-8 h-8" />
-              <span className="font-medium">{user.name}</span>
+            <div className="relative">
+              <button
+                onClick={() => setUserMenuOpen(!userMenuOpen)}
+                className="flex items-center gap-3 text-white hover:bg-white/10 px-3 py-2 rounded transition"
+              >
+                <img src="/icons/iconbook.svg" alt="Book" className="w-7 h-7" />
+                <img src="/icons/iconperfil.svg" alt="Perfil" className="w-7 h-7" />
+                <span className="font-medium">{user.name}</span>
+              </button>
+
+              {/* modal do usuario */}
+              {userMenuOpen && (
+                <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50">
+                  {/* info do usuario */}
+                  <div className="px-4 py-3 border-b border-gray-200">
+                    <div className="font-semibold text-gray-900">{user.name}</div>
+                    <div className="text-sm text-gray-600">{user.email}</div>
+                  </div>
+
+                  {/* opcoes do menu */}
+                  <div className="py-1">
+                    <button
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        // add logica de tema aqui
+                      }}
+                      className="w-full px-4 py-2 text-left flex items-center gap-3 text-gray-700 hover:bg-gray-100 transition"
+                    >
+                      <img src="/icons/icontheme.svg" alt="Tema" className="w-5 h-5" />
+                     <span className="text-lg">Tema</span>
+
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        // add logica de configuracoes aqui
+                      }}
+                      className="w-full px-4 py-2 text-left flex items-center gap-3 text-gray-700 hover:bg-gray-100 transition"
+                    >
+                      <img src="/icons/iconconfig.svg" alt="Configurações" className="w-5 h-5" />
+                       <span className="text-lg">Configurações</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        logout();
+                        router.push('/auth/login');
+                      }}
+                      className="w-full px-4 py-2 text-left flex items-center gap-3 text-red-600 hover:bg-red-50 transition"
+                    >
+                      <img src="/icons/iconlogout.svg" alt="Sair" className="w-5 h-5" />
+                      <span className="text-lg">Sair</span>
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </header>
 
