@@ -32,12 +32,15 @@ router.post("/chamados", verifyToken, async (req: AuthenticatedRequest, res: Res
     const chamadoRepository = AppDataSource.getRepository(Chamados);
     const historicoRepository = AppDataSource.getRepository(ChamadoHistorico);
 
+    // criar a data atual + log no backend
+    const dataAtual = new Date();
+    console.log('Data de abertura no backend:', dataAtual.toISOString());
+
     // criar chamado com apenas os campos obrigatórios iniciais
-    // dataAbertura é automática (@CreateDateColumn)
-    // dataAtribuicao, userResponsavel, dataFechamento, userFechamento ficam NULL
     const chamado = chamadoRepository.create({
       ramal,
       numeroChamado: Date.now(), // Gerado automaticamente (pode melhorar depois)
+      dataAbertura: dataAtual, // defin explicitamente a data
       status: { id: 1 }, // 1 = ABERTO
       resumoChamado,
       descricaoChamado,
@@ -53,6 +56,7 @@ router.post("/chamados", verifyToken, async (req: AuthenticatedRequest, res: Res
     });
 
     await chamadoRepository.save(chamado);
+    console.log('Chamado salvo - dataAbertura:', chamado.dataAbertura);
 
     // Registrar no histórico
     await historicoRepository.save({

@@ -20,7 +20,7 @@ export class Chamados {
   @PrimaryGeneratedColumn({ name: "id_chamado" })
   id!: number;
 
-  // usuario que abriu o chamado
+  // Usuário que abriu o chamado
   @ManyToOne(() => Users, user => user.chamados)
   @JoinColumn({ name: "id_user" })
   usuario!: Users;
@@ -31,11 +31,28 @@ export class Chamados {
   @Column({ name: "numero_chamado", unique: true })
   numeroChamado!: number;
 
-  @CreateDateColumn({ name: "data_abertura", type: "date" })
+  // Data de abertura (automática)
+  @CreateDateColumn({
+    name: "data_abertura",
+    type: "timestamptz",
+  })
   dataAbertura!: Date;
 
-  @Column({ name: "data_atribuicao", type: "date", nullable: true })
-  dataAtribuicao!: Date;
+  // Data de atribuição
+  @Column({
+    name: "data_atribuicao",
+    type: "timestamptz",
+    nullable: true,
+  })
+  dataAtribuicao!: Date | null;
+
+  // Data de fechamento
+  @Column({
+    name: "data_fechamento",
+    type: "timestamptz",
+    nullable: true,
+  })
+  dataFechamento!: Date | null;
 
   @ManyToOne(() => TipoPrioridade, prioridade => prioridade.chamados)
   @JoinColumn({ name: "id_prioridade" })
@@ -59,18 +76,15 @@ export class Chamados {
   @Column({ name: "descricao_chamado", type: "text" })
   descricaoChamado!: string;
 
-  // usuario responsável pelo atendimento
+  // Usuário responsável pelo atendimento
   @ManyToOne(() => Users, user => user.chamadosResponsavel, { nullable: true })
   @JoinColumn({ name: "id_user_responsavel" })
-  userResponsavel!: Users;
+  userResponsavel!: Users | null;
 
-  // usuario que fechou o chamado
+  // Usuário que fechou o chamado
   @ManyToOne(() => Users, user => user.chamadosFechados, { nullable: true })
   @JoinColumn({ name: "id_user_finalizou" })
-  userFechamento!: Users;
-
-  @Column({ name: "data_fechamento", type: "date", nullable: true })
-  dataFechamento!: Date;
+  userFechamento!: Users | null;
 
   @OneToMany(() => ChamadoAnexos, anexo => anexo.chamado)
   anexos!: ChamadoAnexos[];
