@@ -19,6 +19,8 @@ export default function PainelAdmin() {
   const [dataFim, setDataFim] = useState('');
   const [chamadosAbertos, setChamadosAbertos] = useState(0);
   const [chamadosFinalizados, setChamadosFinalizados] = useState(0);
+  const [chamadosEmAndamento, setChamadosEmAndamento] = useState(0);
+  const [chamadosAtrasados, setChamadosAtrasados] = useState(0);
   const [dadosPrioridade, setDadosPrioridade] = useState<any[]>([]);
   const [dadosDepartamento, setDadosDepartamento] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -67,8 +69,23 @@ export default function PainelAdmin() {
       const abertos = chamados.filter((c: any) => c.status?.id === 1).length;
       const finalizados = chamados.filter((c: any) => c.status?.id !== 1).length;
       
+      // contar em andamento (status = 2)
+      const emAndamento = chamados.filter((c: any) => c.status?.id === 2).length;
+      
+      // contar atrasados (abertos ha mais de 1 dia sem responsavel)
+      const umDiaAtras = new Date();
+      umDiaAtras.setDate(umDiaAtras.getDate() - 1);
+      const atrasados = chamados.filter((c: any) => {
+        if (c.status?.id !== 1) return false; // so chamados abertos
+        if (c.userResponsavel) return false; // que nao tem responsavel
+        const dataAbertura = new Date(c.dataAbertura);
+        return dataAbertura < umDiaAtras; // abertos ha mais de 1 dia
+      }).length;
+      
       setChamadosAbertos(abertos);
       setChamadosFinalizados(finalizados);
+      setChamadosEmAndamento(emAndamento);
+      setChamadosAtrasados(atrasados);
 
       // processar dados por prioridade
       const prioridadeMap = new Map();
@@ -222,6 +239,15 @@ export default function PainelAdmin() {
                     }`}
                   >
                     Tipos de Prioridade
+
+                  </button>
+                     <button
+                    onClick={() => setActiveMenu('parametros')}
+                    className={`w-full px-4 py-2 pl-12 text-left text-sm transition ${
+                      activeMenu === 'parametros' ? 'bg-gray-700 text-white' : 'text-gray-300 hover:bg-gray-700'
+                    }`}
+                  >
+                    Parâmetros
                   </button>
 
 
@@ -338,20 +364,36 @@ export default function PainelAdmin() {
             </div>
 
             {/* cards de chamados */}
-            <div className="grid grid-cols-2 gap-6 mb-8">
+            <div className="grid grid-cols-4 gap-6 mb-8">
               <div className="bg-green-500 rounded-lg p-8 flex items-center gap-6 text-white">
                 <img src="/icons/iconabertos.svg" alt="Abertos" className="w-16 h-16" />
                 <div>
-                  <div className="text-5xl font-bold mb-2">{chamadosAbertos}</div>
+                  <div className="text-5xl font-bold mb-1">{chamadosAbertos}</div>
                   <div className="text-xl font-medium">ABERTOS</div>
                 </div>
               </div>
 
-              <div className="bg-red-500 rounded-lg p-8 flex items-center gap-6 text-white">
-                <img src="/icons/iconfechados.svg" alt="Fechados" className="w-16 h-16" />
+              <div className="bg-gray-800 rounded-lg p-8 flex items-center gap-6 text-white">
+                <img src="/icons/iconfechados.svg" alt="Em Andamento" className="w-16 h-16" />
                 <div>
-                  <div className="text-5xl font-bold mb-2">{chamadosFinalizados}</div>
+                  <div className="text-5xl font-bold mb-1">{chamadosFinalizados}</div>
                   <div className="text-xl font-medium">FINALIZADOS</div>
+                </div>
+              </div>
+
+              <div className="bg-purple-800 rounded-lg p-8 flex items-center gap-6 text-white">
+                <img src="/icons/iconemandamento.svg" alt="Em Andamento" className="w-16 h-16" />
+                <div>
+                  <div className="text-5xl font-bold mb-1">{chamadosEmAndamento}</div>
+                  <div className="text-xl font-medium">EM ANDAMENTO</div>
+                </div>
+              </div>
+
+              <div className="bg-red-600 rounded-lg p-8 flex items-center gap-6 text-white">
+                <img src="/icons/iconatrasado.svg" alt="Atrasados" className="w-16 h-16" />
+                <div>
+                  <div className="text-5xl font-bold mb-1">{chamadosAtrasados}</div>
+                  <div className="text-xl font-medium">ATRASADOS</div>
                 </div>
               </div>
             </div>
