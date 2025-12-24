@@ -473,7 +473,7 @@ export default function GerenciarChamados() {
                       Prioridade
                     </th>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                      Tópico ajuda
+                      Tópico
                     </th>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
                       Departamento
@@ -482,13 +482,16 @@ export default function GerenciarChamados() {
                       Status
                     </th>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                      Resumo
+                      Abertura
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                      Fechamento
                     </th>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
                       Usuário
                     </th>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                      Abertura
+                      Resumo
                     </th>
                   </tr>
                 </thead>
@@ -542,14 +545,17 @@ export default function GerenciarChamados() {
                           {chamado.status?.nome || 'Desconhecido'}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-900 max-w-xs truncate">
-                        {chamado.resumoChamado}
+                      <td className="px-4 py-3 text-sm text-gray-600">
+                        {formatarData(chamado.dataAbertura)}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600">
+                        {formatarData(chamado.dataFechamento)}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-900">
                         {chamado.usuario?.name || '-'}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-600">
-                        {formatarData(chamado.dataAbertura)}
+                      <td className="px-4 py-3 text-sm text-gray-900 max-w-xs truncate">
+                        {chamado.resumoChamado}
                       </td>
                     </tr>
                   ))}

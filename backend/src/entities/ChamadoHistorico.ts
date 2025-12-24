@@ -25,7 +25,7 @@ export class ChamadoHistorico {
   @JoinColumn({ name: "usuario_id" })
   usuario!: Users;
 
-  @Column({ name: "data_mov", type: "date" })
+  @Column({ name: "data_mov", type: "timestamp" })
   dataMov!: Date;
 
   @ManyToOne(() => StatusChamado, { nullable: true })
