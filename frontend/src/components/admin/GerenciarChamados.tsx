@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import api from '@/services/api';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -57,6 +58,8 @@ interface StatusChamado {
 }
 
 export default function GerenciarChamados() {
+  const router = useRouter();
+  
   // filtros
   const [dataAberturaInicio, setDataAberturaInicio] = useState<Date | null>(null);
   const [dataAberturaFim, setDataAberturaFim] = useState<Date | null>(null);
@@ -542,11 +545,18 @@ export default function GerenciarChamados() {
                   {chamados.map((chamado, index) => (
                     <tr
                       key={chamado.id}
-                      className={`border-b border-gray-200 hover:bg-blue-50 transition-colors ${
+                      onClick={(e) => {
+                        // Não navegar se clicou no checkbox
+                        if ((e.target as HTMLElement).closest('input[type="checkbox"]')) {
+                          return;
+                        }
+                        router.push(`/admin/chamado/${chamado.id}`);
+                      }}
+                      className={`border-b border-gray-200 hover:bg-blue-50 transition-colors cursor-pointer ${
                         index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
                       }`}
                     >
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                         <input
                           type="checkbox"
                           checked={chamadosSelecionados.includes(chamado.id)}
