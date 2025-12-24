@@ -110,6 +110,66 @@ router.get("/chamados/meus", verifyToken, async (req: AuthenticatedRequest, res:
   }
 });
 
+// buscar um chamado específico por ID
+router.get("/chamados/:id", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const chamadoRepository = AppDataSource.getRepository(Chamados);
+
+    const chamado = await chamadoRepository.findOne({
+      where: { id: Number(id) },
+      relations: [
+        "usuario",
+        "tipoPrioridade",
+        "departamento",
+        "topicoAjuda",
+        "status",
+        "userResponsavel",
+        "userFechamento"
+      ],
+    });
+
+    if (!chamado) {
+      return res.status(404).json({ mensagem: "Chamado não encontrado" });
+    }
+
+    // Formatar resposta
+    const chamadoFormatado = {
+      id: chamado.id,
+      numeroChamado: chamado.numeroChamado,
+      ramal: chamado.ramal,
+      resumoChamado: chamado.resumoChamado,
+      descricaoChamado: chamado.descricaoChamado,
+      dataAbertura: chamado.dataAbertura,
+      dataAtribuicao: chamado.dataAtribuicao,
+      dataFechamento: chamado.dataFechamento,
+      usuario: chamado.usuario ? {
+        id: chamado.usuario.id,
+        name: chamado.usuario.name,
+        email: chamado.usuario.email
+      } : null,
+      tipoPrioridade: chamado.tipoPrioridade,
+      departamento: chamado.departamento,
+      topicoAjuda: chamado.topicoAjuda,
+      status: chamado.status,
+      userResponsavel: chamado.userResponsavel ? {
+        id: chamado.userResponsavel.id,
+        name: chamado.userResponsavel.name
+      } : null,
+      userFechamento: chamado.userFechamento ? {
+        id: chamado.userFechamento.id,
+        name: chamado.userFechamento.name
+      } : null,
+    };
+
+    return res.status(200).json(chamadoFormatado);
+  } catch (error) {
+    console.error("Erro ao buscar chamado:", error);
+    return res.status(500).json({
+      mensagem: "Erro ao buscar chamado",
+    });
+  }
+});
 
 
 //rotar para obter os chamados com filtros (usuarios comuns e administradores)
