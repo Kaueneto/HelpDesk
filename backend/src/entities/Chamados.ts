@@ -6,6 +6,7 @@ import {
   OneToMany,
   JoinColumn,
   CreateDateColumn,
+  UpdateDateColumn,
 } from "typeorm";
 import { Users } from "./Users";
 import { TipoPrioridade } from "./TipoPrioridade";
@@ -37,6 +38,13 @@ export class Chamados {
     type: "timestamptz",
   })
   dataAbertura!: Date;
+
+  // data de ultima atualizacao (automatica)
+  @UpdateDateColumn({
+    name: "updated_at",
+    type: "timestamptz",
+  })
+  updatedAt!: Date;
 
   // data de atribuicao
   @Column({
