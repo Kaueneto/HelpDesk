@@ -61,8 +61,7 @@ export default function Dashboard() {
       const emAndamento = chamados.filter((c: any) => c.status?.id === 2).length;
       
       // contar atrasados
-      const dataLimite = new Date();
-      dataLimite.setHours(dataLimite.getHours() - horasParaAtraso);
+      const dataLimite = new Date(Date.now() - (horasParaAtraso * 60 * 60 * 1000));
       const atrasados = chamados.filter((c: any) => {
         if (c.status?.id !== 1) return false;
         if (c.userResponsavel) return false;

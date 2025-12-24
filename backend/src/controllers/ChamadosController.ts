@@ -5,6 +5,7 @@ import { ChamadoHistorico } from "../entities/ChamadoHistorico";
 import { ChamadoMensagens } from "../entities/ChamadoMensagens";
 import { Users } from "../entities/Users";
 import { StatusChamado } from "../entities/StatusChamado";
+import { TipoPrioridade } from "../entities/TipoPrioridade";
 import { ParametrosSistema } from "../entities/ParametrosSistema";
 import { verifyToken } from "../Middleware/AuthMiddleware";
 
@@ -457,6 +458,147 @@ router.get("/chamados/:id/mensagens", verifyToken, async (req: AuthenticatedRequ
     console.error("Erro ao buscar mensagens:", error);
     return res.status(500).json({
       mensagem: "Erro ao buscar mensagens",
+    });
+  }
+});
+
+// Editar múltiplos chamados
+router.patch("/chamados/editar-multiplos", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { chamadosIds, statusId, prioridadeId } = req.body;
+    const usuarioId = req.userId;
+
+    if (!chamadosIds || !Array.isArray(chamadosIds) || chamadosIds.length === 0) {
+      return res.status(400).json({
+        message: "Nenhum chamado selecionado",
+      });
+    }
+
+    if (!statusId && !prioridadeId) {
+      return res.status(400).json({
+        message: "Selecione ao menos um campo para alterar",
+      });
+    }
+
+    const chamadoRepository = AppDataSource.getRepository(Chamados);
+    const historicoRepository = AppDataSource.getRepository(ChamadoHistorico);
+    const userRepository = AppDataSource.getRepository(Users);
+    const statusRepository = AppDataSource.getRepository(StatusChamado);
+
+    // Buscar usuário
+    const usuario = await userRepository.findOne({
+      where: { id: usuarioId },
+    });
+
+    if (!usuario) {
+      return res.status(404).json({ message: "Usuário não encontrado" });
+    }
+
+    // Buscar chamados
+    const chamados = await chamadoRepository.find({
+      where: chamadosIds.map((id: number) => ({ id })),
+      relations: ["status", "tipoPrioridade"],
+    });
+
+    const erros: string[] = [];
+    const alterados: number[] = [];
+
+    for (const chamado of chamados) {
+      const statusAnterior = chamado.status;
+      const prioridadeAnterior = chamado.tipoPrioridade;
+      let alterou = false;
+
+      // Validar e alterar status
+      if (statusId) {
+        // Validação: não pode alterar para o mesmo status
+        if (chamado.status.id === statusId) {
+          const statusNome = chamado.status.nome.toLowerCase();
+          if (statusNome.includes('aberto')) {
+            erros.push(`Chamado ${chamado.numeroChamado} já está aberto`);
+            continue;
+          } else if (statusNome.includes('encerrado') || statusNome.includes('fechado')) {
+            erros.push(`Chamado ${chamado.numeroChamado} já está encerrado`);
+            continue;
+          } else if (statusNome.includes('atendimento') || statusNome.includes('andamento')) {
+            erros.push(`Chamado ${chamado.numeroChamado} já está em atendimento`);
+            continue;
+          }
+        }
+
+        const novoStatus = await statusRepository.findOne({
+          where: { id: statusId },
+        });
+
+        if (novoStatus) {
+          chamado.status = novoStatus;
+          
+          // Se for encerrado, definir data de fechamento e usuário que finalizou
+          if (novoStatus.nome.toLowerCase().includes('encerrado') || 
+              novoStatus.nome.toLowerCase().includes('fechado')) {
+            chamado.dataFechamento = new Date();
+            chamado.userFechamento = { id: usuarioId } as any;
+          }
+
+          // Salvar histórico de status
+          await historicoRepository.save({
+            chamado: { id: chamado.id },
+            usuario: { id: usuarioId },
+            acao: `${usuario.name} alterou o status do chamado para '${novoStatus.nome}'`,
+            statusAnterior: { id: statusAnterior.id },
+            statusNovo: { id: novoStatus.id },
+            dataMov: new Date(),
+          });
+
+          alterou = true;
+        }
+      }
+
+      // Validar e alterar prioridade
+      if (prioridadeId && chamado.tipoPrioridade.id !== prioridadeId) {
+        chamado.tipoPrioridade = { id: prioridadeId } as any;
+
+        // Buscar nome da prioridade para o histórico
+        const prioridadeRepository = AppDataSource.getRepository(TipoPrioridade);
+        const prioridade = await prioridadeRepository.findOne({
+          where: { id: prioridadeId },
+        });
+
+        const prioridadeNome = prioridade?.nome || 'DESCONHECIDA';
+
+        // Salvar histórico de prioridade
+        await historicoRepository.save({
+          chamado: { id: chamado.id },
+          usuario: { id: usuarioId },
+          acao: `${usuario.name} definiu a prioridade deste chamado para: ${prioridadeNome.toUpperCase()}`,
+          statusAnterior: chamado.status ? { id: chamado.status.id } : undefined,
+          statusNovo: chamado.status ? { id: chamado.status.id } : undefined,
+          dataMov: new Date(),
+        });
+
+        alterou = true;
+      }
+
+      if (alterou) {
+        await chamadoRepository.save(chamado);
+        alterados.push(chamado.id);
+      }
+    }
+
+    if (erros.length > 0 && alterados.length === 0) {
+      return res.status(400).json({
+        message: erros.join('. '),
+      });
+    }
+
+    return res.status(200).json({
+      message: `${alterados.length} chamado(s) alterado(s) com sucesso`,
+      alterados,
+      erros: erros.length > 0 ? erros : undefined,
+    });
+  } catch (error) {
+    console.error("Erro ao editar múltiplos chamados:", error);
+    return res.status(500).json({
+      message: "Erro ao editar chamados",
     });
   }
 });

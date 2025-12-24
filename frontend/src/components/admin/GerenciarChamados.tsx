@@ -81,6 +81,12 @@ export default function GerenciarChamados() {
   const [chamadosSelecionados, setChamadosSelecionados] = useState<number[]>([]);
   const [todosChecados, setTodosChecados] = useState(false);
 
+  // modal de edicao multipla
+  const [modalEdicaoAberto, setModalEdicaoAberto] = useState(false);
+  const [novoStatusId, setNovoStatusId] = useState<string>('');
+  const [novaPrioridadeId, setNovaPrioridadeId] = useState<string>('');
+  const [submittingEdicao, setSubmittingEdicao] = useState(false);
+
   useEffect(() => {
     carregarDadosIniciais();
   }, []);
@@ -207,7 +213,44 @@ export default function GerenciarChamados() {
       return;
     }
 
-    alert('Funcionalidade de edição múltipla em desenvolvimento');
+    setModalEdicaoAberto(true);
+    setNovoStatusId('');
+    setNovaPrioridadeId('');
+  };
+
+  const fecharModalEdicao = () => {
+    setModalEdicaoAberto(false);
+    setNovoStatusId('');
+    setNovaPrioridadeId('');
+  };
+
+  const confirmarEdicaoMultipla = async () => {
+    if (!novoStatusId && !novaPrioridadeId) {
+      alert('Selecione ao menos um campo para alterar');
+      return;
+    }
+
+    setSubmittingEdicao(true);
+    try {
+      const payload: any = {
+        chamadosIds: chamadosSelecionados,
+      };
+
+      if (novoStatusId) payload.statusId = parseInt(novoStatusId);
+      if (novaPrioridadeId) payload.prioridadeId = parseInt(novaPrioridadeId);
+
+      const response = await api.patch('/chamados/editar-multiplos', payload);
+      
+      alert('Chamados editados com sucesso!');
+      fecharModalEdicao();
+      await pesquisarChamados();
+    } catch (error: any) {
+      console.error('Erro ao editar chamados:', error);
+      const mensagemErro = error.response?.data?.message || 'Erro ao editar chamados';
+      alert(mensagemErro);
+    } finally {
+      setSubmittingEdicao(false);
+    }
   };
 
   const formatarData = (data: string | null) => {
@@ -545,10 +588,10 @@ export default function GerenciarChamados() {
                           {chamado.status?.nome || 'Desconhecido'}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-600">
+                      <td className="px-1 py-3 text-sm text-gray-600">
                         {formatarData(chamado.dataAbertura)}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-600">
+                      <td className="px-1 py-3 text-sm text-gray-600">
                         {formatarData(chamado.dataFechamento)}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-900">
@@ -565,6 +608,82 @@ export default function GerenciarChamados() {
           </div>
         </div>
       </div>
+
+      {/* Modal de Edição Múltipla */}
+      {modalEdicaoAberto && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-semibold text-gray-800">
+                  Edição de múltiplos registros
+                </h3>
+                <span className="text-sm text-gray-500">
+                  Alterando {chamadosSelecionados.length} registro(s)
+                </span>
+              </div>
+
+              <div className="space-y-4">
+                {/* Campo Prioridade */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Prioridade
+                  </label>
+                  <select
+                    value={novaPrioridadeId}
+                    onChange={(e) => setNovaPrioridadeId(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                  >
+                    <option value="">Não alterar</option>
+                    {prioridades.map((prioridade) => (
+                      <option key={prioridade.id} value={prioridade.id}>
+                        {prioridade.nome}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Campo Status */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Status
+                  </label>
+                  <select
+                    value={novoStatusId}
+                    onChange={(e) => setNovoStatusId(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                  >
+                    <option value="">Não alterar</option>
+                    {statusList.map((status) => (
+                      <option key={status.id} value={status.id}>
+                        {status.nome}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Botões */}
+              <div className="flex gap-3 mt-6 justify-end">
+                <button
+                  onClick={fecharModalEdicao}
+                  disabled={submittingEdicao}
+                  className="px-6 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors font-medium disabled:bg-gray-400"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={confirmarEdicaoMultipla}
+                  disabled={submittingEdicao}
+                  className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors font-medium disabled:bg-blue-400"
+                >
+                  {submittingEdicao ? 'Salvando...' : 'Confirmar'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
