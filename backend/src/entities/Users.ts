@@ -3,10 +3,13 @@ import {
   PrimaryGeneratedColumn,
   Column,
   OneToMany,
+  ManyToOne,
+  JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
 } from "typeorm";
 import { Chamados } from "./Chamados";
+import { Roles } from "./Roles";
 
 @Entity("users")
 export class Users {
@@ -24,6 +27,10 @@ export class Users {
 
   @Column({ name: "role_id" })
   roleId!: number;
+
+  @ManyToOne(() => Roles)
+  @JoinColumn({ name: "role_id" })
+  role!: Roles;
 
   @Column({ default: true })
   ativo!: boolean;

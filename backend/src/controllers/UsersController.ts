@@ -13,11 +13,54 @@ router.get("/users", verifyToken, async (req: Request, res: Response) => {
   try {
     const userRepository = AppDataSource.getRepository(Users);
     
-    // Teste simples sem paginação
-    const users = await userRepository.find();
+    const { dataCadastroInicio, dataCadastroFim, nome, email, ativo } = req.query;
+    
+    let query = userRepository.createQueryBuilder("user")
+      .leftJoinAndSelect("user.role", "role");
+    
+    // Filtro por período de cadastro
+    if (dataCadastroInicio) {
+      query = query.andWhere("user.createdAt >= :dataCadastroInicio", { 
+        dataCadastroInicio: new Date(dataCadastroInicio as string) 
+      });
+    }
+    
+    if (dataCadastroFim) {
+      const dataFim = new Date(dataCadastroFim as string);
+      dataFim.setHours(23, 59, 59, 999);
+      query = query.andWhere("user.createdAt <= :dataCadastroFim", { 
+        dataCadastroFim: dataFim 
+      });
+    }
+    
+    // Filtro por nome
+    if (nome) {
+      query = query.andWhere("LOWER(user.name) LIKE LOWER(:nome)", { 
+        nome: `%${nome}%` 
+      });
+    }
+    
+    // Filtro por email
+    if (email) {
+      query = query.andWhere("LOWER(user.email) LIKE LOWER(:email)", { 
+        email: `%${email}%` 
+      });
+    }
+    
+    // Filtro por ativo
+    if (ativo !== undefined && ativo !== '') {
+      query = query.andWhere("user.ativo = :ativo", { 
+        ativo: ativo === 'true' 
+      });
+    }
+    
+    const users = await query
+      .orderBy("user.id", "DESC")
+      .getMany();
     
     res.status(200).json(users);
   } catch (error) {
+    console.error("Erro ao listar usuários:", error);
     res.status(500).json({ mensagem: "Erro ao listar usuários" });
   }
 });
@@ -251,6 +294,57 @@ router.delete("/users/:id", async (req: Request, res: Response) => {
     res.status(200).json({ mensagem: "Usuário excluído com sucesso" });
   } catch (error) {
     res.status(500).json({ mensagem: "Erro ao remover usuário" });
+  }
+});
+
+// resetar senha em massa
+router.patch("/users/resetar-senha-multiplos", verifyToken, async (req: Request, res: Response) => {
+  try {
+    const { usuariosIds } = req.body;
+
+    if (!usuariosIds || !Array.isArray(usuariosIds) || usuariosIds.length === 0) {
+      return res.status(400).json({ mensagem: "IDs de usuários são obrigatórios" });
+    }
+
+    const userRepository = AppDataSource.getRepository(Users);
+    const senhaHash = await bcrypt.hash("padrao", 10);
+
+    await userRepository
+      .createQueryBuilder()
+      .update(Users)
+      .set({ password: senhaHash, updatedAt: new Date() })
+      .where("id IN (:...ids)", { ids: usuariosIds })
+      .execute();
+
+    res.status(200).json({ mensagem: "Senhas resetadas com sucesso!" });
+  } catch (error) {
+    console.error("Erro ao resetar senhas:", error);
+    res.status(500).json({ mensagem: "Erro ao resetar senhas" });
+  }
+});
+
+// desativar usuários em massa
+router.patch("/users/desativar-multiplos", verifyToken, async (req: Request, res: Response) => {
+  try {
+    const { usuariosIds } = req.body;
+
+    if (!usuariosIds || !Array.isArray(usuariosIds) || usuariosIds.length === 0) {
+      return res.status(400).json({ mensagem: "IDs de usuários são obrigatórios" });
+    }
+
+    const userRepository = AppDataSource.getRepository(Users);
+
+    await userRepository
+      .createQueryBuilder()
+      .update(Users)
+      .set({ ativo: false, updatedAt: new Date() })
+      .where("id IN (:...ids)", { ids: usuariosIds })
+      .execute();
+
+    res.status(200).json({ mensagem: "Usuários desativados com sucesso!" });
+  } catch (error) {
+    console.error("Erro ao desativar usuários:", error);
+    res.status(500).json({ mensagem: "Erro ao desativar usuários" });
   }
 });
 
