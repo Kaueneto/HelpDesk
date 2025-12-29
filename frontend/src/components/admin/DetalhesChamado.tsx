@@ -85,6 +85,34 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
     carregarUsuarioLogado();
   }, [chamadoId]);
 
+  // Auto-atualização do chat a cada 5 segundos
+  useEffect(() => {
+    // Só atualiza se estiver na aba de detalhes e nao estiver carregando
+    if (abaAtiva !== 'detalhes' || loading) return;
+
+    const intervalo = setInterval(() => {
+      carregarMensagensEHistorico();
+    }, 5000); // 5 segundos
+
+    // Limpa o intervalo quando o componente é desmontado ou quando muda de aba
+    return () => clearInterval(intervalo);
+  }, [chamadoId, abaAtiva, loading]);
+
+  const carregarMensagensEHistorico = async () => {
+    try {
+      const [mensagensRes, historicoRes] = await Promise.all([
+        api.get(`/chamados/${chamadoId}/mensagens`),
+        api.get(`/chamados/${chamadoId}/historico`),
+      ]);
+
+      setMensagens(mensagensRes.data);
+      setHistorico(historicoRes.data);
+    } catch (error) {
+      console.error('Erro ao atualizar mensagens:', error);
+      // nao mostra alert para nao interromper o usuario
+    }
+  };
+
   const carregarUsuarioLogado = () => {
     const token = localStorage.getItem('token');
     if (token) {
@@ -222,6 +250,11 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
             className="px-5 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition font-medium text-sm"
           >
             Editar
+          </button>
+          <button
+            className="px-5 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition font-medium text-sm"
+          >
+            Imprimir
           </button>
           <button
             className="px-5 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition font-medium text-sm"
