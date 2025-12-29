@@ -3,11 +3,13 @@ import {
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
+  OneToMany,
   JoinColumn,
   CreateDateColumn,
 } from "typeorm";
 import { Chamados } from "./Chamados";
 import { Users } from "./Users";
+import { ChamadoAnexos } from "./ChamadoAnexos";
 
 @Entity("chamados_mensagens")
 export class ChamadoMensagens {
@@ -24,6 +26,9 @@ export class ChamadoMensagens {
 
   @Column({ type: "text" })
   mensagem!: string;
+
+  @OneToMany(() => ChamadoAnexos, anexo => anexo.mensagem)
+  anexos?: ChamadoAnexos[];
 
   @CreateDateColumn({ name: "data_envio", type: "timestamp" })
   dataEnvio!: Date;

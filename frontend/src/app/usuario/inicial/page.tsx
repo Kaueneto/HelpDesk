@@ -5,6 +5,26 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import api from '@/services/api';
 
+interface AnexoMensagem {
+  id: number;
+  filename: string;
+  url: string;
+  signedUrl?: string | null;
+  criadoEm: string;
+}
+
+interface MensagemUsuario {
+  id: number;
+  mensagem: string;
+  dataEnvio: string;
+  usuario?: {
+    id: number;
+    name: string;
+    roleId?: number;
+  };
+  anexos?: AnexoMensagem[];
+}
+
 interface TopicosAjuda {
   id: number;
   nome: string;
@@ -59,7 +79,7 @@ export default function DashboardPage() {
 
   // Estados para detalhes do chamado
   const [chamadoSelecionado, setChamadoSelecionado] = useState<any>(null);
-  const [mensagens, setMensagens] = useState<any[]>([]);
+  const [mensagens, setMensagens] = useState<MensagemUsuario[]>([]);
   const [loadingMensagens, setLoadingMensagens] = useState(false);
   const [detalheTab, setDetalheTab] = useState<'detalhes' | 'historico'>('detalhes');
   const [novaMensagem, setNovaMensagem] = useState('');
@@ -245,18 +265,21 @@ export default function DashboardPage() {
     setErrorMessage('');
 
     try {
+      // Primeiro, criar a mensagem
       const response = await api.post(`/chamados/${chamadoSelecionado.id}/mensagens`, {
         mensagem: novaMensagem,
       });
 
-      // Se houver anexos, fazer upload
-      if (anexosResposta.length > 0) {
+      const mensagemId = response.data.id;
+
+      // Se houver anexos, fazer upload vinculado à mensagem
+      if (anexosResposta.length > 0 && mensagemId) {
         const formData = new FormData();
         anexosResposta.forEach((file) => {
           formData.append('arquivos', file);
         });
 
-        await api.post(`/chamado/${chamadoSelecionado.id}/anexo`, formData, {
+        await api.post(`/mensagem/${mensagemId}/anexo`, formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
@@ -356,7 +379,7 @@ export default function DashboardPage() {
 
       const chamadoId = chamadoResponse.data.chamado?.id;
 
-      // Se houver arquivos, fazer upload
+      // Se houver arquivos, fazer upload direto no chamado (SEM criar mensagem)
       if (selectedFiles.length > 0 && chamadoId) {
         const formData = new FormData();
         selectedFiles.forEach((file) => {
@@ -1145,12 +1168,48 @@ export default function DashboardPage() {
                                       </span>
                                     </div>
                                     <p className="text-gray-800 whitespace-pre-wrap">{msg.mensagem}</p>
+                                    
+                                    {/* Anexos da mensagem */}
+                                    {msg.anexos && msg.anexos.length > 0 && (
+                                      <div className="mt-3 space-y-1">
+                                        {msg.anexos.map((anexo: any) => {
+                                          const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(anexo.filename);
+                                          const fileUrl = anexo.signedUrl || '#';
+                                          
+                                          return (
+                                            <a
+                                              key={anexo.id}
+                                              href={fileUrl}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className="flex items-center gap-2 px-2 py-1.5 bg-white border border-gray-300 rounded hover:bg-green-50 hover:border-green-400 transition text-xs group"
+                                            >
+                                              {isImage ? (
+                                                <svg className="w-4 h-4 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                </svg>
+                                              ) : (
+                                                <svg className="w-4 h-4 text-gray-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                </svg>
+                                              )}
+                                              <span className="text-gray-700 group-hover:text-green-700 truncate flex-1">
+                                                {anexo.filename}
+                                              </span>
+                                              <svg className="w-3 h-3 text-gray-400 group-hover:text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                              </svg>
+                                            </a>
+                                          );
+                                        })}
+                                      </div>
+                                    )}
                                   </div>
                                 ))}
                               </div>
 
                               {/* Campo para postar resposta */}
-                              <div className="border border-gray-300 rounded-lg p-4 bg-white">
+                              <div className="border border-gray-300 rounded-lg p-4 bg-white mt-4">
                                 <h3 className="font-semibold text-gray-900 mb-2">Postar uma resposta</h3>
                                 <p className="text-sm text-gray-600 mb-4">Para melhor ajudá-lo, seja específico e detalhado.</p>
                                 

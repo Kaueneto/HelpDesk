@@ -61,6 +61,7 @@ interface Mensagem {
     id: number;
     name: string;
   };
+  anexos?: Anexo[];
 }
 
 interface Historico {
@@ -88,6 +89,8 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
   const [loading, setLoading] = useState(true);
   const [enviandoMensagem, setEnviandoMensagem] = useState(false);
   const [usuarioLogadoId, setUsuarioLogadoId] = useState<number | null>(null);
+  const [anexosResposta, setAnexosResposta] = useState<File[]>([]);
+  const [isDraggingResposta, setIsDraggingResposta] = useState(false);
 
   useEffect(() => {
     carregarDados();
@@ -158,12 +161,30 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
 
     setEnviandoMensagem(true);
     try {
-      await api.post(`/chamados/${chamadoId}/mensagens`, {
+      // Primeiro, criar a mensagem
+      const responseMensagem = await api.post(`/chamados/${chamadoId}/mensagens`, {
         mensagem: novaMensagem,
       });
 
+      const mensagemId = responseMensagem.data.id;
+
+      // Se houver anexos, fazer upload vinculado à mensagem
+      if (anexosResposta.length > 0 && mensagemId) {
+        const formData = new FormData();
+        anexosResposta.forEach((file) => {
+          formData.append('arquivos', file);
+        });
+
+        await api.post(`/mensagem/${mensagemId}/anexo`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+      }
+
       setNovaMensagem('');
-      await carregarDados();
+      setAnexosResposta([]);
+      await carregarMensagensEHistorico();
     } catch (error) {
       console.error('Erro ao enviar mensagem:', error);
       alert('Erro ao enviar mensagem');
@@ -183,6 +204,45 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
       console.error('Erro ao resolver chamado:', error);
       alert('Erro ao resolver chamado');
     }
+  };
+
+  const handleDragOverResposta = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDraggingResposta(true);
+  };
+
+  const handleDragLeaveResposta = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDraggingResposta(false);
+  };
+
+  const handleDropResposta = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDraggingResposta(false);
+    
+    if (e.dataTransfer.files) {
+      const filesArray = Array.from(e.dataTransfer.files);
+      if (filesArray.length > 5) {
+        alert('Máximo de 5 arquivos permitidos.');
+        return;
+      }
+      setAnexosResposta(filesArray);
+    }
+  };
+
+  const handleFileChangeResposta = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const filesArray = Array.from(e.target.files);
+      if (filesArray.length > 5) {
+        alert('Máximo de 5 arquivos permitidos.');
+        return;
+      }
+      setAnexosResposta(filesArray);
+    }
+  };
+
+  const removeFileResposta = (index: number) => {
+    setAnexosResposta((prev) => prev.filter((_, i) => i !== index));
   };
 
   const formatarData = (data: string) => {
@@ -268,7 +328,7 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
           <button
             className="px-5 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition font-medium text-sm"
           >
-            Imprimir
+            Assumir Chamado
           </button>
         </div>
       </div>
@@ -483,6 +543,42 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
                             <span className="text-xs text-gray-500">{formatarData(msg.dataEnvio)}</span>
                           </div>
                           <p className="text-gray-700 text-sm whitespace-pre-wrap">{msg.mensagem}</p>
+                          
+                          {/* Anexos da mensagem */}
+                          {msg.anexos && msg.anexos.length > 0 && (
+                            <div className="mt-3 space-y-1">
+                              {msg.anexos.map((anexo) => {
+                                const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(anexo.filename);
+                                const fileUrl = anexo.signedUrl || '#';
+                                
+                                return (
+                                  <a
+                                    key={anexo.id}
+                                    href={fileUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-2 px-2 py-1.5 bg-white border border-gray-300 rounded hover:bg-blue-50 hover:border-blue-400 transition text-xs group"
+                                  >
+                                    {isImage ? (
+                                      <svg className="w-4 h-4 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                      </svg>
+                                    ) : (
+                                      <svg className="w-4 h-4 text-gray-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                      </svg>
+                                    )}
+                                    <span className="text-gray-700 group-hover:text-blue-700 truncate flex-1">
+                                      {anexo.filename}
+                                    </span>
+                                    <svg className="w-3 h-3 text-gray-400 group-hover:text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                    </svg>
+                                  </a>
+                                );
+                              })}
+                            </div>
+                          )}
                         </div>
                       </div>
                     );
@@ -501,10 +597,66 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
                     rows={4}
                     className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 resize-none"
                   />
-                  <div className="flex justify-between items-center mt-3">
-                    <div className="text-sm text-gray-500">
-                      Arraste os arquivos ou <span className="text-blue-600 cursor-pointer">selecione-os</span>
+                  
+                  {/* Área de Upload de Arquivos */}
+                  <div
+                    className={`mt-3 border-2 border-dashed rounded-lg p-4 text-center transition ${
+                      isDraggingResposta
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-300 bg-gray-50'
+                    }`}
+                    onDragOver={handleDragOverResposta}
+                    onDragLeave={handleDragLeaveResposta}
+                    onDrop={handleDropResposta}
+                  >
+                    <input
+                      type="file"
+                      id="file-upload-resposta"
+                      multiple
+                      accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip"
+                      onChange={handleFileChangeResposta}
+                      className="hidden"
+                    />
+                    <label
+                      htmlFor="file-upload-resposta"
+                      className="cursor-pointer text-sm text-gray-600"
+                    >
+                      Arraste os arquivos aqui ou{' '}
+                      <span className="text-blue-600 hover:text-blue-700 font-medium">
+                        clique para selecionar
+                      </span>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Máximo 5 arquivos, 10MB cada
+                      </p>
+                    </label>
+                  </div>
+
+                  {/* Lista de Arquivos Selecionados */}
+                  {anexosResposta.length > 0 && (
+                    <div className="mt-3 space-y-2">
+                      <p className="text-sm font-medium text-gray-700">
+                        Arquivos selecionados ({anexosResposta.length}/5):
+                      </p>
+                      {anexosResposta.map((file, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between bg-gray-100 px-3 py-2 rounded"
+                        >
+                          <span className="text-sm text-gray-700 truncate flex-1">
+                            {file.name} ({(file.size / 1024).toFixed(1)} KB)
+                          </span>
+                          <button
+                            onClick={() => removeFileResposta(index)}
+                            className="ml-2 text-red-500 hover:text-red-700 font-medium text-sm"
+                          >
+                            Remover
+                          </button>
+                        </div>
+                      ))}
                     </div>
+                  )}
+
+                  <div className="flex justify-end mt-3">
                     <button
                       onClick={enviarMensagem}
                       disabled={enviandoMensagem || !novaMensagem.trim()}
