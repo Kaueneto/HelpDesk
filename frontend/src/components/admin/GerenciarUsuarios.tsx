@@ -38,10 +38,20 @@ export default function GerenciarUsuarios() {
   const [usuariosSelecionados, setUsuariosSelecionados] = useState<number[]>([]);
   const [todosChecados, setTodosChecados] = useState(false);
 
-  const carregarUsuarios = async () => {
+  // Paginação
+  const [paginaAtual, setPaginaAtual] = useState(1);
+  const [totalPaginas, setTotalPaginas] = useState(0);
+  const [totalUsuarios, setTotalUsuarios] = useState(0);
+  const pageSize = 10;
+
+  const carregarUsuarios = async (pageOrEvent?: number | React.MouseEvent<HTMLButtonElement>) => {
+    const page = typeof pageOrEvent === 'number' ? pageOrEvent : 1;
     setLoading(true);
     try {
-      const params: any = {};
+      const params: any = {
+        page,
+        pageSize,
+      };
       
       if (dataCadastroInicio) params.dataCadastroInicio = dataCadastroInicio.toISOString().split('T')[0];
       if (dataCadastroFim) params.dataCadastroFim = dataCadastroFim.toISOString().split('T')[0];
@@ -50,7 +60,10 @@ export default function GerenciarUsuarios() {
       if (ativo !== '') params.ativo = ativo;
 
       const response = await api.get('/users', { params });
-      setUsuarios(response.data);
+      setUsuarios(response.data.usuarios || response.data);
+      setTotalUsuarios(response.data.total || response.data.length);
+      setTotalPaginas(response.data.totalPages || Math.ceil((response.data.total || response.data.length) / pageSize));
+      setPaginaAtual(page);
       setUsuariosSelecionados([]);
       setTodosChecados(false);
     } catch (error) {
@@ -70,6 +83,9 @@ export default function GerenciarUsuarios() {
     setUsuarios([]);
     setUsuariosSelecionados([]);
     setTodosChecados(false);
+    setPaginaAtual(1);
+    setTotalPaginas(0);
+    setTotalUsuarios(0);
   };
 
   const handleCheckAll = () => {
@@ -141,6 +157,42 @@ export default function GerenciarUsuarios() {
     }
   };
 
+  const excluirUsuarios = async () => {
+    if (usuariosSelecionados.length === 0) {
+      alert('Selecione ao menos um usuário');
+      return;
+    }
+
+    // Primeira confirmação
+    if (!confirm(`AVISO: Você está prestes a excluir ${usuariosSelecionados.length} usuário(s) permanentemente. Esta ação NÃO pode ser desfeita.\n\nDeseja continuar?`)) {
+      return;
+    }
+
+    // Segunda confirmação com input
+    const confirmacao = prompt(
+      'Esta é uma ação irreversível! Digite "EXCLUIR" para confirmar a exclusão:'
+    );
+
+    if (confirmacao !== 'EXCLUIR') {
+      alert('Confirmação incorreta. Exclusão cancelada.');
+      return;
+    }
+
+    try {
+      await api.delete('/users/excluir-multiplos', {
+        data: {
+          usuariosIds: usuariosSelecionados,
+        },
+      });
+
+      alert('Usuários excluídos com sucesso!');
+      await carregarUsuarios();
+    } catch (error) {
+      console.error('Erro ao excluir usuários:', error);
+      alert('Erro ao excluir usuários');
+    }
+  };
+
   const formatarData = (data: string) => {
     const date = new Date(data);
     return date.toLocaleDateString('pt-BR', {
@@ -158,10 +210,10 @@ export default function GerenciarUsuarios() {
         <h2 className="text-white text-2xl font-semibold">Gerenciar Usuários</h2>
       </div>
 
-      <div className="p-6 bg-[#EDEDED]">
+      <div className="p-2 bg-[#EDEDED]">
         <div className="bg-white rounded-lg shadow-lg border border-gray-300 overflow-hidden">
           {/* Botões de ação acima dos filtros */}
-          <div className="px-6 py-4 bg-gray-50 border-b border-gray-300 flex gap-3">
+          <div className="px-6 py-3 bg-gray-50 border-b border-gray-300 flex gap-4">
             <button
               onClick={() => alert('Funcionalidade em desenvolvimento')}
               className="px-5 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors font-medium text-sm flex items-center gap-2"
@@ -184,11 +236,11 @@ export default function GerenciarUsuarios() {
               Desativar
             </button>
             <button
-              onClick={() => alert('Funcionalidade em desenvolvimento')}
+              onClick={excluirUsuarios}
               disabled={usuariosSelecionados.length === 0}
-              className="px-5 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors font-medium text-sm disabled:bg-gray-300 disabled:cursor-not-allowed"
+              className="px-5 py-2 bg-red-900 text-white rounded hover:bg-red-950 transition-colors font-medium text-sm disabled:bg-red-800 disabled:cursor-not-allowed"
             >
-              Editar
+              Excluir
             </button>
             {usuariosSelecionados.length > 0 && (
               <span className="text-sm text-gray-600 flex items-center ml-2">
@@ -275,7 +327,7 @@ export default function GerenciarUsuarios() {
                 Limpar Filtros
               </button>
               <button
-                onClick={carregarUsuarios}
+                onClick={() => carregarUsuarios(1)}
                 disabled={loading}
                 className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors font-medium text-sm disabled:bg-blue-400"
               >
@@ -317,7 +369,7 @@ export default function GerenciarUsuarios() {
                       Email
                     </th>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                      Role
+                      Tipo usuário (Role)
                     </th>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
                       Ativo
@@ -382,6 +434,46 @@ export default function GerenciarUsuarios() {
               </table>
             )}
           </div>
+
+          {/* Controles de Paginação */}
+          {usuarios.length > 0 && (
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-300 flex items-center justify-between">
+              <div className="text-sm text-gray-600">
+                Mostrando {(paginaAtual - 1) * pageSize + 1} a {Math.min(paginaAtual * pageSize, totalUsuarios)} de {totalUsuarios} usuário(s)
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => carregarUsuarios(paginaAtual - 1)}
+                  disabled={paginaAtual === 1 || loading}
+                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition-colors font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  ← Anterior
+                </button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: totalPaginas }, (_, i) => i + 1).map((page) => (
+                    <button
+                      key={page}
+                      onClick={() => carregarUsuarios(page)}
+                      className={`px-3 py-2 rounded font-medium text-sm transition-colors ${
+                        paginaAtual === page
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  onClick={() => carregarUsuarios(paginaAtual + 1)}
+                  disabled={paginaAtual === totalPaginas || loading}
+                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition-colors font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Próximo →
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </>

@@ -13,7 +13,12 @@ router.get("/users", verifyToken, async (req: Request, res: Response) => {
   try {
     const userRepository = AppDataSource.getRepository(Users);
     
-    const { dataCadastroInicio, dataCadastroFim, nome, email, ativo } = req.query;
+    const { dataCadastroInicio, dataCadastroFim, nome, email, ativo, page = 1, pageSize = 10 } = req.query;
+    
+    // Converter para números
+    const pageNum = Math.max(1, parseInt(String(page)) || 1);
+    const pageSizeNum = Math.max(1, Math.min(100, parseInt(String(pageSize)) || 10)); // máximo 100 registros
+    const offset = (pageNum - 1) * pageSizeNum;
     
     let query = userRepository.createQueryBuilder("user")
       .leftJoinAndSelect("user.role", "role");
@@ -54,11 +59,26 @@ router.get("/users", verifyToken, async (req: Request, res: Response) => {
       });
     }
     
-    const users = await query
+    // Obter total de registros ANTES de aplicar paginação
+    const total = await query.getCount();
+    
+    // Aplicar ordenação e paginação
+    const usuarios = await query
       .orderBy("user.id", "DESC")
+      .offset(offset)
+      .limit(pageSizeNum)
       .getMany();
     
-    res.status(200).json(users);
+    // Calcular total de páginas
+    const totalPages = Math.ceil(total / pageSizeNum);
+    
+    res.status(200).json({
+      usuarios,
+      total,
+      totalPages,
+      currentPage: pageNum,
+      pageSize: pageSizeNum,
+    });
   } catch (error) {
     console.error("Erro ao listar usuários:", error);
     res.status(500).json({ mensagem: "Erro ao listar usuários" });
@@ -345,6 +365,31 @@ router.patch("/users/desativar-multiplos", verifyToken, async (req: Request, res
   } catch (error) {
     console.error("Erro ao desativar usuários:", error);
     res.status(500).json({ mensagem: "Erro ao desativar usuários" });
+  }
+});
+
+// excluir usuários em massa (hard delete)
+router.delete("/users/excluir-multiplos", verifyToken, async (req: Request, res: Response) => {
+  try {
+    const { usuariosIds } = req.body;
+
+    if (!usuariosIds || !Array.isArray(usuariosIds) || usuariosIds.length === 0) {
+      return res.status(400).json({ mensagem: "IDs de usuários são obrigatórios" });
+    }
+
+    const userRepository = AppDataSource.getRepository(Users);
+
+    await userRepository
+      .createQueryBuilder()
+      .delete()
+      .from(Users)
+      .where("id IN (:...ids)", { ids: usuariosIds })
+      .execute();
+
+    res.status(200).json({ mensagem: "Usuários excluídos com sucesso!" });
+  } catch (error) {
+    console.error("Erro ao excluir usuários:", error);
+    res.status(500).json({ mensagem: "Erro ao excluir usuários" });
   }
 });
 

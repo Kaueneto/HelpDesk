@@ -84,6 +84,12 @@ export default function GerenciarChamados() {
   const [chamadosSelecionados, setChamadosSelecionados] = useState<number[]>([]);
   const [todosChecados, setTodosChecados] = useState(false);
 
+  // paginacao
+  const [paginaAtual, setPaginaAtual] = useState(1);
+  const [totalPaginas, setTotalPaginas] = useState(0);
+  const [totalChamados, setTotalChamados] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+
   // modal de edicao multipla
   const [modalEdicaoAberto, setModalEdicaoAberto] = useState(false);
   const [novoStatusId, setNovoStatusId] = useState<string>('');
@@ -117,10 +123,13 @@ export default function GerenciarChamados() {
     }
   };
 
-  const pesquisarChamados = async () => {
+  const pesquisarChamados = async (page: number = 1) => {
     setLoading(true);
     try {
-      const params: any = {};
+      const params: any = {
+        page,
+        pageSize,
+      };
       
       if (dataAberturaInicio) params.dataAberturaInicio = dataAberturaInicio.toISOString().split('T')[0];
       if (dataAberturaFim) params.dataAberturaFim = dataAberturaFim.toISOString().split('T')[0];
@@ -137,7 +146,10 @@ export default function GerenciarChamados() {
 
       const response = await api.get('/chamados', { params });
       console.log('Resposta do backend:', response.data);
-      setChamados(response.data);
+      setChamados(response.data.chamados || response.data);
+      setTotalChamados(response.data.total || response.data.length);
+      setTotalPaginas(response.data.totalPages || Math.ceil((response.data.total || response.data.length) / pageSize));
+      setPaginaAtual(page);
       setChamadosSelecionados([]);
       setTodosChecados(false);
     } catch (error) {
@@ -162,6 +174,9 @@ export default function GerenciarChamados() {
     setChamados([]);
     setChamadosSelecionados([]);
     setTodosChecados(false);
+    setPaginaAtual(1);
+    setTotalPaginas(0);
+    setTotalChamados(0);
   };
 
   const handleCheckAll = () => {
@@ -454,8 +469,8 @@ export default function GerenciarChamados() {
               >
                 Limpar Filtros
               </button>
-              <button
-                onClick={pesquisarChamados}
+      <button
+                onClick={() => pesquisarChamados(1)}
                 disabled={loading}
                 className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors font-medium text-sm disabled:bg-blue-400"
               >
@@ -513,7 +528,7 @@ export default function GerenciarChamados() {
                       />
                     </th>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                      Cód.
+                      Cód. Chamado
                     </th>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
                       Prioridade
@@ -616,6 +631,70 @@ export default function GerenciarChamados() {
               </table>
             )}
           </div>
+
+          {/* Controles de Paginação */}
+          {chamados.length > 0 && (
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-300">
+              {/* Seletor de registros por página */}
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <label className="text-sm font-medium text-gray-700">
+                    Registros por página:
+                  </label>
+                  <select
+                    value={pageSize}
+                    onChange={(e) => {
+                      setPageSize(parseInt(e.target.value));
+                      setPaginaAtual(1);
+                    }}
+                    className="px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900"
+                  >
+                    <option value="10">10</option>
+                    <option value="20">20</option>
+                    <option value="30">30</option>
+                    <option value="40">40</option>
+                    <option value="50">50</option>
+                  </select>
+                </div>
+                <div className="text-sm text-gray-600">
+                  Mostrando {(paginaAtual - 1) * pageSize + 1} a {Math.min(paginaAtual * pageSize, totalChamados)} de {totalChamados} chamado(s)
+                </div>
+              </div>
+
+              {/* Controles de navegação */}
+              <div className="flex gap-2 justify-center">
+                <button
+                  onClick={() => pesquisarChamados(paginaAtual - 1)}
+                  disabled={paginaAtual === 1 || loading}
+                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition-colors font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  ← Anterior
+                </button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: totalPaginas }, (_, i) => i + 1).map((page) => (
+                    <button
+                      key={page}
+                      onClick={() => pesquisarChamados(page)}
+                      className={`px-3 py-2 rounded font-medium text-sm transition-colors ${
+                        paginaAtual === page
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  onClick={() => pesquisarChamados(paginaAtual + 1)}
+                  disabled={paginaAtual === totalPaginas || loading}
+                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition-colors font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Próximo →
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
