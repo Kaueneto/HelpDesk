@@ -44,6 +44,15 @@ export default function GerenciarUsuarios() {
   const [totalUsuarios, setTotalUsuarios] = useState(0);
   const pageSize = 10;
 
+  // Modal de cadastro
+  const [modalCadastroAberto, setModalCadastroAberto] = useState(false);
+  const [novoUsuarioNome, setNovoUsuarioNome] = useState('');
+  const [novoUsuarioEmail, setNovoUsuarioEmail] = useState('');
+  const [novoUsuarioSenha, setNovoUsuarioSenha] = useState('padrao');
+  const [novoUsuarioAtivo, setNovoUsuarioAtivo] = useState(true);
+  const [novoUsuarioRoleId, setNovoUsuarioRoleId] = useState(2); // 2 = Usuário comum por padrão
+  const [submittingCadastro, setSubmittingCadastro] = useState(false);
+
   const carregarUsuarios = async (pageOrEvent?: number | React.MouseEvent<HTMLButtonElement>) => {
     const page = typeof pageOrEvent === 'number' ? pageOrEvent : 1;
     setLoading(true);
@@ -192,6 +201,57 @@ export default function GerenciarUsuarios() {
     }
   };
 
+  const abrirModalCadastro = () => {
+    setModalCadastroAberto(true);
+    setNovoUsuarioNome('');
+    setNovoUsuarioEmail('');
+    setNovoUsuarioSenha('padrao');
+    setNovoUsuarioAtivo(true);
+    setNovoUsuarioRoleId(2);
+  };
+
+  const fecharModalCadastro = () => {
+    setModalCadastroAberto(false);
+    setNovoUsuarioNome('');
+    setNovoUsuarioEmail('');
+    setNovoUsuarioSenha('padrao');
+    setNovoUsuarioAtivo(true);
+    setNovoUsuarioRoleId(2);
+  };
+
+  const cadastrarUsuario = async () => {
+    if (!novoUsuarioNome.trim()) {
+      alert('O nome é obrigatório');
+      return;
+    }
+
+    if (!novoUsuarioEmail.trim()) {
+      alert('O e-mail é obrigatório');
+      return;
+    }
+
+    setSubmittingCadastro(true);
+    try {
+      await api.post('/users', {
+        name: novoUsuarioNome,
+        email: novoUsuarioEmail,
+        password: novoUsuarioSenha,
+        ativo: novoUsuarioAtivo,
+        roleId: novoUsuarioRoleId,
+      });
+
+      alert('Usuário cadastrado com sucesso!');
+      fecharModalCadastro();
+      await carregarUsuarios(1);
+    } catch (error: any) {
+      console.error('Erro ao cadastrar usuário:', error);
+      const mensagemErro = error.response?.data?.mensagem || 'Erro ao cadastrar usuário';
+      alert(Array.isArray(mensagemErro) ? mensagemErro.join('\n') : mensagemErro);
+    } finally {
+      setSubmittingCadastro(false);
+    }
+  };
+
   const formatarData = (data: string) => {
     const date = new Date(data);
     return date.toLocaleDateString('pt-BR', {
@@ -214,8 +274,9 @@ export default function GerenciarUsuarios() {
           {/* Botões de ação acima dos filtros */}
           <div className="px-6 py-3 bg-gray-50 border-b border-gray-300 flex gap-4">
             <button
-              onClick={() => alert('Funcionalidade em desenvolvimento')}
-              className="px-5 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors font-medium text-sm flex items-center gap-2"
+              onClick={abrirModalCadastro}
+              className="px-4 py-1.5 bg-transparent border border-green-600 text-green-600 rounded-lg hover:bg-green-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm flex items-center gap-2 disabled:border-green-300 disabled:text-green-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-2 focus:ring-green-500/50"
+
             >
               <span className="text-lg font-bold">+</span>
               Novo
@@ -223,21 +284,28 @@ export default function GerenciarUsuarios() {
             <button
               onClick={resetarSenha}
               disabled={usuariosSelecionados.length === 0}
-              className="px-5 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors font-medium text-sm disabled:bg-blue-300 disabled:cursor-not-allowed"
+              className="px-4 py-1.5 bg-transparent border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-blue-300 disabled:text-blue-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
             >
               Resetar Senha
             </button>
             <button
+              onClick={() => alert('Funcionalidade de editar em desenvolvimento')}
+              disabled={usuariosSelecionados.length === 0}
+              className="px-4 py-1 bg-transparent border border-purple-600 text-purple-600 rounded-lg hover:bg-purple-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-purple-300 disabled:text-purple-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+            >
+              Editar
+            </button>
+            <button
               onClick={desativarUsuarios}
               disabled={usuariosSelecionados.length === 0}
-              className="px-5 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors font-medium text-sm disabled:bg-red-300 disabled:cursor-not-allowed"
+              className="px-4 py-1.5 bg-transparent border border-orange-600 text-orange-600 rounded-lg hover:bg-orange-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-orange-300 disabled:text-orange-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-2 focus:ring-orange-500/50"
             >
               Desativar
             </button>
             <button
               onClick={excluirUsuarios}
               disabled={usuariosSelecionados.length === 0}
-              className="px-5 py-2 bg-red-900 text-white rounded hover:bg-red-950 transition-colors font-medium text-sm disabled:bg-red-800 disabled:cursor-not-allowed"
+              className="px-4 py-1.5 bg-transparent border border-red-600 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-red-300 disabled:text-red-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-2 focus:ring-red-500/50"
             >
               Excluir
             </button>
@@ -308,7 +376,7 @@ export default function GerenciarUsuarios() {
                 <select
                   value={ativo}
                   onChange={(e) => setAtivo(e.target.value)}
-                  className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900"
+                  className="w-32 min-w-0 px-3 py-2 border border-gray-400 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900 bg-gray-50"
                 >
                   <option value="">Todos</option>
                   <option value="true">Sim</option>
@@ -475,6 +543,130 @@ export default function GerenciarUsuarios() {
           )}
         </div>
       </div>
+
+      {/* Modal de Cadastro de Usuário */}
+      {modalCadastroAberto && (
+        <div 
+          className="fixed inset-0 bg-black/60 bg-opacity-30 flex items-center justify-center z-50 animate-fadeIn"
+          onClick={fecharModalCadastro}
+        >
+          <div 
+            className="bg-white rounded-lg shadow-2xl w-full max-w-2xl mx-4 animate-slideUp"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Cabeçalho */}
+            <div className="border-b border-gray-200 px-6 py-4">
+              <h3 className="text-xl font-semibold text-gray-800 text-center">
+                Cadastrar Usuário
+              </h3>
+            </div>
+
+            {/* Corpo do Modal */}
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Nome */}
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Nome *
+                  </label>
+                  <input
+                    type="text"
+                    value={novoUsuarioNome}
+                    onChange={(e) => setNovoUsuarioNome(e.target.value)}
+                    placeholder="Digite o nome completo"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                    disabled={submittingCadastro}
+                  />
+                </div>
+
+                {/* Email */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Email *
+                  </label>
+                  <input
+                    type="email"
+                    value={novoUsuarioEmail}
+                    onChange={(e) => setNovoUsuarioEmail(e.target.value)}
+                    placeholder="email@exemplo.com"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                    disabled={submittingCadastro}
+                  />
+                </div>
+
+                {/* Senha */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Senha *
+                  </label>
+                  <input
+                    type="text"
+                    value={novoUsuarioSenha}
+                    onChange={(e) => setNovoUsuarioSenha(e.target.value)}
+                    placeholder="Digite a senha"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                    disabled={submittingCadastro}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Senha padrão é "padrao". Pode ser alterada aqui ou depois pelo usuário.
+                  </p>
+                </div>
+
+                {/* ativo */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Ativo
+                  </label>
+                  <select
+                    value={novoUsuarioAtivo ? 'true' : 'false'}
+                    onChange={(e) => setNovoUsuarioAtivo(e.target.value === 'true')}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                    disabled={submittingCadastro}
+                  >
+                    <option value="true">Sim</option>
+                    <option value="false">Não</option>
+                  </select>
+                </div>
+
+                {/* tipo do user (admin ou normal) */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Tipo de usuário
+                  </label>
+                  <select
+                    value={novoUsuarioRoleId}
+                    onChange={(e) => setNovoUsuarioRoleId(parseInt(e.target.value))}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                    disabled={submittingCadastro}
+                  >
+                    <option value={1}>Administrador</option>
+                    <option value={2}>Usuário Comum</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* rodape*/}
+            <div className="border-t border-gray-200 px-6 py-4 flex gap-3 justify-end bg-gray-50 rounded-b-lg">
+              <button
+                onClick={fecharModalCadastro}
+                disabled={submittingCadastro}
+                className="px-6 py-2 bg-transparent border border-gray-400 text-gray-700 rounded-lg hover:bg-gray-200 hover:text-gray-900 transition-all duration-200 transform hover:scale-105 font-medium disabled:border-gray-300 disabled:text-gray-400 disabled:bg-transparent disabled:cursor-not-allowed"
+
+              >
+                Fechar
+              </button>
+              <button
+                onClick={cadastrarUsuario}
+                disabled={submittingCadastro}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all transform hover:scale-105 font-medium disabled:bg-blue-400 disabled:cursor-not-allowed disabled:transform-none"
+              >
+                {submittingCadastro ? 'Cadastrando...' : 'Cadastrar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
