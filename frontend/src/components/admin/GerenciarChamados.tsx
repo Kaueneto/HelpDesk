@@ -274,7 +274,7 @@ export default function GerenciarChamados() {
         <h2 className="text-white text-2xl font-semibold">Chamados</h2>
       </div>
 
-      <div className="p-6 bg-[#EDEDED] min-h-screen">
+      <div className="p-6 bg-[#EDEDED]">
         <div className="bg-white rounded-lg shadow-lg border border-gray-300 overflow-hidden">
           {/* area de Filtros */}
           <div className="p-6 border-b border-gray-300">
@@ -550,7 +550,7 @@ export default function GerenciarChamados() {
                         if ((e.target as HTMLElement).closest('input[type="checkbox"]')) {
                           return;
                         }
-                        router.push(`/admin/chamado/${chamado.id}`);
+                        router.push(`/chamado/${chamado.id}`);
                       }}
                       className={`border-b border-gray-200 hover:bg-blue-50 transition-colors cursor-pointer ${
                         index % 2 === 0 ? 'bg-white' : 'bg-gray-50'

@@ -38,7 +38,7 @@ export default function LoginPage() {
       const loggedUser = JSON.parse(localStorage.getItem('user') || '{}');
       
       if (loggedUser.roleId === 1) {
-        router.push('/admin/painel');
+        router.push('/painel');
       } else {
         router.push('/usuario/inicial');
       }
