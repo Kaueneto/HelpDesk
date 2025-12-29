@@ -8,6 +8,7 @@ import { StatusChamado } from "../entities/StatusChamado";
 import { TipoPrioridade } from "../entities/TipoPrioridade";
 import { ParametrosSistema } from "../entities/ParametrosSistema";
 import { verifyToken } from "../Middleware/AuthMiddleware";
+import { supabase, SUPABASE_BUCKET } from "../config/supabase";
 
 interface AuthenticatedRequest extends Request {
   userId?: number;
@@ -16,6 +17,27 @@ interface AuthenticatedRequest extends Request {
 }
 
 const router = Router();
+
+// Helper para gerar signed URLs dos anexos
+async function gerarSignedUrlsAnexos(anexos: any[]): Promise<any[]> {
+  if (!anexos || anexos.length === 0) return [];
+
+  return Promise.all(
+    anexos.map(async (anexo) => {
+      const { data: signedUrlData } = await supabase.storage
+        .from(SUPABASE_BUCKET)
+        .createSignedUrl(anexo.url, 3600);
+
+      return {
+        id: anexo.id,
+        filename: anexo.filename,
+        url: anexo.url, // Storage path
+        signedUrl: signedUrlData?.signedUrl || null, // URL temporária para acesso
+        criadoEm: anexo.criadoEm,
+      };
+    })
+  );
+}
 
 //cadastrar chamado
 router.post("/chamados", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
@@ -98,11 +120,19 @@ router.get("/chamados/meus", verifyToken, async (req: AuthenticatedRequest, res:
 
     const chamados = await AppDataSource.getRepository(Chamados).find({
       where: { usuario: { id: usuarioId } },
-      relations: ["tipoPrioridade", "departamento", "topicoAjuda", "status"],
+      relations: ["tipoPrioridade", "departamento", "topicoAjuda", "status", "anexos"],
       order: { dataAbertura: "DESC" },
     });
 
-    return res.status(200).json(chamados);
+    // Gerar signed URLs para anexos de cada chamado
+    const chamadosComUrls = await Promise.all(
+      chamados.map(async (chamado) => ({
+        ...chamado,
+        anexos: await gerarSignedUrlsAnexos(chamado.anexos || []),
+      }))
+    );
+
+    return res.status(200).json(chamadosComUrls);
   } catch (error) {
     return res.status(500).json({
       mensagem: "Erro ao listar chamados",
@@ -125,13 +155,17 @@ router.get("/chamados/:id", verifyToken, async (req: AuthenticatedRequest, res: 
         "topicoAjuda",
         "status",
         "userResponsavel",
-        "userFechamento"
+        "userFechamento",
+        "anexos"
       ],
     });
 
     if (!chamado) {
       return res.status(404).json({ mensagem: "Chamado não encontrado" });
     }
+
+    // Gerar signed URLs para os anexos
+    const anexosComUrls = await gerarSignedUrlsAnexos(chamado.anexos || []);
 
     // Formatar resposta
     const chamadoFormatado = {
@@ -160,6 +194,7 @@ router.get("/chamados/:id", verifyToken, async (req: AuthenticatedRequest, res: 
         id: chamado.userFechamento.id,
         name: chamado.userFechamento.name
       } : null,
+      anexos: anexosComUrls,
     };
 
     return res.status(200).json(chamadoFormatado);
@@ -207,7 +242,8 @@ router.get("/chamados", verifyToken, async (req: AuthenticatedRequest, res: Resp
       .leftJoinAndSelect("chamado.topicoAjuda", "topicoAjuda")
       .leftJoinAndSelect("chamado.status", "status")
       .leftJoinAndSelect("chamado.userResponsavel", "userResponsavel")
-      .leftJoinAndSelect("chamado.userFechamento", "userFechamento");
+      .leftJoinAndSelect("chamado.userFechamento", "userFechamento")
+      .leftJoinAndSelect("chamado.anexos", "anexos");
 
     // Filtro obrigatorio: usuarios comuns veem apenas seus proprios chamados
     if (userRoleId !== 1) {
@@ -302,24 +338,27 @@ router.get("/chamados", verifyToken, async (req: AuthenticatedRequest, res: Resp
     // Calcular total de páginas
     const totalPages = Math.ceil(total / pageSizeNum);
 
-    // Formatar resposta para retornar apenas dados essenciais dos usuarios
-    const chamadosFormatados = chamados.map((chamado) => ({
-      id: chamado.id,
-      numeroChamado: chamado.numeroChamado,
-      ramal: chamado.ramal,
-      resumoChamado: chamado.resumoChamado,
-      descricaoChamado: chamado.descricaoChamado,
-      dataAbertura: chamado.dataAbertura,
-      dataAtribuicao: chamado.dataAtribuicao,
-      dataFechamento: chamado.dataFechamento,
-      usuario: chamado.usuario ? { id: chamado.usuario.id, name: chamado.usuario.name } : null,
-      tipoPrioridade: chamado.tipoPrioridade,
-      departamento: chamado.departamento,
-      topicoAjuda: chamado.topicoAjuda,
-      status: chamado.status,
-      userResponsavel: chamado.userResponsavel ? { id: chamado.userResponsavel.id, name: chamado.userResponsavel.name } : null,
-      userFechamento: chamado.userFechamento ? { id: chamado.userFechamento.id, name: chamado.userFechamento.name } : null,
-    }));
+    // Formatar resposta com signed URLs para anexos
+    const chamadosFormatados = await Promise.all(
+      chamados.map(async (chamado) => ({
+        id: chamado.id,
+        numeroChamado: chamado.numeroChamado,
+        ramal: chamado.ramal,
+        resumoChamado: chamado.resumoChamado,
+        descricaoChamado: chamado.descricaoChamado,
+        dataAbertura: chamado.dataAbertura,
+        dataAtribuicao: chamado.dataAtribuicao,
+        dataFechamento: chamado.dataFechamento,
+        usuario: chamado.usuario ? { id: chamado.usuario.id, name: chamado.usuario.name } : null,
+        tipoPrioridade: chamado.tipoPrioridade,
+        departamento: chamado.departamento,
+        topicoAjuda: chamado.topicoAjuda,
+        status: chamado.status,
+        userResponsavel: chamado.userResponsavel ? { id: chamado.userResponsavel.id, name: chamado.userResponsavel.name } : null,
+        userFechamento: chamado.userFechamento ? { id: chamado.userFechamento.id, name: chamado.userFechamento.name } : null,
+        anexos: await gerarSignedUrlsAnexos(chamado.anexos || []),
+      }))
+    );
 
     return res.status(200).json({
       chamados: chamadosFormatados,
