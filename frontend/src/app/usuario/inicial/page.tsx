@@ -205,6 +205,29 @@ export default function DashboardPage() {
     }
   };
 
+  // Função leve para atualizar apenas as mensagens (sem loading state)
+  const atualizarMensagensSilencioso = async (chamadoId: number) => {
+    try {
+      const response = await api.get(`/chamados/${chamadoId}/mensagens`);
+      setMensagens(response.data);
+    } catch (error) {
+      console.error('Erro ao atualizar mensagens:', error);
+    }
+  };
+
+  // Auto-atualização das mensagens a cada 5 segundos
+  useEffect(() => {
+    // Só atualiza se há um chamado selecionado, está na aba detalhes e não está carregando
+    if (!chamadoSelecionado || detalheTab !== 'detalhes' || loadingMensagens) return;
+
+    const intervalo = setInterval(() => {
+      atualizarMensagensSilencioso(chamadoSelecionado.id);
+    }, 5000); // 5 segundos
+
+    // Limpa o intervalo quando o componente desmonta ou muda de aba
+    return () => clearInterval(intervalo);
+  }, [chamadoSelecionado, detalheTab, loadingMensagens]);
+
   const handleVoltarLista = () => {
     setChamadoSelecionado(null);
     setMensagens([]);
@@ -1065,6 +1088,42 @@ export default function DashboardPage() {
                                   <p className="text-gray-800 whitespace-pre-wrap">
                                     {chamadoSelecionado.descricaoChamado}
                                   </p>
+                                  
+                                  {/* Anexos da descrição inicial */}
+                                  {chamadoSelecionado.anexos && chamadoSelecionado.anexos.length > 0 && (
+                                    <div className="mt-3 pt-3 border-t border-green-300">
+                                      <p className="text-sm font-medium text-gray-700 mb-2">Anexos:</p>
+                                      <div className="flex flex-wrap gap-2">
+                                        {chamadoSelecionado.anexos.map((anexo: any) => {
+                                          const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(anexo.filename);
+                                          const fileUrl = anexo.signedUrl || '#';
+                                          
+                                          return (
+                                            <a
+                                              key={anexo.id}
+                                              href={fileUrl}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className="flex items-center gap-2 px-3 py-2 bg-white border border-green-400 rounded hover:bg-green-200 transition text-sm"
+                                            >
+                                              {isImage ? (
+                                                <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                </svg>
+                                              ) : (
+                                                <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                </svg>
+                                              )}
+                                              <span className="text-green-800 max-w-[200px] truncate">
+                                                {anexo.filename}
+                                              </span>
+                                            </a>
+                                          );
+                                        })}
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
 
                                 {/* Mensagens subsequentes */}

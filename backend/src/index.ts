@@ -22,9 +22,6 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-// servir arquivos estáticos da pasta uploads
-app.use('/uploads', express.static('uploads'));
-
 // importar controllers
 import TestConnectionController from "./controllers/TestConnectionController";
 import AuthController from "./controllers/AuthController";

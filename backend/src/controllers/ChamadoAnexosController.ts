@@ -1,11 +1,10 @@
 import { Router, Request, Response } from "express";
 import multer from "multer";
-import path from "path";
-import fs from "fs";
 import { AppDataSource } from "../data-source";
 import { ChamadoAnexos } from "../entities/ChamadoAnexos";
 import { Chamados } from "../entities/Chamados";
 import { verifyToken } from "../Middleware/AuthMiddleware";
+import { supabase, SUPABASE_BUCKET } from "../config/supabase";
 
 interface AuthenticatedRequest extends Request {
   userId?: number;
@@ -15,29 +14,9 @@ interface AuthenticatedRequest extends Request {
 
 const router = Router();
 
-// Configurar multer para upload
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = path.join(__dirname, "../../uploads");
-    
-    // Criar diretório se não existir
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    // Gerar nome único para o arquivo
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    const ext = path.extname(file.originalname);
-    const nameWithoutExt = path.basename(file.originalname, ext);
-    cb(null, `${nameWithoutExt}-${uniqueSuffix}${ext}`);
-  },
-});
-
+// Configurar multer para processar arquivos em memória (não salvar em disco)
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: {
     fileSize: 10 * 1024 * 1024, // 10MB por arquivo
     files: 5, // Máximo 5 arquivos
@@ -49,6 +28,7 @@ const upload = multer({
       "image/jpg",
       "image/png",
       "image/gif",
+      "image/webp",
       "application/pdf",
       "application/msword",
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -87,22 +67,39 @@ router.post(
       });
 
       if (!chamado) {
-        // Deletar arquivos enviados
-        files.forEach((file) => {
-          fs.unlinkSync(file.path);
-        });
         return res.status(404).json({ mensagem: "Chamado não encontrado" });
       }
 
-      // Salvar anexos no banco de dados
+      // Fazer upload no Supabase Storage e salvar no banco
       const anexoRepository = AppDataSource.getRepository(ChamadoAnexos);
       const anexosSalvos = [];
 
       for (const file of files) {
+        // Gerar path único: chamados/{chamadoId}/{timestamp}-{nomeOriginal}
+        const timestamp = Date.now();
+        const storagePath = `chamados/${chamadoId}/${timestamp}-${file.originalname}`;
+
+        // Upload para o Supabase Storage
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from(SUPABASE_BUCKET)
+          .upload(storagePath, file.buffer, {
+            contentType: file.mimetype,
+            upsert: false,
+          });
+
+        if (uploadError) {
+          console.error("Erro ao fazer upload no Supabase:", uploadError);
+          return res.status(500).json({
+            mensagem: "Erro ao fazer upload do arquivo",
+            erro: uploadError.message,
+          });
+        }
+
+        // Salvar registro no banco com o storage path (não a URL)
         const anexo = anexoRepository.create({
           chamadoId,
           filename: file.originalname,
-          url: `/uploads/${file.filename}`,
+          url: storagePath, // Armazenar o path do storage, não a URL pública
         });
 
         const anexoSalvo = await anexoRepository.save(anexo);
@@ -123,7 +120,60 @@ router.post(
   }
 );
 
-// Buscar chamado com anexos
+// Gerar signed URL para um anexo específico
+router.get(
+  "/anexo/:id/url",
+  verifyToken,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const anexoId = Number(req.params.id);
+
+      const anexoRepository = AppDataSource.getRepository(ChamadoAnexos);
+      const anexo = await anexoRepository.findOne({
+        where: { id: anexoId },
+        relations: ["chamado", "chamado.usuario"],
+      });
+
+      if (!anexo) {
+        return res.status(404).json({ mensagem: "Anexo não encontrado" });
+      }
+
+      // Verificar se o usuário tem permissão (é o dono do chamado ou é admin)
+      const userRoleId = req.userRoleId;
+      const userId = req.userId;
+
+      if (userRoleId !== 1 && anexo.chamado.usuario?.id !== userId) {
+        return res.status(403).json({ mensagem: "Sem permissão para acessar este anexo" });
+      }
+
+      // Gerar signed URL válida por 1 hora (3600 segundos)
+      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+        .from(SUPABASE_BUCKET)
+        .createSignedUrl(anexo.url, 3600);
+
+      if (signedUrlError || !signedUrlData) {
+        console.error("Erro ao gerar signed URL:", signedUrlError);
+        return res.status(500).json({
+          mensagem: "Erro ao gerar URL do arquivo",
+          erro: signedUrlError?.message,
+        });
+      }
+
+      return res.status(200).json({
+        signedUrl: signedUrlData.signedUrl,
+        filename: anexo.filename,
+      });
+    } catch (error) {
+      console.error("Erro ao gerar signed URL:", error);
+      return res.status(500).json({
+        mensagem: "Erro ao gerar URL do anexo",
+        erro: error instanceof Error ? error.message : "Erro desconhecido",
+      });
+    }
+  }
+);
+
+// Buscar chamado com anexos (com signed URLs)
 router.get("/chamado/:id", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const chamadoId = Number(req.params.id);
@@ -147,6 +197,23 @@ router.get("/chamado/:id", verifyToken, async (req: AuthenticatedRequest, res: R
       return res.status(404).json({ mensagem: "Chamado não encontrado" });
     }
 
+    // Gerar signed URLs para cada anexo
+    if (chamado.anexos && chamado.anexos.length > 0) {
+      const anexosComUrls = await Promise.all(
+        chamado.anexos.map(async (anexo) => {
+          const { data: signedUrlData } = await supabase.storage
+            .from(SUPABASE_BUCKET)
+            .createSignedUrl(anexo.url, 3600);
+
+          return {
+            ...anexo,
+            signedUrl: signedUrlData?.signedUrl || null,
+          };
+        })
+      );
+      chamado.anexos = anexosComUrls as any;
+    }
+
     return res.status(200).json(chamado);
   } catch (error) {
     console.error("Erro ao buscar chamado:", error);
@@ -164,16 +231,29 @@ router.delete("/anexo/:id", verifyToken, async (req: AuthenticatedRequest, res: 
     const anexoRepository = AppDataSource.getRepository(ChamadoAnexos);
     const anexo = await anexoRepository.findOne({
       where: { id: anexoId },
+      relations: ["chamado", "chamado.usuario"],
     });
 
     if (!anexo) {
       return res.status(404).json({ mensagem: "Anexo não encontrado" });
     }
 
-    // Deletar arquivo do sistema
-    const filePath = path.join(__dirname, "../../", anexo.url);
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
+    // Verificar permissão
+    const userRoleId = req.userRoleId;
+    const userId = req.userId;
+
+    if (userRoleId !== 1 && anexo.chamado.usuario?.id !== userId) {
+      return res.status(403).json({ mensagem: "Sem permissão para deletar este anexo" });
+    }
+
+    // Deletar arquivo do Supabase Storage
+    const { error: deleteError } = await supabase.storage
+      .from(SUPABASE_BUCKET)
+      .remove([anexo.url]);
+
+    if (deleteError) {
+      console.error("Erro ao deletar arquivo do Supabase:", deleteError);
+      // Continua mesmo com erro, pois queremos remover do banco
     }
 
     // Deletar registro do banco
