@@ -46,7 +46,7 @@ const upload = multer({
   },
 });
 
-// Upload de anexos para um chamado
+// Upload de anexos INICIAIS (na abertura do chamado) - SEM mensagem
 router.post(
   "/chamado/:id/anexo",
   verifyToken,
@@ -55,6 +55,8 @@ router.post(
     try {
       const chamadoId = Number(req.params.id);
       const files = req.files as Express.Multer.File[];
+
+      console.log(`[DEBUG] Upload inicial para chamado ${chamadoId}, arquivos: ${files?.length || 0}`);
 
       if (!files || files.length === 0) {
         return res.status(400).json({ mensagem: "Nenhum arquivo enviado" });
@@ -95,15 +97,119 @@ router.post(
           });
         }
 
-        // Salvar registro no banco com o storage path (não a URL)
+        // Salvar registro no banco SEM mensagemId (anexo inicial)
         const anexo = anexoRepository.create({
           chamadoId,
+          // mensagemId omitido = undefined = anexo inicial, não vinculado a mensagem
           filename: file.originalname,
-          url: storagePath, // Armazenar o path do storage, não a URL pública
+          url: storagePath,
         });
 
         const anexoSalvo = await anexoRepository.save(anexo);
-        anexosSalvos.push(anexoSalvo);
+        
+        // Gerar signed URL imediatamente
+        const { data: signedUrlData } = await supabase.storage
+          .from(SUPABASE_BUCKET)
+          .createSignedUrl(storagePath, 3600);
+
+        anexosSalvos.push({
+          ...anexoSalvo,
+          signedUrl: signedUrlData?.signedUrl,
+        });
+      }
+
+      console.log(`[DEBUG] ${anexosSalvos.length} anexos iniciais salvos`);
+
+      return res.status(201).json({
+        mensagem: "Anexos enviados com sucesso",
+        anexos: anexosSalvos,
+      });
+    } catch (error) {
+      console.error("Erro ao fazer upload de anexos:", error);
+      return res.status(500).json({
+        mensagem: "Erro ao fazer upload de anexos",
+        erro: error instanceof Error ? error.message : "Erro desconhecido",
+      });
+    }
+  }
+);
+
+// Upload de anexos para uma mensagem específica (NO CHAT)
+router.post(
+  "/mensagem/:mensagemId/anexo",
+  verifyToken,
+  upload.array("arquivos", 5),
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const mensagemId = Number(req.params.mensagemId);
+      const files = req.files as Express.Multer.File[];
+
+      console.log(`[DEBUG] Upload para mensagem ${mensagemId}, arquivos: ${files?.length || 0}`);
+
+      if (!files || files.length === 0) {
+        return res.status(400).json({ mensagem: "Nenhum arquivo enviado" });
+      }
+
+      // Buscar a mensagem e o chamado associado
+      const { ChamadoMensagens } = await import("../entities/ChamadoMensagens");
+      const mensagemRepository = AppDataSource.getRepository(ChamadoMensagens);
+      const mensagem = await mensagemRepository.findOne({
+        where: { id: mensagemId },
+        relations: ["chamado"],
+      });
+
+      console.log(`[DEBUG] Mensagem encontrada: ${mensagem ? 'SIM' : 'NÃO'}, ChamadoID: ${mensagem?.chamado?.id}`);
+
+      if (!mensagem) {
+        return res.status(404).json({ mensagem: "Mensagem não encontrada" });
+      }
+
+      const chamadoId = mensagem.chamado.id;
+
+      // Fazer upload no Supabase Storage e salvar no banco
+      const anexoRepository = AppDataSource.getRepository(ChamadoAnexos);
+      const anexosSalvos = [];
+
+      for (const file of files) {
+        // Gerar path único: chamados/{chamadoId}/{timestamp}-{nomeOriginal}
+        const timestamp = Date.now();
+        const storagePath = `chamados/${chamadoId}/${timestamp}-${file.originalname}`;
+
+        // Upload para o Supabase Storage
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from(SUPABASE_BUCKET)
+          .upload(storagePath, file.buffer, {
+            contentType: file.mimetype,
+            upsert: false,
+          });
+
+        if (uploadError) {
+          console.error("Erro ao fazer upload no Supabase:", uploadError);
+          return res.status(500).json({
+            mensagem: "Erro ao fazer upload do arquivo",
+            erro: uploadError.message,
+          });
+        }
+
+        // Salvar registro no banco vinculado à mensagem
+        const anexo = anexoRepository.create({
+          chamadoId,
+          mensagemId,
+          filename: file.originalname,
+          url: storagePath,
+        });
+
+        const anexoSalvo = await anexoRepository.save(anexo);
+        
+        // Gerar signed URL imediatamente
+        const { data: signedUrlData } = await supabase.storage
+          .from(SUPABASE_BUCKET)
+          .createSignedUrl(storagePath, 3600);
+
+        anexosSalvos.push({
+          ...anexoSalvo,
+          signedUrl: signedUrlData?.signedUrl,
+        });
       }
 
       return res.status(201).json({

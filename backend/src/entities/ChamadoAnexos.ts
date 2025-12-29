@@ -7,6 +7,7 @@ import {
   JoinColumn,
 } from "typeorm";
 import { Chamados } from "./Chamados";
+import { ChamadoMensagens } from "./ChamadoMensagens";
 
 @Entity("ChamadoAnexos")
 export class ChamadoAnexos {
@@ -19,6 +20,13 @@ export class ChamadoAnexos {
 
   @Column()
   chamadoId!: number;
+
+  @ManyToOne(() => ChamadoMensagens, mensagem => mensagem.anexos, { nullable: true })
+  @JoinColumn({ name: "mensagemId" })
+  mensagem?: ChamadoMensagens;
+
+  @Column({ nullable: true })
+  mensagemId?: number;
 
   @Column({ length: 255 })
   filename!: string;
