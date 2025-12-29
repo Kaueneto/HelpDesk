@@ -53,6 +53,15 @@ export default function GerenciarUsuarios() {
   const [novoUsuarioRoleId, setNovoUsuarioRoleId] = useState(2); // 2 = Usuário comum por padrão
   const [submittingCadastro, setSubmittingCadastro] = useState(false);
 
+  // Modal de edição
+  const [modalEdicaoAberto, setModalEdicaoAberto] = useState(false);
+  const [editandoUsuarioId, setEditandoUsuarioId] = useState<number | null>(null);
+  const [editandoUsuarioNome, setEditandoUsuarioNome] = useState('');
+  const [editandoUsuarioEmail, setEditandoUsuarioEmail] = useState('');
+  const [editandoUsuarioAtivo, setEditandoUsuarioAtivo] = useState(true);
+  const [editandoUsuarioRoleId, setEditandoUsuarioRoleId] = useState(2);
+  const [submittingEdicao, setSubmittingEdicao] = useState(false);
+
   const carregarUsuarios = async (pageOrEvent?: number | React.MouseEvent<HTMLButtonElement>) => {
     const page = typeof pageOrEvent === 'number' ? pageOrEvent : 1;
     setLoading(true);
@@ -252,6 +261,74 @@ export default function GerenciarUsuarios() {
     }
   };
 
+  const abrirModalEdicao = () => {
+    if (usuariosSelecionados.length !== 1) {
+      alert('Selecione apenas um usuário para editar');
+      return;
+    }
+
+    const usuarioId = usuariosSelecionados[0];
+    const usuario = usuarios.find(u => u.id === usuarioId);
+
+    if (!usuario) {
+      alert('Usuário não encontrado');
+      return;
+    }
+
+    setEditandoUsuarioId(usuario.id);
+    setEditandoUsuarioNome(usuario.name);
+    setEditandoUsuarioEmail(usuario.email);
+    setEditandoUsuarioAtivo(usuario.ativo);
+    setEditandoUsuarioRoleId(usuario.roleId);
+    setModalEdicaoAberto(true);
+  };
+
+  const fecharModalEdicao = () => {
+    setModalEdicaoAberto(false);
+    setEditandoUsuarioId(null);
+    setEditandoUsuarioNome('');
+    setEditandoUsuarioEmail('');
+    setEditandoUsuarioAtivo(true);
+    setEditandoUsuarioRoleId(2);
+  };
+
+  const salvarEdicaoUsuario = async () => {
+    if (!editandoUsuarioNome.trim()) {
+      alert('O nome é obrigatório');
+      return;
+    }
+
+    if (!editandoUsuarioEmail.trim()) {
+      alert('O e-mail é obrigatório');
+      return;
+    }
+
+    if (!editandoUsuarioId) {
+      alert('ID do usuário não encontrado');
+      return;
+    }
+
+    setSubmittingEdicao(true);
+    try {
+      await api.put(`/users/${editandoUsuarioId}`, {
+        name: editandoUsuarioNome,
+        email: editandoUsuarioEmail,
+        ativo: editandoUsuarioAtivo,
+        roleId: editandoUsuarioRoleId,
+      });
+
+      alert('Usuário atualizado com sucesso!');
+      fecharModalEdicao();
+      await carregarUsuarios(paginaAtual);
+    } catch (error: any) {
+      console.error('Erro ao atualizar usuário:', error);
+      const mensagemErro = error.response?.data?.mensagem || 'Erro ao atualizar usuário';
+      alert(Array.isArray(mensagemErro) ? mensagemErro.join('\n') : mensagemErro);
+    } finally {
+      setSubmittingEdicao(false);
+    }
+  };
+
   const formatarData = (data: string) => {
     const date = new Date(data);
     return date.toLocaleDateString('pt-BR', {
@@ -275,7 +352,7 @@ export default function GerenciarUsuarios() {
           <div className="px-6 py-3 bg-gray-50 border-b border-gray-300 flex gap-4">
             <button
               onClick={abrirModalCadastro}
-              className="px-4 py-1.5 bg-transparent border border-green-600 text-green-600 rounded-lg hover:bg-green-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm flex items-center gap-2 disabled:border-green-300 disabled:text-green-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-2 focus:ring-green-500/50"
+              className="px-4 py-0.5 bg-transparent border border-green-600 text-green-600 rounded-lg hover:bg-green-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm flex items-center gap-2 disabled:border-green-300 disabled:text-green-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-2 focus:ring-green-500/50"
 
             >
               <span className="text-lg font-bold">+</span>
@@ -284,28 +361,28 @@ export default function GerenciarUsuarios() {
             <button
               onClick={resetarSenha}
               disabled={usuariosSelecionados.length === 0}
-              className="px-4 py-1.5 bg-transparent border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-blue-300 disabled:text-blue-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+              className="px-4 py-0.5 bg-transparent border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-blue-300 disabled:text-blue-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
             >
               Resetar Senha
             </button>
             <button
-              onClick={() => alert('Funcionalidade de editar em desenvolvimento')}
-              disabled={usuariosSelecionados.length === 0}
-              className="px-4 py-1 bg-transparent border border-purple-600 text-purple-600 rounded-lg hover:bg-purple-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-purple-300 disabled:text-purple-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+              onClick={abrirModalEdicao}
+              disabled={usuariosSelecionados.length !== 1}
+              className="px-4 py-0.5 bg-transparent border border-purple-600 text-purple-600 rounded-lg hover:bg-purple-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-purple-300 disabled:text-purple-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
             >
               Editar
             </button>
             <button
               onClick={desativarUsuarios}
               disabled={usuariosSelecionados.length === 0}
-              className="px-4 py-1.5 bg-transparent border border-orange-600 text-orange-600 rounded-lg hover:bg-orange-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-orange-300 disabled:text-orange-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-2 focus:ring-orange-500/50"
+              className="px-4 py-0.5 bg-transparent border border-orange-600 text-orange-600 rounded-lg hover:bg-orange-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-orange-300 disabled:text-orange-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-2 focus:ring-orange-500/50"
             >
               Desativar
             </button>
             <button
               onClick={excluirUsuarios}
               disabled={usuariosSelecionados.length === 0}
-              className="px-4 py-1.5 bg-transparent border border-red-600 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-red-300 disabled:text-red-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-2 focus:ring-red-500/50"
+              className="px-4 py-0.5 bg-transparent border border-red-600 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-red-300 disabled:text-red-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-2 focus:ring-red-500/50"
             >
               Excluir
             </button>
@@ -662,6 +739,111 @@ export default function GerenciarUsuarios() {
                 className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all transform hover:scale-105 font-medium disabled:bg-blue-400 disabled:cursor-not-allowed disabled:transform-none"
               >
                 {submittingCadastro ? 'Cadastrando...' : 'Cadastrar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Edição de Usuário */}
+      {modalEdicaoAberto && (
+        <div 
+          className="fixed inset-0 bg-black/60 bg-opacity-30 flex items-center justify-center z-50 animate-fadeIn"
+          onClick={fecharModalEdicao}
+        >
+          <div 
+            className="bg-white rounded-lg shadow-2xl w-full max-w-2xl mx-4 animate-slideUp"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Cabeçalho */}
+            <div className="border-b border-gray-200 px-6 py-4">
+              <h3 className="text-xl font-semibold text-gray-800 text-center">
+                Editar Usuário
+              </h3>
+            </div>
+
+            {/* Corpo do Modal */}
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Nome */}
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Nome *
+                  </label>
+                  <input
+                    type="text"
+                    value={editandoUsuarioNome}
+                    onChange={(e) => setEditandoUsuarioNome(e.target.value)}
+                    placeholder="Digite o nome completo"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                    disabled={submittingEdicao}
+                  />
+                </div>
+
+                {/* Email */}
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Email *
+                  </label>
+                  <input
+                    type="email"
+                    value={editandoUsuarioEmail}
+                    onChange={(e) => setEditandoUsuarioEmail(e.target.value)}
+                    placeholder="email@exemplo.com"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                    disabled={submittingEdicao}
+                  />
+                </div>
+
+                {/* Ativo */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Ativo
+                  </label>
+                  <select
+                    value={editandoUsuarioAtivo ? 'true' : 'false'}
+                    onChange={(e) => setEditandoUsuarioAtivo(e.target.value === 'true')}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                    disabled={submittingEdicao}
+                  >
+                    <option value="true">Sim</option>
+                    <option value="false">Não</option>
+                  </select>
+                </div>
+
+                {/* Tipo de usuário */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Tipo de usuário
+                  </label>
+                  <select
+                    value={editandoUsuarioRoleId}
+                    onChange={(e) => setEditandoUsuarioRoleId(parseInt(e.target.value))}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                    disabled={submittingEdicao}
+                  >
+                    <option value={1}>Administrador</option>
+                    <option value={2}>Usuário Comum</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Rodapé */}
+            <div className="border-t border-gray-200 px-6 py-4 flex gap-3 justify-end bg-gray-50 rounded-b-lg">
+              <button
+                onClick={fecharModalEdicao}
+                disabled={submittingEdicao}
+                className="px-6 py-2 bg-transparent border border-gray-400 text-gray-700 rounded-lg hover:bg-gray-200 hover:text-gray-900 transition-all duration-200 transform hover:scale-105 font-medium disabled:border-gray-300 disabled:text-gray-400 disabled:bg-transparent disabled:cursor-not-allowed"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={salvarEdicaoUsuario}
+                disabled={submittingEdicao}
+                className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-all transform hover:scale-105 font-medium disabled:bg-purple-400 disabled:cursor-not-allowed disabled:transform-none"
+              >
+                {submittingEdicao ? 'Salvando...' : 'Salvar Alterações'}
               </button>
             </div>
           </div>
