@@ -159,6 +159,10 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
     });
   };
 
+  const handleVoltar = () => {
+    router.back();
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -176,17 +180,19 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="bg-gray-100">
       {/* Header */}
       <div className="bg-[#51A2FF] px-6 py-4">
         <div className="flex items-center gap-4">
           <button
-            onClick={() => router.back()}
-            className="text-white hover:text-gray-200 transition"
+            onClick={handleVoltar}
+            className="text-white hover:text-gray-200 transition flex items-center justify-center"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
+            <img 
+              src="/icons/arrowPointGerencial.svg" 
+              alt="Voltar" 
+              className="w-5 h-5 transform rotate-180"
+            />
           </button>
           <div>
             <h2 className="text-white text-2xl font-semibold">
