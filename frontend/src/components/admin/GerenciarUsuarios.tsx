@@ -179,14 +179,13 @@ export default function GerenciarUsuarios() {
     }
 
     try {
-      await api.delete('/users/excluir-multiplos', {
-        data: {
-          usuariosIds: usuariosSelecionados,
-        },
+      console.log('Excluindo usuários com IDs:', usuariosSelecionados);
+      await api.post('/users/excluir-multiplos', {
+        usuariosIds: usuariosSelecionados,
       });
 
       alert('Usuários excluídos com sucesso!');
-      await carregarUsuarios();
+      await carregarUsuarios(1);
     } catch (error) {
       console.error('Erro ao excluir usuários:', error);
       alert('Erro ao excluir usuários');

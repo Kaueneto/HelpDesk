@@ -369,27 +369,54 @@ router.patch("/users/desativar-multiplos", verifyToken, async (req: Request, res
 });
 
 // excluir usuários em massa (hard delete)
-router.delete("/users/excluir-multiplos", verifyToken, async (req: Request, res: Response) => {
+router.post("/users/excluir-multiplos", verifyToken, async (req: Request, res: Response) => {
   try {
     const { usuariosIds } = req.body;
 
+    console.log("Body recebido:", req.body);
+    console.log("usuariosIds:", usuariosIds);
+    console.log("tipo de usuariosIds:", typeof usuariosIds);
+
     if (!usuariosIds || !Array.isArray(usuariosIds) || usuariosIds.length === 0) {
-      return res.status(400).json({ mensagem: "IDs de usuários são obrigatórios" });
+      return res.status(400).json({ mensagem: "IDs de usuários são obrigatórios e devem ser um array não vazio" });
+    }
+
+    // Converter para números e validar
+    const idsNumeros = usuariosIds
+      .map((id: any) => {
+        const num = parseInt(id);
+        return isNaN(num) ? null : num;
+      })
+      .filter((id: any) => id !== null);
+
+    if (idsNumeros.length === 0) {
+      return res.status(400).json({ mensagem: "IDs de usuários inválidos" });
     }
 
     const userRepository = AppDataSource.getRepository(Users);
 
-    await userRepository
-      .createQueryBuilder()
-      .delete()
-      .from(Users)
-      .where("id IN (:...ids)", { ids: usuariosIds })
-      .execute();
+    // Buscar usuários pelos IDs
+    const usuariosExistentes = await userRepository.findByIds(idsNumeros);
 
-    res.status(200).json({ mensagem: "Usuários excluídos com sucesso!" });
+    if (usuariosExistentes.length === 0) {
+      return res.status(404).json({ mensagem: "Nenhum usuário encontrado com os IDs fornecidos" });
+    }
+
+    console.log("Usuários encontrados para deletar:", usuariosExistentes.length);
+
+    // Deletar os usuários
+    const result = await userRepository.remove(usuariosExistentes);
+
+    res.status(200).json({ 
+      mensagem: `${result.length} usuário(s) excluído(s) com sucesso!`,
+      deletados: result.length
+    });
   } catch (error) {
     console.error("Erro ao excluir usuários:", error);
-    res.status(500).json({ mensagem: "Erro ao excluir usuários" });
+    res.status(500).json({ 
+      mensagem: "Erro ao excluir usuários",
+      erro: error instanceof Error ? error.message : "Erro desconhecido"
+    });
   }
 });
 
