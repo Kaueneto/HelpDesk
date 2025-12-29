@@ -185,11 +185,18 @@ router.get("/chamados", verifyToken, async (req: AuthenticatedRequest, res: Resp
       dataAberturaInicio,
       dataAberturaFim,
       dataFechamentoInicio,
-      dataFechamentoFim
+      dataFechamentoFim,
+      page = 1,
+      pageSize = 10
     } = req.query;
     
     const userRoleId = req.userRoleId; // role do usuario logado
     const userId = req.userId; // id do usuario logado
+
+    // Converter para números
+    const pageNum = Math.max(1, parseInt(String(page)) || 1);
+    const pageSizeNum = Math.max(1, Math.min(100, parseInt(String(pageSize)) || 10)); // máximo 100 registros
+    const offset = (pageNum - 1) * pageSizeNum;
 
     const chamadoRepository = AppDataSource.getRepository(Chamados);
     const queryBuilder = chamadoRepository
@@ -284,7 +291,16 @@ router.get("/chamados", verifyToken, async (req: AuthenticatedRequest, res: Resp
     // Ordenar por data de abertura (mais recentes primeiro)
     queryBuilder.orderBy("chamado.data_abertura", "DESC");
 
+    // Obter total de registros ANTES de aplicar paginação
+    const total = await queryBuilder.getCount();
+
+    // Aplicar paginação
+    queryBuilder.offset(offset).limit(pageSizeNum);
+
     const chamados = await queryBuilder.getMany();
+
+    // Calcular total de páginas
+    const totalPages = Math.ceil(total / pageSizeNum);
 
     // Formatar resposta para retornar apenas dados essenciais dos usuarios
     const chamadosFormatados = chamados.map((chamado) => ({
@@ -305,7 +321,13 @@ router.get("/chamados", verifyToken, async (req: AuthenticatedRequest, res: Resp
       userFechamento: chamado.userFechamento ? { id: chamado.userFechamento.id, name: chamado.userFechamento.name } : null,
     }));
 
-    return res.status(200).json(chamadosFormatados);
+    return res.status(200).json({
+      chamados: chamadosFormatados,
+      total,
+      totalPages,
+      currentPage: pageNum,
+      pageSize: pageSizeNum,
+    });
   } catch (error) {
     console.error("Erro ao listar chamados:", error);
     return res.status(500).json({
