@@ -166,6 +166,11 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
   };
 
   const enviarMensagem = async () => {
+
+    if (!chamado?.userResponsavel) {
+      alert('Não é possível enviar resposta: o chamado ainda não possui um responsável.');
+      return;
+    }
     if (!novaMensagem.trim()) {
       alert('Digite uma mensagem');
       return;
