@@ -366,6 +366,7 @@ router.put("/chamados/:id/atribuir", verifyToken, async (req: AuthenticatedReque
 
     const chamadoRepository = AppDataSource.getRepository(Chamados);
     const historicoRepository = AppDataSource.getRepository(ChamadoHistorico);
+    const userRepository = AppDataSource.getRepository(Users);
 
     const chamado = await chamadoRepository.findOne({
       where: { id: Number(id) },
@@ -374,6 +375,12 @@ router.put("/chamados/:id/atribuir", verifyToken, async (req: AuthenticatedReque
     if (!chamado) {
       return res.status(404).json({ mensagem: "Chamado não encontrado" });
     }
+
+    // Buscar nomes dos usuários para o histórico
+    const [usuarioAtribuiu, usuarioResponsavel] = await Promise.all([
+      userRepository.findOne({ where: { id: usuarioId }, select: ["id", "name"] }),
+      userRepository.findOne({ where: { id: userResponsavelId }, select: ["id", "name"] })
+    ]);
 
     // save status anterior antes de mudar
     const statusAnteriorId = chamado.status?.id || 1;
@@ -385,11 +392,14 @@ router.put("/chamados/:id/atribuir", verifyToken, async (req: AuthenticatedReque
 
     await chamadoRepository.save(chamado);
 
-    // registrar no historico
+    // registrar no historico com nomes dos usuários
+    const nomeQuemAtribuiu = usuarioAtribuiu?.name || "Usuário";
+    const nomeResponsavel = usuarioResponsavel?.name || "Usuário";
+    
     await historicoRepository.save({
       chamado,
       usuario: { id: usuarioId },
-      acao: `Chamado atribuído ao responsável ID ${userResponsavelId}`,
+      acao: `${nomeQuemAtribuiu} definiu este chamado para ${nomeResponsavel}`,
       statusAnterior: { id: statusAnteriorId },
       statusNovo: { id: 2 }, // EM ATENDIMENTO
       dataMov: new Date(),
