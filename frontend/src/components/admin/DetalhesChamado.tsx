@@ -232,6 +232,20 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
     }
   };
 
+  const reabrirChamado = async () => {
+    if (!confirm('Deseja reabrir este chamado? Você se tornará o responsável por ele.')) return;
+
+    try {
+      await api.put(`/chamados/${chamadoId}/reabrir`);
+      alert('Chamado reaberto com sucesso!');
+      await carregarDados();
+    } catch (error: any) {
+      console.error('Erro ao reabrir chamado:', error);
+      const mensagemErro = error.response?.data?.mensagem || 'Erro ao reabrir chamado';
+      alert(mensagemErro);
+    }
+  };
+
   const abrirModalRedirecionar = () => {
     setModalRedirecionarAberto(true);
   };
@@ -383,6 +397,13 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
             className="px-5 py-2 bg-transparent border border-purple-600 text-purple-600 rounded-lg hover:bg-purple-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-gray-300 disabled:text-gray-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
           >
             Assumir Chamado
+          </button>
+          <button
+            onClick={reabrirChamado}
+            disabled={chamado.status.id !== 3}
+            className="px-5 py-2 bg-transparent border border-orange-600 text-orange-600 rounded-lg hover:bg-orange-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-gray-300 disabled:text-gray-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-2 focus:ring-orange-500/50"
+          >
+            Reabrir Chamado
           </button>
         </div>
       </div>

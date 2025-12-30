@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import api from '@/services/api';
+import ModalEditarChamadoUsuario from '@/components/usuario/ModalEditarChamadoUsuario';
 
 interface AnexoMensagem {
   id: number;
@@ -87,6 +88,9 @@ export default function DashboardPage() {
   const [anexosResposta, setAnexosResposta] = useState<File[]>([]);
   const [isDraggingResposta, setIsDraggingResposta] = useState(false);
   const [submittingResposta, setSubmittingResposta] = useState(false);
+  
+  // Estado do modal de edição
+  const [modalEditarAberto, setModalEditarAberto] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -177,12 +181,12 @@ export default function DashboardPage() {
     try {
       const params: any = {
         page: pagina,
-        limit: 10,
+        pageSize: 10,
       };
       
-      if (filtroAssunto) params.palavraChave = filtroAssunto;
+      if (filtroAssunto) params.assunto = filtroAssunto;
       if (filtroTopicoId > 0) params.topicoAjudaId = filtroTopicoId;
-      if (filtroStatusId > 0) params.status = filtroStatusId;
+      if (filtroStatusId > 0) params.statusId = filtroStatusId;
 
       const response = await api.get('/chamados', { params });
       
@@ -536,12 +540,12 @@ export default function DashboardPage() {
 
           {/* Tabs de Navegação */}
           <div className="px-8 py-4">
-            <div className="h-11 items-center justify-center rounded-md bg-gray-200/70 p-1 text-gray-500 grid w-full grid-cols-3" role="tablist">
+            <div className="inline-flex items-center justify-center rounded-lg bg-gray-200 p-1 text-gray-500 w-full" role="tablist">
               <button
                 type="button"
                 role="tab"
                 onClick={() => setActiveTab('home')}
-                className={`inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-lg font-medium transition-all duration-200 ${
+                className={`inline-flex items-center justify-center whitespace-nowrap rounded-md px-4 py-2.5 text-base font-medium transition-all duration-200 flex-1 ${
                   activeTab === 'home'
                     ? 'bg-white text-gray-900 shadow-sm'
                     : 'text-gray-600 hover:text-gray-900'
@@ -554,7 +558,7 @@ export default function DashboardPage() {
                 type="button"
                 role="tab"
                 onClick={() => setActiveTab('novo')}
-                className={`inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-lg font-medium transition-all duration-200 ${
+                className={`inline-flex items-center justify-center whitespace-nowrap rounded-md px-4 py-2.5 text-base font-medium transition-all duration-200 flex-1 ${
                   activeTab === 'novo'
                     ? 'bg-white text-gray-900 shadow-sm'
                     : 'text-gray-600 hover:text-gray-900'
@@ -567,7 +571,7 @@ export default function DashboardPage() {
                 type="button"
                 role="tab"
                 onClick={() => setActiveTab('acompanhar')}
-                className={`inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-lg font-medium transition-all duration-200 ${
+                className={`inline-flex items-center justify-center whitespace-nowrap rounded-md px-4 py-2.5 text-base font-medium transition-all duration-200 flex-1 ${
                   activeTab === 'acompanhar'
                     ? 'bg-white text-gray-900 shadow-sm'
                     : 'text-gray-600 hover:text-gray-900'
@@ -984,7 +988,7 @@ export default function DashboardPage() {
                                     {chamado.departamento?.name}
                                   </td>
                                   <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
-                                    {chamado.status?.descricaoStatus}
+                                    {chamado.status?.nome}
                                   </td>
                                   <td className="px-4 py-3 text-sm text-gray-700 max-w-xs truncate" title={chamado.resumoChamado}>
                                     {chamado.resumoChamado}
@@ -1079,7 +1083,10 @@ export default function DashboardPage() {
                           >
                             Voltar
                           </button>
-                          <button className="px-4 py-2 bg-gray-200 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-300">
+                          <button 
+                            onClick={() => setModalEditarAberto(true)}
+                            className="px-4 py-2 bg-gray-200 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-300"
+                          >
                             Editar
                           </button>
                           <button className="px-4 py-2 bg-gray-200 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-300">
@@ -1383,6 +1390,29 @@ export default function DashboardPage() {
           Sair | Deslogar
         </button>
       </div>
+
+      {/* Modal de Edição */}
+      {chamadoSelecionado && (
+        <ModalEditarChamadoUsuario
+          isOpen={modalEditarAberto}
+          onClose={() => setModalEditarAberto(false)}
+          onSuccess={async () => {
+            await buscarDetalhesChamado(chamadoSelecionado.id);
+            await buscarChamados();
+          }}
+          chamadoId={chamadoSelecionado.id}
+          dadosIniciais={{
+            resumoChamado: chamadoSelecionado.resumoChamado,
+            descricaoChamado: chamadoSelecionado.descricaoChamado,
+            ramal: chamadoSelecionado.ramal,
+            departamentoId: chamadoSelecionado.departamento?.id || 0,
+            topicoAjudaId: chamadoSelecionado.topicoAjuda?.id || 0,
+            prioridadeId: chamadoSelecionado.tipoPrioridade?.id || 0,
+            statusId: chamadoSelecionado.status?.id || 0,
+            anexos: chamadoSelecionado.anexos || [],
+          }}
+        />
+      )}
     </div>
   );
 }
