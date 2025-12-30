@@ -14,25 +14,31 @@ export class ChamadoAnexos {
   @PrimaryGeneratedColumn()
   id!: number;
 
+  @Column()
+  chamadoId!: number;
+
   @ManyToOne(() => Chamados, chamado => chamado.anexos)
   @JoinColumn({ name: "chamadoId" })
   chamado!: Chamados;
 
-  @Column()
-  chamadoId!: number;
+  @Column({ nullable: true })
+  mensagemId?: number;
 
   @ManyToOne(() => ChamadoMensagens, mensagem => mensagem.anexos, { nullable: true })
   @JoinColumn({ name: "mensagemId" })
   mensagem?: ChamadoMensagens;
-
-  @Column({ nullable: true })
-  mensagemId?: number;
 
   @Column({ length: 255 })
   filename!: string;
 
   @Column({ length: 500 })
   url!: string;
+
+  @Column({
+    type: "enum",
+    enum: ["CHAMADO", "MENSAGEM"],
+  })
+  tipoAnexo!: "CHAMADO" | "MENSAGEM";
 
   @CreateDateColumn()
   criadoEm!: Date;
