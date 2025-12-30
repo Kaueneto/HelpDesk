@@ -356,31 +356,31 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
           <button
             onClick={marcarComoResolvido}
             disabled={chamado.status.id === 3}
-            className="px-5 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition font-medium text-sm disabled:bg-gray-400 disabled:cursor-not-allowed"
+            className="px-5 py-2 bg-transparent border border-green-600 text-green-600 rounded-lg hover:bg-green-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-gray-300 disabled:text-gray-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-2 focus:ring-green-500/50"
           >
             Marcar como Resolvido
           </button>
           <button
             onClick={abrirModalRedirecionar}
             disabled={chamado.status.id === 3}
-            className="px-5 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition font-medium text-sm disabled:bg-gray-400 disabled:cursor-not-allowed"
+            className="px-5 py-2 bg-transparent border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-gray-300 disabled:text-gray-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
           >
             Redirecionar
           </button>
           <button
-            className="px-5 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition font-medium text-sm"
+            className="px-5 py-2 bg-transparent border border-gray-600 text-gray-600 rounded-lg hover:bg-gray-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm active:scale-95 focus:outline-none focus:ring-2 focus:ring-gray-500/50"
           >
             Editar
           </button>
           <button
-            className="px-5 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition font-medium text-sm"
+            className="px-5 py-2 bg-transparent border border-gray-600 text-gray-600 rounded-lg hover:bg-gray-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm active:scale-95 focus:outline-none focus:ring-2 focus:ring-gray-500/50"
           >
             Imprimir
           </button>
           <button
             onClick={assumirChamado}
             disabled={chamado.status.id === 3}
-            className="px-5 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition font-medium text-sm disabled:bg-gray-400 disabled:cursor-not-allowed"
+            className="px-5 py-2 bg-transparent border border-purple-600 text-purple-600 rounded-lg hover:bg-purple-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-gray-300 disabled:text-gray-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
           >
             Assumir Chamado
           </button>
