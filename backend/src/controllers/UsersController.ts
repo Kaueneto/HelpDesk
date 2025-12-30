@@ -355,4 +355,66 @@ router.patch("/users/alterar-situacao-multiplos", verifyToken, async (req: Reque
   }
 });
 
+// usuario autenticado alterar sua propria senha
+interface AuthenticatedRequest extends Request {
+  userId?: number;
+  userEmail?: string;
+  userRoleId?: number;
+}
+
+router.put("/users/alterar-minha-senha", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const usuarioId = req.userId;
+    const { senhaAtual, novaSenha } = req.body;
+
+    // validação
+    const schema = yup.object().shape({
+      senhaAtual: yup.string().required("A senha atual é obrigatória!"),
+      novaSenha: yup
+        .string()
+        .required("A nova senha é obrigatória!")
+        .min(6, "A nova senha deve conter pelo menos 6 caracteres."),
+    });
+
+    await schema.validate({ senhaAtual, novaSenha }, { abortEarly: false });
+
+    const userRepository = AppDataSource.getRepository(Users);
+
+    // Buscar usuário
+    const user = await userRepository.findOne({
+      where: { id: usuarioId },
+      select: ["id", "email", "password"],
+    });
+
+    if (!user) {
+      return res.status(404).json({ mensagem: "Usuário não encontrado" });
+    }
+
+    // Verificar se a senha atual está correta
+    const senhaCorreta = await bcrypt.compare(senhaAtual, user.password);
+
+    if (!senhaCorreta) {
+      return res.status(401).json({ mensagem: "Senha atual incorreta" });
+    }
+
+    // Criptografar nova senha
+    const novaSenhaHash = await bcrypt.hash(novaSenha, 10);
+
+    // Atualizar senha
+    user.password = novaSenhaHash;
+    user.updatedAt = new Date();
+    await userRepository.save(user);
+
+    res.status(200).json({ mensagem: "Senha alterada com sucesso!" });
+  } catch (error: any) {
+    console.error("Erro ao alterar senha:", error);
+    
+    if (error.name === "ValidationError") {
+      return res.status(400).json({ mensagem: error.errors[0] });
+    }
+    
+    res.status(500).json({ mensagem: "Erro ao alterar senha" });
+  }
+});
+
 export default router;

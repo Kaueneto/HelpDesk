@@ -9,7 +9,6 @@ router.get("/topicos_ajuda", async (req: Request, res: Response) => {
   try {
     const topicosRepository = AppDataSource.getRepository(TopicosAjuda);
     const topicos = await topicosRepository.find({
-      where: { ativo: true },
       order: { nome: "ASC" },
     });
 
@@ -86,7 +85,7 @@ router.post("/topicos_ajuda", async (req: Request, res: Response) => {
 router.put("/topicos_ajuda/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { nome } = req.body;
+    const { nome, ativo } = req.body;
 
     if (!nome) {
       return res.status(400).json({ mensagem: "Nome do tópico é obrigatório" });
@@ -103,6 +102,9 @@ router.put("/topicos_ajuda/:id", async (req: Request, res: Response) => {
     }
 
     topico.nome = nome;
+    if (ativo !== undefined) {
+      topico.ativo = ativo;
+    }
     await topicosRepository.save(topico);
 
     return res.status(200).json({
@@ -138,6 +140,40 @@ router.delete("/topicos_ajuda/:id", async (req: Request, res: Response) => {
   } catch (error) {
     return res.status(500).json({
       mensagem: "Erro ao deletar tópico",
+    });
+  }
+});
+
+// rota para ativar/desativar tópico
+router.patch("/topicos_ajuda/:id/status", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { ativo } = req.body;
+
+    if (ativo === undefined) {
+      return res.status(400).json({ mensagem: "Status ativo é obrigatório" });
+    }
+
+    const topicosRepository = AppDataSource.getRepository(TopicosAjuda);
+
+    const topico = await topicosRepository.findOne({
+      where: { id: Number(id) },
+    });
+
+    if (!topico) {
+      return res.status(404).json({ mensagem: "Tópico não encontrado" });
+    }
+
+    topico.ativo = ativo;
+    await topicosRepository.save(topico);
+
+    return res.status(200).json({
+      mensagem: `Tópico ${ativo ? 'ativado' : 'desativado'} com sucesso!`,
+      topico,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      mensagem: "Erro ao alterar status do tópico",
     });
   }
 });

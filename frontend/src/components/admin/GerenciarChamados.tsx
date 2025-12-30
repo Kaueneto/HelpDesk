@@ -43,11 +43,13 @@ interface Chamado {
 interface Departamento {
   id: number;
   name: string;
+  ativo: boolean;
 }
 
 interface TopicoAjuda {
   id: number;
   nome: string;
+  ativo: boolean;
 }
 
 interface TipoPrioridade {
@@ -351,7 +353,7 @@ export default function GerenciarChamados() {
                   className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900"
                 >
                   <option value="">Todos</option>
-                  {departamentos.map((dept) => (
+                  {departamentos.filter(dept => dept.ativo).map((dept) => (
                     <option key={dept.id} value={dept.id}>
                       {dept.name}
                     </option>
@@ -370,7 +372,7 @@ export default function GerenciarChamados() {
                   className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900"
                 >
                   <option value="">Todos</option>
-                  {topicosAjuda.map((topico) => (
+                  {topicosAjuda.filter(topico => topico.ativo).map((topico) => (
                     <option key={topico.id} value={topico.id}>
                       {topico.nome}
                     </option>

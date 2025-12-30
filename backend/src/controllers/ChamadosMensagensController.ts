@@ -3,6 +3,7 @@ import { AppDataSource } from "../data-source";
 import { ChamadoMensagens } from "../entities/ChamadoMensagens";
 import { ChamadoAnexos } from "../entities/ChamadoAnexos";
 import { ChamadoHistorico } from "../entities/ChamadoHistorico";
+import { Chamados } from "../entities/Chamados";
 import { Users } from "../entities/Users";
 import { supabase, SUPABASE_BUCKET } from "../config/supabase";
 
@@ -20,9 +21,49 @@ router.post("/chamados/:id/mensagens", async (req: AuthenticatedRequest, res: Re
     const { id } = req.params;
     const { mensagem } = req.body;
     const usuarioId = req.user?.id;
+    const roleId = req.user?.roleId; // Verificar se é admin (roleId = 1)
+
+    console.log("[DEBUG] ========== POST /chamados/:id/mensagens ==========");
+    console.log("[DEBUG] Usuario ID:", usuarioId);
+    console.log("[DEBUG] Role ID:", roleId);
+    console.log("[DEBUG] Tipo de roleId:", typeof roleId);
+    console.log("[DEBUG] req.user:", req.user);
 
     const mensagensRepository = AppDataSource.getRepository(ChamadoMensagens);
     const historicoRepository = AppDataSource.getRepository(ChamadoHistorico);
+    const chamadosRepository = AppDataSource.getRepository(Chamados);
+
+    // Buscar o chamado para verificar se tem um userResponsavel atribuído
+    const chamado = await chamadosRepository.findOne({
+      where: { id: Number(id) },
+      relations: ["userResponsavel"],
+    });
+
+    console.log("[DEBUG] Chamado encontrado:", {
+      id: chamado?.id,
+      userResponsavelId: chamado?.userResponsavel?.id,
+      userResponsavelName: chamado?.userResponsavel?.name,
+      usuarioRoleId: roleId,
+    });
+
+    if (!chamado) {
+      return res.status(404).json({
+        mensagem: "Chamado não encontrado",
+      });
+    }
+
+    // Validação APENAS para admins (roleId = 1)
+    // Se for admin e o chamado não tiver userResponsavel atribuído, bloqueia
+    console.log("[DEBUG] Verificando validação: roleId === 1?", roleId === 1, "| !userResponsavel?", !chamado.userResponsavel, "| !userResponsavel.id?", !chamado.userResponsavel?.id);
+    
+    if (roleId === 1 && (!chamado.userResponsavel || !chamado.userResponsavel.id)) {
+      console.log("[DEBUG] ❌ BLOQUEADO: Admin tentando responder sem assumir o chamado");
+      return res.status(400).json({
+        mensagem: "Assuma o chamado antes de responder.",
+      });
+    }
+
+    console.log("[DEBUG] ✅ Validação passou - permitindo resposta");
 
     const novaMensagem = mensagensRepository.create({
       mensagem,
@@ -42,6 +83,7 @@ router.post("/chamados/:id/mensagens", async (req: AuthenticatedRequest, res: Re
 
     return res.status(201).json(novaMensagem);
   } catch (error) {
+    console.error("[ERROR] Erro ao enviar mensagem:", error);
     return res.status(500).json({
       mensagem: "Erro ao enviar mensagem",
     });

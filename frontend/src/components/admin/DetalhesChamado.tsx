@@ -197,9 +197,10 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
       setNovaMensagem('');
       setAnexosResposta([]);
       await carregarMensagensEHistorico();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao enviar mensagem:', error);
-      alert('Erro ao enviar mensagem');
+      const mensagemErro = error.response?.data?.mensagem || 'Erro ao enviar mensagem';
+      alert(mensagemErro);
     } finally {
       setEnviandoMensagem(false);
     }
