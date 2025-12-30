@@ -20,6 +20,7 @@ interface Chamado {
   ramal: number;
   dataAbertura: string;
   dataFechamento: string | null;
+  dataAtribuicao: string | null;
   usuario: {
     id: number;
     name: string;
@@ -206,6 +207,20 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
     }
   };
 
+  const assumirChamado = async () => {
+    if (!confirm('Deseja assumir a responsabilidade por este chamado?')) return;
+
+    try {
+      const response = await api.put(`/chamados/${chamadoId}/assumir`);
+      alert('Chamado assumido com sucesso!');
+      await carregarDados();
+    } catch (error: any) {
+      console.error('Erro ao assumir chamado:', error);
+      const mensagemErro = error.response?.data?.mensagem || 'Erro ao assumir chamado';
+      alert(mensagemErro);
+    }
+  };
+
   const handleDragOverResposta = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDraggingResposta(true);
@@ -326,7 +341,9 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
             Imprimir
           </button>
           <button
-            className="px-5 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition font-medium text-sm"
+            onClick={assumirChamado}
+            disabled={chamado.status.id === 3}
+            className="px-5 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition font-medium text-sm disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
             Assumir Chamado
           </button>
@@ -442,26 +459,38 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
                 </div>
               </div>
 
-              {/* Dados de Conclusão */}
-              {chamado.dataFechamento && (
-                <div className="bg-white rounded-lg border border-gray-300 p-5">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-3 border-b">
-                    Dados de conclusão
-                  </h3>
-                  <div className="space-y-3">
-                    <div>
-                      <label className="text-sm font-medium text-gray-600">Data conclusão</label>
-                      <p className="text-gray-900 mt-1">{formatarData(chamado.dataFechamento)}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-600">Usuário Fechou</label>
-                      <p className="text-gray-900 mt-1">
-                        {chamado.userFechamento?.name || 'Não informado'}
-                      </p>
-                    </div>
+              {/* Outros Dados */}
+              <div className="bg-white rounded-lg border border-gray-300 p-5">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-3 border-b">
+                  Outros Dados
+                </h3>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">Responsável pelo chamado</label>
+                    <p className="text-gray-900 mt-1">
+                      {chamado.userResponsavel?.name || '-'}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">Data atribuição</label>
+                    <p className="text-gray-900 mt-1">
+                      {chamado.dataAtribuicao ? formatarData(chamado.dataAtribuicao) : '-'}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">Data conclusão</label>
+                    <p className="text-gray-900 mt-1">
+                      {chamado.dataFechamento ? formatarData(chamado.dataFechamento) : '-'}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">Usuário que concluiu</label>
+                    <p className="text-gray-900 mt-1">
+                      {chamado.userFechamento?.name || '-'}
+                    </p>
                   </div>
                 </div>
-              )}
+              </div>
             </div>
 
             {/* Right Column - Mensagens */}
