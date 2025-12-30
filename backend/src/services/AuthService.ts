@@ -16,14 +16,15 @@ export class AuthService {
     // Buscar usuário pelo email
     const user = await userRepository.findOne({
       where: { email },
+      relations: ["situationUser"],
     });
 
     if (!user) {
       throw new Error("Credenciais inválidas");
     }
 
-    // Verificar se o usuário está ativo
-    if (!user.ativo) {
+    // Verificar se o usuário está ativo (situação = "ativo")
+    if (!user.situationUser || user.situationUser.nomeSituacao.toLowerCase() !== "ativo") {
       throw new Error("Usuário inativo. Entre em contato com o administrador.");
     }
 
@@ -51,7 +52,8 @@ export class AuthService {
       name: user.name,
       email: user.email,
       roleId: user.roleId,
-      ativo: user.ativo,
+      situationUserId: user.situationUserId,
+      situationUser: user.situationUser,
       token,
     };
   }

@@ -10,12 +10,23 @@ interface Usuario {
   id: number;
   name: string;
   email: string;
-  ativo: boolean;
+  situationUserId: number;
+  situationUser: {
+    id: number;
+    nomeSituacao: string;
+  };
   roleId: number;
   role: {
     id: number;
     nome: string;
   };
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface SituationUser {
+  id: number;
+  nomeSituacao: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -28,10 +39,11 @@ export default function GerenciarUsuarios() {
   const [dataCadastroFim, setDataCadastroFim] = useState<Date | null>(null);
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
-  const [ativo, setAtivo] = useState('');
+  const [situationUserId, setSituationUserId] = useState('');
 
   // Dados
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
+  const [situacoes, setSituacoes] = useState<SituationUser[]>([]);
   const [loading, setLoading] = useState(false);
 
   // Seleção múltipla
@@ -49,7 +61,7 @@ export default function GerenciarUsuarios() {
   const [novoUsuarioNome, setNovoUsuarioNome] = useState('');
   const [novoUsuarioEmail, setNovoUsuarioEmail] = useState('');
   const [novoUsuarioSenha, setNovoUsuarioSenha] = useState('padrao');
-  const [novoUsuarioAtivo, setNovoUsuarioAtivo] = useState(true);
+  const [novoUsuarioSituationUserId, setNovoUsuarioSituationUserId] = useState(1); // 1 = Ativo por padrão
   const [novoUsuarioRoleId, setNovoUsuarioRoleId] = useState(2); // 2 = Usuário comum por padrão
   const [submittingCadastro, setSubmittingCadastro] = useState(false);
 
@@ -58,9 +70,22 @@ export default function GerenciarUsuarios() {
   const [editandoUsuarioId, setEditandoUsuarioId] = useState<number | null>(null);
   const [editandoUsuarioNome, setEditandoUsuarioNome] = useState('');
   const [editandoUsuarioEmail, setEditandoUsuarioEmail] = useState('');
-  const [editandoUsuarioAtivo, setEditandoUsuarioAtivo] = useState(true);
+  const [editandoUsuarioSituationUserId, setEditandoUsuarioSituationUserId] = useState(1);
   const [editandoUsuarioRoleId, setEditandoUsuarioRoleId] = useState(2);
   const [submittingEdicao, setSubmittingEdicao] = useState(false);
+
+  // Carregar situações ao montar o componente
+  useEffect(() => {
+    const carregarSituacoes = async () => {
+      try {
+        const response = await api.get('/SituationsUsers');
+        setSituacoes(response.data);
+      } catch (error) {
+        console.error('Erro ao carregar situações:', error);
+      }
+    };
+    carregarSituacoes();
+  }, []);
 
   const carregarUsuarios = async (pageOrEvent?: number | React.MouseEvent<HTMLButtonElement>) => {
     const page = typeof pageOrEvent === 'number' ? pageOrEvent : 1;
@@ -75,7 +100,7 @@ export default function GerenciarUsuarios() {
       if (dataCadastroFim) params.dataCadastroFim = dataCadastroFim.toISOString().split('T')[0];
       if (nome) params.nome = nome;
       if (email) params.email = email;
-      if (ativo !== '') params.ativo = ativo;
+      if (situationUserId !== '') params.situationUserId = situationUserId;
 
       const response = await api.get('/users', { params });
       setUsuarios(response.data.usuarios || response.data);
@@ -97,7 +122,7 @@ export default function GerenciarUsuarios() {
     setDataCadastroFim(null);
     setNome('');
     setEmail('');
-    setAtivo('');
+    setSituationUserId('');
     setUsuarios([]);
     setUsuariosSelecionados([]);
     setTodosChecados(false);
@@ -162,9 +187,17 @@ export default function GerenciarUsuarios() {
       return;
     }
 
+    // Buscar ID da situação "inativo"
+    const situacaoInativa = situacoes.find(s => s.nomeSituacao.toLowerCase() === 'inativo');
+    if (!situacaoInativa) {
+      alert('Situação "inativo" não encontrada. Cadastre-a primeiro.');
+      return;
+    }
+
     try {
-      await api.patch('/users/desativar-multiplos', {
+      await api.patch('/users/alterar-situacao-multiplos', {
         usuariosIds: usuariosSelecionados,
+        situationUserId: situacaoInativa.id,
       });
 
       alert('Usuários desativados com sucesso!');
@@ -215,7 +248,7 @@ export default function GerenciarUsuarios() {
     setNovoUsuarioNome('');
     setNovoUsuarioEmail('');
     setNovoUsuarioSenha('padrao');
-    setNovoUsuarioAtivo(true);
+    setNovoUsuarioSituationUserId(1); // Padrão: Ativo
     setNovoUsuarioRoleId(2);
   };
 
@@ -224,7 +257,7 @@ export default function GerenciarUsuarios() {
     setNovoUsuarioNome('');
     setNovoUsuarioEmail('');
     setNovoUsuarioSenha('padrao');
-    setNovoUsuarioAtivo(true);
+    setNovoUsuarioSituationUserId(1);
     setNovoUsuarioRoleId(2);
   };
 
@@ -245,7 +278,7 @@ export default function GerenciarUsuarios() {
         name: novoUsuarioNome,
         email: novoUsuarioEmail,
         password: novoUsuarioSenha,
-        ativo: novoUsuarioAtivo,
+        situationUserId: novoUsuarioSituationUserId,
         roleId: novoUsuarioRoleId,
       });
 
@@ -278,7 +311,7 @@ export default function GerenciarUsuarios() {
     setEditandoUsuarioId(usuario.id);
     setEditandoUsuarioNome(usuario.name);
     setEditandoUsuarioEmail(usuario.email);
-    setEditandoUsuarioAtivo(usuario.ativo);
+    setEditandoUsuarioSituationUserId(usuario.situationUserId);
     setEditandoUsuarioRoleId(usuario.roleId);
     setModalEdicaoAberto(true);
   };
@@ -288,7 +321,7 @@ export default function GerenciarUsuarios() {
     setEditandoUsuarioId(null);
     setEditandoUsuarioNome('');
     setEditandoUsuarioEmail('');
-    setEditandoUsuarioAtivo(true);
+    setEditandoUsuarioSituationUserId(1);
     setEditandoUsuarioRoleId(2);
   };
 
@@ -313,7 +346,7 @@ export default function GerenciarUsuarios() {
       await api.put(`/users/${editandoUsuarioId}`, {
         name: editandoUsuarioNome,
         email: editandoUsuarioEmail,
-        ativo: editandoUsuarioAtivo,
+        situationUserId: editandoUsuarioSituationUserId,
         roleId: editandoUsuarioRoleId,
       });
 
@@ -445,19 +478,22 @@ export default function GerenciarUsuarios() {
                 />
               </div>
 
-              {/* Ativo */}
+              {/* Situação Usuário */}
               <div className="min-w-0">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Ativo
+                  Situação Usuário
                 </label>
                 <select
-                  value={ativo}
-                  onChange={(e) => setAtivo(e.target.value)}
-                  className="w-32 min-w-0 px-3 py-2 border border-gray-400 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900 bg-gray-50"
+                  value={situationUserId}
+                  onChange={(e) => setSituationUserId(e.target.value)}
+                  className="w-full min-w-0 px-3 py-2 border border-gray-400 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900 bg-gray-50"
                 >
-                  <option value="">Todos</option>
-                  <option value="true">Sim</option>
-                  <option value="false">Não</option>
+                  <option value="">Todas</option>
+                  {situacoes.map(situacao => (
+                    <option key={situacao.id} value={situacao.id}>
+                      {situacao.nomeSituacao}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -516,7 +552,7 @@ export default function GerenciarUsuarios() {
                       Tipo usuário (Role)
                     </th>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                      Ativo
+                      Situação
                     </th>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
                       Criado em
@@ -556,15 +592,19 @@ export default function GerenciarUsuarios() {
                         {usuario.role?.nome || '-'}
                       </td>
                       <td className="px-4 py-3">
-                        <span
-                          className={`px-3 py-1 rounded-full text-xs font-medium ${
-                            usuario.ativo
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-red-100 text-red-800'
-                          }`}
-                        >
-                          {usuario.ativo ? 'Sim' : 'Não'}
-                        </span>
+                        {usuario.situationUser ? (
+                          <span
+                            className={`px-3 py-1 rounded-full text-xs font-medium ${
+                              usuario.situationUser.nomeSituacao.toLowerCase() === 'ativo'
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-red-100 text-red-800'
+                            }`}
+                          >
+                            {usuario.situationUser.nomeSituacao}
+                          </span>
+                        ) : (
+                          <span className="text-sm text-gray-500">Sem situação</span>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-600">
                         {formatarData(usuario.createdAt)}
@@ -689,19 +729,22 @@ export default function GerenciarUsuarios() {
                   </p>
                 </div>
 
-                {/* ativo */}
+                {/* Situação */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Ativo
+                    Situação
                   </label>
                   <select
-                    value={novoUsuarioAtivo ? 'true' : 'false'}
-                    onChange={(e) => setNovoUsuarioAtivo(e.target.value === 'true')}
+                    value={novoUsuarioSituationUserId}
+                    onChange={(e) => setNovoUsuarioSituationUserId(parseInt(e.target.value))}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                     disabled={submittingCadastro}
                   >
-                    <option value="true">Sim</option>
-                    <option value="false">Não</option>
+                    {situacoes.map(situacao => (
+                      <option key={situacao.id} value={situacao.id}>
+                        {situacao.nomeSituacao}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -795,19 +838,22 @@ export default function GerenciarUsuarios() {
                   />
                 </div>
 
-                {/* Ativo */}
+                {/* Situação */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Ativo
+                    Situação
                   </label>
                   <select
-                    value={editandoUsuarioAtivo ? 'true' : 'false'}
-                    onChange={(e) => setEditandoUsuarioAtivo(e.target.value === 'true')}
+                    value={editandoUsuarioSituationUserId}
+                    onChange={(e) => setEditandoUsuarioSituationUserId(parseInt(e.target.value))}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                     disabled={submittingEdicao}
                   >
-                    <option value="true">Sim</option>
-                    <option value="false">Não</option>
+                    {situacoes.map(situacao => (
+                      <option key={situacao.id} value={situacao.id}>
+                        {situacao.nomeSituacao}
+                      </option>
+                    ))}
                   </select>
                 </div>
 

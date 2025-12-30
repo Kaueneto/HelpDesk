@@ -13,10 +13,11 @@ router.get("/users", verifyToken, async (req: Request, res: Response) => {
   try {
     const userRepository = AppDataSource.getRepository(Users);
     
-    const { dataCadastroInicio, dataCadastroFim, nome, email, ativo } = req.query;
+    const { dataCadastroInicio, dataCadastroFim, nome, email, situationUserId } = req.query;
     
     let query = userRepository.createQueryBuilder("user")
-      .leftJoinAndSelect("user.role", "role");
+      .leftJoinAndSelect("user.role", "role")
+      .leftJoinAndSelect("user.situationUser", "situationUser");
     
     // Filtro por período de cadastro
     if (dataCadastroInicio) {
@@ -47,10 +48,10 @@ router.get("/users", verifyToken, async (req: Request, res: Response) => {
       });
     }
     
-    // Filtro por ativo
-    if (ativo !== undefined && ativo !== '') {
-      query = query.andWhere("user.ativo = :ativo", { 
-        ativo: ativo === 'true' 
+    // Filtro por situação
+    if (situationUserId !== undefined && situationUserId !== '') {
+      query = query.andWhere("user.situation_user_id = :situationUserId", { 
+        situationUserId: parseInt(situationUserId as string) 
       });
     }
     
@@ -73,6 +74,7 @@ router.get("/users/:id", async (req: Request, res: Response) => {
 
     const user = await userRepository.findOne({
       where: { id: parseInt(id) },
+      relations: ["role", "situationUser"],
     });
 
     if (!user)
@@ -124,9 +126,10 @@ router.post("/users", async (req: Request, res: Response) => {
     // criptografar senha antes de salvar
     data.password = await bcrypt.hash(data.password, 10);
 
-    // cria o usuário
+    // cria o usuário com situação padrão (1 = ativo)
     const newUser = userRepository.create({
       ...data,
+      situationUserId: data.situationUserId || 1, // Padrão: ativo
     });
 
     await userRepository.save(newUser);
@@ -151,7 +154,7 @@ router.post("/users", async (req: Request, res: Response) => {
 router.put("/users/:id",  verifyToken,  async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { name, email, roleId, ativo } = req.body;
+    const { name, email, roleId, situationUserId } = req.body;
 
     const schema = yup.object().shape({
       name: yup
@@ -198,7 +201,7 @@ router.put("/users/:id",  verifyToken,  async (req: Request, res: Response) => {
     };
 
     if (roleId !== undefined) updateData.roleId = roleId;
-    if (ativo !== undefined) updateData.ativo = ativo;
+    if (situationUserId !== undefined) updateData.situationUserId = situationUserId;
 
     // atualizar dados
     userRepository.merge(user, updateData);
@@ -323,13 +326,17 @@ router.patch("/users/resetar-senha-multiplos", verifyToken, async (req: Request,
   }
 });
 
-// desativar usuários em massa
-router.patch("/users/desativar-multiplos", verifyToken, async (req: Request, res: Response) => {
+// alterar situação de usuários em massa
+router.patch("/users/alterar-situacao-multiplos", verifyToken, async (req: Request, res: Response) => {
   try {
-    const { usuariosIds } = req.body;
+    const { usuariosIds, situationUserId } = req.body;
 
     if (!usuariosIds || !Array.isArray(usuariosIds) || usuariosIds.length === 0) {
       return res.status(400).json({ mensagem: "IDs de usuários são obrigatórios" });
+    }
+
+    if (!situationUserId) {
+      return res.status(400).json({ mensagem: "ID da situação é obrigatório" });
     }
 
     const userRepository = AppDataSource.getRepository(Users);
@@ -337,14 +344,14 @@ router.patch("/users/desativar-multiplos", verifyToken, async (req: Request, res
     await userRepository
       .createQueryBuilder()
       .update(Users)
-      .set({ ativo: false, updatedAt: new Date() })
+      .set({ situationUserId: situationUserId, updatedAt: new Date() })
       .where("id IN (:...ids)", { ids: usuariosIds })
       .execute();
 
-    res.status(200).json({ mensagem: "Usuários desativados com sucesso!" });
+    res.status(200).json({ mensagem: "Situação dos usuários alterada com sucesso!" });
   } catch (error) {
-    console.error("Erro ao desativar usuários:", error);
-    res.status(500).json({ mensagem: "Erro ao desativar usuários" });
+    console.error("Erro ao alterar situação dos usuários:", error);
+    res.status(500).json({ mensagem: "Erro ao alterar situação dos usuários" });
   }
 });
 

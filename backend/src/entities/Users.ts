@@ -10,6 +10,7 @@ import {
 } from "typeorm";
 import { Chamados } from "./Chamados";
 import { Roles } from "./Roles";
+import { SituationsUsers } from "./SituationsUsers";
 
 @Entity("users")
 export class Users {
@@ -32,8 +33,12 @@ export class Users {
   @JoinColumn({ name: "role_id" })
   role!: Roles;
 
-  @Column({ default: true })
-  ativo!: boolean;
+  @Column({ name: "situation_user_id" })
+  situationUserId!: number;
+
+  @ManyToOne(() => SituationsUsers)
+  @JoinColumn({ name: "situation_user_id" })
+  situationUser!: SituationsUsers;
 
   @Column({ name: "recoverPassword", type: "varchar", nullable: true })
   recoverPassword!: string | null;
