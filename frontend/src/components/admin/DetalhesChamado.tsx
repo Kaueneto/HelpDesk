@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/services/api';
+import ModalRedirecionarChamado from './ModalRedirecionarChamado';
 
 interface Anexo {
   id: number;
@@ -75,6 +76,13 @@ interface Historico {
   };
 }
 
+interface Usuario {
+  id: number;
+  name: string;
+  email: string;
+  roleId: number;
+}
+
 interface DetalhesChamadoProps {
   chamadoId: string;
 }
@@ -92,6 +100,9 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
   const [usuarioLogadoId, setUsuarioLogadoId] = useState<number | null>(null);
   const [anexosResposta, setAnexosResposta] = useState<File[]>([]);
   const [isDraggingResposta, setIsDraggingResposta] = useState(false);
+  
+  // Estado do modal de redirecionamento
+  const [modalRedirecionarAberto, setModalRedirecionarAberto] = useState(false);
 
   useEffect(() => {
     carregarDados();
@@ -221,6 +232,30 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
     }
   };
 
+  const abrirModalRedirecionar = () => {
+    setModalRedirecionarAberto(true);
+  };
+
+  const fecharModalRedirecionar = () => {
+    setModalRedirecionarAberto(false);
+  };
+
+  const handleRedirecionarChamado = async (usuarioSelecionado: number) => {
+    try {
+      await api.put(`/chamados/${chamadoId}/atribuir`, {
+        userResponsavelId: usuarioSelecionado,
+      });
+      
+      alert('Chamado redirecionado com sucesso!');
+      await carregarDados();
+    } catch (error: any) {
+      console.error('Erro ao redirecionar chamado:', error);
+      const mensagemErro = error.response?.data?.mensagem || 'Erro ao redirecionar chamado';
+      alert(mensagemErro);
+      throw error;
+    }
+  };
+
   const handleDragOverResposta = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDraggingResposta(true);
@@ -326,7 +361,9 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
             Marcar como Resolvido
           </button>
           <button
-            className="px-5 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition font-medium text-sm"
+            onClick={abrirModalRedirecionar}
+            disabled={chamado.status.id === 3}
+            className="px-5 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition font-medium text-sm disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
             Redirecionar
           </button>
@@ -720,6 +757,14 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
           </div>
         )}
       </div>
+
+      {/* Modal de Redirecionamento */}
+      <ModalRedirecionarChamado
+        isOpen={modalRedirecionarAberto}
+        onClose={fecharModalRedirecionar}
+        onConfirm={handleRedirecionarChamado}
+        chamadoId={chamadoId}
+      />
     </div>
   );
 }
