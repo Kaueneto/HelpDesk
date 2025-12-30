@@ -80,6 +80,7 @@ export default function DashboardPage() {
   // Estados para detalhes do chamado
   const [chamadoSelecionado, setChamadoSelecionado] = useState<any>(null);
   const [mensagens, setMensagens] = useState<MensagemUsuario[]>([]);
+  const [anexosChamado, setAnexosChamado] = useState<any[]>([]);
   const [loadingMensagens, setLoadingMensagens] = useState(false);
   const [detalheTab, setDetalheTab] = useState<'detalhes' | 'historico'>('detalhes');
   const [novaMensagem, setNovaMensagem] = useState('');
@@ -210,13 +211,33 @@ export default function DashboardPage() {
   const handleChamadoClick = async (chamado: any) => {
     setChamadoSelecionado(chamado);
     setDetalheTab('detalhes');
+    await buscarDetalhesChamado(chamado.id);
     await buscarMensagens(chamado.id);
+  };
+
+  const buscarDetalhesChamado = async (chamadoId: number) => {
+    try {
+      const response = await api.get(`/chamados/${chamadoId}`);
+      setChamadoSelecionado(response.data);
+      setAnexosChamado(response.data.anexos || []);
+    } catch (error) {
+      console.error('Erro ao buscar detalhes do chamado:', error);
+    }
   };
 
   const buscarMensagens = async (chamadoId: number) => {
     setLoadingMensagens(true);
     try {
       const response = await api.get(`/chamados/${chamadoId}/mensagens`);
+      console.log('📨 Mensagens recebidas:', response.data);
+      response.data.forEach((msg: any, idx: number) => {
+        console.log(`  Mensagem ${idx + 1}: ID=${msg.id}, Anexos=${msg.anexos?.length || 0}`);
+        if (msg.anexos && msg.anexos.length > 0) {
+          msg.anexos.forEach((anexo: any) => {
+            console.log(`    - Anexo: ${anexo.filename} (ID=${anexo.id})`);
+          });
+        }
+      });
       setMensagens(response.data);
     } catch (error) {
       console.error('Erro ao buscar mensagens:', error);
@@ -251,6 +272,7 @@ export default function DashboardPage() {
   const handleVoltarLista = () => {
     setChamadoSelecionado(null);
     setMensagens([]);
+    setAnexosChamado([]);
     setNovaMensagem('');
     setAnexosResposta([]);
   };
@@ -265,32 +287,39 @@ export default function DashboardPage() {
     setErrorMessage('');
 
     try {
+      console.log('📤 Enviando mensagem...');
       // Primeiro, criar a mensagem
       const response = await api.post(`/chamados/${chamadoSelecionado.id}/mensagens`, {
         mensagem: novaMensagem,
       });
 
       const mensagemId = response.data.id;
+      console.log('✅ Mensagem criada com ID:', mensagemId);
 
       // Se houver anexos, fazer upload vinculado à mensagem
       if (anexosResposta.length > 0 && mensagemId) {
+        console.log(`📎 Enviando ${anexosResposta.length} anexo(s) para mensagem ${mensagemId}...`);
         const formData = new FormData();
         anexosResposta.forEach((file) => {
           formData.append('arquivos', file);
+          console.log(`  - Arquivo: ${file.name}`);
         });
 
-        await api.post(`/mensagem/${mensagemId}/anexo`, formData, {
+        const uploadResponse = await api.post(`/mensagem/${mensagemId}/anexo`, formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
         });
+        console.log('✅ Anexos enviados:', uploadResponse.data);
       }
 
       // Limpar formulário e recarregar mensagens
       setNovaMensagem('');
       setAnexosResposta([]);
+      console.log('🔄 Recarregando mensagens...');
       await buscarMensagens(chamadoSelecionado.id);
     } catch (error: any) {
+      console.error('❌ Erro ao publicar resposta:', error);
       setErrorMessage(error.response?.data?.mensagem || 'Erro ao publicar resposta.');
     } finally {
       setSubmittingResposta(false);
@@ -1058,9 +1087,57 @@ export default function DashboardPage() {
                           </button>
                         </div>
                       </div>
+                    </div>
+
+                    {/* Descrição do Problema (separada das mensagens) */}
+                    <div className="mb-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-3">Descrição do Problema</h3>
+                      <div className="bg-blue-50 border border-blue-200 p-4 rounded-md">
+                        <p className="text-gray-800 whitespace-pre-wrap">
+                          {chamadoSelecionado.descricaoChamado}
+                        </p>
+                        
+                        {/* Anexos do chamado inicial */}
+                        {anexosChamado.length > 0 && (
+                          <div className="mt-4 pt-4 border-t border-blue-300">
+                            <p className="text-sm font-medium text-gray-700 mb-2">Anexos:</p>
+                            <div className="flex flex-wrap gap-2">
+                              {anexosChamado.map((anexo: any) => {
+                                const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(anexo.filename);
+                                const fileUrl = anexo.signedUrl || '#';
+                                
+                                return (
+                                  <a
+                                    key={anexo.id}
+                                    href={fileUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-2 px-3 py-2 bg-white border border-blue-400 rounded hover:bg-blue-100 transition text-sm"
+                                  >
+                                    {isImage ? (
+                                      <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                      </svg>
+                                    ) : (
+                                      <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                      </svg>
+                                    )}
+                                    <span className="text-blue-800 max-w-[200px] truncate">
+                                      {anexo.filename}
+                                    </span>
+                                  </a>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                       
-                      {/* Tabs Detalhes/Histórico */}
-                      <div className="flex gap-4 mt-6 border-b border-gray-300">
+                    {/* Tabs Detalhes/Histórico */}
+                    <div className="bg-white border-b border-gray-200">
+                      <div className="flex gap-4 border-b border-gray-300">
                         <button
                           onClick={() => setDetalheTab('detalhes')}
                           className={`px-6 py-2 font-medium transition-all ${
@@ -1096,116 +1173,79 @@ export default function DashboardPage() {
                             <div className="text-center py-8 text-gray-600">Carregando mensagens...</div>
                           ) : (
                             <>
-                              {/* Mensagens */}
-                              <div className="space-y-4 mb-6">
-                                {/* Primeira mensagem - descrição do problema */}
-                                <div className="bg-green-100 border-l-4 border-green-500 p-4 rounded-md">
-                                  <div className="flex justify-between items-start mb-2">
-                                    <p className="font-semibold text-gray-900">
-                                      {chamadoSelecionado.usuario?.name || 'Nome de perfil do usuario'}
-                                    </p>
-                                    <span className="text-sm text-gray-600">
-                                      {formatarDataBrasilia(chamadoSelecionado.dataAbertura)}
-                                    </span>
+                              {/* Mensagens do chat */}
+                              <div className="space-y-4 mb-6 mt-6">
+                                {mensagens.length === 0 ? (
+                                  <div className="text-center py-8 text-gray-500">
+                                    Nenhuma mensagem ainda.
                                   </div>
-                                  <p className="text-gray-800 whitespace-pre-wrap">
-                                    {chamadoSelecionado.descricaoChamado}
-                                  </p>
-                                  
-                                  {/* Anexos da descrição inicial */}
-                                  {chamadoSelecionado.anexos && chamadoSelecionado.anexos.length > 0 && (
-                                    <div className="mt-3 pt-3 border-t border-green-300">
-                                      <p className="text-sm font-medium text-gray-700 mb-2">Anexos:</p>
-                                      <div className="flex flex-wrap gap-2">
-                                        {chamadoSelecionado.anexos.map((anexo: any) => {
-                                          const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(anexo.filename);
-                                          const fileUrl = anexo.signedUrl || '#';
-                                          
-                                          return (
-                                            <a
-                                              key={anexo.id}
-                                              href={fileUrl}
-                                              target="_blank"
-                                              rel="noopener noreferrer"
-                                              className="flex items-center gap-2 px-3 py-2 bg-white border border-green-400 rounded hover:bg-green-200 transition text-sm"
-                                            >
-                                              {isImage ? (
-                                                <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                </svg>
-                                              ) : (
-                                                <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                </svg>
-                                              )}
-                                              <span className="text-green-800 max-w-[200px] truncate">
-                                                {anexo.filename}
-                                              </span>
-                                            </a>
-                                          );
-                                        })}
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-
-                                {/* Mensagens subsequentes */}
-                                {mensagens.map((msg) => (
-                                  <div
-                                    key={msg.id}
-                                    className={`${
-                                      msg.usuario?.roleId === 1
-                                        ? 'bg-gray-200 border-l-4 border-gray-500'
-                                        : 'bg-green-100 border-l-4 border-green-500'
-                                    } p-4 rounded-md`}
-                                  >
-                                    <div className="flex justify-between items-start mb-2">
-                                      <p className="font-semibold text-gray-900">
-                                        {msg.usuario?.roleId === 1 ? 'nome de perfil do administrador' : msg.usuario?.name}
-                                      </p>
-                                      <span className="text-sm text-gray-600">
-                                        {formatarDataBrasilia(msg.dataEnvio)}
-                                      </span>
-                                    </div>
-                                    <p className="text-gray-800 whitespace-pre-wrap">{msg.mensagem}</p>
+                                ) : (
+                                  mensagens.map((msg) => {
+                                    // Debug: verificar anexos da mensagem
+                                    if (msg.anexos && msg.anexos.length > 0) {
+                                      console.log(`💬 Renderizando mensagem ${msg.id} com ${msg.anexos.length} anexo(s)`);
+                                    }
                                     
-                                    {/* Anexos da mensagem */}
-                                    {msg.anexos && msg.anexos.length > 0 && (
-                                      <div className="mt-3 space-y-1">
-                                        {msg.anexos.map((anexo: any) => {
-                                          const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(anexo.filename);
-                                          const fileUrl = anexo.signedUrl || '#';
-                                          
-                                          return (
-                                            <a
-                                              key={anexo.id}
-                                              href={fileUrl}
-                                              target="_blank"
-                                              rel="noopener noreferrer"
-                                              className="flex items-center gap-2 px-2 py-1.5 bg-white border border-gray-300 rounded hover:bg-green-50 hover:border-green-400 transition text-xs group"
-                                            >
-                                              {isImage ? (
-                                                <svg className="w-4 h-4 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                </svg>
-                                              ) : (
-                                                <svg className="w-4 h-4 text-gray-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                </svg>
-                                              )}
-                                              <span className="text-gray-700 group-hover:text-green-700 truncate flex-1">
-                                                {anexo.filename}
-                                              </span>
-                                              <svg className="w-3 h-3 text-gray-400 group-hover:text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                                              </svg>
-                                            </a>
-                                          );
-                                        })}
+                                    return (
+                                    <div
+                                      key={msg.id}
+                                      className={`${
+                                        msg.usuario?.roleId === 1
+                                          ? 'bg-gray-200 border-l-4 border-gray-500'
+                                          : 'bg-green-100 border-l-4 border-green-500'
+                                      } p-4 rounded-md`}
+                                    >
+                                      <div className="flex justify-between items-start mb-2">
+                                        <p className="font-semibold text-gray-900">
+                                          {msg.usuario?.roleId === 1 ? 'Administrador' : msg.usuario?.name}
+                                        </p>
+                                        <span className="text-sm text-gray-600">
+                                          {formatarDataBrasilia(msg.dataEnvio)}
+                                        </span>
                                       </div>
-                                    )}
-                                  </div>
-                                ))}
+                                      <p className="text-gray-800 whitespace-pre-wrap">{msg.mensagem}</p>
+                                      
+                                      {/* Anexos da mensagem */}
+                                      {msg.anexos && msg.anexos.length > 0 && (
+                                        <div className="mt-3 space-y-1">
+                                          <p className="text-xs font-medium text-gray-600 mb-1">
+                                            📎 {msg.anexos.length} anexo(s):
+                                          </p>
+                                          {msg.anexos.map((anexo: any) => {
+                                            const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(anexo.filename);
+                                            const fileUrl = anexo.signedUrl || '#';
+                                            
+                                            return (
+                                              <a
+                                                key={anexo.id}
+                                                href={fileUrl}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="flex items-center gap-2 px-2 py-1.5 bg-white border border-gray-300 rounded hover:bg-green-50 hover:border-green-400 transition text-xs group"
+                                              >
+                                                {isImage ? (
+                                                  <svg className="w-4 h-4 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                  </svg>
+                                                ) : (
+                                                  <svg className="w-4 h-4 text-gray-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                  </svg>
+                                                )}
+                                                <span className="text-gray-700 group-hover:text-green-700 truncate flex-1">
+                                                  {anexo.filename}
+                                                </span>
+                                                <svg className="w-3 h-3 text-gray-400 group-hover:text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                                </svg>
+                                              </a>
+                                            );
+                                          })}
+                                        </div>
+                                      )}
+                                    </div>
+                                  )})
+                                )}
                               </div>
 
                               {/* Campo para postar resposta */}

@@ -100,7 +100,7 @@ router.post(
         // Salvar registro no banco SEM mensagemId (anexo inicial)
         const anexo = anexoRepository.create({
           chamadoId,
-          // mensagemId omitido = undefined = anexo inicial, não vinculado a mensagem
+          tipoAnexo: 'CHAMADO',
           filename: file.originalname,
           url: storagePath,
         });
@@ -195,6 +195,7 @@ router.post(
         const anexo = anexoRepository.create({
           chamadoId,
           mensagemId,
+          tipoAnexo: 'MENSAGEM',
           filename: file.originalname,
           url: storagePath,
         });

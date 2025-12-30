@@ -13,12 +13,7 @@ router.get("/users", verifyToken, async (req: Request, res: Response) => {
   try {
     const userRepository = AppDataSource.getRepository(Users);
     
-    const { dataCadastroInicio, dataCadastroFim, nome, email, ativo, page = 1, pageSize = 10 } = req.query;
-    
-    // Converter para números
-    const pageNum = Math.max(1, parseInt(String(page)) || 1);
-    const pageSizeNum = Math.max(1, Math.min(100, parseInt(String(pageSize)) || 10)); // máximo 100 registros
-    const offset = (pageNum - 1) * pageSizeNum;
+    const { dataCadastroInicio, dataCadastroFim, nome, email, ativo } = req.query;
     
     let query = userRepository.createQueryBuilder("user")
       .leftJoinAndSelect("user.role", "role");
@@ -59,26 +54,11 @@ router.get("/users", verifyToken, async (req: Request, res: Response) => {
       });
     }
     
-    // Obter total de registros ANTES de aplicar paginação
-    const total = await query.getCount();
-    
-    // Aplicar ordenação e paginação
-    const usuarios = await query
+    const users = await query
       .orderBy("user.id", "DESC")
-      .offset(offset)
-      .limit(pageSizeNum)
       .getMany();
     
-    // Calcular total de páginas
-    const totalPages = Math.ceil(total / pageSizeNum);
-    
-    res.status(200).json({
-      usuarios,
-      total,
-      totalPages,
-      currentPage: pageNum,
-      pageSize: pageSizeNum,
-    });
+    res.status(200).json(users);
   } catch (error) {
     console.error("Erro ao listar usuários:", error);
     res.status(500).json({ mensagem: "Erro ao listar usuários" });
@@ -317,7 +297,7 @@ router.delete("/users/:id", async (req: Request, res: Response) => {
   }
 });
 
-// resetar senha em massa
+// resetar senha de multiplos usuarios
 router.patch("/users/resetar-senha-multiplos", verifyToken, async (req: Request, res: Response) => {
   try {
     const { usuariosIds } = req.body;
@@ -365,58 +345,6 @@ router.patch("/users/desativar-multiplos", verifyToken, async (req: Request, res
   } catch (error) {
     console.error("Erro ao desativar usuários:", error);
     res.status(500).json({ mensagem: "Erro ao desativar usuários" });
-  }
-});
-
-// excluir usuários em massa (hard delete)
-router.post("/users/excluir-multiplos", verifyToken, async (req: Request, res: Response) => {
-  try {
-    const { usuariosIds } = req.body;
-
-    console.log("Body recebido:", req.body);
-    console.log("usuariosIds:", usuariosIds);
-    console.log("tipo de usuariosIds:", typeof usuariosIds);
-
-    if (!usuariosIds || !Array.isArray(usuariosIds) || usuariosIds.length === 0) {
-      return res.status(400).json({ mensagem: "IDs de usuários são obrigatórios e devem ser um array não vazio" });
-    }
-
-    // Converter para números e validar
-    const idsNumeros = usuariosIds
-      .map((id: any) => {
-        const num = parseInt(id);
-        return isNaN(num) ? null : num;
-      })
-      .filter((id: any) => id !== null);
-
-    if (idsNumeros.length === 0) {
-      return res.status(400).json({ mensagem: "IDs de usuários inválidos" });
-    }
-
-    const userRepository = AppDataSource.getRepository(Users);
-
-    // Buscar usuários pelos IDs
-    const usuariosExistentes = await userRepository.findByIds(idsNumeros);
-
-    if (usuariosExistentes.length === 0) {
-      return res.status(404).json({ mensagem: "Nenhum usuário encontrado com os IDs fornecidos" });
-    }
-
-    console.log("Usuários encontrados para deletar:", usuariosExistentes.length);
-
-    // Deletar os usuários
-    const result = await userRepository.remove(usuariosExistentes);
-
-    res.status(200).json({ 
-      mensagem: `${result.length} usuário(s) excluído(s) com sucesso!`,
-      deletados: result.length
-    });
-  } catch (error) {
-    console.error("Erro ao excluir usuários:", error);
-    res.status(500).json({ 
-      mensagem: "Erro ao excluir usuários",
-      erro: error instanceof Error ? error.message : "Erro desconhecido"
-    });
   }
 });
 

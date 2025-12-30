@@ -1,6 +1,7 @@
 import { Router, Request, Response } from "express";
 import { AppDataSource } from "../data-source";
 import { ChamadoMensagens } from "../entities/ChamadoMensagens";
+import { ChamadoAnexos } from "../entities/ChamadoAnexos";
 import { ChamadoHistorico } from "../entities/ChamadoHistorico";
 import { Users } from "../entities/Users";
 import { supabase, SUPABASE_BUCKET } from "../config/supabase";
@@ -8,6 +9,8 @@ import { supabase, SUPABASE_BUCKET } from "../config/supabase";
 interface AuthenticatedRequest extends Request {
   user?: Users;
 }
+
+console.log("🔥🔥🔥 CARREGANDO CHAMADO MENSAGENS CONTROLLER - VERSÃO NOVA 2025-12-29 🔥🔥🔥");
 
 const router = Router();
 
@@ -51,26 +54,45 @@ router.get("/chamados/:id/mensagens", async (req: AuthenticatedRequest, res: Res
 
     console.log(`[DEBUG] Buscando mensagens do chamado ${id}`);
 
-    // Usar createQueryBuilder para ter controle total sobre o JOIN
+    // Buscar mensagens primeiro
     const mensagens = await AppDataSource.getRepository(ChamadoMensagens)
       .createQueryBuilder("mensagem")
       .leftJoinAndSelect("mensagem.usuario", "usuario")
-      .leftJoinAndSelect("mensagem.anexos", "anexos")
       .where("mensagem.chamado_id = :chamadoId", { chamadoId: Number(id) })
-      .orderBy("mensagem.data_envio", "ASC")
+      .orderBy("mensagem.dataEnvio", "ASC")
       .getMany();
 
     console.log(`[DEBUG] Mensagens encontradas: ${mensagens.length}`);
-    mensagens.forEach((msg, idx) => {
-      console.log(`[DEBUG] Mensagem ${idx + 1}: ID=${msg.id}, Texto="${msg.mensagem.substring(0, 30)}...", Anexos=${msg.anexos?.length || 0}`);
-      if (msg.anexos && msg.anexos.length > 0) {
-        msg.anexos.forEach(a => console.log(`  - Anexo ID=${a.id}: ${a.filename} (mensagemId=${a.mensagemId}, chamadoId=${a.chamadoId})`));
-      }
+
+    // Buscar anexos MANUALMENTE para todas as mensagens
+    const mensagensIds = mensagens.map(m => m.id);
+    const anexosRepository = AppDataSource.getRepository(ChamadoAnexos);
+    
+    const todosAnexos = mensagensIds.length > 0
+      ? await anexosRepository
+          .createQueryBuilder("anexo")
+          .where("anexo.mensagemId IN (:...ids)", { ids: mensagensIds })
+          .andWhere("anexo.tipoAnexo = :tipo", { tipo: 'MENSAGEM' })
+          .getMany()
+      : [];
+
+    console.log(`[DEBUG] Total de anexos encontrados: ${todosAnexos.length}`);
+    todosAnexos.forEach(a => console.log(`  - Anexo: ${a.filename}, mensagemId=${a.mensagemId}, tipoAnexo=${a.tipoAnexo}`));
+
+    // Mapear anexos para suas mensagens
+    const mensagensComAnexos = mensagens.map(msg => ({
+      ...msg,
+      anexos: todosAnexos.filter(anexo => anexo.mensagemId === msg.id)
+    }));
+
+    console.log(`[DEBUG] Após mapear anexos:`);
+    mensagensComAnexos.forEach((msg, idx) => {
+      console.log(`  Mensagem ${idx + 1}: ID=${msg.id}, Anexos=${msg.anexos.length}`);
     });
 
     // Gerar signed URLs para todos os anexos
-    const mensagensComAnexos = await Promise.all(
-      mensagens.map(async (mensagem) => {
+    const mensagensComSignedUrls = await Promise.all(
+      mensagensComAnexos.map(async (mensagem) => {
         if (mensagem.anexos && mensagem.anexos.length > 0) {
           const anexosComSignedUrl = await Promise.all(
             mensagem.anexos.map(async (anexo) => {
@@ -95,7 +117,7 @@ router.get("/chamados/:id/mensagens", async (req: AuthenticatedRequest, res: Res
       })
     );
 
-    return res.status(200).json(mensagensComAnexos);
+    return res.status(200).json(mensagensComSignedUrls);
   } catch (error) {
     return res.status(500).json({
       mensagem: "Erro ao listar mensagens",

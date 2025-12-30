@@ -3,6 +3,7 @@ import { AppDataSource } from "../data-source";
 import { Chamados } from "../entities/Chamados";
 import { ChamadoHistorico } from "../entities/ChamadoHistorico";
 import { ChamadoMensagens } from "../entities/ChamadoMensagens";
+import { ChamadoAnexos } from "../entities/ChamadoAnexos";
 import { Users } from "../entities/Users";
 import { StatusChamado } from "../entities/StatusChamado";
 import { TipoPrioridade } from "../entities/TipoPrioridade";
@@ -135,8 +136,8 @@ router.get("/chamados/:id", verifyToken, async (req: AuthenticatedRequest, res: 
       return res.status(404).json({ mensagem: "Chamado não encontrado" });
     }
 
-    // Buscar apenas anexos INICIAIS (sem mensagemId) e gerar signed URLs
-    const anexosIniciais = chamado.anexos?.filter(a => !a.mensagemId) || [];
+    // Buscar apenas anexos do tipo CHAMADO (anexos iniciais) e gerar signed URLs
+    const anexosIniciais = chamado.anexos?.filter(a => a.tipoAnexo === 'CHAMADO') || [];
     const anexosComUrls = await Promise.all(
       anexosIniciais.map(async (anexo) => {
         const { data: signedUrlData } = await supabase.storage
@@ -547,15 +548,70 @@ router.post("/chamados/:id/mensagens", verifyToken, async (req: AuthenticatedReq
 router.get("/chamados/:id/mensagens", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
+    console.log(`[DEBUG] Buscando mensagens do chamado ${id}`);
     
     const mensagensRepository = AppDataSource.getRepository(ChamadoMensagens);
-    const mensagens = await mensagensRepository.find({
-      where: { chamado: { id: Number(id) } },
-      relations: ["usuario"],
-      order: { dataEnvio: "ASC" },
-    });
+    const anexosRepository = AppDataSource.getRepository(ChamadoAnexos);
+    
+    // Buscar mensagens
+    const mensagens = await mensagensRepository
+      .createQueryBuilder("mensagem")
+      .leftJoinAndSelect("mensagem.usuario", "usuario")
+      .where("mensagem.chamado_id = :chamadoId", { chamadoId: Number(id) })
+      .orderBy("mensagem.dataEnvio", "ASC")
+      .getMany();
 
-    return res.status(200).json(mensagens);
+    console.log(`[DEBUG] Mensagens encontradas: ${mensagens.length}`);
+
+    if (mensagens.length === 0) {
+      return res.status(200).json([]);
+    }
+
+    // Buscar todos os anexos de uma vez
+    const mensagensIds = mensagens.map(m => m.id);
+    const todosAnexos = await anexosRepository
+      .createQueryBuilder("anexo")
+      .where("anexo.mensagemId IN (:...ids)", { ids: mensagensIds })
+      .andWhere("anexo.tipoAnexo = :tipo", { tipo: 'MENSAGEM' })
+      .getMany();
+
+    console.log(`[DEBUG] Total de anexos encontrados: ${todosAnexos.length}`);
+
+    // Mapear anexos para as mensagens correspondentes
+    const mensagensComAnexos = await Promise.all(
+      mensagens.map(async (msg) => {
+        const anexosDaMensagem = todosAnexos.filter(anexo => anexo.mensagemId === msg.id);
+        
+        // Gerar signed URLs para cada anexo
+        const anexosComSignedUrl = await Promise.all(
+          anexosDaMensagem.map(async (anexo) => {
+            try {
+              const { data, error } = await supabase.storage
+                .from(SUPABASE_BUCKET!)
+                .createSignedUrl(anexo.url, 3600);
+
+              if (error) {
+                console.error(`[ERROR] Erro ao gerar signed URL para ${anexo.filename}:`, error);
+                return { ...anexo, signedUrl: null };
+              }
+
+              return { ...anexo, signedUrl: data?.signedUrl };
+            } catch (err) {
+              console.error(`[ERROR] Exceção ao gerar signed URL:`, err);
+              return { ...anexo, signedUrl: null };
+            }
+          })
+        );
+
+        return {
+          ...msg,
+          anexos: anexosComSignedUrl
+        };
+      })
+    );
+
+    console.log(`[DEBUG] Retornando ${mensagensComAnexos.length} mensagens com anexos`);
+    return res.status(200).json(mensagensComAnexos);
   } catch (error) {
     console.error("Erro ao buscar mensagens:", error);
     return res.status(500).json({
