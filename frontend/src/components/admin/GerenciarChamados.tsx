@@ -16,6 +16,10 @@ interface Chamado {
     id: number;
     name: string;
   };
+  userResponsavel: {
+    id: number;
+    name: string;
+  } | null;
   tipoPrioridade: {
     id: number;
     nome: string;
@@ -552,6 +556,9 @@ export default function GerenciarChamados() {
                       Usuário
                     </th>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                      Responsável
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
                       Resumo
                     </th>
                   </tr>
@@ -621,8 +628,11 @@ export default function GerenciarChamados() {
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-900">
                         {chamado.usuario?.name || '-'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-900 max-w-xs truncate">
+                      </td>                      <td className="px-4 py-3 text-sm text-gray-900">
+                        {chamado.userResponsavel?.name || (
+                          <span className="text-gray-400 italic">Não atribuído</span>
+                        )}
+                      </td>                      <td className="px-4 py-3 text-sm text-gray-900 max-w-xs truncate">
                         {chamado.resumoChamado}
                       </td>
                     </tr>

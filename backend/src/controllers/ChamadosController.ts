@@ -408,6 +408,85 @@ router.put("/chamados/:id/atribuir", verifyToken, async (req: AuthenticatedReque
   }
 });
 
+// assumir chamado (admin assume responsabilidade pelo chamado)
+router.put("/chamados/:id/assumir", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const usuarioId = req.userId; // usuário que está assumindo
+
+    const chamadoRepository = AppDataSource.getRepository(Chamados);
+    const historicoRepository = AppDataSource.getRepository(ChamadoHistorico);
+
+    const chamado = await chamadoRepository.findOne({
+      where: { id: Number(id) },
+      relations: ["status", "userResponsavel"],
+    });
+
+    if (!chamado) {
+      return res.status(404).json({ mensagem: "Chamado não encontrado" });
+    }
+
+    // Verificar se já está encerrado
+    if (chamado.status?.id === 3) {
+      return res.status(400).json({ mensagem: "Não é possível assumir um chamado encerrado" });
+    }
+
+    // save status anterior antes de mudar
+    const statusAnteriorId = chamado.status?.id || 1;
+    const responsavelAnterior = chamado.userResponsavel?.id;
+
+    // Atribuir responsável e data de atribuição
+    chamado.userResponsavel = { id: usuarioId } as Users;
+    chamado.dataAtribuicao = new Date();
+    
+    // Se estava aberto (status 1), mudar para em atendimento (status 2)
+    if (chamado.status?.id === 1) {
+      chamado.status = { id: 2 } as StatusChamado; // 2 = EM ATENDIMENTO
+    }
+
+    await chamadoRepository.save(chamado);
+
+    // registrar no historico
+    const acaoTexto = responsavelAnterior 
+      ? `Chamado assumido por outro responsável` 
+      : `Chamado assumido pelo responsável`;
+
+    await historicoRepository.save({
+      chamado,
+      usuario: { id: usuarioId },
+      acao: acaoTexto,
+      statusAnterior: { id: statusAnteriorId },
+      statusNovo: chamado.status,
+      dataMov: new Date(),
+    });
+
+    // Recarregar chamado com todas as relações
+    const chamadoAtualizado = await chamadoRepository.findOne({
+      where: { id: Number(id) },
+      relations: [
+        "usuario",
+        "userResponsavel",
+        "userFechamento",
+        "tipoPrioridade",
+        "departamento",
+        "topicoAjuda",
+        "status",
+      ],
+    });
+
+    return res.status(200).json({
+      mensagem: "Chamado assumido com sucesso!",
+      chamado: chamadoAtualizado,
+    });
+  } catch (error) {
+    console.error("Erro ao assumir chamado:", error);
+    return res.status(500).json({
+      mensagem: "Erro ao assumir chamado",
+      error: error instanceof Error ? error.message : "Erro desconhecido",
+    });
+  }
+});
+
 // encerrar chamado (apenas admin ou responsável)
 router.put("/chamados/:id/encerrar", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
