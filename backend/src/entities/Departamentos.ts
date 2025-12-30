@@ -14,6 +14,9 @@ export class Departamentos {
   @Column({ name: "nome", length: 100 })
   name!: string;
 
+  @Column({ name: "ativo", type: "boolean", default: true })
+  ativo!: boolean;
+
   @OneToMany(() => Chamados, chamado => chamado.departamento)
   chamados!: Chamados[];
 }

@@ -51,13 +51,14 @@ router.get("/departamentos/:id", async (req: Request, res: Response) => {
 // criar novo departamento
 router.post("/departamentos", async (req: Request, res: Response) => {
   try {
-    const { name } = req.body;
+    const { name, ativo = true } = req.body;
 
     const schema = yup.object().shape({
       name: yup
         .string()
         .required("O nome do departamento é obrigatório!")
         .min(3, "O nome deve conter no mínimo 3 caracteres!"),
+      ativo: yup.boolean().optional(),
     });
 
     await schema.validate(req.body, { abortEarly: false });
@@ -75,6 +76,7 @@ router.post("/departamentos", async (req: Request, res: Response) => {
 
     const novoDepartamento = departamentosRepository.create({
       name,
+      ativo,
     });
 
     await departamentosRepository.save(novoDepartamento);
@@ -102,13 +104,14 @@ router.post("/departamentos", async (req: Request, res: Response) => {
 router.put("/departamentos/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { name } = req.body;
+    const { name, ativo } = req.body;
 
     const schema = yup.object().shape({
       name: yup
         .string()
         .required("O nome do departamento é obrigatório!")
         .min(3, "O nome deve conter no mínimo 3 caracteres!"),
+      ativo: yup.boolean().optional(),
     });
 
     await schema.validate(req.body, { abortEarly: false });
@@ -140,7 +143,12 @@ router.put("/departamentos/:id", async (req: Request, res: Response) => {
     }
 
     // atualizar dados
-    departamentosRepository.merge(departamento, { name });
+    const updateData: any = { name };
+    if (ativo !== undefined) {
+      updateData.ativo = ativo;
+    }
+    
+    departamentosRepository.merge(departamento, updateData);
 
     const departamentoAtualizado = await departamentosRepository.save(departamento);
 
@@ -162,10 +170,18 @@ router.put("/departamentos/:id", async (req: Request, res: Response) => {
   }
 });
 
-// remover departamento
-router.delete("/departamentos/:id", async (req: Request, res: Response) => {
+// ativar/desativar departamento
+router.patch("/departamentos/:id/status", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    const { ativo } = req.body;
+
+    const schema = yup.object().shape({
+      ativo: yup.boolean().required("O status ativo é obrigatório!"),
+    });
+
+    await schema.validate(req.body, { abortEarly: false });
+
     const departamentosRepository = AppDataSource.getRepository(Departamentos);
 
     const departamento = await departamentosRepository.findOneBy({
@@ -178,15 +194,23 @@ router.delete("/departamentos/:id", async (req: Request, res: Response) => {
       });
     }
 
-    await departamentosRepository.remove(departamento);
+    departamento.ativo = ativo;
+    await departamentosRepository.save(departamento);
 
     return res.status(200).json({
-      mensagem: "Departamento removido com sucesso",
+      mensagem: `Departamento ${ativo ? 'ativado' : 'desativado'} com sucesso`,
+      departamento,
     });
   } catch (error) {
-    console.error("Erro ao remover departamento:", error);
+    if (error instanceof yup.ValidationError) {
+      return res.status(400).json({
+        mensagem: error.errors,
+      });
+    }
+    
+    console.error("Erro ao alterar status do departamento:", error);
     return res.status(500).json({
-      mensagem: "Erro ao remover departamento",
+      mensagem: "Erro ao alterar status do departamento",
     });
   }
 });

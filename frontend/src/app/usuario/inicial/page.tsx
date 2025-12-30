@@ -1,3 +1,9 @@
+
+
+
+
+
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -91,12 +97,42 @@ export default function DashboardPage() {
   
   // Estado do modal de edição
   const [modalEditarAberto, setModalEditarAberto] = useState(false);
+  
+  // Estado do dropdown do usuário
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  
+  // Estado da tela de configurações
+  const [mostrarConfiguracoes, setMostrarConfiguracoes] = useState(false);
+  const [alterarSenhaAberto, setAlterarSenhaAberto] = useState(false);
+  const [senhaAtual, setSenhaAtual] = useState('');
+  const [novaSenha, setNovaSenha] = useState('');
+  const [confirmarSenha, setConfirmarSenha] = useState('');
+  const [submittingSenha, setSubmittingSenha] = useState(false);
+  const [errorSenha, setErrorSenha] = useState('');
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       router.push('/login');
     }
   }, [isAuthenticated, isLoading, router]);
+
+  // Fechar dropdown ao clicar fora
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (userDropdownOpen && !target.closest('.relative')) {
+        setUserDropdownOpen(false);
+      }
+    };
+
+    if (userDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [userDropdownOpen]);
 
   // Carregar tópicos de ajuda, departamentos e prioridades
   useEffect(() => {
@@ -458,6 +494,45 @@ export default function DashboardPage() {
     }
   };
 
+  const handleAlterarSenha = async () => {
+    setErrorSenha('');
+
+    if (!senhaAtual || !novaSenha || !confirmarSenha) {
+      setErrorSenha('Todos os campos são obrigatórios');
+      return;
+    }
+
+    if (novaSenha.length < 6) {
+      setErrorSenha('A nova senha deve ter pelo menos 6 caracteres');
+      return;
+    }
+
+    if (novaSenha !== confirmarSenha) {
+      setErrorSenha('A nova senha e a confirmação não coincidem');
+      return;
+    }
+
+    setSubmittingSenha(true);
+
+    try {
+      await api.put('/users/alterar-minha-senha', {
+        senhaAtual,
+        novaSenha,
+      });
+
+      alert('Senha alterada com sucesso!');
+      setSenhaAtual('');
+      setNovaSenha('');
+      setConfirmarSenha('');
+      setAlterarSenhaAberto(false);
+    } catch (error: any) {
+      const mensagem = error.response?.data?.mensagem || 'Erro ao alterar senha';
+      setErrorSenha(mensagem);
+    } finally {
+      setSubmittingSenha(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
@@ -533,8 +608,227 @@ export default function DashboardPage() {
           {/* Header */}
           <div className="bg-white border-b border-gray-200 px-8 py-5 flex justify-between items-center">
             <h1 className="text-2xl font-bold text-gray-900">Central de chamados</h1>
-            <div className="text-gray-700">
-              Usuário: <span className="font-medium">{user.name}</span>
+            <div className="relative">
+              <button
+                onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
+                  {user.name.charAt(0).toUpperCase()}
+                </div>
+                <span className="text-gray-700 font-medium">{user.name}</span>
+                <svg className={`w-4 h-4 text-gray-500 transition-transform ${userDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              {/* Dropdown Menu */}
+              {userDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50">
+                  <div className="px-4 py-3 border-b border-gray-200">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                        {user.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-900">{user.name}</p>
+                        <p className="text-xs text-gray-500">Usuário Comum</p>
+                      </div>
+                    </div>
+                    <div className="mt-2 space-y-1">
+                      <p className="text-sm text-gray-600">
+                        <span className="font-medium">Email:</span> {user.email}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        <span className="font-medium">ID:</span> {user.id}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="py-1">
+                    <button
+                      onClick={() => {
+                        setUserDropdownOpen(false);
+                        setMostrarConfiguracoes(true);
+                      }}
+                      className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      Configurações
+                    </button>
+                  </div>
+                  <div className="border-t border-gray-200">
+                    <button
+                      onClick={() => {
+                        setUserDropdownOpen(false);
+                        logout();
+                      }}
+                      className="w-full px-4 py-2 text-left text-red-600 hover:bg-red-50 transition-colors flex items-center gap-2"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                      </svg>
+                      Sair
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Tela de Configurações com transição (drawer lateral) */}
+          <div className={`fixed inset-0 z-40 ${mostrarConfiguracoes ? 'pointer-events-auto' : 'pointer-events-none'}`}>
+            {/* Overlay escuro clicável */}
+            <div
+              className={`absolute inset-0 bg-black transition-opacity duration-300 ${mostrarConfiguracoes ? 'opacity-30' : 'opacity-0'}`}
+              onClick={() => setMostrarConfiguracoes(false)}
+            />
+
+            {/* Painel lateral */}
+            <div className={`absolute top-0 right-0 h-full w-full md:w-[900px] bg-white shadow-xl transition-transform duration-300 ease-in-out ${
+              mostrarConfiguracoes ? 'translate-x-0' : 'translate-x-full'
+            }`}>
+              <div className="h-full flex flex-col">
+                {/* Header da tela de configurações */}
+                <div className="bg-white border-b border-gray-200 px-8 py-5 flex items-center gap-4">
+                  <button
+                    onClick={() => {
+                      setMostrarConfiguracoes(false);
+                      setAlterarSenhaAberto(false);
+                      setSenhaAtual('');
+                      setNovaSenha('');
+                      setConfirmarSenha('');
+                      setErrorSenha('');
+                    }}
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                  <h1 className="text-2xl font-bold text-gray-900">Configurações</h1>
+                </div>
+
+                {/* Conteúdo das configurações */}
+                <div className="flex-1 overflow-y-auto p-8">
+                  <div className="max-w-3xl mx-auto">
+                    <div className="flex flex-row gap-8 items-start">
+                      {/* Dados do Usuário */}
+                      <div className="bg-white border border-gray-300 rounded-lg p-6 flex-1 min-w-[320px]">
+                        <h2 className="text-lg font-semibold text-gray-900 mb-4">Seus Dados</h2>
+                        <div className="space-y-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">ID</label>
+                            <input
+                              type="text"
+                              value={user.id}
+                              disabled
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-700"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Nome</label>
+                            <input
+                              type="text"
+                              value={user.name}
+                              disabled
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-700"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                            <input
+                              type="email"
+                              value={user.email}
+                              disabled
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-700"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Botão de alterar senha */}
+                      <div className="flex flex-col flex-shrink-0 min-w-[340px] max-w-[400px] w-full">
+                        <div className="bg-white border border-gray-300 rounded-lg overflow-hidden">
+                          <button
+                            onClick={() => setAlterarSenhaAberto(!alterarSenhaAberto)}
+                            className="w-full px-6 py-4 flex items-center justify-between bg-blue-500 hover:bg-blue-600 transition-colors"
+                          >
+                            <div className="flex items-center gap-3">
+                              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                              </svg>
+                              <span className="text-white font-medium text-lg">Alterar sua Senha</span>
+                            </div>
+                            <svg className={`w-5 h-5 text-white transition-transform ${alterarSenhaAberto ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </button>
+
+                          {/* Formulário de alteração de senha (expansível) */}
+                          <div className={`transition-all duration-300 ease-in-out ${
+                            alterarSenhaAberto ? 'max-h-[600px] opacity-100' : 'max-h-0 opacity-0 overflow-hidden'
+                          }`}>
+                            <div className="p-6 space-y-4 bg-gray-50">
+                              <div>
+                                <label className="block text-sm font-medium text-gray-900 mb-1">Senha atual</label>
+                                <input
+                                  type="password"
+                                  value={senhaAtual}
+                                  onChange={(e) => setSenhaAtual(e.target.value)}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                  placeholder="Digite sua senha atual"
+                                  disabled={submittingSenha}
+                                />
+                              </div>
+
+                              <div>
+                                <label className="block text-sm font-medium text-gray-900 mb-1">Nova senha</label>
+                                <input
+                                  type="password"
+                                  value={novaSenha}
+                                  onChange={(e) => setNovaSenha(e.target.value)}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                  placeholder="Digite a nova senha"
+                                  disabled={submittingSenha}
+                                />
+                              </div>
+
+                              <div>
+                                <label className="block text-sm font-medium text-gray-900 mb-1">Confirmar Nova Senha</label>
+                                <input
+                                  type="password"
+                                  value={confirmarSenha}
+                                  onChange={(e) => setConfirmarSenha(e.target.value)}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                  placeholder="Confirme a nova senha"
+                                  disabled={submittingSenha}
+                                />
+                              </div>
+
+                              {errorSenha && (
+                                <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm">
+                                  {errorSenha}
+                                </div>
+                              )}
+
+                              <button
+                                onClick={handleAlterarSenha}
+                                disabled={submittingSenha}
+                                className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                {submittingSenha ? 'Alterando...' : 'Confirmar'}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -1204,7 +1498,7 @@ export default function DashboardPage() {
                                     >
                                       <div className="flex justify-between items-start mb-2">
                                         <p className="font-semibold text-gray-900">
-                                          {msg.usuario?.roleId === 1 ? 'Administrador' : msg.usuario?.name}
+                                          {msg.usuario?.name}
                                         </p>
                                         <span className="text-sm text-gray-600">
                                           {formatarDataBrasilia(msg.dataEnvio)}
@@ -1264,7 +1558,7 @@ export default function DashboardPage() {
                                   value={novaMensagem}
                                   onChange={(e) => setNovaMensagem(e.target.value)}
                                   rows={6}
-                                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y mb-4"
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y mb-4 disabled:bg-gray-100 disabled:cursor-not-allowed"
                                   placeholder="Digite sua resposta aqui..."
                                   disabled={submittingResposta}
                                 />
@@ -1384,7 +1678,10 @@ export default function DashboardPage() {
       {/* Rodapé fixo */}
       <div className="bg-gray-100 py-4 text-center">
         <button
-          onClick={logout}
+          onClick={() => {
+            logout();
+            router.push('/login');
+          }}
           className="text-red-600 hover:text-red-700 font-bold text-sm"
         >
           Sair | Deslogar

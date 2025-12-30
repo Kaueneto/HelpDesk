@@ -19,7 +19,7 @@ interface AuthContextData {
 /**
  * Contexto de autenticação
  */
-const AuthContext = createContext<AuthContextData>({} as AuthContextData);
+export const AuthContext = createContext<AuthContextData>({} as AuthContextData);
 
 /**
  * Provider do contexto de autenticação
