@@ -426,6 +426,7 @@ router.put("/chamados/:id/assumir", verifyToken, async (req: AuthenticatedReques
 
     const chamadoRepository = AppDataSource.getRepository(Chamados);
     const historicoRepository = AppDataSource.getRepository(ChamadoHistorico);
+    const userRepository = AppDataSource.getRepository(Users);
 
     const chamado = await chamadoRepository.findOne({
       where: { id: Number(id) },
@@ -456,15 +457,19 @@ router.put("/chamados/:id/assumir", verifyToken, async (req: AuthenticatedReques
 
     await chamadoRepository.save(chamado);
 
-    // registrar no historico
-    const acaoTexto = responsavelAnterior 
-      ? `Chamado assumido por outro responsável` 
-      : `Chamado assumido pelo responsável`;
+    // Buscar nome do usuário para o histórico
+    const usuario = await userRepository.findOne({
+      where: { id: usuarioId },
+      select: ["id", "name"]
+    });
 
+    const nomeUsuario = usuario?.name || "Usuário";
+
+    // registrar no historico
     await historicoRepository.save({
       chamado,
       usuario: { id: usuarioId },
-      acao: acaoTexto,
+      acao: `Este chamado foi assumido por ${nomeUsuario}`,
       statusAnterior: { id: statusAnteriorId },
       statusNovo: chamado.status,
       dataMov: new Date(),
@@ -492,6 +497,239 @@ router.put("/chamados/:id/assumir", verifyToken, async (req: AuthenticatedReques
     console.error("Erro ao assumir chamado:", error);
     return res.status(500).json({
       mensagem: "Erro ao assumir chamado",
+      error: error instanceof Error ? error.message : "Erro desconhecido",
+    });
+  }
+});
+
+// reabrir chamado encerrado (apenas admin)
+router.put("/chamados/:id/reabrir", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const usuarioId = req.userId; // usuário que está reabrindo
+
+    const chamadoRepository = AppDataSource.getRepository(Chamados);
+    const historicoRepository = AppDataSource.getRepository(ChamadoHistorico);
+    const userRepository = AppDataSource.getRepository(Users);
+
+    const chamado = await chamadoRepository.findOne({
+      where: { id: Number(id) },
+      relations: ["status"],
+    });
+
+    if (!chamado) {
+      return res.status(404).json({ mensagem: "Chamado não encontrado" });
+    }
+
+    // Verificar se está encerrado
+    if (chamado.status?.id !== 3) {
+      return res.status(400).json({ mensagem: "Apenas chamados encerrados podem ser reabertos" });
+    }
+
+    // Buscar nome do usuário
+    const usuario = await userRepository.findOne({
+      where: { id: usuarioId },
+      select: ["id", "name"]
+    });
+
+    const nomeUsuario = usuario?.name || "Usuário";
+
+    // Limpar dados de fechamento
+    chamado.dataFechamento = null;
+    chamado.userFechamento = null;
+
+    // Definir novo responsável (quem está reabrindo)
+    chamado.userResponsavel = { id: usuarioId } as Users;
+    chamado.dataAtribuicao = new Date();
+    
+    // Mudar status para EM ATENDIMENTO (2)
+    chamado.status = { id: 2 } as StatusChamado;
+
+    await chamadoRepository.save(chamado);
+
+    // Registrar no histórico
+    await historicoRepository.save({
+      chamado,
+      usuario: { id: usuarioId },
+      acao: `${nomeUsuario} reabriu este chamado`,
+      statusAnterior: { id: 3 }, // ENCERRADO
+      statusNovo: { id: 2 }, // EM ATENDIMENTO
+      dataMov: new Date(),
+    });
+
+    // Recarregar chamado com todas as relações
+    const chamadoAtualizado = await chamadoRepository.findOne({
+      where: { id: Number(id) },
+      relations: [
+        "usuario",
+        "userResponsavel",
+        "userFechamento",
+        "tipoPrioridade",
+        "departamento",
+        "topicoAjuda",
+        "status",
+      ],
+    });
+
+    return res.status(200).json({
+      mensagem: "Chamado reaberto com sucesso!",
+      chamado: chamadoAtualizado,
+    });
+  } catch (error) {
+    console.error("Erro ao reabrir chamado:", error);
+    return res.status(500).json({
+      mensagem: "Erro ao reabrir chamado",
+      error: error instanceof Error ? error.message : "Erro desconhecido",
+    });
+  }
+});
+
+// editar chamado (apenas usuário criador e apenas se status = ABERTO)
+router.put("/chamados/:id/editar", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const usuarioId = req.userId;
+    const {
+      resumoChamado,
+      descricaoChamado,
+      ramal,
+      departamentoId,
+      topicoAjudaId,
+      prioridadeId,
+    } = req.body;
+
+    const chamadoRepository = AppDataSource.getRepository(Chamados);
+    const historicoRepository = AppDataSource.getRepository(ChamadoHistorico);
+    const userRepository = AppDataSource.getRepository(Users);
+
+    const chamado = await chamadoRepository.findOne({
+      where: { id: Number(id) },
+      relations: ["status", "usuario"],
+    });
+
+    if (!chamado) {
+      return res.status(404).json({ mensagem: "Chamado não encontrado" });
+    }
+
+    // Verificar se é o criador do chamado
+    if (chamado.usuario.id !== usuarioId) {
+      return res.status(403).json({ mensagem: "Você não tem permissão para editar este chamado" });
+    }
+
+    // Verificar se está ABERTO (status 1)
+    if (chamado.status?.id !== 1) {
+      return res.status(400).json({ 
+        mensagem: "Você não pode editar este chamado agora pois um usuário já está te ajudando com a resolução" 
+      });
+    }
+
+    // Buscar nome do usuário
+    const usuario = await userRepository.findOne({
+      where: { id: usuarioId },
+      select: ["id", "name"]
+    });
+
+    const nomeUsuario = usuario?.name || "Usuário";
+
+    // Atualizar campos
+    chamado.resumoChamado = resumoChamado;
+    chamado.descricaoChamado = descricaoChamado;
+    chamado.ramal = ramal;
+    chamado.departamento = { id: departamentoId } as any;
+    chamado.topicoAjuda = { id: topicoAjudaId } as any;
+    chamado.tipoPrioridade = { id: prioridadeId } as any;
+
+    await chamadoRepository.save(chamado);
+
+    // Registrar no histórico
+    await historicoRepository.save({
+      chamado,
+      usuario: { id: usuarioId },
+      acao: `${nomeUsuario} editou este chamado`,
+      statusAnterior: chamado.status,
+      statusNovo: chamado.status,
+      dataMov: new Date(),
+    });
+
+    // Recarregar com relações
+    const chamadoAtualizado = await chamadoRepository.findOne({
+      where: { id: Number(id) },
+      relations: [
+        "usuario",
+        "userResponsavel",
+        "userFechamento",
+        "tipoPrioridade",
+        "departamento",
+        "topicoAjuda",
+        "status",
+      ],
+    });
+
+    return res.status(200).json({
+      mensagem: "Chamado editado com sucesso!",
+      chamado: chamadoAtualizado,
+    });
+  } catch (error) {
+    console.error("Erro ao editar chamado:", error);
+    return res.status(500).json({
+      mensagem: "Erro ao editar chamado",
+      error: error instanceof Error ? error.message : "Erro desconhecido",
+    });
+  }
+});
+
+// remover anexo de chamado (usuário criador ou admin)
+router.delete("/chamados/:id/anexo/:anexoId", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { id, anexoId } = req.params;
+    const usuarioId = req.userId;
+
+    const chamadoRepository = AppDataSource.getRepository(Chamados);
+    const anexoRepository = AppDataSource.getRepository(ChamadoAnexos);
+
+    const chamado = await chamadoRepository.findOne({
+      where: { id: Number(id) },
+      relations: ["usuario"],
+    });
+
+    if (!chamado) {
+      return res.status(404).json({ mensagem: "Chamado não encontrado" });
+    }
+
+    // Verificar permissão (criador ou admin)
+    if (chamado.usuario.id !== usuarioId && req.userRoleId !== 1) {
+      return res.status(403).json({ mensagem: "Você não tem permissão para remover este anexo" });
+    }
+
+    const anexo = await anexoRepository.findOne({
+      where: { id: Number(anexoId), chamado: { id: Number(id) } },
+    });
+
+    if (!anexo) {
+      return res.status(404).json({ mensagem: "Anexo não encontrado" });
+    }
+
+    // Remover arquivo do Supabase
+    try {
+      const { error } = await supabase.storage
+        .from(SUPABASE_BUCKET)
+        .remove([anexo.url]);
+
+      if (error) {
+        console.error("Erro ao remover arquivo do Supabase:", error);
+      }
+    } catch (storageError) {
+      console.error("Erro ao acessar Supabase Storage:", storageError);
+    }
+
+    // Remover do banco
+    await anexoRepository.remove(anexo);
+
+    return res.status(200).json({ mensagem: "Anexo removido com sucesso!" });
+  } catch (error) {
+    console.error("Erro ao remover anexo:", error);
+    return res.status(500).json({
+      mensagem: "Erro ao remover anexo",
       error: error instanceof Error ? error.message : "Erro desconhecido",
     });
   }
