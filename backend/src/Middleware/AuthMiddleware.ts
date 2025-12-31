@@ -30,7 +30,9 @@ export const verifyToken = (req: Request, res: Response, next: NextFunction) => 
       }
 
       // add userId ao request para uso nos controllers
-      (req as any).userId = decoded.userId;
+ 
+      (req as any).userId = Number(decoded.id);
+ 
       (req as any).userEmail = decoded.email;
       (req as any).userRoleId = decoded.roleId;
 

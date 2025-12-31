@@ -1,4 +1,5 @@
-'use client';
+
+"use client";
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -64,6 +65,8 @@ interface StatusChamado {
 }
 
 export default function GerenciarChamados() {
+    const [linhaAnimando, setLinhaAnimando] = useState<number | null>(null);
+    const [pageSliding, setPageSliding] = useState(false);
   const router = useRouter();
   
   // filtros
@@ -104,6 +107,30 @@ export default function GerenciarChamados() {
 
   useEffect(() => {
     carregarDadosIniciais();
+    // Recupera filtros/resultados do localStorage
+    const cache = localStorage.getItem('chamadosCache');
+    if (cache) {
+      try {
+        const { filtros, resultados } = JSON.parse(cache);
+        setDataAberturaInicio(filtros.dataAberturaInicio ? new Date(filtros.dataAberturaInicio) : null);
+        setDataAberturaFim(filtros.dataAberturaFim ? new Date(filtros.dataAberturaFim) : null);
+        setDataFechamentoInicio(filtros.dataFechamentoInicio ? new Date(filtros.dataFechamentoInicio) : null);
+        setDataFechamentoFim(filtros.dataFechamentoFim ? new Date(filtros.dataFechamentoFim) : null);
+        setDepartamentoId(filtros.departamentoId || '');
+        setTopicoAjudaId(filtros.topicoAjudaId || '');
+        setPrioridadeId(filtros.prioridadeId || '');
+        setStatusId(filtros.statusId || '');
+        setAssunto(filtros.assunto || '');
+        setNomeUsuario(filtros.nomeUsuario || '');
+        setChamados(resultados.chamados || []);
+        setTotalChamados(resultados.total || 0);
+        setTotalPaginas(resultados.totalPages || 0);
+        setPaginaAtual(resultados.currentPage || 1);
+        setPageSize(resultados.pageSize || 10);
+      } catch (e) {
+        localStorage.removeItem('chamadosCache');
+      }
+    }
   }, []);
 
   const carregarDadosIniciais = async () => {
@@ -136,7 +163,6 @@ export default function GerenciarChamados() {
         page,
         pageSize,
       };
-      
       if (dataAberturaInicio) params.dataAberturaInicio = dataAberturaInicio.toISOString().split('T')[0];
       if (dataAberturaFim) params.dataAberturaFim = dataAberturaFim.toISOString().split('T')[0];
       if (dataFechamentoInicio) params.dataFechamentoInicio = dataFechamentoInicio.toISOString().split('T')[0];
@@ -148,16 +174,35 @@ export default function GerenciarChamados() {
       if (assunto) params.assunto = assunto;
       if (nomeUsuario) params.nomeUsuario = nomeUsuario;
 
-      console.log('Parâmetros de pesquisa:', params);
-
       const response = await api.get('/chamados', { params });
-      console.log('Resposta do backend:', response.data);
       setChamados(response.data.chamados || response.data);
       setTotalChamados(response.data.total || response.data.length);
       setTotalPaginas(response.data.totalPages || Math.ceil((response.data.total || response.data.length) / pageSize));
       setPaginaAtual(page);
       setChamadosSelecionados([]);
       setTodosChecados(false);
+
+      // Salva filtros/resultados no localStorage
+      const filtros = {
+        dataAberturaInicio: dataAberturaInicio ? dataAberturaInicio.toISOString() : null,
+        dataAberturaFim: dataAberturaFim ? dataAberturaFim.toISOString() : null,
+        dataFechamentoInicio: dataFechamentoInicio ? dataFechamentoInicio.toISOString() : null,
+        dataFechamentoFim: dataFechamentoFim ? dataFechamentoFim.toISOString() : null,
+        departamentoId,
+        topicoAjudaId,
+        prioridadeId,
+        statusId,
+        assunto,
+        nomeUsuario,
+      };
+      const resultados = {
+        chamados: response.data.chamados || response.data,
+        total: response.data.total || response.data.length,
+        totalPages: response.data.totalPages || Math.ceil((response.data.total || response.data.length) / pageSize),
+        currentPage: page,
+        pageSize,
+      };
+      localStorage.setItem('chamadosCache', JSON.stringify({ filtros, resultados }));
     } catch (error) {
       console.error('Erro ao pesquisar chamados:', error);
       alert('Erro ao buscar chamados');
@@ -183,6 +228,7 @@ export default function GerenciarChamados() {
     setPaginaAtual(1);
     setTotalPaginas(0);
     setTotalChamados(0);
+    localStorage.removeItem('chamadosCache');
   };
 
   const handleCheckAll = () => {
@@ -290,7 +336,7 @@ export default function GerenciarChamados() {
   };
 
   return (
-    <>
+    <div className={pageSliding ? 'slideOutLeft' : ''}>
       <div className="bg-[#51A2FF] px-6 py-4">
         <h2 className="text-white text-2xl font-semibold">Chamados</h2>
       </div>
@@ -570,15 +616,26 @@ export default function GerenciarChamados() {
                     <tr
                       key={chamado.id}
                       onClick={(e) => {
-                        // Não navegar se clicou no checkbox
                         if ((e.target as HTMLElement).closest('input[type="checkbox"]')) {
                           return;
                         }
-                        router.push(`/chamado/${chamado.id}`);
+                        // grava posição do clique em porcentagem da viewport
+                        const xPct = (e.clientX / window.innerWidth) * 100;
+                        const yPct = (e.clientY / window.innerHeight) * 100;
+                        try {
+                          sessionStorage.setItem('detailOrigin', JSON.stringify({ x: `${xPct}%`, y: `${yPct}%` }));
+                        } catch (err) {
+                          // ignore
+                        }
+                        setLinhaAnimando(chamado.id);
+                        setPageSliding(true);
+                        setTimeout(() => {
+                          router.push(`/chamado/${chamado.id}`);
+                        }, 240); // aguarda animação slideOutLeft (220ms)
                       }}
                       className={`border-b border-gray-200 hover:bg-blue-50 transition-colors cursor-pointer ${
                         index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-                      }`}
+                      } ${linhaAnimando === chamado.id ? 'slideOutLeft' : ''}`}
                     >
                       <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                         <input
@@ -785,6 +842,6 @@ export default function GerenciarChamados() {
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }

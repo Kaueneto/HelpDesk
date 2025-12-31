@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -109,6 +110,12 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
   const [modalAssumirAberto, setModalAssumirAberto] = useState(false);
   // Estado do modal de marcar como resolvido
   const [modalResolvidoAberto, setModalResolvidoAberto] = useState(false);
+  // Estado para animação de saída
+  const [animandoSaida, setAnimandoSaida] = useState(false);
+  // Estado para animação de entrada (slide-in)
+  const [animandoEntrada, setAnimandoEntrada] = useState(true);
+  // origem do transform (ex: '30% 20%') para efeito de expandir a partir do clique
+  const [transformOrigin, setTransformOrigin] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     carregarDados();
@@ -177,6 +184,10 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
       alert('Não é possível enviar resposta: o chamado ainda não possui um responsável.');
       return;
     }
+    if (chamado.status.id === 3) {
+      const confirmar = confirm('Como esse chamado foi encerrado, se você responder agora ele será reaberto. Deseja continuar?');
+      if (!confirmar) return;
+    }
     if (!novaMensagem.trim()) {
       alert('Digite uma mensagem');
       return;
@@ -189,7 +200,12 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
         mensagem: novaMensagem,
       });
 
-      const mensagemId = responseMensagem.data.id;
+      // Atualiza o chamado com o objeto atualizado retornado pelo backend
+      if (responseMensagem.data.chamado) {
+        setChamado(responseMensagem.data.chamado);
+      }
+
+      const mensagemId = responseMensagem.data.mensagem?.id || responseMensagem.data.id;
 
       // Se houver anexos, fazer upload vinculado à mensagem
       if (anexosResposta.length > 0 && mensagemId) {
@@ -359,8 +375,30 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
   };
 
   const handleVoltar = () => {
-    router.back();
+    // usar slideOutRight visual
+    setAnimandoSaida(true);
+    setTimeout(() => {
+      router.back();
+    }, 260); // aguarda slideOutRight (220ms) + folga
   };
+
+  useEffect(() => {
+    // lê origem (se foi definida ao clicar na lista) e remove flag de entrada após animação
+    // lê origem (se foi definida ao clicar na lista)
+    try {
+      const raw = sessionStorage.getItem('detailOrigin');
+      if (raw) {
+        const obj = JSON.parse(raw);
+        if (obj && obj.x && obj.y) setTransformOrigin(`${obj.x} ${obj.y}`);
+        sessionStorage.removeItem('detailOrigin');
+      }
+    } catch (err) {
+      // ignore
+    }
+
+    const t = setTimeout(() => setAnimandoEntrada(false), 240);
+    return () => clearTimeout(t);
+  }, []);
 
   if (loading) {
     return (
@@ -378,8 +416,11 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
     );
   }
 
-  return (
-    <div className="bg-gray-100">
+    return (
+      <div
+        className={`bg-gray-100 ${animandoEntrada ? 'slideInRight' : ''} ${animandoSaida ? 'slideOutRight' : ''}`}
+        style={transformOrigin ? { transformOrigin } : undefined}
+      >
       <Toaster position="top-right" />
       {/* Header */}
       <div className="bg-[#51A2FF] px-6 py-4">
@@ -391,7 +432,7 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
             <img 
               src="/icons/arrowPointGerencial.svg" 
               alt="Voltar" 
-              className="w-5 h-5 transform rotate-180"
+              className="arrowIcon"
             />
           </button>
           <div>
@@ -522,7 +563,7 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
                     <label className="text-sm font-medium text-gray-600">Prioridade</label>
                     <div className="flex items-center gap-2 mt-1">
                       <div
-                        className="w-3 h-3 rounded-full"
+                        className="prioridadeDot"
                         style={{ backgroundColor: chamado.tipoPrioridade.cor }}
                       />
                       <span className="text-gray-900">{chamado.tipoPrioridade.nome}</span>

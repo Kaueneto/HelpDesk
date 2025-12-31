@@ -399,7 +399,7 @@ router.put("/chamados/:id/atribuir", verifyToken, async (req: AuthenticatedReque
     await historicoRepository.save({
       chamado,
       usuario: { id: usuarioId },
-      acao: `${nomeQuemAtribuiu} definiu este chamado para ${nomeResponsavel}`,
+      acao: `${nomeQuemAtribuiu} redirecionou este chamado para ${nomeResponsavel}`,
       statusAnterior: { id: statusAnteriorId },
       statusNovo: { id: 2 }, // EM ATENDIMENTO
       dataMov: new Date(),
@@ -836,69 +836,68 @@ router.post("/chamados/:id/mensagens", verifyToken, async (req: AuthenticatedReq
     const { id } = req.params;
     const { mensagem } = req.body;
     const usuarioId = req.userId;
-    const roleId = req.roleId; // Verificar se é admin (roleId = 1)
-
-    console.log("[DEBUG] ========== POST /chamados/:id/mensagens ==========");
-    console.log("[DEBUG] Usuario ID:", usuarioId);
-    console.log("[DEBUG] Role ID:", roleId);
-    console.log("[DEBUG] Chamado ID:", id);
 
     const mensagensRepository = AppDataSource.getRepository(ChamadoMensagens);
     const historicoRepository = AppDataSource.getRepository(ChamadoHistorico);
-    const chamadosRepository = AppDataSource.getRepository(Chamados);
+    const chamadoRepository = AppDataSource.getRepository(Chamados);
+    const statusRepository = AppDataSource.getRepository(StatusChamado);
 
-    // Buscar o chamado para verificar se tem um userResponsavel atribuído
-    const chamado = await chamadosRepository.findOne({
+    // buscar o chamado para pegar o status atual
+    const chamado = await chamadoRepository.findOne({
       where: { id: Number(id) },
       relations: ["status", "userResponsavel"],
     });
-
-    console.log("[DEBUG] Chamado encontrado:", {
-      id: chamado?.id,
-      userResponsavelId: chamado?.userResponsavel?.id,
-      userResponsavelName: chamado?.userResponsavel?.name,
-      usuarioRoleId: roleId,
-    });
-
     if (!chamado) {
-      return res.status(404).json({
-        mensagem: "Chamado não encontrado",
-      });
+      return res.status(404).json({ mensagem: "Chamado não encontrado" });
     }
 
-    // Validação APENAS para admins (roleId = 1)
-    // Se for admin e o chamado não tiver userResponsavel atribuído, bloqueia
-    console.log("[DEBUG] Verificando validação: roleId === 1?", roleId === 1, "| !userResponsavel?", !chamado.userResponsavel, "| !userResponsavel.id?", !chamado.userResponsavel?.id);
-    
-    if (roleId === 1 && (!chamado.userResponsavel || !chamado.userResponsavel.id)) {
-      console.log("[DEBUG] ❌ BLOQUEADO: Admin tentando responder sem assumir o chamado");
-      return res.status(400).json({
-        mensagem: "Assuma o chamado antes de responder.",
-      });
+    let statusAnterior = chamado.status;
+    let statusNovo = chamado.status;
+    let acao = "Mensagem enviada";
+
+    // Se o chamado estiver encerrado (status.id === 3), reabrir
+    if (chamado.status.id === 3) {
+      const statusAberto = await statusRepository.findOne({ where: { id: 1 } }); // 1 = ABERTO
+      if (statusAberto) {
+        chamado.status = statusAberto;
+        chamado.dataFechamento = null;
+        chamado.userFechamento = null;
+        await chamadoRepository.save(chamado);
+        statusNovo = statusAberto;
+        acao = `${chamado.userResponsavel?.name || 'Um administrador'} reabriu este chamado ao enviar uma mensagem`;
+      }
     }
 
-    console.log("[DEBUG] ✅ Validação passou - permitindo resposta");
-
+    // Salvar mensagem
     const novaMensagem = mensagensRepository.create({
       mensagem,
       usuario: { id: usuarioId },
       chamado: { id: Number(id) },
     });
-
     await mensagensRepository.save(novaMensagem);
 
+    // Salvar histórico
     await historicoRepository.save({
       chamado: { id: Number(id) },
       usuario: { id: usuarioId },
-      acao: "Mensagem enviada",
-      statusAnterior: chamado ? { id: chamado.status.id } : undefined,
-      statusNovo: chamado ? { id: chamado.status.id } : undefined, // Status não muda
+      acao,
+      statusAnterior,
+      statusNovo,
       dataMov: new Date(),
     });
 
-    return res.status(201).json(novaMensagem);
+    // Recarregar chamado com todas as relações
+      const chamadoCompleto = await chamadoRepository.findOne({
+      where: { id: chamado.id },
+      relations: ["usuario", "tipoPrioridade", "departamento", "topicoAjuda", "status", "userResponsavel", "userFechamento"],
+    });
+
+
+    return res.status(201).json({
+      mensagem: novaMensagem,
+      chamado: chamadoCompleto,
+    });
   } catch (error) {
-    console.error("[ERROR] Erro ao enviar mensagem:", error);
     return res.status(500).json({
       mensagem: "Erro ao enviar mensagem",
     });
