@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/services/api';
 import ModalRedirecionarChamado from './ModalRedirecionarChamado';
+import ModalAssumirChamado from './ModalAssumirChamado';
+import ModalMarcarResolvido from './ModalMarcarResolvido';
+import { Toaster, toast } from 'react-hot-toast';
 
 interface Anexo {
   id: number;
@@ -100,9 +103,12 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
   const [usuarioLogadoId, setUsuarioLogadoId] = useState<number | null>(null);
   const [anexosResposta, setAnexosResposta] = useState<File[]>([]);
   const [isDraggingResposta, setIsDraggingResposta] = useState(false);
-  
   // Estado do modal de redirecionamento
   const [modalRedirecionarAberto, setModalRedirecionarAberto] = useState(false);
+  // Estado do modal de assumir chamado
+  const [modalAssumirAberto, setModalAssumirAberto] = useState(false);
+  // Estado do modal de marcar como resolvido
+  const [modalResolvidoAberto, setModalResolvidoAberto] = useState(false);
 
   useEffect(() => {
     carregarDados();
@@ -212,29 +218,55 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
   };
 
   const marcarComoResolvido = async () => {
-    if (!confirm('Deseja marcar este chamado como resolvido?')) return;
-
     try {
       await api.put(`/chamados/${chamadoId}/encerrar`);
-      alert('Chamado marcado como resolvido!');
+      toast.success('Chamado marcado como resolvido!', {
+        style: {
+          background: '#fff',
+          color: '#16a34a',
+          fontWeight: 'bold',
+          fontSize: '1rem',
+          borderRadius: '0.75rem',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+        },
+        iconTheme: {
+          primary: '#16a34a',
+          secondary: '#fff',
+        },
+      });
       await carregarDados();
     } catch (error) {
       console.error('Erro ao resolver chamado:', error);
-      alert('Erro ao resolver chamado');
+      toast.error('Erro ao resolver chamado');
+    } finally {
+      setModalResolvidoAberto(false);
     }
   };
 
   const assumirChamado = async () => {
-    if (!confirm('Deseja assumir a responsabilidade por este chamado?')) return;
-
     try {
-      const response = await api.put(`/chamados/${chamadoId}/assumir`);
-      alert('Chamado assumido com sucesso!');
+      await api.put(`/chamados/${chamadoId}/assumir`);
+      toast.success('Chamado assumido com sucesso!', {
+        style: {
+          background: '#fff',
+          color: '#2563eb',
+          fontWeight: 'bold',
+          fontSize: '1rem',
+          borderRadius: '0.75rem',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+        },
+        iconTheme: {
+          primary: '#2563eb',
+          secondary: '#fff',
+        },
+      });
       await carregarDados();
     } catch (error: any) {
       console.error('Erro ao assumir chamado:', error);
       const mensagemErro = error.response?.data?.mensagem || 'Erro ao assumir chamado';
-      alert(mensagemErro);
+      toast.error(mensagemErro);
+    } finally {
+      setModalAssumirAberto(false);
     }
   };
 
@@ -348,6 +380,7 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
 
   return (
     <div className="bg-gray-100">
+      <Toaster position="top-right" />
       {/* Header */}
       <div className="bg-[#51A2FF] px-6 py-4">
         <div className="flex items-center gap-4">
@@ -374,7 +407,7 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
       <div className="bg-white border-b border-gray-300 px-6 py-3">
         <div className="flex gap-3">
           <button
-            onClick={marcarComoResolvido}
+            onClick={() => setModalResolvidoAberto(true)}
             disabled={chamado.status.id === 3}
             className="px-5 py-2 bg-transparent border border-green-600 text-green-600 rounded-lg hover:bg-green-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-gray-300 disabled:text-gray-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-2 focus:ring-green-500/50"
           >
@@ -398,7 +431,7 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
             Imprimir
           </button>
           <button
-            onClick={assumirChamado}
+            onClick={() => setModalAssumirAberto(true)}
             disabled={chamado.status.id === 3}
             className="px-5 py-2 bg-transparent border border-purple-600 text-purple-600 rounded-lg hover:bg-purple-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-gray-300 disabled:text-gray-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
           >
@@ -791,6 +824,18 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
         onClose={fecharModalRedirecionar}
         onConfirm={handleRedirecionarChamado}
         chamadoId={chamadoId}
+      />
+      {/* Modal de Assumir Chamado */}
+      <ModalAssumirChamado
+        isOpen={modalAssumirAberto}
+        onConfirm={assumirChamado}
+        onClose={() => setModalAssumirAberto(false)}
+      />
+      {/* Modal de Marcar como Resolvido */}
+      <ModalMarcarResolvido
+        isOpen={modalResolvidoAberto}
+        onConfirm={marcarComoResolvido}
+        onClose={() => setModalResolvidoAberto(false)}
       />
     </div>
   );
