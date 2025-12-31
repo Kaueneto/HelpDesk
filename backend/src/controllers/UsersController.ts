@@ -150,82 +150,6 @@ router.post("/users", async (req: Request, res: Response) => {
 
 
 
-// atualizar user 
-router.put("/users/:id",  verifyToken,  async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const { name, email, roleId, situationUserId } = req.body;
-
-    const schema = yup.object().shape({
-      name: yup
-        .string()
-        .required("O nome do usuário é obrigatório!")
-        .min(3, "O nome do usuário deve conter no mínimo 3 caracteres!"),
-      email: yup
-        .string()
-        .email("Formato de e-mail inválido")
-        .required("O e-mail do usuário é obrigatório!"),
-    });
-
-    await schema.validate(req.body, { abortEarly: false });
-
-    const userRepository = AppDataSource.getRepository(Users);
-
-    // verificar se o usuario existe
-    const user = await userRepository.findOneBy({ id: Number(id) });
-    if (!user) {
-      return res.status(404).json({
-        mensagem: "Usuário não encontrado",
-      });
-    }
-
-
-    const emailExistente = await userRepository.findOne({
-      where: {
-        email,
-        id: Not(Number(id)),
-      },
-    });
-
-    if (emailExistente) {
-      return res.status(400).json({
-        mensagem: "Já existe outro usuário com este e-mail.",
-      });
-    }
-
-    // preparar dados para atualização (update parcial)
-    const updateData: Partial<Users> = {
-      name,
-      email,
-      updatedAt: new Date(),
-    };
-
-    if (roleId !== undefined) updateData.roleId = roleId;
-    if (situationUserId !== undefined) updateData.situationUserId = situationUserId;
-
-    // atualizar dados
-    userRepository.merge(user, updateData);
-
-    const updatedUser = await userRepository.save(user);
-
-    return res.status(200).json({
-      mensagem: "Usuário atualizado com sucesso",
-      user: updatedUser,
-    });
-  } catch (error) {
-    if (error instanceof yup.ValidationError) {
-      return res.status(400).json({
-        mensagem: error.errors,
-      });
-    }
-
-    console.error("Erro ao atualizar usuário:", error);
-    return res.status(500).json({
-      mensagem: "Erro ao atualizar usuário",  
-    });
-  }
-});
-
 
 router.put("/users-password/:id", async (req: Request, res: Response) => {
   
@@ -363,6 +287,7 @@ interface AuthenticatedRequest extends Request {
 }
 
 router.put("/users/alterar-minha-senha", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
+    console.log("debug: ROTA ALTERAR SENHA EXECUTADA");
   try {
     const usuarioId = req.userId;
     const { senhaAtual, novaSenha } = req.body;
@@ -417,4 +342,80 @@ router.put("/users/alterar-minha-senha", verifyToken, async (req: AuthenticatedR
   }
 });
 
+
+// atualizar user 
+router.put("/users/:id",  verifyToken,  async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { name, email, roleId, situationUserId } = req.body;
+
+    const schema = yup.object().shape({
+      name: yup
+        .string()
+        .required("O nome do usuário é obrigatório!")
+        .min(3, "O nome do usuário deve conter no mínimo 3 caracteres!"),
+      email: yup
+        .string()
+        .email("Formato de e-mail inválido")
+        .required("O e-mail do usuário é obrigatório!"),
+    });
+
+    await schema.validate(req.body, { abortEarly: false });
+
+    const userRepository = AppDataSource.getRepository(Users);
+
+    // verificar se o usuario existe
+    const user = await userRepository.findOneBy({ id: Number(id) });
+    if (!user) {
+      return res.status(404).json({
+        mensagem: "Usuário não encontrado",
+      });
+    }
+
+
+    const emailExistente = await userRepository.findOne({
+      where: {
+        email,
+        id: Not(Number(id)),
+      },
+    });
+
+    if (emailExistente) {
+      return res.status(400).json({
+        mensagem: "Já existe outro usuário com este e-mail.",
+      });
+    }
+
+    // preparar dados para atualização (update parcial)
+    const updateData: Partial<Users> = {
+      name,
+      email,
+      updatedAt: new Date(),
+    };
+
+    if (roleId !== undefined) updateData.roleId = roleId;
+    if (situationUserId !== undefined) updateData.situationUserId = situationUserId;
+
+    // atualizar dados
+    userRepository.merge(user, updateData);
+
+    const updatedUser = await userRepository.save(user);
+
+    return res.status(200).json({
+      mensagem: "Usuário atualizado com sucesso",
+      user: updatedUser,
+    });
+  } catch (error) {
+    if (error instanceof yup.ValidationError) {
+      return res.status(400).json({
+        mensagem: error.errors,
+      });
+    }
+
+    console.error("Erro ao atualizar usuário:", error);
+    return res.status(500).json({
+      mensagem: "Erro ao atualizar usuário",  
+    });
+  }
+});
 export default router;
