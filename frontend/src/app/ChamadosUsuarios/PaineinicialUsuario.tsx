@@ -14,6 +14,7 @@ interface TopicosAjuda {
 interface Departamento {
   id: number;
   name: string;
+  ativo: boolean;
 }
 
 interface TipoPrioridade {
@@ -83,7 +84,7 @@ export default function DashboardPage() {
           api.get('/tipo_prioridade'),
         ]);
         setTopicos(topicosRes.data.filter((t: TopicosAjuda) => t.ativo));
-        setDepartamentos(departamentosRes.data);
+        setDepartamentos(departamentosRes.data.filter((d: Departamento) => d.ativo));
         setPrioridades(prioridadesRes.data);
         
         // Definir prioridade padrão (Média - geralmente ordem 3)

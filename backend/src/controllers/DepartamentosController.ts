@@ -12,6 +12,7 @@ router.get("/departamentos", async (req: Request, res: Response) => {
     const departamentosRepository = AppDataSource.getRepository(Departamentos);
     
     const departamentos = await departamentosRepository.find({
+      where: { ativo: true },
       order: { name: "ASC" },
     });
 
