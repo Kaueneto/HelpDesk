@@ -172,7 +172,20 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
       setHistorico(historicoRes.data);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
-      alert('Erro ao carregar chamado');
+      toast.error('Erro ao carregar chamado', {
+        style: {
+          background: '#fff',
+          color: '#dc2626',
+          fontWeight: 'bold',
+          fontSize: '1rem',
+          borderRadius: '0.75rem',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+        },
+        iconTheme: {
+          primary: '#dc2626',
+          secondary: '#fff',
+        },
+      });
     } finally {
       setLoading(false);
     }
@@ -181,15 +194,52 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
   const enviarMensagem = async () => {
 
     if (!chamado?.userResponsavel) {
-      alert('Não é possível enviar resposta: o chamado ainda não possui um responsável.');
+      toast.error('Não é possível enviar resposta: o chamado ainda não possui um responsável.', {
+        style: {
+          background: '#fff',
+          color: '#dc2626',
+          fontWeight: 'bold',
+          fontSize: '1rem',
+          borderRadius: '0.75rem',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+        },
+        iconTheme: {
+          primary: '#dc2626',
+          secondary: '#fff',
+        },
+      });
       return;
     }
     if (chamado.status.id === 3) {
-      const confirmar = confirm('Como esse chamado foi encerrado, se você responder agora ele será reaberto. Deseja continuar?');
-      if (!confirmar) return;
+      toast('Como esse chamado foi encerrado, se você responder agora ele será reaberto. Deseja continuar?', {
+        duration: 5000,
+        icon: '⚠️',
+        style: {
+          background: '#fff',
+          color: '#f59e0b',
+          fontWeight: 'bold',
+          fontSize: '1rem',
+          borderRadius: '0.75rem',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+        },
+      });
+      // Continua com o envio mesmo assim
     }
     if (!novaMensagem.trim()) {
-      alert('Digite uma mensagem');
+      toast.error('Digite uma mensagem', {
+        style: {
+          background: '#fff',
+          color: '#dc2626',
+          fontWeight: 'bold',
+          fontSize: '1rem',
+          borderRadius: '0.75rem',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+        },
+        iconTheme: {
+          primary: '#dc2626',
+          secondary: '#fff',
+        },
+      });
       return;
     }
 
@@ -227,7 +277,20 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
     } catch (error: any) {
       console.error('Erro ao enviar mensagem:', error);
       const mensagemErro = error.response?.data?.mensagem || 'Erro ao enviar mensagem';
-      alert(mensagemErro);
+      toast.error(mensagemErro, {
+        style: {
+          background: '#fff',
+          color: '#dc2626',
+          fontWeight: 'bold',
+          fontSize: '1rem',
+          borderRadius: '0.75rem',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+        },
+        iconTheme: {
+          primary: '#dc2626',
+          secondary: '#fff',
+        },
+      });
     } finally {
       setEnviandoMensagem(false);
     }
@@ -287,16 +350,43 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
   };
 
   const reabrirChamado = async () => {
-    if (!confirm('Deseja reabrir este chamado? Você se tornará o responsável por ele.')) return;
+    const confirmacao = window.confirm('Deseja reabrir este chamado? Você se tornará o responsável por ele.');
+    if (!confirmacao) return;
 
     try {
       await api.put(`/chamados/${chamadoId}/reabrir`);
-      alert('Chamado reaberto com sucesso!');
+      toast.success('Chamado reaberto com sucesso!', {
+        style: {
+          background: '#fff',
+          color: '#f97316',
+          fontWeight: 'bold',
+          fontSize: '1rem',
+          borderRadius: '0.75rem',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+        },
+        iconTheme: {
+          primary: '#f97316',
+          secondary: '#fff',
+        },
+      });
       await carregarDados();
     } catch (error: any) {
       console.error('Erro ao reabrir chamado:', error);
       const mensagemErro = error.response?.data?.mensagem || 'Erro ao reabrir chamado';
-      alert(mensagemErro);
+      toast.error(mensagemErro, {
+        style: {
+          background: '#fff',
+          color: '#dc2626',
+          fontWeight: 'bold',
+          fontSize: '1rem',
+          borderRadius: '0.75rem',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+        },
+        iconTheme: {
+          primary: '#dc2626',
+          secondary: '#fff',
+        },
+      });
     }
   };
 
@@ -314,12 +404,38 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
         userResponsavelId: usuarioSelecionado,
       });
       
-      alert('Chamado redirecionado com sucesso!');
+      toast.success('Chamado redirecionado com sucesso!', {
+        style: {
+          background: '#fff',
+          color: '#2563eb',
+          fontWeight: 'bold',
+          fontSize: '1rem',
+          borderRadius: '0.75rem',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+        },
+        iconTheme: {
+          primary: '#2563eb',
+          secondary: '#fff',
+        },
+      });
       await carregarDados();
     } catch (error: any) {
       console.error('Erro ao redirecionar chamado:', error);
       const mensagemErro = error.response?.data?.mensagem || 'Erro ao redirecionar chamado';
-      alert(mensagemErro);
+      toast.error(mensagemErro, {
+        style: {
+          background: '#fff',
+          color: '#dc2626',
+          fontWeight: 'bold',
+          fontSize: '1rem',
+          borderRadius: '0.75rem',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+        },
+        iconTheme: {
+          primary: '#dc2626',
+          secondary: '#fff',
+        },
+      });
       throw error;
     }
   };
@@ -341,7 +457,20 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
     if (e.dataTransfer.files) {
       const filesArray = Array.from(e.dataTransfer.files);
       if (filesArray.length > 5) {
-        alert('Máximo de 5 arquivos permitidos.');
+        toast.error('Máximo de 5 arquivos permitidos.', {
+          style: {
+            background: '#fff',
+            color: '#dc2626',
+            fontWeight: 'bold',
+            fontSize: '1rem',
+            borderRadius: '0.75rem',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+          },
+          iconTheme: {
+            primary: '#dc2626',
+            secondary: '#fff',
+          },
+        });
         return;
       }
       setAnexosResposta(filesArray);
@@ -352,7 +481,20 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
     if (e.target.files) {
       const filesArray = Array.from(e.target.files);
       if (filesArray.length > 5) {
-        alert('Máximo de 5 arquivos permitidos.');
+        toast.error('Máximo de 5 arquivos permitidos.', {
+          style: {
+            background: '#fff',
+            color: '#dc2626',
+            fontWeight: 'bold',
+            fontSize: '1rem',
+            borderRadius: '0.75rem',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+          },
+          iconTheme: {
+            primary: '#dc2626',
+            secondary: '#fff',
+          },
+        });
         return;
       }
       setAnexosResposta(filesArray);

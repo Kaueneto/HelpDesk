@@ -370,10 +370,21 @@ router.put("/chamados/:id/atribuir", verifyToken, async (req: AuthenticatedReque
 
     const chamado = await chamadoRepository.findOne({
       where: { id: Number(id) },
+      relations: ["userResponsavel"],
     });
 
     if (!chamado) {
       return res.status(404).json({ mensagem: "Chamado não encontrado" });
+    }
+
+    //verificar se o usuario nao esta tentando redirecionar pra si mesmo
+    if (userResponsavelId === usuarioId) {
+      return res.status(400).json({ mensagem: "Você não pode redirecionar o chamado para si mesmo" });
+    }
+
+    // verificar se usuario  ja nao é responsavel 
+    if (chamado.userResponsavel?.id === userResponsavelId) {
+      return res.status(400).json({ mensagem: "Você já é o responsável por este chamado" });
     }
 
     // Buscar nomes dos usuários para o histórico
