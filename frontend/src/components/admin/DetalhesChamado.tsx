@@ -4,9 +4,9 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/services/api';
-import ModalRedirecionarChamado from './ModalRedirecionarChamado';
-import ModalAssumirChamado from './ModalAssumirChamado';
-import ModalMarcarResolvido from './ModalMarcarResolvido';
+import ModalRedirecionarChamado from '@/app/admin/Modal/RedirecionarChamado';
+import ModalAssumirChamado from '@/app/admin/Modal/AssumirChamado';
+import ModalMarcarResolvido from '@/app/admin/Modal/MarcarResolvido';
 import { Toaster, toast } from 'react-hot-toast';
 
 interface Anexo {
