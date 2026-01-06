@@ -163,10 +163,35 @@ export default function GerenciarChamados() {
         page,
         pageSize,
       };
-      if (dataAberturaInicio) params.dataAberturaInicio = dataAberturaInicio.toISOString().split('T')[0];
-      if (dataAberturaFim) params.dataAberturaFim = dataAberturaFim.toISOString().split('T')[0];
-      if (dataFechamentoInicio) params.dataFechamentoInicio = dataFechamentoInicio.toISOString().split('T')[0];
-      if (dataFechamentoFim) params.dataFechamentoFim = dataFechamentoFim.toISOString().split('T')[0];
+      
+      // Função auxiliar para formatar data como YYYY-MM-DD sem conversão UTC
+      const formatarData = (data: Date): string => {
+        const ano = data.getFullYear();
+        const mes = String(data.getMonth() + 1).padStart(2, '0');
+        const dia = String(data.getDate()).padStart(2, '0');
+        return `${ano}-${mes}-${dia}`;
+      };
+      
+      // Data de início: início do dia (00:00:00)
+      if (dataAberturaInicio) {
+        params.dataAberturaInicio = formatarData(dataAberturaInicio);
+      }
+      
+      // Data de fim: enviar a mesma data (backend adiciona 23:59:59)
+      if (dataAberturaFim) {
+        params.dataAberturaFim = formatarData(dataAberturaFim);
+      }
+      
+      // Data de início fechamento: início do dia (00:00:00)
+      if (dataFechamentoInicio) {
+        params.dataFechamentoInicio = formatarData(dataFechamentoInicio);
+      }
+      
+      // Data de fim fechamento: enviar a mesma data (backend adiciona 23:59:59)
+      if (dataFechamentoFim) {
+        params.dataFechamentoFim = formatarData(dataFechamentoFim);
+      }
+      
       if (departamentoId) params.departamentoId = departamentoId;
       if (topicoAjudaId) params.topicoAjudaId = topicoAjudaId;
       if (prioridadeId) params.prioridadeId = prioridadeId;
