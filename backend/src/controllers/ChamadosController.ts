@@ -286,26 +286,35 @@ router.get("/chamados", verifyToken, async (req: AuthenticatedRequest, res: Resp
 
       // Filtro por data de abertura
       if (dataAberturaInicio && dataAberturaFim) {
+        // Adiciona o horário completo para incluir o dia todo
+        const inicio = `${dataAberturaInicio} 00:00:00`;
+        const fim = `${dataAberturaFim} 23:59:59`;
         queryBuilder.andWhere("chamado.data_abertura BETWEEN :dataAberturaInicio AND :dataAberturaFim", {
-          dataAberturaInicio,
-          dataAberturaFim,
+          dataAberturaInicio: inicio,
+          dataAberturaFim: fim,
         });
       } else if (dataAberturaInicio) {
-        queryBuilder.andWhere("chamado.data_abertura >= :dataAberturaInicio", { dataAberturaInicio });
+        const inicio = `${dataAberturaInicio} 00:00:00`;
+        queryBuilder.andWhere("chamado.data_abertura >= :dataAberturaInicio", { dataAberturaInicio: inicio });
       } else if (dataAberturaFim) {
-        queryBuilder.andWhere("chamado.data_abertura <= :dataAberturaFim", { dataAberturaFim });
+        const fim = `${dataAberturaFim} 23:59:59`;
+        queryBuilder.andWhere("chamado.data_abertura <= :dataAberturaFim", { dataAberturaFim: fim });
       }
 
       // Filtro por data de fechamento
       if (dataFechamentoInicio && dataFechamentoFim) {
+        const inicio = `${dataFechamentoInicio} 00:00:00`;
+        const fim = `${dataFechamentoFim} 23:59:59`;
         queryBuilder.andWhere("chamado.data_fechamento BETWEEN :dataFechamentoInicio AND :dataFechamentoFim", {
-          dataFechamentoInicio,
-          dataFechamentoFim,
+          dataFechamentoInicio: inicio,
+          dataFechamentoFim: fim,
         });
       } else if (dataFechamentoInicio) {
-        queryBuilder.andWhere("chamado.data_fechamento >= :dataFechamentoInicio", { dataFechamentoInicio });
+        const inicio = `${dataFechamentoInicio} 00:00:00`;
+        queryBuilder.andWhere("chamado.data_fechamento >= :dataFechamentoInicio", { dataFechamentoInicio: inicio });
       } else if (dataFechamentoFim) {
-        queryBuilder.andWhere("chamado.data_fechamento <= :dataFechamentoFim", { dataFechamentoFim });
+        const fim = `${dataFechamentoFim} 23:59:59`;
+        queryBuilder.andWhere("chamado.data_fechamento <= :dataFechamentoFim", { dataFechamentoFim: fim });
       }
     }
 
