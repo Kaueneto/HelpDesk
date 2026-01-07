@@ -6,9 +6,10 @@ import { useAuth } from '@/contexts/AuthContext';
 
 interface LoginProps {
   onCadastrarClick: () => void;
+  onEsqueceuSenhaClick: () => void;
 }
 
-export default function Login({ onCadastrarClick }: LoginProps) {
+export default function Login({ onCadastrarClick, onEsqueceuSenhaClick }: LoginProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -84,6 +85,7 @@ export default function Login({ onCadastrarClick }: LoginProps) {
           <div className="text-center">
             <button
               type="button"
+              onClick={onEsqueceuSenhaClick}
               className="text-sm text-blue-600 hover:text-blue-700 hover:underline"
             >
               Esqueci minha senha

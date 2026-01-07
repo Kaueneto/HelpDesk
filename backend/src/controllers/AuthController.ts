@@ -219,23 +219,33 @@ router.put("/update-password", async (req: Request, res: Response) => {
       recoverPassword: data.recoverPassword,
     });
 
+    console.log('Usuário encontrado:', user ? 'SIM' : 'NÃO');
+
     if (!user) {
+      console.log('ERRO: Token não corresponde ao usuário');
       return res.status(404).json({ mensagem: "A chave de recuperação é inválida" });
     }
 
+    console.log('Senha antiga (hash):', user.password);
+
     // criptografar nova senha
     const hashedPassword = await bcrypt.hash(data.password, 10);
+    
+    console.log('Nova senha (hash):', hashedPassword);
 
     // atualizar senha e limpar token de recuperação
     user.password = hashedPassword;
     user.recoverPassword = null;
 
     await userRepository.save(user);
+    
+    console.log('Senha atualizada com sucesso no banco!');
 
     return res.status(200).json({
       mensagem: "Senha atualizada com sucesso!",
     });
   } catch (error) {
+    console.error('ERRO no update-password:', error);
     if (error instanceof yup.ValidationError) {
       return res.status(400).json({ mensagem: error.errors });
     }
