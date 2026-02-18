@@ -46,11 +46,8 @@ const upload = multer({
   },
 });
 
-// Upload de anexos INICIAIS (na abertura do chamado) - SEM mensagem
-router.post(
-  "/chamado/:id/anexo",
-  verifyToken,
-  upload.array("arquivos", 5),
+//upload de anexos iniciais na abertura do chamado
+router.post("/chamado/:id/anexo", verifyToken, upload.array("arquivos", 5),
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const chamadoId = Number(req.params.id);
@@ -62,7 +59,7 @@ router.post(
         return res.status(400).json({ mensagem: "Nenhum arquivo enviado" });
       }
 
-      // Verificar se o chamado existe
+      // verificar se o chamado existe
       const chamadoRepository = AppDataSource.getRepository(Chamados);
       const chamado = await chamadoRepository.findOne({
         where: { id: chamadoId },
@@ -72,7 +69,7 @@ router.post(
         return res.status(404).json({ mensagem: "Chamado não encontrado" });
       }
 
-      // Fazer upload no Supabase Storage e salvar no banco
+      // fazer upload no Supabase Storage e salvar no banco
       const anexoRepository = AppDataSource.getRepository(ChamadoAnexos);
       const anexosSalvos = [];
 

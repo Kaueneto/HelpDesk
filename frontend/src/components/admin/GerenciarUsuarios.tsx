@@ -230,16 +230,23 @@ export default function GerenciarUsuarios() {
     }
 
     try {
-      console.log('Excluindo usuários com IDs:', usuariosSelecionados);
-      await api.post('/users/excluir-multiplos', {
-        usuariosIds: usuariosSelecionados,
-      });
 
+      const payload = {
+        usuariosIds: usuariosSelecionados,
+      };
+      
+      const response = await api.delete('/users/excluir-multiplos', {
+        data: payload
+      });
+      
       alert('Usuários excluídos com sucesso!');
       await carregarUsuarios(1);
-    } catch (error) {
-      console.error('Erro ao excluir usuários:', error);
-      alert('Erro ao excluir usuários');
+    } catch (error: any) {
+
+      
+      const mensagemErro = error.response?.data?.mensagem || 'Erro ao excluir usuários';
+      const detalhesErro = error.response?.data?.erro ? `\n\nDetalhes: ${error.response.data.erro}` : '';
+      alert(mensagemErro + detalhesErro);
     }
   };
 
