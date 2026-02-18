@@ -47,19 +47,19 @@ export default function AcompanharChamado({ onChamadoClick }: AcompanharChamadoP
     try {
       const params: any = {
         page: pagina,
-        limit: 10,
+        pageSize: 10,
       };
       
-      if (filtroAssunto) params.palavraChave = filtroAssunto;
+      if (filtroAssunto) params.assunto = filtroAssunto;
       if (filtroTopicoId > 0) params.topicoAjudaId = filtroTopicoId;
-      if (filtroStatusId > 0) params.status = filtroStatusId;
+      if (filtroStatusId > 0) params.statusId = filtroStatusId;
 
       const response = await api.get('/chamados', { params });
       
       if (response.data.chamados) {
         setChamados(response.data.chamados);
         setTotalPaginas(response.data.totalPages || 1);
-        setPaginaAtual(pagina);
+        setPaginaAtual(response.data.currentPage || pagina);
       } else {
         setChamados(response.data);
         const total = Math.ceil(response.data.length / 10);
@@ -97,7 +97,7 @@ export default function AcompanharChamado({ onChamadoClick }: AcompanharChamadoP
   return (
     <>
       {/* Filtros */}
-      <div className="bg-gray-200 p-6 rounded-lg mb-6">
+      <div className=" border border-gray-200 p-6 rounded-lg mb-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
           <div>
             <label className="block text-sm font-medium text-gray-900 mb-2">
@@ -107,7 +107,7 @@ export default function AcompanharChamado({ onChamadoClick }: AcompanharChamadoP
               type="text"
               value={filtroAssunto}
               onChange={(e) => setFiltroAssunto(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-1 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
               placeholder="Buscar por assunto..."
             />
           </div>
@@ -119,7 +119,7 @@ export default function AcompanharChamado({ onChamadoClick }: AcompanharChamadoP
             <select
               value={filtroTopicoId}
               onChange={(e) => setFiltroTopicoId(Number(e.target.value))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
             >
               <option value={0}>Todos</option>
               {topicos.map((topico) => (
@@ -137,7 +137,7 @@ export default function AcompanharChamado({ onChamadoClick }: AcompanharChamadoP
             <select
               value={filtroStatusId}
               onChange={(e) => setFiltroStatusId(Number(e.target.value))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
             >
               <option value={0}>Todos</option>
               {statusList.map((status) => (
@@ -147,7 +147,6 @@ export default function AcompanharChamado({ onChamadoClick }: AcompanharChamadoP
               ))}
             </select>
           </div>
-
           <button
             onClick={handlePesquisar}
             className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition"
@@ -195,7 +194,7 @@ export default function AcompanharChamado({ onChamadoClick }: AcompanharChamadoP
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {chamados.slice((paginaAtual - 1) * 10, paginaAtual * 10).map((chamado) => (
+                {chamados.map((chamado) => (
                   <tr 
                     key={chamado.id} 
                     className="hover:bg-gray-50 cursor-pointer"
@@ -223,8 +222,18 @@ export default function AcompanharChamado({ onChamadoClick }: AcompanharChamadoP
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
                       {chamado.departamento?.name}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
-                      {chamado.status?.descricaoStatus}
+                  <td className="px-4 py-3 whitespace-nowrap">
+                      <span
+                        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border uppercase tracking-wider ${
+                          chamado.status?.id === 1
+                            ? 'bg-yellow-100 text-yellow-700 border-yellow-500' 
+                            : chamado.status?.id === 2
+                            ? 'bg-blue-100 text-blue-700 border-blue-500'     
+                            : 'bg-green-100 text-green-700 border-green-500' 
+                        }`}
+                      >
+                        {chamado.status?.nome || 'Desconhecido'}
+                      </span>
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-700 max-w-xs truncate" title={chamado.resumoChamado}>
                       {chamado.resumoChamado}

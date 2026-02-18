@@ -56,7 +56,7 @@ export default function Cadastrarse({ onLoginClick, onSuccess }: CadastrarseProp
   };
 
   return (
-    <div className="p-6 pt-6 space-y-4">
+    <div className="p-6 pt-6 space-y-4 mb-20">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-1">
           <label

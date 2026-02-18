@@ -592,38 +592,38 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
           <button
             onClick={() => setModalResolvidoAberto(true)}
             disabled={chamado.status.id === 3}
-            className="px-5 py-2 bg-transparent border border-green-600 text-green-600 rounded-lg hover:bg-green-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-gray-300 disabled:text-gray-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-2 focus:ring-green-500/50"
+            className="px-5 py-2 bg-transparent border border-green-600 text-green-600 rounded-lg hover:bg-green-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-gray-300 disabled:text-gray-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-1 focus:ring-green-500/50"
           >
             Marcar como Resolvido
           </button>
           <button
             onClick={abrirModalRedirecionar}
             disabled={chamado.status.id === 3}
-            className="px-5 py-2 bg-transparent border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-gray-300 disabled:text-gray-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+            className="px-5 py-2 bg-transparent border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-gray-300 disabled:text-gray-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-1 focus:ring-blue-500/50"
           >
             Redirecionar
           </button>
           <button
-            className="px-5 py-2 bg-transparent border border-gray-600 text-gray-600 rounded-lg hover:bg-gray-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm active:scale-95 focus:outline-none focus:ring-2 focus:ring-gray-500/50"
+            className="px-5 py-2 bg-transparent border border-gray-600 text-gray-600 rounded-lg hover:bg-gray-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm active:scale-95 focus:outline-none focus:ring-1 focus:ring-gray-500/50"
           >
             Editar
           </button>
           <button
-            className="px-5 py-2 bg-transparent border border-gray-600 text-gray-600 rounded-lg hover:bg-gray-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm active:scale-95 focus:outline-none focus:ring-2 focus:ring-gray-500/50"
+            className="px-5 py-2 bg-transparent border border-gray-600 text-gray-600 rounded-lg hover:bg-gray-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm active:scale-95 focus:outline-none focus:ring-1 focus:ring-gray-500/50"
           >
             Imprimir
           </button>
           <button
             onClick={() => setModalAssumirAberto(true)}
             disabled={chamado.status.id === 3}
-            className="px-5 py-2 bg-transparent border border-purple-600 text-purple-600 rounded-lg hover:bg-purple-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-gray-300 disabled:text-gray-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+            className="px-5 py-2 bg-transparent border border-purple-600 text-purple-600 rounded-lg hover:bg-purple-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-gray-300 disabled:text-gray-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-1 focus:ring-purple-500/50"
           >
             Assumir Chamado
           </button>
           <button
             onClick={reabrirChamado}
             disabled={chamado.status.id !== 3}
-            className="px-5 py-2 bg-transparent border border-orange-600 text-orange-600 rounded-lg hover:bg-orange-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-gray-300 disabled:text-gray-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-2 focus:ring-orange-500/50"
+            className="px-5 py-2 bg-transparent border border-orange-600 text-orange-600 rounded-lg hover:bg-orange-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-gray-300 disabled:text-gray-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-1 focus:ring-orange-500/50"
           >
             Reabrir Chamado
           </button>
@@ -664,7 +664,7 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
             <div className="col-span-4 space-y-6">
               {/* Dados do Chamado */}
               <div className="bg-white rounded-lg border border-gray-300 p-5">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-3 border-b">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 pb-3 border-b border-gray-400">
                   Dados do chamado
                 </h3>
                 <div className="space-y-3">
@@ -672,12 +672,12 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
                     <label className="text-sm font-medium text-gray-600">Status</label>
                     <div className="mt-1">
                       <span
-                        className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+                        className={`inline-block px-3 py-1 rounded-full border text-sm font-medium ${
                           chamado.status.id === 1
-                            ? 'bg-yellow-100 text-yellow-800'
+                            ? 'bg-yellow-100 text-yellow-800 border-yellow-300'
                             : chamado.status.id === 2
-                            ? 'bg-blue-100 text-blue-800'
-                            : 'bg-green-100 text-green-800'
+                            ? 'bg-blue-50 text-blue-500 border-blue-500'
+                            : 'bg-green-100 text-green-800 border-green-300'
                         }`}
                       >
                         {chamado.status.nome}
@@ -693,24 +693,39 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
                       )}
                     </p>
                   </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-600">Departamento</label>
-                    <p className="text-gray-900 mt-1">{chamado.departamento.name}</p>
+                <div>
+                <label className="text-sm font-medium text-gray-600">Departamento</label>
+                  <div className="mt-2 flex"> 
+                    <span className="px-4 py-1.5 bg-blue-50 text-blue-600 text-sm tracking-wider border border-blue-500 rounded-full">
+                      {chamado.departamento.name}
+                    </span>
                   </div>
+                </div>
                   <div>
                     <label className="text-sm font-medium text-gray-600">Criado em</label>
                     <p className="text-gray-900 mt-1">{formatarData(chamado.dataAbertura)}</p>
                   </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-600">Prioridade</label>
-                    <div className="flex items-center gap-2 mt-1">
+                 <div>
+                  <label className="text-sm font-medium text-gray-600">Prioridade</label>
+                  <div className="mt-2 flex">
+                    <span 
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold border"
+                      style={{ 
+                        backgroundColor: `${chamado.tipoPrioridade.cor}15`, 
+                        color: chamado.tipoPrioridade.cor,
+                        borderColor: `${chamado.tipoPrioridade.cor}30` 
+                      }}
+                    >
                       <div
-                        className="prioridadeDot"
+                        className="w-2 h-2 rounded-full"
                         style={{ backgroundColor: chamado.tipoPrioridade.cor }}
                       />
-                      <span className="text-gray-900">{chamado.tipoPrioridade.nome}</span>
-                    </div>
+                      <span className="uppercase tracking-wider">
+                        {chamado.tipoPrioridade.nome}
+                      </span>
+                    </span>
                   </div>
+                </div>
                   <div>
                     <label className="text-sm font-medium text-gray-600">Tópico de ajuda</label>
                     <p className="text-gray-900 mt-1">{chamado.topicoAjuda.nome}</p>
@@ -720,7 +735,7 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
 
               {/* Dados do Usuario */}
               <div className="bg-white rounded-lg border border-gray-300 p-5">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-3 border-b">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 pb-3 border-b border-gray-400">
                   Dados do usuário
                 </h3>
                 <div className="space-y-3">
@@ -741,7 +756,7 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
 
               {/* Outros Dados */}
               <div className="bg-white rounded-lg border border-gray-300 p-5">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-3 border-b">
+                <h3 className="text-lg font-semibold text-gray-700 mb-4 pb-3 border-b border-gray-400">
                   Outros Dados
                 </h3>
                 <div className="space-y-3">
@@ -904,7 +919,7 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
                     onChange={(e) => setNovaMensagem(e.target.value)}
                     placeholder="Digite sua mensagem..."
                     rows={4}
-                    className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 resize-none"
+                    className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 resize-none"
                   />
                   
                   {/* Área de Upload de Arquivos */}
