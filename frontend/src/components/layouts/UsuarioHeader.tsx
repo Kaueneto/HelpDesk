@@ -60,7 +60,7 @@ export default function UsuarioHeader({ onToggleSidebar }: UsuarioHeaderProps) {
                 onClick={() => {
                   setUserMenuOpen(false);
                   logout();
-                  router.push('/auth/login');
+
                 }}
                 className="w-full px-4 py-2 text-left flex items-center gap-3 text-red-600 hover:bg-red-50 transition"
               >

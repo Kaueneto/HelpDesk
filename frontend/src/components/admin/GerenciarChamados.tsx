@@ -667,12 +667,12 @@ export default function GerenciarChamados() {
                       </td>
                       <td className="px-4 py-3">
                         <span
-                          className={`px-3 py-1 rounded-full text-xs font-medium ${
+                          className={`px-3 py-1 rounded-full text-sm  ${
                             chamado.status?.id === 1
-                              ? 'bg-yellow-100 text-yellow-800'
+                              ? 'bg-yellow-100 text-yellow-800 border border-yellow-600'
                               : chamado.status?.id === 2
-                              ? 'bg-blue-100 text-blue-800'
-                              : 'bg-green-100 text-green-800'
+                              ? 'bg-blue-100 text-blue-800 border border-blue-600'
+                              : 'bg-green-100 text-green-800 border border-green-600'
                           }`}
                         >
                           {chamado.status?.nome || 'Desconhecido'}
@@ -769,7 +769,7 @@ export default function GerenciarChamados() {
       {/* Modal de Edição Múltipla */}
       {modalEdicaoAberto && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 animate-ease-in-out">
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-xl font-semibold text-gray-800">

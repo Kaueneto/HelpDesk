@@ -480,7 +480,7 @@ router.put("/chamados/:id/assumir", verifyToken, async (req: AuthenticatedReques
     await historicoRepository.save({
       chamado,
       usuario: { id: usuarioId },
-      acao: `Este chamado foi assumido por ${nomeUsuario}`,
+      acao: `Este chamado foi atribuído por ${nomeUsuario}`,
       statusAnterior: { id: statusAnteriorId },
       statusNovo: chamado.status,
       dataMov: new Date(),
@@ -501,13 +501,13 @@ router.put("/chamados/:id/assumir", verifyToken, async (req: AuthenticatedReques
     });
 
     return res.status(200).json({
-      mensagem: "Chamado assumido com sucesso!",
+      mensagem: "Chamado atribuido com sucesso!",
       chamado: chamadoAtualizado,
     });
   } catch (error) {
-    console.error("Erro ao assumir chamado:", error);
+    console.error("Erro ao atribuir chamado:", error);
     return res.status(500).json({
-      mensagem: "Erro ao assumir chamado",
+      mensagem: "Erro ao atribuir chamado",
       error: error instanceof Error ? error.message : "Erro desconhecido",
     });
   }
