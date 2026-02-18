@@ -11,7 +11,6 @@ interface AuthenticatedRequest extends Request {
   user?: Users;
 }
 
-console.log("🔥🔥🔥 CARREGANDO CHAMADO MENSAGENS CONTROLLER - VERSÃO NOVA 2025-12-29 🔥🔥🔥");
 
 const router = Router();
 
@@ -23,11 +22,6 @@ router.post("/chamados/:id/mensagens", async (req: AuthenticatedRequest, res: Re
     const usuarioId = req.user?.id;
     const roleId = req.user?.roleId; // Verificar se é admin (roleId = 1)
 
-    console.log("[DEBUG] ========== POST /chamados/:id/mensagens ==========");
-    console.log("[DEBUG] Usuario ID:", usuarioId);
-    console.log("[DEBUG] Role ID:", roleId);
-    console.log("[DEBUG] Tipo de roleId:", typeof roleId);
-    console.log("[DEBUG] req.user:", req.user);
 
     const mensagensRepository = AppDataSource.getRepository(ChamadoMensagens);
     const historicoRepository = AppDataSource.getRepository(ChamadoHistorico);
@@ -57,13 +51,11 @@ router.post("/chamados/:id/mensagens", async (req: AuthenticatedRequest, res: Re
     console.log("[DEBUG] Verificando validação: roleId === 1?", roleId === 1, "| !userResponsavel?", !chamado.userResponsavel, "| !userResponsavel.id?", !chamado.userResponsavel?.id);
     
     if (roleId === 1 && (!chamado.userResponsavel || !chamado.userResponsavel.id)) {
-      console.log("[DEBUG] ❌ BLOQUEADO: Admin tentando responder sem assumir o chamado");
       return res.status(400).json({
         mensagem: "Assuma o chamado antes de responder.",
       });
     }
 
-    console.log("[DEBUG] ✅ Validação passou - permitindo resposta");
 
     const novaMensagem = mensagensRepository.create({
       mensagem,
