@@ -120,7 +120,7 @@ export default function PainelUsuario() {
 
           {/* Tabs de Navegação */}
           <div className="px-8 py-4">
-            <div className="h-10 items-center justify-center rounded-md bg-gray-200/70 p-1 text-gray-500 grid w-full grid-cols-3" role="tablist">
+            <div className="items-center justify-center rounded-md bg-gray-200/70 p-1 text-gray-500 grid w-full grid-cols-3" role="tablist">
               <button
                 type="button"
                 role="tab"

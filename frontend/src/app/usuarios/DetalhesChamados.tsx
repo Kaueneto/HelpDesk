@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import api from '@/services/api';
+import ModalEditarChamadoUsuario from './ModalEditarChamadoUsuario';
 
 interface DetalhesChamadosProps {
   chamado: any;
@@ -17,9 +18,12 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
   const [isDraggingResposta, setIsDraggingResposta] = useState(false);
   const [submittingResposta, setSubmittingResposta] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [modalEditarAberto, setModalEditarAberto] = useState(false);
+  const [chamadoAtualizado, setChamadoAtualizado] = useState(chamado);
 
   useEffect(() => {
     buscarMensagens(chamado.id);
+    setChamadoAtualizado(chamado);
   }, [chamado.id]);
 
   const buscarMensagens = async (chamadoId: number) => {
@@ -113,19 +117,19 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
   };
 
   const formatarDataBrasilia = (data: string) => {
-    const date = new Date(data);
-    
-    if (data.includes('Z')) {
-      date.setHours(date.getHours() + 3);
-    }
-    
-    const dia = String(date.getDate()).padStart(2, '0');
-    const mes = String(date.getMonth() + 1).padStart(2, '0');
-    const ano = date.getFullYear();
-    const hora = String(date.getHours()).padStart(2, '0');
-    const minuto = String(date.getMinutes()).padStart(2, '0');
-    
-    return `${dia}/${mes}/${ano} ${hora}:${minuto}`;
+  return new Date(data).toLocaleString("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+  const handleSucessoEdicao = () => {
+    // Recarregar informações do chamado
+    window.location.reload();
   };
 
   return (
@@ -137,40 +141,49 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
             <h2 className="text-2xl font-bold text-blue-600 mb-2">
               {chamado.resumoChamado} <span className="text-gray-500 text-lg">#{chamado.numeroChamado || chamado.id}</span>
             </h2>
-            <p className="text-sm text-gray-600 mb-4">Informações sobre o ticket</p>
+            <p className="text-base text-gray-600 mb-4">Informações sobre o chamado</p>
             
             <div className="grid grid-cols-5 gap-6">
               <div>
-                <p className="text-sm font-semibold text-gray-700 mb-1">Status</p>
-                <p className="text-sm font-bold" style={{ color: chamado.status?.id === 1 ? '#2563eb' : '#059669' }}>
-                  {chamado.status?.descricaoStatus || chamado.status?.nome}
+                <p className="text-base font-semibold text-gray-700 mb-1">Status</p>
+                <p className="text-base font-bold" style={{ color: chamado.status?.id === 1 ? '#2563eb' : '#059669' }}>
+                  {chamado.status?.nome}
                 </p>
               </div>
               
               <div>
-                <p className="text-sm font-semibold text-gray-700 mb-1">Departamento</p>
-                <p className="text-sm font-bold text-blue-600">
+                <p className="text-base font-semibold text-gray-700 mb-1">Departamento</p>
+                <p className="text-base font-bold text-blue-600">
                   {chamado.departamento?.name}
                 </p>
               </div>
               
               <div>
-                <p className="text-sm font-semibold text-gray-700 mb-1">Criado em</p>
-                <p className="text-sm font-bold text-blue-600">
+                <p className="text-base font-semibold text-gray-700 mb-1">Criado em</p>
+                <p className="text-base font-bold text-blue-600">
                   {formatarDataBrasilia(chamado.dataAbertura)}
                 </p>
               </div>
-              
-              <div>
-                <p className="text-sm font-semibold text-gray-700 mb-1">Prioridade</p>
-                <p className="text-sm font-bold" style={{ color: chamado.tipoPrioridade?.cor }}>
+                          
+               <div>
+                <p className="text-base font-semibold text-gray-700 mb-1">Prioridade</p>
+
+                <span
+                  className="inline-block px-3 py-1 text-sm font-semibold rounded-full border"
+                  style={{
+                    backgroundColor: `${chamado.tipoPrioridade?.cor}20`, 
+                    color: chamado.tipoPrioridade?.cor,
+                    borderColor: chamado.tipoPrioridade?.cor,
+                  }}
+                >
                   {chamado.tipoPrioridade?.nome}
-                </p>
+                </span>
               </div>
+
               
               <div>
-                <p className="text-sm font-semibold text-gray-700 mb-1">Tópico de ajuda</p>
-                <p className="text-sm text-gray-900">
+                <p className="text-base font-semibold text-gray-700 mb-1">Tópico de ajuda</p>
+                <p className="text-base text-gray-900">
                   {chamado.topicoAjuda?.nome}
                 </p>
               </div>
@@ -180,14 +193,17 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
           <div className="flex gap-2">
             <button
               onClick={onVoltar}
-              className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+              className="px-4 py-2 border border-gray-300 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50"
             >
               Voltar
             </button>
-            <button className="px-4 py-2 bg-gray-200 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-300">
+            <button 
+              onClick={() => setModalEditarAberto(true)}
+              className="px-4 py-2 bg-gray-200 rounded-md text-base font-medium text-gray-700 hover:bg-gray-300"
+            >
               Editar
             </button>
-            <button className="px-4 py-2 bg-gray-200 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-300">
+            <button className="px-4 py-2 bg-gray-200 rounded-md text-base font-medium text-gray-700 hover:bg-gray-300">
               imprimir
             </button>
           </div>
@@ -225,7 +241,7 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
           style={{ transform: detalheTab === 'detalhes' ? 'translateX(0)' : 'translateX(-100%)' }}
         >
           {/* Tab Detalhes */}
-          <div className="w-full flex-shrink-0">
+          <div className="w-full shrink-0">
             {loadingMensagens ? (
               <div className="text-center py-8 text-gray-600">Carregando mensagens...</div>
             ) : (
@@ -238,7 +254,7 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
                       <p className="font-semibold text-gray-900">
                         {chamado.usuario?.name || 'Nome de perfil do usuario'}
                       </p>
-                      <span className="text-sm text-gray-600">
+                      <span className="text-base text-gray-600">
                         {formatarDataBrasilia(chamado.dataAbertura)}
                       </span>
                     </div>
@@ -261,7 +277,7 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
                         <p className="font-semibold text-gray-900">
                           {msg.usuario?.roleId === 1 ? 'nome de perfil do administrador' : msg.usuario?.name}
                         </p>
-                        <span className="text-sm text-gray-600">
+                        <span className="text-base text-gray-600">
                           {formatarDataBrasilia(msg.dataEnvio)}
                         </span>
                       </div>
@@ -273,13 +289,13 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
                 {/* Campo para postar resposta */}
                 <div className="border border-gray-300 rounded-lg p-4 bg-white">
                   <h3 className="font-semibold text-gray-900 mb-2">Postar uma resposta</h3>
-                  <p className="text-sm text-gray-600 mb-4">Para melhor ajudá-lo, seja específico e detalhado.</p>
+                  <p className="text-base text-gray-600 mb-4">Para melhor ajudá-lo, seja específico e detalhado.</p>
                   
                   <textarea
                     value={novaMensagem}
                     onChange={(e) => setNovaMensagem(e.target.value)}
                     rows={6}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y mb-4"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-y mb-4"
                     placeholder="Digite sua resposta aqui..."
                     disabled={submittingResposta}
                   />
@@ -302,7 +318,7 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
                       <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                       </svg>
-                      <span className="text-sm text-gray-700">
+                      <span className="text-base text-gray-700">
                         Arraste os arquivos ou <span className="text-blue-600 underline">selecione-os</span>
                       </span>
                     </label>
@@ -329,7 +345,7 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
                             <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                             </svg>
-                            <span className="text-sm text-gray-700">{file.name}</span>
+                            <span className="text-base text-gray-700">{file.name}</span>
                             <span className="text-xs text-gray-500">
                               ({(file.size / 1024).toFixed(2)} KB)
                             </span>
@@ -350,7 +366,7 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
                   )}
 
                   {errorMessage && (
-                    <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm mb-4">
+                    <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-base mb-4">
                       {errorMessage}
                     </div>
                   )}
@@ -381,13 +397,31 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
           </div>
 
           {/* Tab Histórico */}
-          <div className="w-full flex-shrink-0 pl-4">
+          <div className="w-full shrink-0 pl-4">
             <div className="text-center py-8 text-gray-600">
               Histórico do chamado será implementado aqui
             </div>
           </div>
         </div>
       </div>
+
+      {/* Modal de Edição */}
+      <ModalEditarChamadoUsuario
+        isOpen={modalEditarAberto}
+        onClose={() => setModalEditarAberto(false)}
+        onSuccess={handleSucessoEdicao}
+        chamadoId={chamadoAtualizado.id}
+        dadosIniciais={{
+          resumoChamado: chamadoAtualizado.resumoChamado,
+          descricaoChamado: chamadoAtualizado.descricaoChamado,
+          ramal: chamadoAtualizado.ramal,
+          departamentoId: chamadoAtualizado.departamento?.id || 0,
+          topicoAjudaId: chamadoAtualizado.topicoAjuda?.id || 0,
+          prioridadeId: chamadoAtualizado.tipoPrioridade?.id || 0,
+          statusId: chamadoAtualizado.status?.id || 0,
+          anexos: chamadoAtualizado.anexos || [],
+        }}
+      />
     </div>
   );
 }

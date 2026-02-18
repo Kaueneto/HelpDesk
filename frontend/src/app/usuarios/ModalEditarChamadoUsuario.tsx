@@ -359,7 +359,7 @@ export default function ModalEditarChamadoUsuario({
                 >
                   <option value={0}>Selecione</option>
                   {departamentos.map(dep => (
-                    <option key={dep.id} value={dep.id}>{dep.name}</option>
+                    <option key={dep.id} value={dep.id}>{dep.id} - {dep.name}</option>
                   ))}
                 </select>
               </div>
@@ -375,7 +375,7 @@ export default function ModalEditarChamadoUsuario({
                 >
                   <option value={0}>Selecione</option>
                   {topicosAjuda.map(top => (
-                    <option key={top.id} value={top.id}>{top.nome}</option>
+                    <option key={top.id} value={top.id}>{top.id} - {top.nome}</option>
                   ))}
                 </select>
               </div>

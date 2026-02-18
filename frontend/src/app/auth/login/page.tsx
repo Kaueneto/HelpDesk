@@ -57,8 +57,8 @@ export default function LoginPage() {
                 onClick={() => handleTabChange('entrar')}
                 className={`inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium transition-all duration-200 ${
                   activeTab === 'entrar'
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
+                    ? 'bg-white text-gray-600 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-700'
                 }`}
               >
                 Entrar
@@ -69,8 +69,8 @@ export default function LoginPage() {
                 onClick={() => handleTabChange('cadastrar')}
                 className={`inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium transition-all duration-200 ${
                   activeTab === 'cadastrar'
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
+                    ? 'bg-white text-gray-600 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-700'
                 }`}
               >
                 Cadastrar
@@ -134,11 +134,11 @@ export default function LoginPage() {
         }
 
         .animate-slideLeft {
-          animation: slideLeft 0.4s ease-out;
+          animation: slideLeft 0.2s ease-out;
         }
 
         .animate-slideRight {
-          animation: slideRight 0.4s ease-out;
+          animation: slideRight 0.2s ease-out;
         }
       `}</style>
     </div>

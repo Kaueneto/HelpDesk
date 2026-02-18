@@ -613,8 +613,7 @@ export default function GerenciarChamados() {
                 </thead>
                 <tbody>
                   {chamados.map((chamado, index) => (
-                    <tr
-                      key={chamado.id}
+                    <tr key={chamado.id}
                       onClick={(e) => {
                         if ((e.target as HTMLElement).closest('input[type="checkbox"]')) {
                           return;
