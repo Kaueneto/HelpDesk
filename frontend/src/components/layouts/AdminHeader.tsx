@@ -72,7 +72,7 @@ export default function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
                 onClick={() => {
                   setUserMenuOpen(false);
                   logout();
-                  router.push('/auth/login');
+
                 }}
                 className="w-full px-5 py-3 text-left flex items-center gap-4 text-red-600 hover:bg-red-50 hover:text-red-700 transition-all duration-150 rounded-lg mx-2"
               >

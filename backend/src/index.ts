@@ -55,10 +55,14 @@ AppDataSource.initialize()
   .then(() => {
     console.log("Banco de dados conectado com sucesso!");
 
-    app.listen(process.env.PORT, () => {
+    const PORT = Number(process.env.PORT) || 3000;
+
+    app.listen(PORT, '0.0.0.0', () => {
       console.log(
-        `Servidor iniciado na porta ${process.env.PORT}: http://localhost:${process.env.PORT}`
+        `Servidor iniciado na porta ${PORT}:`
       );
+      console.log(`  - Local:   http://localhost:${PORT}`);
+      console.log(`  - Network: http://192.168.0.157:${PORT}`);
     });
   })
   .catch((error) => {

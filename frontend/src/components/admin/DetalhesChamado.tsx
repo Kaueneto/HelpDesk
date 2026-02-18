@@ -325,7 +325,7 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
   const assumirChamado = async () => {
     try {
       await api.put(`/chamados/${chamadoId}/assumir`);
-      toast.success('Chamado assumido com sucesso!', {
+      toast.success('Chamado atribuido com sucesso!', {
         style: {
           background: '#fff',
           color: '#2563eb',
@@ -618,7 +618,7 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
             disabled={chamado.status.id === 3}
             className="px-5 py-2 bg-transparent border border-purple-600 text-purple-600 rounded-lg hover:bg-purple-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-gray-300 disabled:text-gray-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-1 focus:ring-purple-500/50"
           >
-            Assumir Chamado
+            Atribuir a mim
           </button>
           <button
             onClick={reabrirChamado}

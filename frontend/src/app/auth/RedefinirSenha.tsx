@@ -97,12 +97,9 @@ export default function RedefinirSenha({ email, token }: RedefinirSenhaProps) {
     <div className="min-h-screen flex items-start justify-center bg-gradient-to-br from-gray-50 to-gray-100">
       <div className="mt-24 w-full max-w-md px-4">
         {/* Título */}
-        <h1 className="text-3xl font-bold text-center text-gray-900 mb-2">
-          Sistema de Chamados
-        </h1>
-        <h3 className="text-xl font-bold text-center text-gray-900 mb-3">
-          HelpDesk
-        </h3>
+        <h1 className="text-xl font-bold text-center text-gray-900 mb-3 font-mono">
+            HelpDesk
+          </h1>
 
         <div className="w-full">
           {/* Tab superior */}

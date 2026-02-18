@@ -85,9 +85,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Limpa qualquer outra informação em cache
     localStorage.clear();
     
-    // Redireciona para login
+    // redireciona para login (força reload completo da página)
     if (typeof window !== 'undefined') {
-      window.location.href = '/auth/login';
+      // usa replace para evitar que o usuário volte pressionando "voltar"
+      window.location.replace('/auth/login');
     }
   };
 

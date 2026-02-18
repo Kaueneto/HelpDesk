@@ -65,12 +65,9 @@ export default function RedefinirSenhaPage() {
     return (
       <div className="min-h-screen flex items-start justify-center bg-gradient-to-br from-gray-50 to-gray-100">
         <div className="mt-24 w-full max-w-md px-4">
-          <h1 className="text-3xl font-bold text-center text-gray-900 mb-2">
-            Sistema de Chamados
-          </h1>
-          <h3 className="text-xl font-bold text-center text-gray-900 mb-3">
+          <h1 className="text-xl font-bold text-center text-gray-900 mb-3 font-mono">
             HelpDesk
-          </h3>
+          </h1>
 
           <div className="rounded-lg border border-gray-200 bg-white shadow-sm p-6">
             <div className="text-center space-y-4">
