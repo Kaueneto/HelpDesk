@@ -11,6 +11,9 @@ export class TopicosAjuda {
   @PrimaryGeneratedColumn()
   id!: number;
 
+  @Column({ type: "int" })
+  codigo!: number;
+
   @Column({ length: 100 })
   nome!: string;
 

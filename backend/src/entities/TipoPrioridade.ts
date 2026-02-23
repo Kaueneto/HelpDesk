@@ -10,7 +10,7 @@ import { Chamados } from "./Chamados";
 export class TipoPrioridade {
   @PrimaryGeneratedColumn()
   id!: number;
-
+  
   @Column({ length: 50 })
   nome!: string; // Urgente | Alto | Médio | Baixo
 

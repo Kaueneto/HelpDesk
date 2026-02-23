@@ -46,13 +46,26 @@ router.get("/topicos_ajuda/:id", async (req: Request, res: Response) => {
 
 router.post("/topicos_ajuda", async (req: Request, res: Response) => {
   try {
-    const { nome, ativo } = req.body;
+    const { codigo, nome, ativo } = req.body;
+    
+    if (!codigo) {
+      return res.status(400).json({ mensagem: "O código do tópico é obrigatório" });
+    }
     
     if (!nome) {
       return res.status(400).json({ mensagem: "O nome do tópico é obrigatório" });
     }
 
     const topicosRepository = AppDataSource.getRepository(TopicosAjuda);
+
+    // validar se existe um tópico com o mesmo código
+    const codigoExistente = await topicosRepository.findOne({
+      where: { codigo: Number(codigo) },
+    });
+
+    if (codigoExistente) {
+      return res.status(409).json({ mensagem: "Já existe um tópico com esse código" });
+    }
 
     // validar se existe um topico com o mesmo nome
     const topicoExistente = await topicosRepository.findOne({
@@ -64,6 +77,7 @@ router.post("/topicos_ajuda", async (req: Request, res: Response) => {
     }
 
     const novoTopico = topicosRepository.create({
+      codigo: Number(codigo),
       nome,
       ativo: ativo !== undefined ? ativo : true,
     });
@@ -85,7 +99,11 @@ router.post("/topicos_ajuda", async (req: Request, res: Response) => {
 router.put("/topicos_ajuda/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { nome, ativo } = req.body;
+    const { codigo, nome, ativo } = req.body;
+
+    if (!codigo) {
+      return res.status(400).json({ mensagem: "Código do tópico é obrigatório" });
+    }
 
     if (!nome) {
       return res.status(400).json({ mensagem: "Nome do tópico é obrigatório" });
@@ -101,6 +119,27 @@ router.put("/topicos_ajuda/:id", async (req: Request, res: Response) => {
       return res.status(404).json({ mensagem: "Tópico não encontrado para atualização" });
     }
 
+    // validar se existe outro tópico com o mesmo código
+    const codigoExistente = await topicosRepository.createQueryBuilder("topico")
+      .where("topico.codigo = :codigo", { codigo: Number(codigo) })
+      .andWhere("topico.id != :id", { id: Number(id) })
+      .getOne();
+
+    if (codigoExistente) {
+      return res.status(409).json({ mensagem: "Já existe outro tópico com esse código" });
+    }
+
+    // validar se existe outro tópico com o mesmo nome
+    const nomeExistente = await topicosRepository.createQueryBuilder("topico")
+      .where("topico.nome = :nome", { nome })
+      .andWhere("topico.id != :id", { id: Number(id) })
+      .getOne();
+
+    if (nomeExistente) {
+      return res.status(409).json({ mensagem: "Já existe outro tópico com esse nome" });
+    }
+
+    topico.codigo = Number(codigo);
     topico.nome = nome;
     if (ativo !== undefined) {
       topico.ativo = ativo;

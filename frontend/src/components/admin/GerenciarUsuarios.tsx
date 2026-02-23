@@ -46,6 +46,10 @@ export default function GerenciarUsuarios() {
   const [situacoes, setSituacoes] = useState<SituationUser[]>([]);
   const [loading, setLoading] = useState(false);
 
+  // Ordenação
+  const [ordenarPor, setOrdenarPor] = useState<'id' | 'name' | 'email' | 'role' | 'situationUser' | 'createdAt' | 'updatedAt' | null>(null);
+  const [direcaoOrdem, setDirecaoOrdem] = useState<'asc' | 'desc'>('asc');
+
   // Seleção múltipla
   const [usuariosSelecionados, setUsuariosSelecionados] = useState<number[]>([]);
   const [todosChecados, setTodosChecados] = useState(false);
@@ -153,6 +157,47 @@ export default function GerenciarUsuarios() {
       }
     }
   };
+
+  const handleOrdenar = (coluna: 'id' | 'name' | 'email' | 'role' | 'situationUser' | 'createdAt' | 'updatedAt') => {
+    if (ordenarPor === coluna) {
+      if (direcaoOrdem === 'asc') {
+        setDirecaoOrdem('desc');
+      } else {
+        setOrdenarPor(null);
+        setDirecaoOrdem('asc');
+      }
+    } else {
+      setOrdenarPor(coluna);
+      setDirecaoOrdem('asc');
+    }
+  };
+
+  // ordernar usuarios
+  const usuariosOrdenados = ordenarPor ? [...usuarios].sort((a, b) => {
+    let valorA: any;
+    let valorB: any;
+
+    if (ordenarPor === 'role') {
+      valorA = a.role?.nome?.toLowerCase() || '';
+      valorB = b.role?.nome?.toLowerCase() || '';
+    } else if (ordenarPor === 'situationUser') {
+      valorA = a.situationUser?.nomeSituacao?.toLowerCase() || '';
+      valorB = b.situationUser?.nomeSituacao?.toLowerCase() || '';
+    } else if (ordenarPor === 'name' || ordenarPor === 'email') {
+      valorA = a[ordenarPor].toLowerCase();
+      valorB = b[ordenarPor].toLowerCase();
+    } else if (ordenarPor === 'createdAt' || ordenarPor === 'updatedAt') {
+      valorA = new Date(a[ordenarPor]).getTime();
+      valorB = new Date(b[ordenarPor]).getTime();
+    } else {
+      valorA = a[ordenarPor];
+      valorB = b[ordenarPor];
+    }
+
+    if (valorA < valorB) return direcaoOrdem === 'asc' ? -1 : 1;
+    if (valorA > valorB) return direcaoOrdem === 'asc' ? 1 : -1;
+    return 0;
+  }) : usuarios;
 
   const resetarSenha = async () => {
     if (usuariosSelecionados.length === 0) {
@@ -546,31 +591,87 @@ export default function GerenciarUsuarios() {
                         before:content-['✓'] before:absolute before:inset-0 before:flex before:items-center before:justify-center before:text-white before:text-sm before:font-bold before:opacity-0 checked:before:opacity-100"
                       />
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                      ID
+                    <th 
+                      className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none"
+                      onClick={() => handleOrdenar('id')}
+                    >
+                      <div className="flex items-center gap-1">
+                        ID
+                        {ordenarPor === 'id' && (
+                          <span>{direcaoOrdem === 'asc' ? '↑' : '↓'}</span>
+                        )}
+                      </div>
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                      Nome
+                    <th 
+                      className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none"
+                      onClick={() => handleOrdenar('name')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Nome
+                        {ordenarPor === 'name' && (
+                          <span>{direcaoOrdem === 'asc' ? '↑' : '↓'}</span>
+                        )}
+                      </div>
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                      Email
+                    <th 
+                      className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none"
+                      onClick={() => handleOrdenar('email')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Email
+                        {ordenarPor === 'email' && (
+                          <span>{direcaoOrdem === 'asc' ? '↑' : '↓'}</span>
+                        )}
+                      </div>
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                      Tipo usuário (Role)
+                    <th 
+                      className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none"
+                      onClick={() => handleOrdenar('role')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Tipo usuário (Role)
+                        {ordenarPor === 'role' && (
+                          <span>{direcaoOrdem === 'asc' ? '↑' : '↓'}</span>
+                        )}
+                      </div>
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                      Situação
+                    <th 
+                      className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none"
+                      onClick={() => handleOrdenar('situationUser')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Situação
+                        {ordenarPor === 'situationUser' && (
+                          <span>{direcaoOrdem === 'asc' ? '↑' : '↓'}</span>
+                        )}
+                      </div>
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                      Criado em
+                    <th 
+                      className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none"
+                      onClick={() => handleOrdenar('createdAt')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Criado em
+                        {ordenarPor === 'createdAt' && (
+                          <span>{direcaoOrdem === 'asc' ? '↑' : '↓'}</span>
+                        )}
+                      </div>
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                      Atualizado em
+                    <th 
+                      className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none"
+                      onClick={() => handleOrdenar('updatedAt')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Atualizado em
+                        {ordenarPor === 'updatedAt' && (
+                          <span>{direcaoOrdem === 'asc' ? '↑' : '↓'}</span>
+                        )}
+                      </div>
                     </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {usuarios.map((usuario, index) => (
+                  {usuariosOrdenados.map((usuario, index) => (
                     <tr
                       key={usuario.id}
                       className={`border-b border-gray-200 hover:bg-blue-50 transition-colors ${

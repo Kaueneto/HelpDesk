@@ -99,6 +99,10 @@ export default function GerenciarChamados() {
   const [totalChamados, setTotalChamados] = useState(0);
   const [pageSize, setPageSize] = useState(10);
 
+  // ordenação
+  const [ordenarPor, setOrdenarPor] = useState<'numeroChamado' | 'prioridade' | 'topico' | 'departamento' | 'status' | 'dataAbertura' | 'dataFechamento' | 'usuario' | 'responsavel' | 'resumo' | null>(null);
+  const [direcaoOrdem, setDirecaoOrdem] = useState<'asc' | 'desc'>('asc');
+
   // modal de edicao multipla
   const [modalEdicaoAberto, setModalEdicaoAberto] = useState(false);
   const [novoStatusId, setNovoStatusId] = useState<string>('');
@@ -132,6 +136,76 @@ export default function GerenciarChamados() {
       }
     }
   }, []);
+
+  const handleOrdenar = (coluna: 'numeroChamado' | 'prioridade' | 'topico' | 'departamento' | 'status' | 'dataAbertura' | 'dataFechamento' | 'usuario' | 'responsavel' | 'resumo') => {
+    if (ordenarPor === coluna) {
+      if (direcaoOrdem === 'asc') {
+        setDirecaoOrdem('desc');
+      } else {
+        setOrdenarPor(null);
+        setDirecaoOrdem('asc');
+      }
+    } else {
+      setOrdenarPor(coluna);
+      setDirecaoOrdem('asc');
+    }
+  };
+
+  const chamadosOrdenados = ordenarPor
+    ? [...chamados].sort((a, b) => {
+        let valorA: any;
+        let valorB: any;
+
+        switch (ordenarPor) {
+          case 'numeroChamado':
+            valorA = a.numeroChamado || a.id;
+            valorB = b.numeroChamado || b.id;
+            break;
+          case 'prioridade':
+            valorA = a.tipoPrioridade?.nome?.toLowerCase() || '';
+            valorB = b.tipoPrioridade?.nome?.toLowerCase() || '';
+            break;
+          case 'topico':
+            valorA = a.topicoAjuda?.nome?.toLowerCase() || '';
+            valorB = b.topicoAjuda?.nome?.toLowerCase() || '';
+            break;
+          case 'departamento':
+            valorA = (a.departamento?.nome || a.departamento?.name || '').toLowerCase();
+            valorB = (b.departamento?.nome || b.departamento?.name || '').toLowerCase();
+            break;
+          case 'status':
+            valorA = a.status?.nome?.toLowerCase() || '';
+            valorB = b.status?.nome?.toLowerCase() || '';
+            break;
+          case 'dataAbertura':
+            valorA = a.dataAbertura ? new Date(a.dataAbertura).getTime() : 0;
+            valorB = b.dataAbertura ? new Date(b.dataAbertura).getTime() : 0;
+            break;
+          case 'dataFechamento':
+            valorA = a.dataFechamento ? new Date(a.dataFechamento).getTime() : 0;
+            valorB = b.dataFechamento ? new Date(b.dataFechamento).getTime() : 0;
+            break;
+          case 'usuario':
+            valorA = a.usuario?.name?.toLowerCase() || '';
+            valorB = b.usuario?.name?.toLowerCase() || '';
+            break;
+          case 'responsavel':
+            valorA = a.userResponsavel?.name?.toLowerCase() || '';
+            valorB = b.userResponsavel?.name?.toLowerCase() || '';
+            break;
+          case 'resumo':
+            valorA = a.resumoChamado?.toLowerCase() || '';
+            valorB = b.resumoChamado?.toLowerCase() || '';
+            break;
+          default:
+            return 0;
+        }
+
+        if (valorA < valorB) return direcaoOrdem === 'asc' ? -1 : 1;
+        if (valorA > valorB) return direcaoOrdem === 'asc' ? 1 : -1;
+        return 0;
+      })
+    : chamados;
 
   const carregarDadosIniciais = async () => {
     try {
@@ -579,41 +653,121 @@ export default function GerenciarChamados() {
                         before:content-['✓'] before:absolute before:inset-0 before:flex before:items-center before:justify-center before:text-white before:text-sm before:font-bold before:opacity-0 checked:before:opacity-100"
                       />
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                      Cód. Chamado
+                    <th 
+                      className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none"
+                      onClick={() => handleOrdenar('numeroChamado')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Cód. Chamado
+                        {ordenarPor === 'numeroChamado' && (
+                          <span>{direcaoOrdem === 'asc' ? '↑' : '↓'}</span>
+                        )}
+                      </div>
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                      Prioridade
+                    <th 
+                      className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none"
+                      onClick={() => handleOrdenar('prioridade')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Prioridade
+                        {ordenarPor === 'prioridade' && (
+                          <span>{direcaoOrdem === 'asc' ? '↑' : '↓'}</span>
+                        )}
+                      </div>
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                      Tópico
+                    <th 
+                      className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none"
+                      onClick={() => handleOrdenar('topico')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Tópico
+                        {ordenarPor === 'topico' && (
+                          <span>{direcaoOrdem === 'asc' ? '↑' : '↓'}</span>
+                        )}
+                      </div>
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                      Departamento
+                    <th 
+                      className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none"
+                      onClick={() => handleOrdenar('departamento')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Departamento
+                        {ordenarPor === 'departamento' && (
+                          <span>{direcaoOrdem === 'asc' ? '↑' : '↓'}</span>
+                        )}
+                      </div>
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                      Status
+                    <th 
+                      className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none"
+                      onClick={() => handleOrdenar('status')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Status
+                        {ordenarPor === 'status' && (
+                          <span>{direcaoOrdem === 'asc' ? '↑' : '↓'}</span>
+                        )}
+                      </div>
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                      Abertura
+                    <th 
+                      className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none"
+                      onClick={() => handleOrdenar('dataAbertura')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Abertura
+                        {ordenarPor === 'dataAbertura' && (
+                          <span>{direcaoOrdem === 'asc' ? '↑' : '↓'}</span>
+                        )}
+                      </div>
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                      Fechamento
+                    <th 
+                      className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none"
+                      onClick={() => handleOrdenar('dataFechamento')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Fechamento
+                        {ordenarPor === 'dataFechamento' && (
+                          <span>{direcaoOrdem === 'asc' ? '↑' : '↓'}</span>
+                        )}
+                      </div>
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                      Usuário
+                    <th 
+                      className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none"
+                      onClick={() => handleOrdenar('usuario')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Usuário
+                        {ordenarPor === 'usuario' && (
+                          <span>{direcaoOrdem === 'asc' ? '↑' : '↓'}</span>
+                        )}
+                      </div>
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                      Responsável
+                    <th 
+                      className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none"
+                      onClick={() => handleOrdenar('responsavel')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Responsável
+                        {ordenarPor === 'responsavel' && (
+                          <span>{direcaoOrdem === 'asc' ? '↑' : '↓'}</span>
+                        )}
+                      </div>
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                      Resumo
+                    <th 
+                      className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none"
+                      onClick={() => handleOrdenar('resumo')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Resumo
+                        {ordenarPor === 'resumo' && (
+                          <span>{direcaoOrdem === 'asc' ? '↑' : '↓'}</span>
+                        )}
+                      </div>
                     </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {chamados.map((chamado, index) => (
-                    <tr key={chamado.id}
+                  {chamadosOrdenados.map((chamado, index) => (<tr
+                      key={chamado.id}
                       onClick={(e) => {
                         if ((e.target as HTMLElement).closest('input[type="checkbox"]')) {
                           return;
@@ -686,15 +840,16 @@ export default function GerenciarChamados() {
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-900">
                         {chamado.usuario?.name || '-'}
-                      </td>                      <td className="px-4 py-3 text-sm text-gray-900">
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-900">
                         {chamado.userResponsavel?.name || (
                           <span className="text-gray-400 italic">Não atribuído</span>
                         )}
-                      </td>                      <td className="px-4 py-3 text-sm text-gray-900 max-w-xs truncate">
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-900 max-w-xs truncate">
                         {chamado.resumoChamado}
                       </td>
-                    </tr>
-                  ))}
+                    </tr>))}
                 </tbody>
               </table>
             )}

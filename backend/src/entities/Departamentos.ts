@@ -10,6 +10,8 @@ import { Chamados } from "./Chamados";
 export class Departamentos {
   @PrimaryGeneratedColumn({name: "id_departamento"})
   id!: number;
+  @Column({ type: "int" })
+  codigo!: number;
 
   @Column({ name: "nome", length: 100 })
   name!: string;

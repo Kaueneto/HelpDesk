@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import api from '@/services/api';
 
 // IDs de status (ajuste se necessário)
@@ -28,6 +28,7 @@ export default function Dashboard() {
   const [dadosPrioridade, setDadosPrioridade] = useState<any[]>([]);
   const [prioridadeSelecionadas, setPrioridadeSelecionadas] = useState<Set<string>>(new Set());
   const [dadosDepartamento, setDadosDepartamento] = useState<any[]>([]);
+  const [dadosTopicos, setDadosTopicos] = useState<any[]>([]);
 
   const [horasParaAtraso, setHorasParaAtraso] = useState(24);
   const [loading, setLoading] = useState(false);
@@ -71,6 +72,7 @@ export default function Dashboard() {
       processarIndicadores(chamadosFiltrados);
       processarPrioridades(chamadosFiltrados);
       processarDepartamentos(chamadosFiltrados);
+      processarTopicos(chamadosFiltrados);
     } catch (err) {
       console.error('Erro ao carregar dados', err);
     } finally {
@@ -199,6 +201,26 @@ export default function Dashboard() {
     );
   }
 
+  function processarTopicos(chamados: any[]) {
+    const map = new Map<string, number>();
+
+    chamados.forEach(c => {
+      const nome = c.topicoAjuda?.nome ?? 'Sem tópico';
+      map.set(nome, (map.get(nome) ?? 0) + 1);
+    });
+
+    // ordenar por valor (decrescente) e pegar apenas os top 5
+    const topicos = Array.from(map.entries())
+      .map(([nome, valor]) => ({
+        nome,
+        valor,
+      }))
+      .sort((a, b) => b.valor - a.valor)
+      .slice(0, 5);
+
+    setDadosTopicos(topicos);
+  }
+
   return (
     <>
       <div className="bg-blue-500 px-6 py-4">
@@ -234,15 +256,15 @@ export default function Dashboard() {
 
         {/* Cards */}
         <div className="grid grid-cols-4 gap-6 mb-8">
-          <Card titulo="ABERTOS" valor={chamadosAbertos} cor="bg-green-500" />
+          <Card titulo="ABERTOS" valor={chamadosAbertos} cor="bg-[#2ECC71]" />
           <Card titulo="EM ANDAMENTO" valor={chamadosEmAndamento} cor="bg-purple-700" />
           <Card titulo="FINALIZADOS" valor={chamadosFinalizados} cor="bg-gray-800" />
-          <Card titulo="ATRASADOS" valor={chamadosAtrasados} cor="bg-red-600" />
+          <Card titulo="ATRASADOS" valor={chamadosAtrasados} cor="bg-[#E74C3C]" />
         </div>
 
-        {/* Gráficos (mantidos simples e estáveis) */}
+        {/* gráficos */}
         <div className="grid grid-cols-2 gap-6 text-gray-400">
-          <div className="bg-white border rounded p-6">
+          <div className="bg-white border border-gray-400 rounded p-6">
             <h3 className="font-semibold mb-4 text-gray-900">Por prioridade</h3>
             
             {/* Checkboxes de filtro */}
@@ -296,7 +318,7 @@ export default function Dashboard() {
             )}
           </div>
 
-          <div className="bg-white border rounded p-6 text-gray-500">
+          <div className="bg-white border border-gray-400 rounded p-6 text-gray-500">
             <h3 className="font-semibold mb-4 text-gray-700">Por departamento</h3>
             {dadosDepartamento.map((d, i) => (
               <div key={i} className="mb-3">
@@ -313,7 +335,33 @@ export default function Dashboard() {
             ))}
           </div>
         </div>
-      </div>
+        {/* gráfico de Top 5 Tópicos */}
+        <div className="mt-6 bg-white border border-gray-400 rounded p-6">
+          <h3 className="font-semibold mb-4 text-gray-900">Top 5 Tópicos de Ajuda Mais Relatados</h3>
+          {dadosTopicos.length === 0 ? (
+            <p className="text-gray-500 text-center py-8">Nenhum dado disponível no período selecionado</p>
+          ) : (
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={dadosTopicos} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis 
+                  dataKey="nome" 
+                  angle={-45} 
+                  textAnchor="end" 
+                  height={100}
+                  interval={0}
+                  tick={{ fill: '#374151', fontSize: 15, fontWeight: 'bold' }}
+                />
+                <YAxis tick={{ fill: '#374151' }} />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#E6E6FA', border: '1px solid #F5F5DC' }}
+                  cursor={{ fill: 'rgba(59, 130, 246, 0.1)' }}
+                />
+                <Bar dataKey="valor" fill="#6A5ACD" radius={[8, 8, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>      </div>
     </>
   );
 }

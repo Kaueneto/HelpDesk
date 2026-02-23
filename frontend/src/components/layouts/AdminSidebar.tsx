@@ -19,7 +19,7 @@ export default function AdminSidebar({ collapsed }: AdminSidebarProps) {
       className={`transition-all duration-300 flex flex-col ${
         collapsed ? 'w-16' : 'w-64'
       }`}
-      style={{ backgroundColor: '#3F3F3F' }}
+      style={{ backgroundColor: '#001933' }}
     >
       <div className="p-4 border-b border-gray-600">
         <h1 className={`text-white font-bold transition-all ${collapsed ? 'text-xs text-center' : 'text-xl'}`}>
