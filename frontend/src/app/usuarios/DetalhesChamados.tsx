@@ -11,6 +11,7 @@ interface DetalhesChamadosProps {
 
 export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamadosProps) {
   const [mensagens, setMensagens] = useState<any[]>([]);
+  const [historico, setHistorico] = useState<any[]>([]);
   const [loadingMensagens, setLoadingMensagens] = useState(false);
   const [detalheTab, setDetalheTab] = useState<'detalhes' | 'historico'>('detalhes');
   const [novaMensagem, setNovaMensagem] = useState('');
@@ -23,9 +24,22 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
 
   useEffect(() => {
     buscarMensagens(chamado.id);
+    buscarHistorico(chamado.id);
     setChamadoAtualizado(chamado);
   }, [chamado.id]);
 
+  // auto-atualização do chat a cada 5 segundos
+  useEffect(() => {
+    // Só atualiza se estiver na aba de detalhes e não estiver enviando resposta
+    if (detalheTab !== 'detalhes' || submittingResposta) return;
+
+    const intervalo = setInterval(() => {
+      carregarMensagensEHistorico();
+    }, 5000); // 5 segundos
+
+    // limpa o intervalo quando o componente é desmontado ou quando muda de aba
+    return () => clearInterval(intervalo);
+  }, [chamado.id, detalheTab, submittingResposta]);
   const buscarMensagens = async (chamadoId: number) => {
     setLoadingMensagens(true);
     try {
@@ -35,6 +49,30 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
       console.error('Erro ao buscar mensagens:', error);
     } finally {
       setLoadingMensagens(false);
+    }
+  };
+
+  const buscarHistorico = async (chamadoId: number) => {
+    try {
+      const response = await api.get(`/chamados/${chamadoId}/historico`);
+      setHistorico(response.data);
+    } catch (error) {
+      console.error('Erro ao buscar histórico:', error);
+    }
+  };
+
+ const carregarMensagensEHistorico = async () => {
+    try {
+      const [mensagensRes, historicoRes] = await Promise.all([
+        api.get(`/chamados/${chamado.id}/mensagens`),
+        api.get(`/chamados/${chamado.id}/historico`),
+      ]);
+
+      setMensagens(mensagensRes.data);
+      setHistorico(historicoRes.data);
+    } catch (error) {
+      console.error('Erro ao atualizar mensagens:', error);
+      // nao mostra alert para nao interromper o usuario
     }
   };
 
@@ -398,8 +436,35 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
 
           {/* Tab Histórico */}
           <div className="w-full shrink-0 pl-4">
-            <div className="text-center py-8 text-gray-600">
-              Histórico do chamado será implementado aqui
+            <div className="bg-white rounded-lg border border-gray-300 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-3 border-b border-gray-400">
+                Histórico do Chamado
+              </h3>
+              {historico.length === 0 ? (
+                <div className="text-center py-8 text-gray-600">
+                  Nenhum histórico disponível para este chamado.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {historico.map((evento) => (
+                    <div key={evento.id} className="flex gap-4 pb-4 border-b border-gray-200 last:border-0">
+                      <div className="shrink-0 w-2 h-2 rounded-full bg-blue-600 mt-2" />
+                      <div className="flex-1">
+                        <p className="text-gray-900 font-medium">{evento.acao}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-sm text-gray-600">{evento.usuario?.name || 'Sistema'}</span>
+                          <span className="text-sm text-gray-500">• {formatarDataBrasilia(evento.dataMov)}</span>
+                        </div>
+                        {evento.observacao && (
+                          <p className="text-sm text-gray-500 italic mt-2">
+                            Observação: {evento.observacao}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

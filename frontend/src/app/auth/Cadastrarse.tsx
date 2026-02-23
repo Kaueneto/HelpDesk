@@ -72,7 +72,7 @@ export default function Cadastrarse({ onLoginClick, onSuccess }: CadastrarseProp
             onChange={(e) => setCadastroName(e.target.value)}
             required
             minLength={3}
-            className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
             placeholder="seu nome completo"
             disabled={cadastroLoading}
           />
@@ -91,7 +91,7 @@ export default function Cadastrarse({ onLoginClick, onSuccess }: CadastrarseProp
             value={cadastroEmail}
             onChange={(e) => setCadastroEmail(e.target.value)}
             required
-            className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500  disabled:cursor-not-allowed disabled:opacity-50"
             placeholder="seu@email.com"
             disabled={cadastroLoading}
           />
@@ -111,7 +111,7 @@ export default function Cadastrarse({ onLoginClick, onSuccess }: CadastrarseProp
             onChange={(e) => setCadastroPassword(e.target.value)}
             required
             minLength={6}
-            className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500  disabled:cursor-not-allowed disabled:opacity-50"
             placeholder="mínimo 6 caracteres"
             disabled={cadastroLoading}
           />
@@ -131,7 +131,7 @@ export default function Cadastrarse({ onLoginClick, onSuccess }: CadastrarseProp
             onChange={(e) => setCadastroConfirmPassword(e.target.value)}
             required
             minLength={6}
-            className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500  disabled:cursor-not-allowed disabled:opacity-50"
             placeholder="repita sua senha"
             disabled={cadastroLoading}
           />
@@ -146,7 +146,7 @@ export default function Cadastrarse({ onLoginClick, onSuccess }: CadastrarseProp
         <button
           type="submit"
           disabled={cadastroLoading}
-          className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-200 bg-blue-600 text-white shadow hover:bg-blue-700 hover:shadow-md hover:-translate-y-px focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2 w-full"
+          className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-200 bg-blue-600 text-white shadow hover:bg-blue-700 hover:shadow-md hover:-translate-y-px focus:outline-none focus:ring-1 focus:ring-blue-500  disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2 w-full"
         >
           {cadastroLoading ? 'cadastrando...' : 'cadastrar'}
         </button>

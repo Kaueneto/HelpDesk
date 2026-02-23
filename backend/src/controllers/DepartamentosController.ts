@@ -12,8 +12,7 @@ router.get("/departamentos", async (req: Request, res: Response) => {
     const departamentosRepository = AppDataSource.getRepository(Departamentos);
     
     const departamentos = await departamentosRepository.find({
-      where: { ativo: true },
-      order: { name: "ASC" },
+      order: { name: "ASC" }, 
     });
 
     return res.status(200).json(departamentos);
@@ -52,9 +51,13 @@ router.get("/departamentos/:id", async (req: Request, res: Response) => {
 // criar novo departamento
 router.post("/departamentos", async (req: Request, res: Response) => {
   try {
-    const { name, ativo = true } = req.body;
+    const { codigo, name, ativo = true } = req.body;
 
     const schema = yup.object().shape({
+      codigo: yup
+        .number()
+        .required("O código do departamento é obrigatório!")
+        .positive("O código deve ser um número positivo!"),
       name: yup
         .string()
         .required("O nome do departamento é obrigatório!")
@@ -66,6 +69,15 @@ router.post("/departamentos", async (req: Request, res: Response) => {
 
     const departamentosRepository = AppDataSource.getRepository(Departamentos);
 
+    // validar se já existe um departamento com esse código
+    const codigoExistente = await departamentosRepository.findOne({
+      where: { codigo },
+    });
+
+    if (codigoExistente) {
+      return res.status(409).json({ mensagem: "Já existe um departamento com esse código" });
+    }
+
     // validar se já existe um departamento com esse nome
     const departamentoExistente = await departamentosRepository.findOne({
       where: { name },
@@ -76,6 +88,7 @@ router.post("/departamentos", async (req: Request, res: Response) => {
     }
 
     const novoDepartamento = departamentosRepository.create({
+      codigo,
       name,
       ativo,
     });
@@ -105,9 +118,13 @@ router.post("/departamentos", async (req: Request, res: Response) => {
 router.put("/departamentos/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { name, ativo } = req.body;
+    const { codigo, name, ativo } = req.body;
 
     const schema = yup.object().shape({
+      codigo: yup
+        .number()
+        .required("O código do departamento é obrigatório!")
+        .positive("O código deve ser um número positivo!"),
       name: yup
         .string()
         .required("O nome do departamento é obrigatório!")
@@ -129,6 +146,20 @@ router.put("/departamentos/:id", async (req: Request, res: Response) => {
       });
     }
 
+    // validar duplicidade de código além do que está sendo editado
+    const codigoExistente = await departamentosRepository.findOne({
+      where: {
+        codigo,
+        id: Not(Number(id)),
+      },
+    });
+
+    if (codigoExistente) {
+      return res.status(400).json({
+        mensagem: "Já existe outro departamento com este código.",
+      });
+    }
+
     // validar duplicidade de nome alem do que esta sendo editado
     const nomeExistente = await departamentosRepository.findOne({
       where: {
@@ -144,7 +175,7 @@ router.put("/departamentos/:id", async (req: Request, res: Response) => {
     }
 
     // atualizar dados
-    const updateData: any = { name };
+    const updateData: any = { codigo, name };
     if (ativo !== undefined) {
       updateData.ativo = ativo;
     }

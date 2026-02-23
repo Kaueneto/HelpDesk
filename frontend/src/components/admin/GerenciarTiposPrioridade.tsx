@@ -37,6 +37,10 @@ export default function GerenciarTiposPrioridade() {
   const [editandoOrdem, setEditandoOrdem] = useState(1);
   const [submittingEdicao, setSubmittingEdicao] = useState(false);
 
+  // estados de ordenação
+  const [ordenarPor, setOrdenarPor] = useState<'id' | 'nome' | 'cor' | 'ordem' | null>(null);
+  const [direcaoOrdem, setDirecaoOrdem] = useState<'asc' | 'desc'>('asc');
+
   // Carregar tipos ao montar
   useEffect(() => {
     carregarTipos();
@@ -192,10 +196,41 @@ export default function GerenciarTiposPrioridade() {
     }
   };
 
-  // Filtrar tipos
+  // função de ordenaco
+  const handleOrdenar = (coluna: 'id' | 'nome' | 'cor' | 'ordem') => {
+    if (ordenarPor === coluna) {
+      if (direcaoOrdem === 'asc') {
+        setDirecaoOrdem('desc');
+      } else {
+        setOrdenarPor(null);
+        setDirecaoOrdem('asc');
+      }
+    } else {
+      setOrdenarPor(coluna);
+      setDirecaoOrdem('asc');
+    }
+  };
+
+  // filtrar e ordenar tipos
   const tiposFiltrados = tipos.filter(t =>
     t.nome.toLowerCase().includes(nome.toLowerCase())
   );
+
+  const tiposOrdenados = ordenarPor
+    ? [...tiposFiltrados].sort((a, b) => {
+        let valorA: any = a[ordenarPor];
+        let valorB: any = b[ordenarPor];
+
+        if (typeof valorA === 'string') {
+          valorA = valorA.toLowerCase();
+          valorB = valorB.toLowerCase();
+        }
+
+        if (valorA < valorB) return direcaoOrdem === 'asc' ? -1 : 1;
+        if (valorA > valorB) return direcaoOrdem === 'asc' ? 1 : -1;
+        return 0;
+      })
+    : tiposFiltrados;
 
   return (
     <>
@@ -294,22 +329,54 @@ export default function GerenciarTiposPrioridade() {
                         before:content-['✓'] before:absolute before:inset-0 before:flex before:items-center before:justify-center before:text-white before:text-sm before:font-bold before:opacity-0 checked:before:opacity-100"
                       />
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                      ID
+                    <th 
+                      className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none"
+                      onClick={() => handleOrdenar('id')}
+                    >
+                      <div className="flex items-center gap-1">
+                        ID
+                        {ordenarPor === 'id' && (
+                          <span>{direcaoOrdem === 'asc' ? '↑' : '↓'}</span>
+                        )}
+                      </div>
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                      Nome
+                    <th 
+                      className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none"
+                      onClick={() => handleOrdenar('nome')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Nome
+                        {ordenarPor === 'nome' && (
+                          <span>{direcaoOrdem === 'asc' ? '↑' : '↓'}</span>
+                        )}
+                      </div>
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                      Cor
+                    <th 
+                      className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none"
+                      onClick={() => handleOrdenar('cor')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Cor
+                        {ordenarPor === 'cor' && (
+                          <span>{direcaoOrdem === 'asc' ? '↑' : '↓'}</span>
+                        )}
+                      </div>
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                      Ordem
+                    <th 
+                      className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none"
+                      onClick={() => handleOrdenar('ordem')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Ordem
+                        {ordenarPor === 'ordem' && (
+                          <span>{direcaoOrdem === 'asc' ? '↑' : '↓'}</span>
+                        )}
+                      </div>
                     </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {tiposFiltrados.map((tipo, index) => (
+                  {tiposOrdenados.map((tipo, index) => (
                     <tr
                       key={tipo.id}
                       className={`border-b border-gray-200 hover:bg-blue-50 transition-colors ${
