@@ -342,6 +342,57 @@ router.put("/users/alterar-minha-senha", verifyToken, async (req: AuthenticatedR
   }
 });
 
+// usuario autenticado alterar seu proprio nome
+router.put("/users/alterar-meu-nome", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const usuarioId = req.userId;
+    const { nome } = req.body;
+
+    // validacao de nome
+    const schema = yup.object().shape({
+      nome: yup
+        .string()
+        .required("O nome é obrigatório!")
+        .min(3, "O nome deve conter pelo menos 3 caracteres."),
+    });
+
+    await schema.validate({ nome }, { abortEarly: false });
+
+    const userRepository = AppDataSource.getRepository(Users);
+
+    // buscar usuario
+    const user = await userRepository.findOne({
+      where: { id: usuarioId },
+    });
+
+    if (!user) {
+      return res.status(404).json({ mensagem: "Usuário não encontrado" });
+    }
+
+    // update nome
+    user.name = nome;
+    user.updatedAt = new Date();
+    await userRepository.save(user);
+
+    res.status(200).json({ 
+      mensagem: "Nome alterado com sucesso!",
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+      }
+    });
+  } catch (error: any) {
+    console.error("Erro ao alterar nome:", error);
+    
+    if (error.name === "ValidationError") {
+      return res.status(400).json({ mensagem: error.errors[0] });
+    }
+    
+    res.status(500).json({ mensagem: "Erro ao alterar nome" });
+  }
+});
+
 
 // atualizar user 
 router.put("/users/:id",  verifyToken,  async (req: Request, res: Response) => {
