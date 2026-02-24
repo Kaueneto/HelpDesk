@@ -75,20 +75,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    * Remove token e dados do usuário, limpa localStorage e redireciona para login
    */
   const logout = () => {
-    // Limpa estado
-    setToken(null);
-    setUser(null);
+    console.log('[LOGOUT] Iniciando logout...');
     
-    // Limpa localStorage
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    
-    // Limpa qualquer outra informação em cache
-    localStorage.clear();
-    
-    // redireciona para login (força reload completo da página)
-    if (typeof window !== 'undefined') {
-      // usa replace para evitar que o usuário volte pressionando "voltar"
+    try {
+      // limpa estado
+      setToken(null);
+      setUser(null);
+      
+      // limpa localStorage
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      
+      // limpa qualquer outra informação em cache
+      localStorage.clear();
+      
+      console.log('[LOGOUT] LocalStorage limpo');
+      
+      // limpa cookies (se houver)
+      document.cookie.split(";").forEach((c) => {
+        document.cookie = c
+          .replace(/^ +/, "")
+          .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+      });
+      
+      console.log('[LOGOUT] Cookies limpos');
+      console.log('[LOGOUT] Redirecionando para /auth/login...');
+      
+      // usar  replace para evitar voltar com botão de voltar do navegador
+      window.location.replace('/auth/login');
+    } catch (error) {
+      console.error('[LOGOUT] Erro durante logout:', error);
       window.location.replace('/auth/login');
     }
   };

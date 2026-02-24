@@ -189,13 +189,13 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
   return (
     <div>
       {/* Cabeçalho com informações do chamado */}
-      <div className="bg-white border-b border-gray-200 pb-4 mb-6">
+      <div className="bg-[#f8fafc] border-b border-gray-200 pb-4 mb-6">
         <div className="flex justify-between items-start mb-4">
           <div>
             <h2 className="text-2xl font-bold text-blue-600 mb-2">
               {chamadoAtualizado.resumoChamado} <span className="text-gray-500 text-lg">#{chamadoAtualizado.numeroChamado || chamadoAtualizado.id}</span>
             </h2>
-            <p className="text-base text-gray-600 mb-4">Informações sobre o chamado</p>
+            <p className="text-sm text-gray-600 mb-4 border-b border-gray-300">Informações sobre o chamado</p>
             
             <div className="grid grid-cols-5 gap-6">
               <div>
@@ -351,7 +351,7 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
                 </div>
 
                 {/* campo pra poder escrever resposta - fixo na parte inferior */}
-                <div className="border-t border-gray-300 bg-white p-6">
+                <div className="border-t border-gray-300 bg-[#f8fafc] p-6">
                   <h3 className="font-semibold text-gray-900 mb-2">Postar uma resposta</h3>
                   <p className="text-base text-gray-600 mb-4">Para melhor ajudá-lo, seja específico e detalhado.</p>
                   
@@ -359,7 +359,7 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
                     value={novaMensagem}
                     onChange={(e) => setNovaMensagem(e.target.value)}
                     rows={4}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none mb-4"
+                    className="w-full px-3 py-2 border bg-white border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none mb-4"
                     placeholder="Digite sua resposta aqui..."
                     disabled={submittingResposta}
                   />
@@ -462,7 +462,7 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
 
           {/* Tab Histórico */}
           <div className="w-full shrink-0 h-full overflow-y-auto px-6 py-4">
-            <div className="bg-white rounded-lg border border-gray-300 p-6">
+            <div className="bg-[#f8fafc] rounded-lg border border-gray-300 p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-3 border-b border-gray-400">
                 Histórico do Chamado
               </h3>

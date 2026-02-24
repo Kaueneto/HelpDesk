@@ -100,8 +100,12 @@ export default function GerenciarUsuarios() {
         pageSize,
       };
       
-      if (dataCadastroInicio) params.dataCadastroInicio = dataCadastroInicio.toISOString().split('T')[0];
-      if (dataCadastroFim) params.dataCadastroFim = dataCadastroFim.toISOString().split('T')[0];
+      if (dataCadastroInicio) params.dataCadastroInicio = dataCadastroInicio.toISOString();
+      if (dataCadastroFim) {
+        const fim = new Date(dataCadastroFim);
+        fim.setHours(23, 59, 59, 999);
+        params.dataCadastroFim = fim.toISOString();
+      }
       if (nome) params.nome = nome;
       if (email) params.email = email;
       if (situationUserId !== '') params.situationUserId = situationUserId;
@@ -422,6 +426,7 @@ export default function GerenciarUsuarios() {
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
+      timeZone: 'America/Sao_Paulo',
     });
   };
 

@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/services/api';
+import { useAuth } from '@/contexts/AuthContext';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 
@@ -64,10 +65,18 @@ interface StatusChamado {
   nome: string;
 }
 
+interface User {
+  id: number;
+  name: string;
+  email: string;
+  roleId: number;
+}
+
 export default function GerenciarChamados() {
     const [linhaAnimando, setLinhaAnimando] = useState<number | null>(null);
     const [pageSliding, setPageSliding] = useState(false);
   const router = useRouter();
+  const { user } = useAuth();
   
   // filtros
   const [dataAberturaInicio, setDataAberturaInicio] = useState<Date | null>(null);
@@ -87,6 +96,7 @@ export default function GerenciarChamados() {
   const [topicosAjuda, setTopicosAjuda] = useState<TopicoAjuda[]>([]);
   const [prioridades, setPrioridades] = useState<TipoPrioridade[]>([]);
   const [statusList, setStatusList] = useState<StatusChamado[]>([]);
+  const [usuariosAdmin, setUsuariosAdmin] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
 
   // selecao multipla
@@ -107,6 +117,9 @@ export default function GerenciarChamados() {
   const [modalEdicaoAberto, setModalEdicaoAberto] = useState(false);
   const [novoStatusId, setNovoStatusId] = useState<string>('');
   const [novaPrioridadeId, setNovaPrioridadeId] = useState<string>('');
+  const [novoDepartamentoId, setNovoDepartamentoId] = useState<string>('');
+  const [novoTopicoAjudaId, setNovoTopicoAjudaId] = useState<string>('');
+  const [novoResponsavelId, setNovoResponsavelId] = useState<string>('');
   const [submittingEdicao, setSubmittingEdicao] = useState(false);
 
   useEffect(() => {
@@ -209,22 +222,45 @@ export default function GerenciarChamados() {
 
   const carregarDadosIniciais = async () => {
     try {
-      const [deptosRes, topicosRes, prioridadesRes, statusRes] = await Promise.all([
+      const [deptosRes, topicosRes, prioridadesRes, statusRes, usersRes] = await Promise.all([
         api.get('/departamentos'),
         api.get('/topicos_ajuda'),
         api.get('/tipo_prioridade'),
         api.get('/status'),
+        api.get('/users'),
       ]);
 
       console.log('Departamentos:', deptosRes.data);
       console.log('Tópicos:', topicosRes.data);
       console.log('Prioridades:', prioridadesRes.data);
       console.log('Status:', statusRes.data);
+      console.log('Usuários bruto:', usersRes.data);
 
       setDepartamentos(deptosRes.data);
       setTopicosAjuda(topicosRes.data);
       setPrioridades(prioridadesRes.data);
       setStatusList(statusRes.data);
+      
+      // filtrar apenas usuários admin
+            const todosUsuarios = Array.isArray(usersRes.data) 
+        ? usersRes.data
+        : (usersRes.data.usuarios || usersRes.data);
+      
+      console.log('=== DEBUG USUÁRIOS ===');
+      console.log('Total de usuários:', todosUsuarios.length);
+      console.log('Estrutura do primeiro usuário:', todosUsuarios[0]);
+      
+      // filtrar admins - testar diferentes propriedades
+      const admins = todosUsuarios.filter((u: any) => {
+        const isAdmin = u.roleId === 1 || u.role?.id === 1;
+        console.log(`User ${u.id} - ${u.name}: roleId=${u.roleId}, role.id=${u.role?.id}, isAdmin=${isAdmin}`);
+        return isAdmin;
+      });
+      
+      console.log('Total de admins encontrados:', admins.length);
+      console.log('Admins:', admins);
+      
+      setUsuariosAdmin(admins);
     } catch (error) {
       console.error('Erro ao carregar dados iniciais:', error);
     }
@@ -237,10 +273,18 @@ export default function GerenciarChamados() {
         page,
         pageSize,
       };
-      if (dataAberturaInicio) params.dataAberturaInicio = dataAberturaInicio.toISOString().split('T')[0];
-      if (dataAberturaFim) params.dataAberturaFim = dataAberturaFim.toISOString().split('T')[0];
-      if (dataFechamentoInicio) params.dataFechamentoInicio = dataFechamentoInicio.toISOString().split('T')[0];
-      if (dataFechamentoFim) params.dataFechamentoFim = dataFechamentoFim.toISOString().split('T')[0];
+      if (dataAberturaInicio) params.dataAberturaInicio = dataAberturaInicio.toISOString();
+      if (dataAberturaFim) {
+        const fim = new Date(dataAberturaFim);
+        fim.setHours(23, 59, 59, 999);
+        params.dataAberturaFim = fim.toISOString();
+      }
+      if (dataFechamentoInicio) params.dataFechamentoInicio = dataFechamentoInicio.toISOString();
+      if (dataFechamentoFim) {
+        const fim = new Date(dataFechamentoFim);
+        fim.setHours(23, 59, 59, 999);
+        params.dataFechamentoFim = fim.toISOString();
+      }
       if (departamentoId) params.departamentoId = departamentoId;
       if (topicoAjudaId) params.topicoAjudaId = topicoAjudaId;
       if (prioridadeId) params.prioridadeId = prioridadeId;
@@ -352,46 +396,185 @@ export default function GerenciarChamados() {
   };
 
   const editarMultiplos = () => {
-    if (chamadosSelecionados.length === 0) {
-      alert('Selecione ao menos um chamado');
+    // verificar se há chamados encerrados nos selçecionados
+    const chamadosEncerrados = chamados.filter(
+      c => chamadosSelecionados.includes(c.id) && c.status?.id === 3
+    );
+
+    if (chamadosEncerrados.length > 0) {
+      alert(
+        `${chamadosEncerrados.length} chamado(s) selecionado(s) estão encerrados e não podem ser editados.\n\n` +
+        `Números: ${chamadosEncerrados.map(c => c.numeroChamado || c.id).join(', ')}`
+      );
       return;
     }
 
-    setModalEdicaoAberto(true);
-    setNovoStatusId('');
+    // Inicializar todos os campos com string vazia (para mostrar "Não alterar")
     setNovaPrioridadeId('');
+    setNovoStatusId('');
+    setNovoDepartamentoId('');
+    setNovoTopicoAjudaId('');
+    setNovoResponsavelId('');
+    setModalEdicaoAberto(true);
+  };
+
+  const atribuirAMim = () => {
+    if (!user) {
+      alert('Erro: usuário não autenticado.');
+      return;
+    }
+
+    // obtem todos os chamados selecionados
+    const chamadosSelecionadosData = chamados.filter(c => chamadosSelecionados.includes(c.id));
+
+    // verifica se há chamados encerrados na seleção
+    const chamadosEncerrados = chamadosSelecionadosData.filter(c => c.status?.id === 3);
+
+    if (chamadosEncerrados.length > 0) {
+      alert(
+        ` ${chamadosEncerrados.length} chamado(s) selecionado(s) estão encerrados e não podem ser atribuídos.\n\n` +
+        `Números: ${chamadosEncerrados.map(c => c.numeroChamado || c.id).join(', ')}`
+      );
+      return;
+    }
+
+    // verifica se todos os chamados já são do usuário atual
+    const chamadosJaMeus = chamadosSelecionadosData.filter(
+      c => c.userResponsavel && c.userResponsavel.id === user.id
+    );
+
+    if (chamadosJaMeus.length === chamadosSelecionadosData.length) {
+      alert(
+        `Todos os ${chamadosJaMeus.length} chamado(s) selecionado(s) já estão atribuídos a você.\n\n` +
+        `Não há nada para alterar.`
+      );
+      return;
+    }
+
+    // verifica se há chamados que não pertencem ao usuário logado
+    const chamadosDeOutros = chamadosSelecionadosData.filter(
+      c => c.userResponsavel && c.userResponsavel.id !== user.id
+    );
+
+    // verifica chamados sem responsável
+    const chamadosSemResponsavel = chamadosSelecionadosData.filter(
+      c => !c.userResponsavel
+    );
+
+    const totalParaAtribuir = chamadosDeOutros.length + chamadosSemResponsavel.length;
+
+    if (chamadosDeOutros.length > 0) {
+      const mensagem = chamadosJaMeus.length > 0
+        ? ` ${chamadosDeOutros.length} chamado(s) estão sendo atendidos por outros usuários:\n\n` +
+          chamadosDeOutros.map(c => `#${c.numeroChamado || c.id} - ${c.userResponsavel?.name}`).join('\n') +
+          `\n\n${chamadosJaMeus.length} já estão atribuídos a você.\n\n` +
+          `Deseja atribuir os ${totalParaAtribuir} chamado(s) restantes a você?`
+        : ` ${chamadosDeOutros.length} chamado(s) estão sendo atendidos por outros usuários:\n\n` +
+          chamadosDeOutros.map(c => `#${c.numeroChamado || c.id} - ${c.userResponsavel?.name}`).join('\n') +
+          `\n\nDeseja realmente atribuir esses chamados a você?`;
+      
+      const confirmacao = window.confirm(mensagem);
+      if (!confirmacao) return;
+    } else {
+      const mensagem = chamadosJaMeus.length > 0
+        ? `${chamadosJaMeus.length} chamado(s) já estão atribuídos a você.\n\n` +
+          `Deseja atribuir os ${totalParaAtribuir} chamado(s) restantes a você?`
+        : `Deseja atribuir ${totalParaAtribuir} chamado(s) a você?`;
+      
+      const confirmacao = window.confirm(mensagem);
+      if (!confirmacao) return;
+    }
+
+    confirmarAtribuirAMim();
+  };
+
+  const confirmarAtribuirAMim = async () => {
+    if (!user) {
+      alert(' Erro: usuário não autenticado.');
+      return;
+    }
+
+    try {
+      setSubmittingEdicao(true);
+
+      const response = await api.patch('/chamados/editar-multiplos', {
+        chamadosIds: chamadosSelecionados,
+        userResponsavelId: user.id
+      });
+
+      alert(response.data.message || ` ${chamadosSelecionados.length} chamado(s) atribuído(s) com sucesso!`);
+      setChamadosSelecionados([]);
+      setTodosChecados(false);
+      await pesquisarChamados(paginaAtual);
+    } catch (error: any) {
+      console.error('Erro ao atribuir chamados:', error);
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.mensagem || 
+                          error.response?.data?.erros || 
+                          error.message || 
+                          'Erro ao atribuir chamados';
+      alert(`Erro: ${errorMessage}`);
+    } finally {
+      setSubmittingEdicao(false);
+    }
   };
 
   const fecharModalEdicao = () => {
     setModalEdicaoAberto(false);
     setNovoStatusId('');
     setNovaPrioridadeId('');
+    setNovoDepartamentoId('');
+    setNovoTopicoAjudaId('');
+    setNovoResponsavelId('');
   };
 
   const confirmarEdicaoMultipla = async () => {
-    if (!novoStatusId && !novaPrioridadeId) {
-      alert('Selecione ao menos um campo para alterar');
-      return;
-    }
-
-    setSubmittingEdicao(true);
     try {
+      // validacao especifica pra redirecionamento
+      if (novoResponsavelId && novoResponsavelId !== '') {
+        const chamadosParaRedirecionar = chamados.filter(c => chamadosSelecionados.includes(c.id));
+        const chamadosDeOutros = chamadosParaRedirecionar.filter(
+          c => c.userResponsavel && c.userResponsavel.id !== user?.id
+        );
+
+        if (chamadosDeOutros.length > 0) {
+          alert(
+            `Você não pode redirecionar chamados que não são seus.\n\n` +
+            `${chamadosDeOutros.length} chamado(s) estão sendo atendidos por outras pessoas:\n\n` +
+            chamadosDeOutros.map(c => `#${c.numeroChamado || c.id} - Responsável: ${c.userResponsavel?.name}`).join('\n') +
+            `\n\nRemova esses chamados da seleção para continuar.`
+          );
+          return;
+        }
+      }
+
+      setSubmittingEdicao(true);
+
       const payload: any = {
         chamadosIds: chamadosSelecionados,
       };
 
       if (novoStatusId) payload.statusId = parseInt(novoStatusId);
       if (novaPrioridadeId) payload.prioridadeId = parseInt(novaPrioridadeId);
+      if (novoDepartamentoId) payload.departamentoId = parseInt(novoDepartamentoId);
+      if (novoTopicoAjudaId) payload.topicoAjudaId = parseInt(novoTopicoAjudaId);
+      if (novoResponsavelId) payload.userResponsavelId = parseInt(novoResponsavelId);
 
       const response = await api.patch('/chamados/editar-multiplos', payload);
-      
-      alert('Chamados editados com sucesso!');
-      fecharModalEdicao();
-      await pesquisarChamados();
+
+      alert(response.data.message || ` ${chamadosSelecionados.length} chamado(s) atualizado(s) com sucesso!`);
+      setModalEdicaoAberto(false);
+      setChamadosSelecionados([]);
+      setTodosChecados(false);
+      await pesquisarChamados(paginaAtual);
     } catch (error: any) {
       console.error('Erro ao editar chamados:', error);
-      const mensagemErro = error.response?.data?.message || 'Erro ao editar chamados';
-      alert(mensagemErro);
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.mensagem || 
+                          error.response?.data?.erros || 
+                          error.message || 
+                          'Erro ao editar múltiplos chamados';
+      alert(`Erro: ${errorMessage}`);
     } finally {
       setSubmittingEdicao(false);
     }
@@ -406,6 +589,7 @@ export default function GerenciarChamados() {
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
+      timeZone: 'America/Sao_Paulo',
     });
   };
 
@@ -436,7 +620,7 @@ export default function GerenciarChamados() {
                   }}
                   dateFormat="dd/MM/yyyy"
                   placeholderText="Selecione o período"
-                  className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900"
+                  className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded  focus:ring-1 focus:ring-blue-500 text-sm text-gray-900"
                   isClearable={true}
                 />
               </div>
@@ -457,7 +641,7 @@ export default function GerenciarChamados() {
                   }}
                   dateFormat="dd/MM/yyyy"
                   placeholderText="Selecione o período"
-                  className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900"
+                  className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded  focus:ring-1 focus:ring-blue-500 text-sm text-gray-900"
                   isClearable={true}
                 />
               </div>
@@ -470,7 +654,7 @@ export default function GerenciarChamados() {
                 <select
                   value={departamentoId}
                   onChange={(e) => setDepartamentoId(e.target.value)}
-                  className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900"
+                  className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded  focus:ring-1 focus:ring-blue-500 text-sm text-gray-900"
                 >
                   <option value="">Todos</option>
                   {departamentos.filter(dept => dept.ativo).map((dept) => (
@@ -489,7 +673,7 @@ export default function GerenciarChamados() {
                 <select
                   value={topicoAjudaId}
                   onChange={(e) => setTopicoAjudaId(e.target.value)}
-                  className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900"
+                  className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded  focus:ring-1 focus:ring-blue-500 text-sm text-gray-900"
                 >
                   <option value="">Todos</option>
                   {topicosAjuda.filter(topico => topico.ativo).map((topico) => (
@@ -508,7 +692,7 @@ export default function GerenciarChamados() {
                 <select
                   value={statusId}
                   onChange={(e) => setStatusId(e.target.value)}
-                  className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900"
+                  className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded  focus:ring-1 focus:ring-blue-500 text-sm text-gray-900"
                 >
                   <option value="">Todos</option>
                   {statusList.map((status) => (
@@ -532,7 +716,7 @@ export default function GerenciarChamados() {
                   value={assunto}
                   onChange={(e) => setAssunto(e.target.value)}
                   placeholder="Digite o assunto"
-                  className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900"
+                  className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded  focus:ring-1 focus:ring-blue-500 text-sm text-gray-900"
                 />
               </div>
 
@@ -546,7 +730,7 @@ export default function GerenciarChamados() {
                   value={nomeUsuario}
                   onChange={(e) => setNomeUsuario(e.target.value)}
                   placeholder="Digite o nome"
-                  className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900"
+                  className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded  focus:ring-1 focus:ring-blue-500 text-sm text-gray-900"
                 />
               </div>
 
@@ -607,7 +791,7 @@ export default function GerenciarChamados() {
 
           {/* acao em multiplos registros */}
           {chamados.length > 0 && (
-            <div className="px-6 py-4 bg-gray-50 border-b border-gray-300 flex gap-3">
+            <div className="px-6 py-4 bg-gray-50 border-b border-gray-300 flex gap-3 items-center">
               <button
                 onClick={marcarComoResolvido}
                 disabled={chamadosSelecionados.length === 0}
@@ -621,6 +805,13 @@ export default function GerenciarChamados() {
                 className="px-5 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors font-medium text-sm disabled:bg-blue-300 disabled:cursor-not-allowed"
               >
                 Editar Múltiplos
+              </button>
+              <button
+                onClick={atribuirAMim}
+                disabled={chamadosSelecionados.length === 0}
+                className="px-5 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors font-medium text-sm disabled:bg-purple-300 disabled:cursor-not-allowed"
+              >
+                Atribuir a mim
               </button>
               {chamadosSelecionados.length > 0 && (
                 <span className="text-sm text-gray-600 flex items-center ml-2">
@@ -870,7 +1061,7 @@ export default function GerenciarChamados() {
                       setPageSize(parseInt(e.target.value));
                       setPaginaAtual(1);
                     }}
-                    className="px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900"
+                    className="px-3 py-2 border border-gray-300 rounded  focus:ring-1 focus:ring-blue-500 text-sm text-gray-900"
                   >
                     <option value="10">10</option>
                     <option value="20">20</option>
@@ -923,76 +1114,169 @@ export default function GerenciarChamados() {
 
       {/* Modal de Edição Múltipla */}
       {modalEdicaoAberto && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 animate-ease-in-out">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-semibold text-gray-800">
-                  Edição de múltiplos registros
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl transform transition-all">
+            {/* header */}
+            <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 rounded-t-2xl">
+              <div className="flex justify-between items-center">
+                <h3 className="text-xl font-bold text-white">
+                  Editar múltiplos chamados
                 </h3>
-                <span className="text-sm text-gray-500">
-                  Alterando {chamadosSelecionados.length} registro(s)
-                </span>
-              </div>
-
-              <div className="space-y-4">
-                {/* Campo Prioridade */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Prioridade
-                  </label>
-                  <select
-                    value={novaPrioridadeId}
-                    onChange={(e) => setNovaPrioridadeId(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                <div className="flex items-center gap-3">
+                  <span className="text-sm bg-white/20 text-white px-3 py-1 rounded-full font-medium">
+                    {chamadosSelecionados.length} selecionado(s)
+                  </span>
+                  <button
+                    onClick={fecharModalEdicao}
+                    disabled={submittingEdicao}
+                    className="text-white hover:bg-white/20 rounded-full p-1 transition-colors disabled:opacity-50"
                   >
-                    <option value="">Não alterar</option>
-                    {prioridades.map((prioridade) => (
-                      <option key={prioridade.id} value={prioridade.id}>
-                        {prioridade.nome}
-                      </option>
-                    ))}
-                  </select>
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
                 </div>
-
-                {/* Campo Status */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Status
-                  </label>
-                  <select
-                    value={novoStatusId}
-                    onChange={(e) => setNovoStatusId(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-                  >
-                    <option value="">Não alterar</option>
-                    {statusList.map((status) => (
-                      <option key={status.id} value={status.id}>
-                        {status.nome}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Botões */}
-              <div className="flex gap-3 mt-6 justify-end">
-                <button
-                  onClick={fecharModalEdicao}
-                  disabled={submittingEdicao}
-                  className="px-6 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors font-medium disabled:bg-gray-400"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={confirmarEdicaoMultipla}
-                  disabled={submittingEdicao}
-                  className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors font-medium disabled:bg-blue-400"
-                >
-                  {submittingEdicao ? 'Salvando...' : 'Confirmar'}
-                </button>
               </div>
             </div>
+            
+          {/* Body */}
+<div className="p-8"> 
+  {/* Grid de campos */}
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+    
+    {/* Prioridade */}
+    <div className="space-y-2">
+      <label className="block text-xs font-bold uppercase tracking-wider text-gray-500">
+        Prioridade
+      </label>
+      <select
+        value={novaPrioridadeId}
+        onChange={(e) => setNovaPrioridadeId(e.target.value)}
+        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 bg-white transition-all"
+      >
+        <option value="">Manter atual</option>
+        {[...prioridades].sort((a, b) => a.id - b.id).map((prioridade) => (
+          <option key={prioridade.id} value={prioridade.id}>
+            {prioridade.nome}
+          </option>
+        ))}
+      </select>
+    </div>
+
+    {/* departamento */}
+    <div className="space-y-2">
+      <label className="block text-xs font-bold uppercase tracking-wider text-gray-500">
+        Departamento
+      </label>
+      <select
+        value={novoDepartamentoId}
+        onChange={(e) => setNovoDepartamentoId(e.target.value)}
+        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 bg-white transition-all"
+      >
+        <option value="">Manter atual</option>
+        {[...departamentos].filter(dept => dept.ativo).sort((a, b) => a.id - b.id).map((dept) => (
+          <option key={dept.id} value={dept.id}>
+            {dept.name}
+          </option>
+        ))}
+      </select>
+    </div>
+
+    {/* Status */}
+    <div className="space-y-2">
+      <label className="block text-xs font-bold uppercase tracking-wider text-gray-500">
+        Status
+      </label>
+      <select
+        value={novoStatusId}
+        onChange={(e) => setNovoStatusId(e.target.value)}
+        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 bg-white transition-all"
+      >
+        <option value="">Manter atual</option>
+        {[...statusList].sort((a, b) => a.id - b.id).map((status) => (
+          <option key={status.id} value={status.id}>
+            {status.nome}
+          </option>
+        ))}
+      </select>
+    </div>
+
+    {/* topico */}
+    <div className="space-y-2">
+      <label className="block text-xs font-bold uppercase tracking-wider text-gray-500">
+        Tópico de ajuda
+      </label>
+      <select
+        value={novoTopicoAjudaId}
+        onChange={(e) => setNovoTopicoAjudaId(e.target.value)}
+        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 bg-white transition-all"
+      >
+        <option value="">Manter atual</option>
+        {[...topicosAjuda].filter(topico => topico.ativo).sort((a, b) => a.id - b.id).map((topico) => (
+          <option key={topico.id} value={topico.id}>
+            {topico.nome}
+          </option>
+        ))}
+      </select>
+    </div>
+  </div>
+
+  <div className="mb-8 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+    <div className="flex items-center gap-2 mb-3">
+      <svg className="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+      </svg>
+      <h4 className="text-sm font-semibold text-gray-800">Redirecionar Chamado</h4>
+    </div>
+    
+    <select
+      value={novoResponsavelId}
+      onChange={(e) => setNovoResponsavelId(e.target.value)}
+      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 text-sm bg-white"
+    >
+      <option value="">Não alterar responsável</option>
+      {usuariosAdmin.length === 0 && (
+        <option value="" disabled>Nenhum administrador disponível</option>
+      )}
+      {[...usuariosAdmin].sort((a, b) => a.id - b.id).map((usuario) => (
+        <option key={usuario.id} value={usuario.id}>
+          {usuario.name}
+        </option>
+      ))}
+    </select>
+    <p className="mt-2 text-[11px] text-gray-500 italic">
+      * Apenas chamados sob sua responsabilidade podem ser redirecionados.
+    </p>
+  </div>
+
+  {/* Botões */}
+  <div className="flex gap-3 justify-end pt-6 border-t border-gray-100">
+    <button
+      onClick={fecharModalEdicao}
+      disabled={submittingEdicao}
+      className="px-5 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors disabled:opacity-50"
+    >
+      Cancelar
+    </button>
+    <button
+      onClick={confirmarEdicaoMultipla}
+      disabled={submittingEdicao}
+      className="px-6 py-2 bg-blue-600 text-white text-sm font-bold rounded-md hover:bg-blue-700 transition-all shadow-sm hover:shadow-md disabled:opacity-50 flex items-center gap-2"
+    >
+      {submittingEdicao ? (
+        <span className="flex items-center gap-2">
+          <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          Salvando...
+        </span>
+      ) : (
+        "Confirmar Alterações"
+      )}
+    </button>
+  </div>
+</div>
           </div>
         </div>
       )}
