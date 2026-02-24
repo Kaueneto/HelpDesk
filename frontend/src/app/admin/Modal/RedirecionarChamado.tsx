@@ -26,18 +26,35 @@ export default function ModalRedirecionarChamado({
   const [usuariosAdmin, setUsuariosAdmin] = useState<Usuario[]>([]);
   const [usuarioSelecionado, setUsuarioSelecionado] = useState<number | null>(null);
   const [redirecionando, setRedirecionando] = useState(false);
+  const [usuarioLogadoId, setUsuarioLogadoId] = useState<number | null>(null);
 
   useEffect(() => {
-    if (isOpen) {
+    //pegar id do usuario logado do token
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        setUsuarioLogadoId(payload.id);
+      } catch (error) {
+        console.error('Erro ao decodificar token:', error);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isOpen && usuarioLogadoId !== null) {
       carregarAdministradores();
       setUsuarioSelecionado(null);
     }
-  }, [isOpen]);
+  }, [isOpen, usuarioLogadoId]);
 
   const carregarAdministradores = async () => {
     try {
       const response = await api.get('/users');
-      const admins = response.data.filter((user: Usuario) => user.roleId === 1);
+      // filtrar admins, excluindo o usuário logado
+      const admins = response.data.filter(
+        (user: Usuario) => user.roleId === 1 && user.id !== usuarioLogadoId
+      );
       setUsuariosAdmin(admins);
     } catch (error) {
       console.error('Erro ao carregar administradores:', error);

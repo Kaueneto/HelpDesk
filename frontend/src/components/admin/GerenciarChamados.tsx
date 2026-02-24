@@ -799,10 +799,10 @@ export default function GerenciarChamados() {
                           before:content-['✓'] before:absolute before:inset-0 before:flex before:items-center before:justify-center before:text-white before:text-sm before:font-bold before:opacity-0 checked:before:opacity-100"
                         />
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-900 font-medium">
+                      <td className="px-4 py-3 text-sm text-gray-900 font-medium whitespace-nowrap">
                         {chamado.numeroChamado || chamado.id}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <div className="flex items-center gap-2">
                           <div
                             className="w-3 h-3 rounded-full"
@@ -813,15 +813,15 @@ export default function GerenciarChamados() {
                           </span>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-900">
+                      <td className="px-4 py-3 text-sm text-gray-900 max-w-[150px] truncate">
                         {chamado.topicoAjuda?.nome || '-'}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-900">
+                      <td className="px-4 py-3 text-sm text-gray-900 max-w-[120px] truncate">
                         {chamado.departamento?.nome || chamado.departamento?.name || '-'}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-1 py-1 text-center whitespace-nowrap">
                         <span
-                          className={`px-3 py-1 rounded-full text-sm  ${
+                          className={`px-2 py-1 rounded-full text-xs  ${
                             chamado.status?.id === 1
                               ? 'bg-yellow-100 text-yellow-800 border border-yellow-600'
                               : chamado.status?.id === 2
@@ -832,21 +832,21 @@ export default function GerenciarChamados() {
                           {chamado.status?.nome || 'Desconhecido'}
                         </span>
                       </td>
-                      <td className="px-1 py-3 text-sm text-gray-600">
+                      <td className="px-1 py-3 text-sm text-gray-600 whitespace-nowrap">
                         {formatarData(chamado.dataAbertura)}
                       </td>
-                      <td className="px-1 py-3 text-sm text-gray-600">
+                      <td className="px-1 py-3 text-sm text-gray-600 whitespace-nowrap">
                         {formatarData(chamado.dataFechamento)}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-900">
+                      <td className="px-4 py-3 text-sm text-gray-900 max-w-[150px] truncate">
                         {chamado.usuario?.name || '-'}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-900">
+                      <td className="px-4 py-3 text-sm text-gray-900 max-w-[150px] truncate">
                         {chamado.userResponsavel?.name || (
                           <span className="text-gray-400 italic">Não atribuído</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-900 max-w-xs truncate">
+                      <td className="px-4 py-3 text-sm text-gray-900 max-w-[200px] truncate" title={chamado.resumoChamado}>
                         {chamado.resumoChamado}
                       </td>
                     </tr>))}

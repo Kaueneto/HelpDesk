@@ -349,6 +349,27 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
     }
   };
 
+  const handleAssumirChamado = () => {
+    //verificar se o usuario logado ja é o responsavel pelo chamado
+    if (chamado?.userResponsavel?.id === usuarioLogadoId) {
+      toast('Você já é o responsável por este chamado.', {
+        icon: 'ℹ️',
+        style: {
+          background: '#fff',
+          color: '#3b82f6',
+          fontWeight: 'bold',
+          fontSize: '1rem',
+          borderRadius: '0.75rem',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+        },
+      });
+      return;
+    }
+
+    // se nao for o responsável abrir modal de confirmação
+    setModalAssumirAberto(true);
+  };
+
   const reabrirChamado = async () => {
     const confirmacao = window.confirm('Deseja reabrir este chamado? Você se tornará o responsável por ele.');
     if (!confirmacao) return;
@@ -614,7 +635,8 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
             Imprimir
           </button>
           <button
-            onClick={() => setModalAssumirAberto(true)}
+
+             onClick={handleAssumirChamado}
             disabled={chamado.status.id === 3}
             className="px-5 py-2 bg-transparent border border-purple-600 text-purple-600 rounded-lg hover:bg-purple-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-gray-300 disabled:text-gray-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-1 focus:ring-purple-500/50"
           >

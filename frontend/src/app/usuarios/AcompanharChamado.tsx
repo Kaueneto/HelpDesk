@@ -226,7 +226,7 @@ export default function AcompanharChamado({ onChamadoClick }: AcompanharChamadoP
                       <span
                         className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border uppercase tracking-wider ${
                           chamado.status?.id === 1
-                            ? 'bg-yellow-100 text-yellow-700 border-yellow-500' 
+                            ? 'bg-yellow-100 text-yellow-800 border-yellow-800' 
                             : chamado.status?.id === 2
                             ? 'bg-blue-100 text-blue-700 border-blue-500'     
                             : 'bg-green-100 text-green-700 border-green-500' 
