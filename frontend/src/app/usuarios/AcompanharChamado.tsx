@@ -80,18 +80,14 @@ export default function AcompanharChamado({ onChamadoClick }: AcompanharChamadoP
 
   const formatarDataBrasilia = (data: string) => {
     const date = new Date(data);
-    
-    if (data.includes('Z')) {
-      date.setHours(date.getHours() + 3);
-    }
-    
-    const dia = String(date.getDate()).padStart(2, '0');
-    const mes = String(date.getMonth() + 1).padStart(2, '0');
-    const ano = date.getFullYear();
-    const hora = String(date.getHours()).padStart(2, '0');
-    const minuto = String(date.getMinutes()).padStart(2, '0');
-    
-    return `${dia}/${mes}/${ano} ${hora}:${minuto}`;
+    return date.toLocaleString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: 'America/Sao_Paulo',
+    });
   };
 
   return (

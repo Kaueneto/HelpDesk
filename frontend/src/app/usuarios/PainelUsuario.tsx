@@ -18,7 +18,7 @@ export default function PainelUsuario() {
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      router.push('/login');
+      router.push('/auth/login');
     }
   }, [isAuthenticated, isLoading, router]);
 
@@ -61,9 +61,9 @@ export default function PainelUsuario() {
     <div className="min-h-screen bg-gray-100 flex flex-col">
       {/* Container principal */}
       <div className="flex-1 max-w-7xl mx-auto w-full p-8">
-        <div className="bg-white rounded-lg shadow-lg overflow-hidden h-full flex flex-col">
+        <div className="bg-[#f8fafc] rounded-lg shadow-lg overflow-hidden h-full flex flex-col">
           {/* Header */}
-          <div className="bg-[#fffafa] border-b border-gray-200 px-8 py-5 flex justify-between items-center">
+          <div className="bg-[#f8fafc] border-b border-gray-200 px-8 py-5 flex justify-between items-center">
             <h1 className="text-2xl font-bold text-gray-900">Central de chamados</h1>
             <div className="relative">
               <button
@@ -86,7 +86,7 @@ export default function PainelUsuario() {
 
               {/* Dropdown Menu */}
               {userDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                <div className="absolute right-0 mt-2 w-56 bg-[#f8fafc] rounded-lg shadow-lg border border-gray-200 py-2 z-50">
                   <button
                     onClick={() => {
                       setShowConfiguracoes(true);
@@ -103,8 +103,9 @@ export default function PainelUsuario() {
                   <hr className="my-2 border-gray-200" />
                   <button
                     onClick={() => {
-                      logout();
+                      console.log('[PAINEL USUARIO] Botão sair clicado');
                       setUserDropdownOpen(false);
+                      logout();
                     }}
                     className="w-full px-4 py-2 text-left text-red-600 hover:bg-red-50 flex items-center gap-2"
                   >
