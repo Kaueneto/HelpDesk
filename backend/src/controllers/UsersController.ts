@@ -22,15 +22,13 @@ router.get("/users", verifyToken, async (req: Request, res: Response) => {
     // Filtro por período de cadastro
     if (dataCadastroInicio) {
       query = query.andWhere("user.createdAt >= :dataCadastroInicio", { 
-        dataCadastroInicio: new Date(dataCadastroInicio as string) 
+        dataCadastroInicio: new Date(dataCadastroInicio as string)
       });
     }
     
     if (dataCadastroFim) {
-      const dataFim = new Date(dataCadastroFim as string);
-      dataFim.setHours(23, 59, 59, 999);
       query = query.andWhere("user.createdAt <= :dataCadastroFim", { 
-        dataCadastroFim: dataFim 
+        dataCadastroFim: new Date(dataCadastroFim as string)
       });
     }
     
@@ -206,23 +204,6 @@ try {
 
 
 
-//remover usuario
-router.delete("/users/:id", async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const userRepository = AppDataSource.getRepository(Users);
-
-    const user = await userRepository.findOneBy({ id: parseInt(id) });
-    if (!user)
-      return res.status(404).json({ mensagem: "Usuário não encontrado" });
-
-    await userRepository.remove(user);
-
-    res.status(200).json({ mensagem: "Usuário excluído com sucesso" });
-  } catch (error) {
-    res.status(500).json({ mensagem: "Erro ao remover usuário" });
-  }
-});
 
 // resetar senha de multiplos usuarios
 router.patch("/users/resetar-senha-multiplos", verifyToken, async (req: Request, res: Response) => {
@@ -276,6 +257,42 @@ router.patch("/users/alterar-situacao-multiplos", verifyToken, async (req: Reque
   } catch (error) {
     console.error("Erro ao alterar situação dos usuários:", error);
     res.status(500).json({ mensagem: "Erro ao alterar situação dos usuários" });
+  }
+});
+
+// excluir multiplos usuarios
+router.delete("/users/excluir-multiplos", verifyToken, async (req: Request, res: Response) => {
+  try {
+    const { usuariosIds } = req.body;
+
+    if (!usuariosIds || !Array.isArray(usuariosIds) || usuariosIds.length === 0) {
+      return res.status(400).json({ mensagem: "IDs de usuários são obrigatórios" });
+    }
+
+    const userRepository = AppDataSource.getRepository(Users);
+
+    // buscar usuarios que serão excluidos
+    const usuarios = await userRepository
+      .createQueryBuilder("user")
+      .where("user.id IN (:...ids)", { ids: usuariosIds })
+      .getMany();
+
+    if (usuarios.length === 0) {
+      return res.status(404).json({ mensagem: "Nenhum usuário encontrado para exclusão" });
+    }
+
+    // excluir os users  
+    await userRepository.remove(usuarios);
+
+    res.status(200).json({ 
+      mensagem: `${usuarios.length} usuário(s) excluído(s) com sucesso!` 
+    });
+  } catch (error) {
+    console.error("Erro ao excluir usuários:", error);
+    res.status(500).json({ 
+      mensagem: "Erro ao excluir usuários",
+      erro: error instanceof Error ? error.message : "Erro desconhecido"
+    });
   }
 });
 
