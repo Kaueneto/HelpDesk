@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import api from '@/services/api';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface ConfiguracoesProps {
   user: {
@@ -13,12 +14,18 @@ interface ConfiguracoesProps {
 }
 
 function Configuracoes({ user, onClose }: ConfiguracoesProps) {
+  const { updateUser } = useAuth();
   const [alterarSenhaAberto, setAlterarSenhaAberto] = useState(false);
   const [senhaAtual, setSenhaAtual] = useState('');
   const [novaSenha, setNovaSenha] = useState('');
   const [confirmarSenha, setConfirmarSenha] = useState('');
   const [submittingSenha, setSubmittingSenha] = useState(false);
   const [errorSenha, setErrorSenha] = useState('');
+  
+  //estados pra editar nome
+  const [nomeEditavel, setNomeEditavel] = useState(user.name);
+  const [submittingNome, setSubmittingNome] = useState(false);
+  const [errorNome, setErrorNome] = useState('');
 
   const handleAlterarSenha = async () => {
     setErrorSenha('');
@@ -59,6 +66,48 @@ function Configuracoes({ user, onClose }: ConfiguracoesProps) {
     }
   };
 
+const handleAlterarNome = async () => {
+  setErrorNome('');
+
+  if (!nomeEditavel || nomeEditavel.trim() === '') {
+    setErrorNome('O nome não pode estar vazio');
+    return;
+  }
+
+  if (nomeEditavel.trim().length < 3) {
+    setErrorNome('O nome deve ter pelo menos 3 caracteres');
+    return;
+  }
+
+  if (nomeEditavel.trim() === user.name) {
+    setErrorNome('O nome não foi alterado');
+    return;
+  }
+
+  setSubmittingNome(true);
+
+  try {
+    const response = await api.put('/users/alterar-meu-nome', {
+      nome: nomeEditavel.trim(),
+    });
+
+    const novoNome = nomeEditavel.trim();
+
+    // att no contexto de autenticação
+    updateUser({ name: novoNome });
+
+    alert('Nome alterado com sucesso!');
+    setErrorNome('');
+  } catch (error: any) {
+    const mensagem = error.response?.data?.mensagem || 'Erro ao alterar nome';
+    setErrorNome(mensagem);
+  } finally {
+    setSubmittingNome(false);
+  }
+};
+
+const nomeAlterado = nomeEditavel.trim() !== '' && nomeEditavel.trim() !== user.name;
+
   return (
     <div className="h-full flex flex-col">
       {/* Header da tela de configurações */}
@@ -71,6 +120,8 @@ function Configuracoes({ user, onClose }: ConfiguracoesProps) {
             setNovaSenha('');
             setConfirmarSenha('');
             setErrorSenha('');
+            setNomeEditavel(user.name);
+            setErrorNome('');
           }}
           className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
         >
@@ -90,7 +141,7 @@ function Configuracoes({ user, onClose }: ConfiguracoesProps) {
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Seus Dados</h2>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">ID</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">N° de identificação</label>
                   <input
                     type="text"
                     value={user.id}
@@ -102,13 +153,27 @@ function Configuracoes({ user, onClose }: ConfiguracoesProps) {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Nome</label>
                   <input
                     type="text"
-                    value={user.name}
-                    disabled
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-700"
+                    value={nomeEditavel}
+                    onChange={(e) => setNomeEditavel(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    placeholder="Digite seu nome"
+                    disabled={submittingNome}
                   />
+                  {errorNome && (
+                    <p className="text-red-600 text-sm mt-1">{errorNome}</p>
+                  )}
+                  {nomeAlterado && (
+                    <button
+                      onClick={handleAlterarNome}
+                      disabled={submittingNome}
+                      className="mt-2 w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium rounded transition"
+                    >
+                      {submittingNome ? 'Salvando...' : 'Salvar Alterações'}
+                    </button>
+                  )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">E-mail</label>
                   <input
                     type="email"
                     value={user.email}
@@ -146,7 +211,7 @@ function Configuracoes({ user, onClose }: ConfiguracoesProps) {
                         type="password"
                         value={senhaAtual}
                         onChange={(e) => setSenhaAtual(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
                         placeholder="Digite sua senha atual"
                         disabled={submittingSenha}
                       />
@@ -158,7 +223,7 @@ function Configuracoes({ user, onClose }: ConfiguracoesProps) {
                         type="password"
                         value={novaSenha}
                         onChange={(e) => setNovaSenha(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
                         placeholder="Digite sua nova senha"
                         disabled={submittingSenha}
                       />
@@ -170,7 +235,7 @@ function Configuracoes({ user, onClose }: ConfiguracoesProps) {
                         type="password"
                         value={confirmarSenha}
                         onChange={(e) => setConfirmarSenha(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
                         placeholder="Confirme sua nova senha"
                         disabled={submittingSenha}
                       />
