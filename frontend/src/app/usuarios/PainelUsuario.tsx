@@ -63,7 +63,7 @@ export default function PainelUsuario() {
       <div className="flex-1 max-w-7xl mx-auto w-full p-8">
         <div className="bg-white rounded-lg shadow-lg overflow-hidden h-full flex flex-col">
           {/* Header */}
-          <div className="bg-white border-b border-gray-200 px-8 py-5 flex justify-between items-center">
+          <div className="bg-[#fffafa] border-b border-gray-200 px-8 py-5 flex justify-between items-center">
             <h1 className="text-2xl font-bold text-gray-900">Central de chamados</h1>
             <div className="relative">
               <button

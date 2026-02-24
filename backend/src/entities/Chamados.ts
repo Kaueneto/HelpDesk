@@ -84,6 +84,10 @@ export class Chamados {
   @Column({ name: "descricao_chamado", type: "text" })
   descricaoChamado!: string;
 
+  // Contador de vezes que o chamado foi reaberto
+  @Column({ name: "vezes_reaberto", default: 0 })
+  vezesReaberto!: number;
+
   // Usuário responsável pelo atendimento
   @ManyToOne(() => Users, user => user.chamadosResponsavel, { nullable: true })
   @JoinColumn({ name: "id_user_responsavel" })

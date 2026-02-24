@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import api from '@/services/api';
 import ModalEditarChamadoUsuario from './ModalEditarChamadoUsuario';
+import ModalConfirmarReabertura from './ModalConfirmarReabertura';
 
 interface DetalhesChamadosProps {
   chamado: any;
@@ -21,6 +22,7 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
   const [errorMessage, setErrorMessage] = useState('');
   const [modalEditarAberto, setModalEditarAberto] = useState(false);
   const [chamadoAtualizado, setChamadoAtualizado] = useState(chamado);
+  const [modalConfirmarReaberturaAberto, setModalConfirmarReaberturaAberto] = useState(false);
 
   useEffect(() => {
     buscarMensagens(chamado.id);
@@ -63,13 +65,15 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
 
  const carregarMensagensEHistorico = async () => {
     try {
-      const [mensagensRes, historicoRes] = await Promise.all([
+      const [mensagensRes, historicoRes, chamadoRes] = await Promise.all([
         api.get(`/chamados/${chamado.id}/mensagens`),
         api.get(`/chamados/${chamado.id}/historico`),
+        api.get(`/chamados/${chamado.id}`),
       ]);
 
       setMensagens(mensagensRes.data);
       setHistorico(historicoRes.data);
+      setChamadoAtualizado(chamadoRes.data);
     } catch (error) {
       console.error('Erro ao atualizar mensagens:', error);
       // nao mostra alert para nao interromper o usuario
@@ -82,6 +86,17 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
       return;
     }
 
+    // se o chamado está encerrado (status.id === 3), mostrar modal de confirmação
+    if (chamadoAtualizado.status?.id === 3) {
+      setModalConfirmarReaberturaAberto(true);
+      return;
+    }
+
+    // se não está encerrado, enviar normalmente
+    await enviarMensagem();
+  };
+
+  const enviarMensagem = async () => {
     setSubmittingResposta(true);
     setErrorMessage('');
 
@@ -105,9 +120,10 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
 
       setNovaMensagem('');
       setAnexosResposta([]);
-      await buscarMensagens(chamado.id);
+      await carregarMensagensEHistorico();
     } catch (error: any) {
-      setErrorMessage(error.response?.data?.mensagem || 'Erro ao publicar resposta.');
+      const mensagemErro = error.response?.data?.mensagem || 'Erro ao publicar resposta.';
+      setErrorMessage(mensagemErro);
     } finally {
       setSubmittingResposta(false);
     }
@@ -177,29 +193,29 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
         <div className="flex justify-between items-start mb-4">
           <div>
             <h2 className="text-2xl font-bold text-blue-600 mb-2">
-              {chamado.resumoChamado} <span className="text-gray-500 text-lg">#{chamado.numeroChamado || chamado.id}</span>
+              {chamadoAtualizado.resumoChamado} <span className="text-gray-500 text-lg">#{chamadoAtualizado.numeroChamado || chamadoAtualizado.id}</span>
             </h2>
             <p className="text-base text-gray-600 mb-4">Informações sobre o chamado</p>
             
             <div className="grid grid-cols-5 gap-6">
               <div>
                 <p className="text-base font-semibold text-gray-700 mb-1">Status</p>
-                <p className="text-base font-bold" style={{ color: chamado.status?.id === 1 ? '#2563eb' : '#059669' }}>
-                  {chamado.status?.nome}
+                <p className="text-base font-bold" style={{ color: chamadoAtualizado.status?.id === 1 ? '#2563eb' : chamadoAtualizado.status?.id === 2 ? '#f59e0b' : '#059669' }}>
+                  {chamadoAtualizado.status?.nome}
                 </p>
               </div>
               
               <div>
                 <p className="text-base font-semibold text-gray-700 mb-1">Departamento</p>
                 <p className="text-base font-bold text-blue-600">
-                  {chamado.departamento?.name}
+                  {chamadoAtualizado.departamento?.name}
                 </p>
               </div>
               
               <div>
                 <p className="text-base font-semibold text-gray-700 mb-1">Criado em</p>
                 <p className="text-base font-bold text-blue-600">
-                  {formatarDataBrasilia(chamado.dataAbertura)}
+                  {formatarDataBrasilia(chamadoAtualizado.dataAbertura)}
                 </p>
               </div>
                           
@@ -209,12 +225,12 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
                 <span
                   className="inline-block px-3 py-1 text-sm font-semibold rounded-full border"
                   style={{
-                    backgroundColor: `${chamado.tipoPrioridade?.cor}20`, 
-                    color: chamado.tipoPrioridade?.cor,
-                    borderColor: chamado.tipoPrioridade?.cor,
+                    backgroundColor: `${chamadoAtualizado.tipoPrioridade?.cor}20`, 
+                    color: chamadoAtualizado.tipoPrioridade?.cor,
+                    borderColor: chamadoAtualizado.tipoPrioridade?.cor,
                   }}
                 >
-                  {chamado.tipoPrioridade?.nome}
+                  {chamadoAtualizado.tipoPrioridade?.nome}
                 </span>
               </div>
 
@@ -222,7 +238,7 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
               <div>
                 <p className="text-base font-semibold text-gray-700 mb-1">Tópico de ajuda</p>
                 <p className="text-base text-gray-900">
-                  {chamado.topicoAjuda?.nome}
+                  {chamadoAtualizado.topicoAjuda?.nome}
                 </p>
               </div>
             </div>
@@ -273,67 +289,77 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
       </div>
 
       {/* Conteúdo das tabs */}
-      <div className="overflow-hidden">
+      <div className="overflow-hidden h-[calc(100vh-240px)]">
         <div
-          className="flex transition-transform duration-300 ease-in-out"
+          className="flex transition-transform duration-300 ease-in-out h-full"
           style={{ transform: detalheTab === 'detalhes' ? 'translateX(0)' : 'translateX(-100%)' }}
         >
           {/* Tab Detalhes */}
-          <div className="w-full shrink-0">
+          <div className="w-full shrink-0 flex flex-col h-full">
             {loadingMensagens ? (
               <div className="text-center py-8 text-gray-600">Carregando mensagens...</div>
             ) : (
               <>
-                {/* Mensagens */}
-                <div className="space-y-4 mb-6">
-                  {/* Primeira mensagem */}
-                  <div className="bg-green-100 border-l-4 border-green-500 p-4 rounded-md">
-                    <div className="flex justify-between items-start mb-2">
-                      <p className="font-semibold text-gray-900">
-                        {chamado.usuario?.name || 'Nome de perfil do usuario'}
+                {/* container de mensagens com scroll */}
+                <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4 bg-gray-50">
+                  {/* 1° mensagem do usuário */}
+                  <div className="flex justify-end">
+                    <div className="max-w-[70%] bg-green-50 border-r-4 border-green-500 rounded-lg p-4 shadow-sm">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="font-semibold text-gray-900 text-sm">
+                          {chamado.usuario?.name || 'Usuário'}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          {formatarDataBrasilia(chamado.dataAbertura)}
+                        </span>
+                      </div>
+                      <p className="text-gray-800 whitespace-pre-wrap text-sm">
+                        {chamado.descricaoChamado}
                       </p>
-                      <span className="text-base text-gray-600">
-                        {formatarDataBrasilia(chamado.dataAbertura)}
-                      </span>
                     </div>
-                    <p className="text-gray-800 whitespace-pre-wrap">
-                      {chamado.descricaoChamado}
-                    </p>
                   </div>
 
                   {/* Mensagens subsequentes */}
-                  {mensagens.map((msg) => (
-                    <div
-                      key={msg.id}
-                      className={`${
-                        msg.usuario?.roleId === 1
-                          ? 'bg-gray-200 border-l-4 border-gray-500'
-                          : 'bg-green-100 border-l-4 border-green-500'
-                      } p-4 rounded-md`}
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <p className="font-semibold text-gray-900">
-                          {msg.usuario?.roleId === 1 ? 'nome de perfil do administrador' : msg.usuario?.name}
-                        </p>
-                        <span className="text-base text-gray-600">
-                          {formatarDataBrasilia(msg.dataEnvio)}
-                        </span>
+                  {mensagens.map((msg) => {
+                    const isUsuarioChamado = msg.usuario?.id === chamado.usuario?.id;
+                    
+                    return (
+                      <div
+                        key={msg.id}
+                        className={`flex ${isUsuarioChamado ? 'justify-end' : 'justify-start'}`}
+                      >
+                        <div
+                          className={`max-w-[70%] ${
+                            isUsuarioChamado 
+                              ? 'bg-green-50 border-r-4 border-green-500' 
+                              : 'bg-gray-100 border-l-4 border-gray-500'
+                          } rounded-lg p-4 shadow-sm`}
+                        >
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="font-semibold text-gray-900 text-sm">
+                              {msg.usuario?.name}
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              {formatarDataBrasilia(msg.dataEnvio)}
+                            </span>
+                          </div>
+                          <p className="text-gray-800 whitespace-pre-wrap text-sm">{msg.mensagem}</p>
+                        </div>
                       </div>
-                      <p className="text-gray-800 whitespace-pre-wrap">{msg.mensagem}</p>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
-                {/* Campo para postar resposta */}
-                <div className="border border-gray-300 rounded-lg p-4 bg-white">
+                {/* campo pra poder escrever resposta - fixo na parte inferior */}
+                <div className="border-t border-gray-300 bg-white p-6">
                   <h3 className="font-semibold text-gray-900 mb-2">Postar uma resposta</h3>
                   <p className="text-base text-gray-600 mb-4">Para melhor ajudá-lo, seja específico e detalhado.</p>
                   
                   <textarea
                     value={novaMensagem}
                     onChange={(e) => setNovaMensagem(e.target.value)}
-                    rows={6}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-y mb-4"
+                    rows={4}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none mb-4"
                     placeholder="Digite sua resposta aqui..."
                     disabled={submittingResposta}
                   />
@@ -435,7 +461,7 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
           </div>
 
           {/* Tab Histórico */}
-          <div className="w-full shrink-0 pl-4">
+          <div className="w-full shrink-0 h-full overflow-y-auto px-6 py-4">
             <div className="bg-white rounded-lg border border-gray-300 p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-3 border-b border-gray-400">
                 Histórico do Chamado
@@ -486,6 +512,13 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
           statusId: chamadoAtualizado.status?.id || 0,
           anexos: chamadoAtualizado.anexos || [],
         }}
+      />
+
+      {/* modal confirmacao de reabertura */}
+      <ModalConfirmarReabertura
+        isOpen={modalConfirmarReaberturaAberto}
+        onConfirm={enviarMensagem}
+        onClose={() => setModalConfirmarReaberturaAberto(false)}
       />
     </div>
   );

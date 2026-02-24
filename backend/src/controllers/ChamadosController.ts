@@ -364,64 +364,96 @@ router.put("/chamados/:id/atribuir", verifyToken, async (req: AuthenticatedReque
     const { userResponsavelId } = req.body;
     const usuarioId = req.userId; // adm que está atribuindo
 
+    console.log('[ATRIBUIR] Iniciando atribuição:', { chamadoId: id, userResponsavelId, usuarioId });
+
     const chamadoRepository = AppDataSource.getRepository(Chamados);
     const historicoRepository = AppDataSource.getRepository(ChamadoHistorico);
     const userRepository = AppDataSource.getRepository(Users);
+    const statusRepository = AppDataSource.getRepository(StatusChamado);
 
     const chamado = await chamadoRepository.findOne({
       where: { id: Number(id) },
-      relations: ["userResponsavel"],
+      relations: ["userResponsavel", "status"],
     });
 
     if (!chamado) {
+      console.log('[ATRIBUIR] Chamado não encontrado');
       return res.status(404).json({ mensagem: "Chamado não encontrado" });
     }
 
-    //verificar se o usuario nao esta tentando redirecionar pra si mesmo
+    console.log('[ATRIBUIR] Chamado encontrado:', { 
+      chamadoId: chamado.id, 
+      responsavelAtual: chamado.userResponsavel?.id 
+    });
+
+    //SE O chamado ja tem um reponsavel, verificar se quem esta redirecoinadno é  o responsavel atual
+    if (chamado.userResponsavel && chamado.userResponsavel.id !== usuarioId) {
+      console.log('[ATRIBUIR] Usuário não é o responsável atual');
+      return res.status(403).json({ mensagem: "Apenas o responsável atual pode redirecionar este chamado." });
+    }
+
+    // verificar se está tentando redirecionar para si mesmo
     if (userResponsavelId === usuarioId) {
-      return res.status(400).json({ mensagem: "Você não pode redirecionar o chamado para si mesmo" });
+      console.log('[ATRIBUIR] Tentando redirecionar para si mesmo');
+      return res.status(400).json({ mensagem: "Você já é o responsável por este chamado." });
     }
 
-    // verificar se usuario  ja nao é responsavel 
-    if (chamado.userResponsavel?.id === userResponsavelId) {
-      return res.status(400).json({ mensagem: "Você já é o responsável por este chamado" });
-    }
-
+    console.log('[ATRIBUIR] Buscando usuários...');
     // Buscar nomes dos usuários para o histórico
     const [usuarioAtribuiu, usuarioResponsavel] = await Promise.all([
       userRepository.findOne({ where: { id: usuarioId }, select: ["id", "name"] }),
       userRepository.findOne({ where: { id: userResponsavelId }, select: ["id", "name"] })
     ]);
 
+    if (!usuarioResponsavel) {
+      console.log('[ATRIBUIR] Usuário responsável não encontrado');
+      return res.status(404).json({ mensagem: "Usuário responsável não encontrado" });
+    }
+
+    console.log('[ATRIBUIR] Usuários encontrados:', { 
+      atribuiu: usuarioAtribuiu?.name, 
+      novo: usuarioResponsavel?.name 
+    });
+
     // save status anterior antes de mudar
-    const statusAnteriorId = chamado.status?.id || 1;
+    const statusAnteriorId = chamado.status?.id || 2;
 
     // atribuir responsável e data de atribuição
     chamado.userResponsavel = { id: userResponsavelId } as Users;
     chamado.dataAtribuicao = new Date();
-    chamado.status = { id: 2 } as StatusChamado; // 2 = EM ATENDIMENTO
+    
+    //se o status for aberto id=1 entao mudar para id=2 em atendimento
+    if (chamado.status?.id === 1) {
+      const statusEmAtendimento = await statusRepository.findOne({ where: { id: 2 } });
+      if (statusEmAtendimento) {
+        chamado.status = statusEmAtendimento;
+      }
+    }
 
+    console.log('[ATRIBUIR] Salvando chamado...');
     await chamadoRepository.save(chamado);
 
     // registrar no historico com nomes dos usuários
     const nomeQuemAtribuiu = usuarioAtribuiu?.name || "Usuário";
     const nomeResponsavel = usuarioResponsavel?.name || "Usuário";
     
+    console.log('[ATRIBUIR] Salvando histórico...');
     await historicoRepository.save({
-      chamado,
+      chamado: { id: chamado.id },
       usuario: { id: usuarioId },
       acao: `${nomeQuemAtribuiu} redirecionou este chamado para ${nomeResponsavel}`,
       statusAnterior: { id: statusAnteriorId },
-      statusNovo: { id: 2 }, // EM ATENDIMENTO
+      statusNovo: { id: chamado.status?.id || 2 },
       dataMov: new Date(),
     });
 
+    console.log('[ATRIBUIR] Atribuição concluída com sucesso');
     return res.status(200).json({
       mensagem: "Chamado atribuído com sucesso!",
       chamado,
     });
   } catch (error) {
-    console.error("Erro ao atribuir chamado:", error);
+    console.error("[ATRIBUIR] Erro ao atribuir chamado:", error);
     return res.status(500).json({
       mensagem: "Erro ao atribuir chamado",
       error: error instanceof Error ? error.message : "Erro desconhecido",
@@ -852,6 +884,7 @@ router.post("/chamados/:id/mensagens", verifyToken, async (req: AuthenticatedReq
     const historicoRepository = AppDataSource.getRepository(ChamadoHistorico);
     const chamadoRepository = AppDataSource.getRepository(Chamados);
     const statusRepository = AppDataSource.getRepository(StatusChamado);
+    const usersRepository = AppDataSource.getRepository(Users);
 
     // buscar o chamado para pegar o status atual
     const chamado = await chamadoRepository.findOne({
@@ -862,20 +895,33 @@ router.post("/chamados/:id/mensagens", verifyToken, async (req: AuthenticatedReq
       return res.status(404).json({ mensagem: "Chamado não encontrado" });
     }
 
+    // buscar o usuario que está enviando a mensagem
+    const usuarioAtual = await usersRepository.findOne({
+      where: { id: usuarioId }
+    });
+
     let statusAnterior = chamado.status;
     let statusNovo = chamado.status;
     let acao = "Mensagem enviada";
 
-    // Se o chamado estiver encerrado (status.id === 3), reabrir
+    // se o chamado estiver encerrado (status.id === 3), verificar limite e reabrir
     if (chamado.status.id === 3) {
+      // verificar se já foi reaberto 2 vezes
+      if (chamado.vezesReaberto >= 2) {
+        return res.status(400).json({ 
+          mensagem: "Você já reabriu esse chamado muitas vezes. Caso queira tratar do mesmo problema, abra outro chamado." 
+        });
+      }
+
       const statusAberto = await statusRepository.findOne({ where: { id: 1 } }); // 1 = ABERTO
       if (statusAberto) {
         chamado.status = statusAberto;
         chamado.dataFechamento = null;
         chamado.userFechamento = null;
+        chamado.vezesReaberto = (chamado.vezesReaberto || 0) + 1;
         await chamadoRepository.save(chamado);
         statusNovo = statusAberto;
-        acao = `${chamado.userResponsavel?.name || 'Um administrador'} reabriu este chamado ao enviar uma mensagem`;
+        acao = `${usuarioAtual?.name || 'Usuário'} reabriu este chamado ao enviar uma mensagem`;
       }
     }
 
