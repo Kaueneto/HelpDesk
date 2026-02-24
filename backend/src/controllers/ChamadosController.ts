@@ -7,6 +7,8 @@ import { ChamadoAnexos } from "../entities/ChamadoAnexos";
 import { Users } from "../entities/Users";
 import { StatusChamado } from "../entities/StatusChamado";
 import { TipoPrioridade } from "../entities/TipoPrioridade";
+import { Departamentos } from "../entities/Departamentos";
+import { TopicosAjuda } from "../entities/TopicosAjuda";
 import { ParametrosSistema } from "../entities/ParametrosSistema";
 import { verifyToken } from "../Middleware/AuthMiddleware";
 import { supabase, SUPABASE_BUCKET } from "../config/supabase";
@@ -1040,7 +1042,7 @@ router.get("/chamados/:id/mensagens", verifyToken, async (req: AuthenticatedRequ
 // Editar múltiplos chamados
 router.patch("/chamados/editar-multiplos", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { chamadosIds, statusId, prioridadeId } = req.body;
+    const { chamadosIds, statusId, prioridadeId, departamentoId, topicoAjudaId, userResponsavelId } = req.body;
     const usuarioId = req.userId;
 
     if (!chamadosIds || !Array.isArray(chamadosIds) || chamadosIds.length === 0) {
@@ -1049,7 +1051,7 @@ router.patch("/chamados/editar-multiplos", verifyToken, async (req: Authenticate
       });
     }
 
-    if (!statusId && !prioridadeId) {
+    if (!statusId && !prioridadeId && !departamentoId && !topicoAjudaId && !userResponsavelId) {
       return res.status(400).json({
         message: "Selecione ao menos um campo para alterar",
       });
@@ -1151,6 +1153,81 @@ router.patch("/chamados/editar-multiplos", verifyToken, async (req: Authenticate
         });
 
         alterou = true;
+      }
+
+      // altera departamento
+      if (departamentoId && chamado.departamento?.id !== departamentoId) {
+        chamado.departamento = { id: departamentoId } as any;
+
+        // busca nome do departamento para o histórico
+        const departamentoRepository = AppDataSource.getRepository(Departamentos);
+        const departamento = await departamentoRepository.findOne({
+          where: { id: departamentoId },
+        });
+
+        const departamentoNome = departamento?.name || 'DESCONHECIDO';
+
+        // salva histórico
+        await historicoRepository.save({
+          chamado: { id: chamado.id },
+          usuario: { id: usuarioId },
+          acao: `${usuario.name} alterou o departamento para: ${departamentoNome}`,
+          statusAnterior: chamado.status ? { id: chamado.status.id } : undefined,
+          statusNovo: chamado.status ? { id: chamado.status.id } : undefined,
+          dataMov: new Date(),
+        });
+
+        alterou = true;
+      }
+
+      // alterar o  tópico de ajuda
+      if (topicoAjudaId && chamado.topicoAjuda?.id !== topicoAjudaId) {
+        chamado.topicoAjuda = { id: topicoAjudaId } as any;
+
+        // buscar o  nome do tópico para o histórico
+        const topicoAjudaRepository = AppDataSource.getRepository(TopicosAjuda);
+        const topicoAjuda = await topicoAjudaRepository.findOne({
+          where: { id: topicoAjudaId },
+        });
+
+        const topicoNome = topicoAjuda?.nome || 'DESCONHECIDO';
+
+        // salvar histórico
+        await historicoRepository.save({
+          chamado: { id: chamado.id },
+          usuario: { id: usuarioId },
+          acao: `${usuario.name} alterou o tópico de ajuda para: ${topicoNome}`,
+          statusAnterior: chamado.status ? { id: chamado.status.id } : undefined,
+          statusNovo: chamado.status ? { id: chamado.status.id } : undefined,
+          dataMov: new Date(),
+        });
+
+        alterou = true;
+      }
+
+      // redirecionar p o responsável
+      if (userResponsavelId && chamado.userResponsavel?.id !== userResponsavelId) {
+        const novoResponsavel = await userRepository.findOne({
+          where: { id: userResponsavelId },
+          select: ["id", "name"]
+        });
+
+        if (novoResponsavel) {
+          chamado.userResponsavel = { id: userResponsavelId } as any;
+          chamado.dataAtribuicao = new Date();
+
+          // salvar histórico
+          await historicoRepository.save({
+            chamado: { id: chamado.id },
+            usuario: { id: usuarioId },
+            acao: `${usuario.name} redirecionou este chamado para ${novoResponsavel.name}`,
+            statusAnterior: chamado.status ? { id: chamado.status.id } : undefined,
+            statusNovo: chamado.status ? { id: chamado.status.id } : undefined,
+            dataMov: new Date(),
+          });
+
+          alterou = true;
+        }
       }
 
       if (alterou) {
