@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, LabelList } from 'recharts';
 import api from '@/services/api';
 
 // IDs de status (ajuste se necessário)
@@ -202,19 +202,38 @@ export default function Dashboard() {
   }
 
   function processarTopicos(chamados: any[]) {
-    const map = new Map<string, number>();
+    const map = new Map<string, { valor: number; usuarios: Map<string, number> }>();
 
     chamados.forEach(c => {
-      const nome = c.topicoAjuda?.nome ?? 'Sem tópico';
-      map.set(nome, (map.get(nome) ?? 0) + 1);
+      const nomeTopico = c.topicoAjuda?.nome ?? 'Sem tópico';
+      const nomeUsuario = c.usuario?.name ?? 'Usuário desconhecido';
+
+      if (!map.has(nomeTopico)) {
+        map.set(nomeTopico, { valor: 0, usuarios: new Map<string, number>() });
+      }
+
+      const topico = map.get(nomeTopico)!;
+      topico.valor += 1;
+      
+      // Contar chamados por usuário neste tópico
+      const countUsuario = topico.usuarios.get(nomeUsuario) ?? 0;
+      topico.usuarios.set(nomeUsuario, countUsuario + 1);
     });
 
     // ordenar por valor (decrescente) e pegar apenas os top 5
     const topicos = Array.from(map.entries())
-      .map(([nome, valor]) => ({
-        nome,
-        valor,
-      }))
+      .map(([nome, data]) => {
+        // obter o usuário que mais abriu chamados neste tópico
+        const usuarioMaisAtivo = Array.from(data.usuarios.entries())
+          .sort((a, b) => b[1] - a[1])[0];
+
+        return {
+          nome,
+          valor: data.valor,
+          usuarioTop: usuarioMaisAtivo ? usuarioMaisAtivo[0] : 'N/A',
+          quantidadeUsuarioTop: usuarioMaisAtivo ? usuarioMaisAtivo[1] : 0,
+        };
+      })
       .sort((a, b) => b.valor - a.valor)
       .slice(0, 5);
 
@@ -338,11 +357,12 @@ export default function Dashboard() {
         {/* gráfico de Top 5 Tópicos */}
         <div className="mt-6 bg-white border border-gray-400 rounded p-6">
           <h3 className="font-semibold mb-4 text-gray-900">Top 5 Tópicos de Ajuda Mais Relatados</h3>
+          <p className="text-sm text-gray-600 mb-4">O nome acima de cada barra indica o usuário que mais abre chamados desse tipo</p>
           {dadosTopicos.length === 0 ? (
             <p className="text-gray-500 text-center py-8">Nenhum dado disponível no período selecionado</p>
           ) : (
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={dadosTopicos} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
+            <ResponsiveContainer width="100%" height={600}>
+              <BarChart data={dadosTopicos} margin={{ top: 80, right: 30, left: 20, bottom: 60 }}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis 
                   dataKey="nome" 
@@ -350,14 +370,55 @@ export default function Dashboard() {
                   textAnchor="end" 
                   height={100}
                   interval={0}
-                  tick={{ fill: '#374151', fontSize: 15, fontWeight: 'bold' }}
+                  tick={{ fill: '#374151', fontSize: 12, fontWeight: 'bold' }}
                 />
-                <YAxis tick={{ fill: '#374151' }} />
+                <YAxis 
+                  tick={{ fill: '#374151' }} 
+                  label={{ value: 'Quantidade de Chamados', angle: -90, position: 'insideLeft' }}
+                />
                 <Tooltip 
-                  contentStyle={{ backgroundColor: '#E6E6FA', border: '1px solid #F5F5DC' }}
+                  content={({ active, payload, label }) => {
+                    if (active && payload && payload.length && payload[0].payload) {
+                      const data = payload[0].payload;
+                      return (
+                        <div className="bg-white border border-gray-300 rounded-lg p-4 shadow-lg">
+                          <h4 className="font-semibold text-gray-900 mb-2">{label}</h4>
+                          <p className="text-sm text-gray-700 mb-2">
+                            <strong>Total de chamados:</strong> {data.valor}
+                          </p>
+                          <div className="border-t border-gray-200 pt-2">
+                            <p className="text-xs font-semibold text-gray-700 mb-1">
+                              Usuário mais ativo neste tópico:
+                            </p>
+                            <div className="text-xs text-gray-600">
+                              <strong>{data.usuarioTop}</strong> - {data.quantidadeUsuarioTop} chamados
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
                   cursor={{ fill: 'rgba(59, 130, 246, 0.1)' }}
                 />
-                <Bar dataKey="valor" fill="#6A5ACD" radius={[8, 8, 0, 0]} />
+                
+                <Bar 
+                  dataKey="valor" 
+                  fill="#430372" 
+                  radius={[8, 8, 0, 0]}
+                >
+                  <LabelList 
+                    dataKey="usuarioTop"
+                    position="top"
+                    offset={10}
+                    style={{ 
+                      fill: '#6A5ACD', 
+                      fontWeight: 'bold', 
+                      fontSize: '15px',
+                      textTransform: 'uppercase'
+                    }}
+                  />
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           )}
