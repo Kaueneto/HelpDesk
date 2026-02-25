@@ -26,12 +26,12 @@ export default function GerenciarPreferencias() {
       setLoading(true);
       
       // carregar todas as preferências
-      const responsePreferencias = await api.get('/preferences');
+      const responsePreferencias = await api.get('/preferencias');
       setPreferencias(responsePreferencias.data);
 
       // carregar preferencias do usuario logado
       if (user?.id) {
-        const responseUserPrefs = await api.get(`/preferences/user/${user.id}`);
+        const responseUserPrefs = await api.get(`/preferencias/user/${user.id}`);
         setPreferenciasUsuario(responseUserPrefs.data);
       }
     } catch (error) {
@@ -53,6 +53,9 @@ export default function GerenciarPreferencias() {
 
   // toggle preferencia
   const togglePreferencia = async (preferenceId: number) => {
+    console.log('User object:', user);
+    console.log('User ID:', user?.id);
+    
     if (!user?.id) {
       alert('Usuário não está logado');
       return;
@@ -63,11 +66,11 @@ export default function GerenciarPreferencias() {
       
       if (isAtiva) {
         // remover preferencia
-        await api.delete(`/preferences/user/${user.id}/preference/${preferenceId}`);
+        await api.delete(`/preferencias/user/${user.id}/preference/${preferenceId}`);
         setPreferenciasUsuario(prev => prev.filter(id => id !== preferenceId));
       } else {
         // add preferencia
-        await api.post(`/preferences/user/${user.id}/preference/${preferenceId}`);
+        await api.post(`/preferencias/user/${user.id}/preference/${preferenceId}`);
         setPreferenciasUsuario(prev => [...prev, preferenceId]);
       }
     } catch (error) {

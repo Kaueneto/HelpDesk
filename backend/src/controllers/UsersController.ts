@@ -1,12 +1,14 @@
 import express, { Request, Response } from "express";
 import { AppDataSource } from "../data-source";
 import { Users } from "../entities/Users";
+import { Chamados } from "../entities/Chamados";
 import { PaginationService } from "../services/PaginationService";
 import * as yup from "yup";
 import { Not } from "typeorm";
 const router = express.Router();
 import bcrypt from "bcryptjs"
 import { verifyToken } from "../Middleware/AuthMiddleware";
+import { SecurityUtils } from "../utils/SecurityUtils";
 
 // listar todos os users
 router.get("/users", verifyToken, async (req: Request, res: Response) => {
@@ -105,6 +107,16 @@ router.post("/users", async (req: Request, res: Response) => {
     });
 
     await schema.validate(data, { abortEarly: false });
+
+    // Validar força da senha (exceto para senha padrão "padrao")
+    if (data.password !== "padrao") {
+      const passwordValidation = SecurityUtils.validatePassword(data.password);
+      if (!passwordValidation.isValid) {
+        return res.status(400).json({
+          mensagem: passwordValidation.errors,
+        });
+      }
+    }
 
     const userRepository = AppDataSource.getRepository(Users);
     const existingUserName = await userRepository.findOne({
@@ -260,6 +272,81 @@ router.patch("/users/alterar-situacao-multiplos", verifyToken, async (req: Reque
   }
 });
 
+// desativar múltiplos usuários com motivo
+router.patch("/users/desativar-multiplos", verifyToken, async (req: Request, res: Response) => {
+  try {
+    const { usuariosIds, situationUserId, motivoInativacao } = req.body;
+
+    if (!usuariosIds || !Array.isArray(usuariosIds) || usuariosIds.length === 0) {
+      return res.status(400).json({ mensagem: "IDs de usuários são obrigatórios" });
+    }
+
+    if (!situationUserId) {
+      return res.status(400).json({ mensagem: "ID da situação é obrigatório" });
+    }
+
+    if (!motivoInativacao || !motivoInativacao.trim()) {
+      return res.status(400).json({ mensagem: "Motivo da inativação é obrigatório" });
+    }
+
+    const userRepository = AppDataSource.getRepository(Users);
+
+    // Desativar usuários: alterar situação, definir data e motivo de inativação
+    await userRepository
+      .createQueryBuilder()
+      .update(Users)
+      .set({ 
+        situationUserId: situationUserId,
+        dataInativacao: new Date(),
+        motivoInativacao: motivoInativacao.trim(),
+        updatedAt: new Date() 
+      })
+      .where("id IN (:...ids)", { ids: usuariosIds })
+      .execute();
+
+    res.status(200).json({ mensagem: "Usuários desativados com sucesso!" });
+  } catch (error) {
+    console.error("Erro ao desativar usuários:", error);
+    res.status(500).json({ mensagem: "Erro ao desativar usuários" });
+  }
+});
+
+// ativar múltiplos usuários (limpa tentativas, data inativação, motivo e altera situação)
+router.patch("/users/ativar-multiplos", verifyToken, async (req: Request, res: Response) => {
+  try {
+    const { usuariosIds, situationUserId } = req.body;
+
+    if (!usuariosIds || !Array.isArray(usuariosIds) || usuariosIds.length === 0) {
+      return res.status(400).json({ mensagem: "IDs de usuários são obrigatórios" });
+    }
+
+    if (!situationUserId) {
+      return res.status(400).json({ mensagem: "ID da situação é obrigatório" });
+    }
+
+    const userRepository = AppDataSource.getRepository(Users);
+
+    // Ativar usuários: limpar tentativas de login, data e motivo de inativação, alterar situação
+    await userRepository
+      .createQueryBuilder()
+      .update(Users)
+      .set({ 
+        situationUserId: situationUserId, 
+        tentativasLogin: 0,
+        dataInativacao: null,
+        motivoInativacao: null,
+        updatedAt: new Date() 
+      })
+      .where("id IN (:...ids)", { ids: usuariosIds })
+      .execute();
+
+    res.status(200).json({ mensagem: "Usuários ativados com sucesso!" });
+  } catch (error) {
+    console.error("Erro ao ativar usuários:", error);
+    res.status(500).json({ mensagem: "Erro ao ativar usuários" });
+  }
+});
+
 // excluir multiplos usuarios
 router.delete("/users/excluir-multiplos", verifyToken, async (req: Request, res: Response) => {
   try {
@@ -281,11 +368,52 @@ router.delete("/users/excluir-multiplos", verifyToken, async (req: Request, res:
       return res.status(404).json({ mensagem: "Nenhum usuário encontrado para exclusão" });
     }
 
-    // excluir os users  
+    // Verificar e tratar dependências em chamados ANTES da exclusão
+    const chamadosRepository = AppDataSource.getRepository(Chamados);
+    
+    // Verificar quantos chamados são afetados
+    const chamadosAfetadosResult = await AppDataSource.query(`
+      SELECT COUNT(*) as count 
+      FROM chamados 
+      WHERE id_user = ANY($1) 
+         OR id_user_responsavel = ANY($1) 
+         OR id_user_finalizou = ANY($1)
+    `, [usuariosIds]);
+    
+    const chamadosAfetados = parseInt(chamadosAfetadosResult[0].count);
+
+    if (chamadosAfetados > 0) {
+      // Limpar referencias dos usuarios nos chamados usando SQL direto
+      await AppDataSource.query(`
+        UPDATE chamados 
+        SET id_user_responsavel = NULL, 
+            id_user_finalizou = NULL, 
+            updated_at = NOW() 
+        WHERE id_user_responsavel = ANY($1) 
+           OR id_user_finalizou = ANY($1)
+      `, [usuariosIds]);
+
+      // Se o usuário criou chamados, não permitir exclusão (manter histórico)
+      const chamadosCriadosResult = await AppDataSource.query(`
+        SELECT COUNT(*) as count 
+        FROM chamados 
+        WHERE id_user = ANY($1)
+      `, [usuariosIds]);
+      
+      const chamadosCriados = parseInt(chamadosCriadosResult[0].count);
+
+      if (chamadosCriados > 0) {
+        return res.status(400).json({ 
+          mensagem: `Não é possível excluir usuário(s) que criaram chamados. ${chamadosCriados} chamado(s) encontrado(s). Use a função 'Desativar' para preservar o histórico.`
+        });
+      }
+    }
+
+    // excluir os users após limpar dependências  
     await userRepository.remove(usuarios);
 
     res.status(200).json({ 
-      mensagem: `${usuarios.length} usuário(s) excluído(s) com sucesso!` 
+      mensagem: `${usuarios.length} usuário(s) excluído(s) com sucesso!${chamadosAfetados > 0 ? ` ${chamadosAfetados} chamado(s) foram atualizados.` : ''}` 
     });
   } catch (error) {
     console.error("Erro ao excluir usuários:", error);

@@ -9,12 +9,12 @@ import { User, LoginCredentials, LoginResponse } from '@/types/auth';
  */
 interface AuthContextData {
   user: User | null;
-  token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (credentials: LoginCredentials) => Promise<void>;
   logout: () => void;
   updateUser: (userData: Partial<User>) => void;
+  validateToken: () => Promise<boolean>;
 }
 
 /**
@@ -23,27 +23,54 @@ interface AuthContextData {
 export const AuthContext = createContext<AuthContextData>({} as AuthContextData);
 
 /**
- * Provider do contexto de autenticação
- * Gerencia estado global de autenticação e persiste no localStorage
+ * provider do contexto de autenticação  
+ * gerencia estado global de autenticação com token em cookies seguros
  */
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   /**
-   * Carrega dados do usuário do localStorage ao iniciar
+   * valida token via cookie e carrega dados do usuário
+   */
+  const validateToken = async (): Promise<boolean> => {
+    try {
+      const response = await api.get('/validate-token');
+      return true;
+    } catch (error) {
+      return false;
+    }
+  };
+
+  /**
+   * carrega dados do usuário do localStorage e valida token ao iniciar
    */
   useEffect(() => {
-    const storedToken = localStorage.getItem('token');
-    const storedUser = localStorage.getItem('user');
+    const loadUser = async () => {
+      const storedUser = localStorage.getItem('user');
 
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
-    }
+      if (storedUser) {
+        const userData = JSON.parse(storedUser);
+        
+        // verificar se token ainda é valido
+        const isTokenValid = await validateToken();
+        
+        if (isTokenValid) {
+          setUser(userData);
+          setIsAuthenticated(true);
+        } else {
+          // Token invalido, fazer logout
+          localStorage.removeItem('user');
+          setUser(null);
+          setIsAuthenticated(false);
+        }
+      }
 
-    setIsLoading(false);
+      setIsLoading(false);
+    };
+
+    loadUser();
   }, []);
 
   /**
@@ -52,18 +79,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    */
   const login = async (credentials: LoginCredentials) => {
     try {
-      const response = await api.post<LoginResponse>('/login', credentials);
+      const response = await api.post<LoginResponse>('/login', credentials, {
+        withCredentials: true // incluir cookies na requisicao
+      });
       
       const { user: userData } = response.data;
-      const { token: userToken, ...userDataWithoutToken } = userData;
 
-      // Salva token e dados do usuário
-      setToken(userToken);
-      setUser(userDataWithoutToken);
 
-      // Persiste no localStorage
-      localStorage.setItem('token', userToken);
-      localStorage.setItem('user', JSON.stringify(userDataWithoutToken));
+      setUser(userData);
+      setIsAuthenticated(true);
+
+      // persiste  apenas dados bsicos no localstorage
+      localStorage.setItem('user', JSON.stringify(userData));
     } catch (error) {
       console.error('Erro ao fazer login:', error);
       throw error;
@@ -72,36 +99,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   /**
    * Função para realizar logout
-   * Remove token e dados do usuário, limpa localStorage e redireciona para login
+   * remove cookies de autenticação e limpa localstorage
    */
-  const logout = () => {
+  const logout = async () => {
     console.log('[LOGOUT] Iniciando logout...');
     
     try {
+      //chamar endpoint de logou para limpar coookiue
+      await api.post('/logout', {}, { withCredentials: true });
+    } catch (error) {
+      console.error('Erro ao fazer logout no servidor:', error);
+    }
+    
+    try {
       // limpa estado
-      setToken(null);
       setUser(null);
+      setIsAuthenticated(false);
       
-      // limpa localStorage
-      localStorage.removeItem('token');
+      // limpa localstorage
       localStorage.removeItem('user');
       
-      // limpa qualquer outra informação em cache
-      localStorage.clear();
-      
-      console.log('[LOGOUT] LocalStorage limpo');
-      
-      // limpa cookies (se houver)
-      document.cookie.split(";").forEach((c) => {
-        document.cookie = c
-          .replace(/^ +/, "")
-          .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
-      });
-      
-      console.log('[LOGOUT] Cookies limpos');
+      console.log('[LOGOUT] Estado limpo');
       console.log('[LOGOUT] Redirecionando para /auth/login...');
       
-      // usar  replace para evitar voltar com botão de voltar do navegador
+      // usar replace para evitar voltar com botão de voltar do navegador
       window.location.replace('/auth/login');
     } catch (error) {
       console.error('[LOGOUT] Erro durante logout:', error);
@@ -125,12 +146,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider
       value={{
         user,
-        token,
-        isAuthenticated: !!token,
+        isAuthenticated,
         isLoading,
         login,
         logout,
         updateUser,
+        validateToken,
       }}
     >
       {children}

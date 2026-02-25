@@ -2,10 +2,11 @@ import { AppDataSource } from "../data-source";
 import { Users } from "../entities/Users";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { SecurityUtils } from "../utils/SecurityUtils";
 
 export class AuthService {
   /**
-   * Realiza o login do usuário
+   * relaiza o login do usuário com sistema de tentativas
    * @param email - Email do usuário
    * @param password - Senha do usuário
    * @returns Dados do usuário e token JWT
@@ -23,6 +24,11 @@ export class AuthService {
       throw new Error("Credenciais inválidas");
     }
 
+    // verificar se o usuário está bloqueado por excesso de tentativas
+    if (SecurityUtils.isUserBlocked(user.tentativasLogin)) {
+      throw new Error("Conta bloqueada por excesso de tentativas. Entre em contato com o administrador.");
+    }
+
     // Verificar se o usuário está ativo (situação = "ativo")
     if (!user.situationUser || user.situationUser.nomeSituacao.toLowerCase() !== "ativo") {
       throw new Error("Usuário inativo. Entre em contato com o administrador.");
@@ -32,8 +38,29 @@ export class AuthService {
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
-      throw new Error("Credenciais inválidas");
+      // incrementar tentativas de login
+      user.tentativasLogin = SecurityUtils.incrementLoginAttempts(user.tentativasLogin);
+      
+      // se atingiu 5 tentativas, inativar o usuário
+      if (SecurityUtils.isUserBlocked(user.tentativasLogin)) {
+        user.situationUserId = 2; 
+        user.dataInativacao = new Date();
+        user.motivoInativacao = "Conta bloqueada automaticamente por excesso de tentativas de login";
+      }
+      
+      await userRepository.save(user);
+      
+      const tentativasRestantes = 5 - user.tentativasLogin;
+      if (tentativasRestantes > 0) {
+        throw new Error(`Credenciais inválidas. ${tentativasRestantes} tentativa(s) restante(s).`);
+      } else {
+        throw new Error("Conta bloqueada por excesso de tentativas. Entre em contato com o administrador.");
+      }
     }
+
+    // se login for bem-sucedido= zerar tentativas
+    user.tentativasLogin = SecurityUtils.resetLoginAttempts();
+    await userRepository.save(user);
 
     // Gerar token JWT
     const token = jwt.sign(
@@ -52,9 +79,20 @@ export class AuthService {
       name: user.name,
       email: user.email,
       roleId: user.roleId,
-      situationUserId: user.situationUserId,
-      situationUser: user.situationUser,
       token,
+      // dados para localStorage (sem informações sensíveis)
+      userInfo: {
+        name: user.name,
+        email: user.email,
+        roleId: user.roleId
+      }
     };
+  }
+
+  /**
+   * valida a  senha forte para novos users ou alteração de senha
+   */
+  static validatePassword(password: string) {
+    return SecurityUtils.validatePassword(password);
   }
 }
