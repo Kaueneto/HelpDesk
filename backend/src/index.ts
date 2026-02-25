@@ -12,6 +12,9 @@ dotenv.config();
 // importar biblioteca para permitir conexão externa
 import cors from "cors";
 
+// importar cookie-parser
+import cookieParser from "cookie-parser";
+
 // importar DataSource
 import { AppDataSource } from "./data-source";
 
@@ -20,7 +23,35 @@ const app = express();
 
 // middlewares
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+  origin: function (origin, callback) {
+   
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'http://localhost:3001', 
+      process.env.SURL
+    ];
+    
+    // permitir requisições sem origem (ex: Postman, aplicações mobile)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    
+    // em desenvolvimento, permitir qualquer origem local ou da rede interna
+    if (process.env.NODE_ENV !== 'production') {
+      if (origin.includes('localhost') || origin.includes('127.0.0.1') || origin.includes('192.168.')) {
+        return callback(null, true);
+      }
+    }
+    
+    const msg = 'A política de CORS desta aplicação não permite acesso da origem ' + origin;
+    return callback(new Error(msg), false);
+  },
+  credentials: true // permite cookies
+}));
+app.use(cookieParser()); // sporte a cookies
 
 // importar controllers
 import TestConnectionController from "./controllers/TestConnectionController";
@@ -64,7 +95,6 @@ AppDataSource.initialize()
         `Servidor iniciado na porta ${PORT}:`
       );
       console.log(`  - Local:   http://localhost:${PORT}`);
-      console.log(`  - Network: http://192.168.0.157:${PORT}`);
     });
   })
   .catch((error) => {

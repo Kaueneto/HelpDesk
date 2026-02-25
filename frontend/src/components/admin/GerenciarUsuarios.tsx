@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import api from '@/services/api';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+import { validatePassword, getPasswordStrengthColor, getPasswordStrengthText } from '@/utils/passwordValidation';
 
 interface Usuario {
   id: number;
@@ -22,6 +23,9 @@ interface Usuario {
   };
   createdAt: string;
   updatedAt: string;
+  tentativasLogin?: number;
+  dataInativacao?: string | null;
+  motivoInativacao?: string | null;
 }
 
 interface SituationUser {
@@ -236,6 +240,16 @@ export default function GerenciarUsuarios() {
       return;
     }
 
+    //pedir motivo da inativacao de usuario
+    const motivo = prompt(
+      'Digite o motivo da inativação dos usuários selecionados:\n\n'
+    );
+
+    if (!motivo || !motivo.trim()) {
+      alert('Motivo da inativação é obrigatório para prosseguir.');
+      return;
+    }
+
     // Buscar ID da situação "inativo"
     const situacaoInativa = situacoes.find(s => s.nomeSituacao.toLowerCase() === 'inativo');
     if (!situacaoInativa) {
@@ -244,9 +258,10 @@ export default function GerenciarUsuarios() {
     }
 
     try {
-      await api.patch('/users/alterar-situacao-multiplos', {
+      await api.patch('/users/desativar-multiplos', {
         usuariosIds: usuariosSelecionados,
         situationUserId: situacaoInativa.id,
+        motivoInativacao: motivo.trim(),
       });
 
       alert('Usuários desativados com sucesso!');
@@ -264,7 +279,7 @@ export default function GerenciarUsuarios() {
     }
 
     // Primeira confirmação
-    if (!confirm(`AVISO: Você está prestes a excluir ${usuariosSelecionados.length} usuário(s) permanentemente. Esta ação NÃO pode ser desfeita.\n\nDeseja continuar?`)) {
+    if (!confirm(`AVISO: Você está prestes a excluir ${usuariosSelecionados.length} usuário(s) permanentemente.\n\n• Usuários que criaram chamados não poderão ser excluídos (para preservar histórico)\n• Usuários responsáveis/finalizadores de chamados serão removidos dos chamados\n• Esta ação é IRREVERSÍVEL\n\nDeseja continuar?`)) {
       return;
     }
 
@@ -288,14 +303,51 @@ export default function GerenciarUsuarios() {
         data: payload
       });
       
-      alert('Usuários excluídos com sucesso!');
+      alert(response.data.mensagem || 'Usuários excluídos com sucesso!');
       await carregarUsuarios(1);
     } catch (error: any) {
 
       
       const mensagemErro = error.response?.data?.mensagem || 'Erro ao excluir usuários';
       const detalhesErro = error.response?.data?.erro ? `\n\nDetalhes: ${error.response.data.erro}` : '';
-      alert(mensagemErro + detalhesErro);
+      
+      if (error.response?.status === 400) {
+        //erros de validacao
+        alert(`EXCLUSÃO INTERROMPIDA\n\n${mensagemErro}\n\n .`);
+      } else {
+        alert(mensagemErro + detalhesErro);
+      }
+    }
+  };
+
+  const ativarUsuarios = async () => {
+    if (usuariosSelecionados.length === 0) {
+      alert('Selecione ao menos um usuário');
+      return;
+    }
+
+    if (!confirm(`Deseja ativar ${usuariosSelecionados.length} usuário(s)? `)) {
+      return;
+    }
+
+    //buscar id da situacao 'ativo'
+    const situacaoAtiva = situacoes.find(s => s.nomeSituacao.toLowerCase() === 'ativo');
+    if (!situacaoAtiva) {
+      alert('Situação "ativo" não encontrada. Cadastre-a primeiro.');
+      return;
+    }
+
+    try {
+      await api.patch('/users/ativar-multiplos', {
+        usuariosIds: usuariosSelecionados,
+        situationUserId: situacaoAtiva.id,
+      });
+
+      alert('Usuários ativados com sucesso!');
+      await carregarUsuarios();
+    } catch (error) {
+      console.error('Erro ao ativar usuários:', error);
+      alert('Erro ao ativar usuários');
     }
   };
 
@@ -326,6 +378,15 @@ export default function GerenciarUsuarios() {
     if (!novoUsuarioEmail.trim()) {
       alert('O e-mail é obrigatório');
       return;
+    }
+
+    // validar força da senha
+    if (novoUsuarioSenha !== "padrao") {
+      const passwordValidation = validatePassword(novoUsuarioSenha);
+      if (!passwordValidation.isValid) {
+        alert('Senha não atende aos critérios de segurança:\n\n' + passwordValidation.errors.join('\n'));
+        return;
+      }
     }
 
     setSubmittingCadastro(true);
@@ -468,6 +529,13 @@ export default function GerenciarUsuarios() {
               className="px-4 py-0.5 bg-transparent border border-orange-600 text-orange-600 rounded-lg hover:bg-orange-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-orange-300 disabled:text-orange-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-2 focus:ring-orange-500/50"
             >
               Desativar
+            </button>
+            <button
+              onClick={ativarUsuarios}
+              disabled={usuariosSelecionados.length === 0}
+              className="px-4 py-0.5 bg-transparent border border-emerald-600 text-emerald-600 rounded-lg hover:bg-emerald-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-emerald-300 disabled:text-emerald-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+            >
+              Ativar
             </button>
             <button
               onClick={excluirUsuarios}
@@ -673,6 +741,15 @@ export default function GerenciarUsuarios() {
                         )}
                       </div>
                     </th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                      Tentativas Login
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                      Data Inativação
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                      Motivo Inativação
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -724,6 +801,15 @@ export default function GerenciarUsuarios() {
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-600">
                         {formatarData(usuario.updatedAt)}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600">
+                        {usuario.tentativasLogin || 0}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600">
+                        {usuario.dataInativacao ? formatarData(usuario.dataInativacao) : '-'}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600">
+                        {usuario.motivoInativacao || '-'}
                       </td>
                     </tr>
                   ))}
@@ -833,12 +919,20 @@ export default function GerenciarUsuarios() {
                     type="text"
                     value={novoUsuarioSenha}
                     onChange={(e) => setNovoUsuarioSenha(e.target.value)}
-                    placeholder="Digite a senha"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                    placeholder="Senha forte: 6+ chars, maiúscula, minúscula, número, especial"
+                    className={`w-full px-4 py-2 border ${getPasswordStrengthColor(novoUsuarioSenha)} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900`}
                     disabled={submittingCadastro}
                   />
+                  {novoUsuarioSenha && novoUsuarioSenha !== 'padrao' && (
+                    <div className={`text-xs mt-1 ${
+                      getPasswordStrengthColor(novoUsuarioSenha) === 'border-green-500' ? 'text-green-600' :
+                      getPasswordStrengthColor(novoUsuarioSenha) === 'border-yellow-500' ? 'text-yellow-600' : 'text-red-600'
+                    }`}>
+                      {getPasswordStrengthText(novoUsuarioSenha)}
+                    </div>
+                  )}
                   <p className="text-xs text-gray-500 mt-1">
-                    Senha padrão é "padrao". Pode ser alterada aqui ou depois pelo usuário.
+                    Use uma senha forte ou mantenha "padrao" para o padrão do sistema.
                   </p>
                 </div>
 

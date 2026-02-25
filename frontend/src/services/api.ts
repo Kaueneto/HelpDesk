@@ -4,29 +4,23 @@ import axios from 'axios';
  * Instância configurada do Axios para comunicação com a API
  * - baseURL: URL base da API definida nas variáveis de ambiente
  * - timeout: Tempo máximo de 10 segundos para requisições
+ * - withCredentials: Inclui cookies em todas as requisições
  */
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000',
   timeout: 10000,
+  withCredentials: true, // inclui cookies automaticamente
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
 /**
- * Interceptor de requisição
- * Adiciona automaticamente o token JWT no header Authorization de todas as requisições
+ * Interceptor de requisição  
+ * via via cookies
  */
 api.interceptors.request.use(
   (config) => {
-    // Busca o token armazenado no localStorage
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    
-    // Se o token existir, adiciona no header Authorization
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    
     return config;
   },
   (error) => {
@@ -43,11 +37,10 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
-    // Se o token estiver inválido ou expirado (401), redireciona para login
+    //se o token estiver invalido ou expirado limpa os dados e redireciona
     if (error.response?.status === 401) {
-      localStorage.removeItem('token');
+      //remove dados do localstorage
       localStorage.removeItem('user');
-      localStorage.clear();
       
       // Redireciona para login apenas no cliente
       if (typeof window !== 'undefined') {

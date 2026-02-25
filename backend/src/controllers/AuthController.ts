@@ -7,10 +7,11 @@ import { Users } from "../entities/Users";
 import crypto from "crypto";
 import { verifyToken } from "../Middleware/AuthMiddleware";
 import bcrypt from "bcryptjs";
+import { SecurityUtils } from "../utils/SecurityUtils";
 
 const router = express.Router();
 
-// Login de usuário
+// Login de usuário com sistema de segurança
 router.post("/login", async (req: Request, res: Response) => {
   try {
     // Extrair email e senha do corpo da requisição
@@ -28,10 +29,24 @@ router.post("/login", async (req: Request, res: Response) => {
     // chamar o metodo login para validar as credenciais e obter os dados do usuário
     const userData = await authService.login(email, password);
 
-    // retornar a resposta de sucesso com os dados do usuario
+    // Configurar cookie seguro com o token
+    res.cookie('auth-token', userData.token, {
+      httpOnly: true, // Não acessível via JavaScript
+      secure: process.env.NODE_ENV === 'production', // HTTPS em produção
+      sameSite: 'lax', // Proteção CSRF
+      maxAge: 8 * 60 * 60 * 1000, // 8 horas em milissegundos
+      path: '/'
+    });
+
+    // retornar a resposta de sucesso com apenas os dados básicos do usuário
     return res.status(200).json({
       mensagem: "Login realizado com sucesso!",
-      user: userData,
+      user: {
+        id: userData.id,
+        name: userData.name,
+        email: userData.email,
+        roleId: userData.roleId
+      },
     });
   } catch (error: any) {
     console.error("Erro ao realizar login:", error);
@@ -41,7 +56,21 @@ router.post("/login", async (req: Request, res: Response) => {
   }
 });
 
-// rota de validação de token
+// Logout - limpar cookie
+router.post("/logout", (req: Request, res: Response) => {
+  res.clearCookie('auth-token', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/'
+  });
+  
+  return res.status(200).json({
+    mensagem: "Logout realizado com sucesso!"
+  });
+});
+
+// rota de validação de token com cookies
 router.get("/validate-token", verifyToken, async (req: Request, res: Response) => {
   return res.status(200).json({
     mensagem: "Token válido OK!",
@@ -49,6 +78,32 @@ router.get("/validate-token", verifyToken, async (req: Request, res: Response) =
     userEmail: (req as any).userEmail,
     userRoleId: (req as any).userRoleId,
   });
+});
+
+// Rota para validar senha forte
+router.post("/validate-password", async (req: Request, res: Response) => {
+  try {
+    const { password } = req.body;
+
+    if (!password) {
+      return res.status(400).json({
+        mensagem: "Senha é obrigatória para validação"
+      });
+    }
+
+    const validation = AuthService.validatePassword(password);
+
+    return res.status(200).json({
+      isValid: validation.isValid,
+      errors: validation.errors,
+      mensagem: validation.isValid ? "Senha válida" : SecurityUtils.getPasswordErrorMessage(validation)
+    });
+  } catch (error) {
+    console.error("Erro ao validar senha:", error);
+    return res.status(500).json({
+      mensagem: "Erro interno ao validar senha"
+    });
+  }
 });
 
 // solicitar recuperação de senha
@@ -207,10 +262,18 @@ router.put("/update-password", async (req: Request, res: Response) => {
       password: yup
         .string()
         .required("A senha do usuário é obrigatória!")
-        .min(6, "A senha deve conter pelo menos 6 caracteres."),
+        .min(8, "A senha deve conter pelo menos 8 caracteres."),
     });
 
     await schema.validate(data, { abortEarly: false });
+
+    // Validar senha forte
+    const passwordValidation = AuthService.validatePassword(data.password);
+    if (!passwordValidation.isValid) {
+      return res.status(400).json({
+        mensagem: SecurityUtils.getPasswordErrorMessage(passwordValidation)
+      });
+    }
 
     const userRepository = AppDataSource.getRepository(Users);
 
@@ -233,9 +296,10 @@ router.put("/update-password", async (req: Request, res: Response) => {
     
     console.log('Nova senha (hash):', hashedPassword);
 
-    // atualizar senha e limpar token de recuperação
+    // atualizar senha, limpar token de recuperação e zerar tentativas
     user.password = hashedPassword;
     user.recoverPassword = null;
+    user.tentativasLogin = SecurityUtils.resetLoginAttempts();
 
     await userRepository.save(user);
     

@@ -43,6 +43,16 @@ export class Users {
   @Column({ name: "recoverPassword", type: "varchar", nullable: true })
   recoverPassword!: string | null;
 
+  // Campos de segurança
+  @Column({ name: "tentativas_login", type: "int", default: 0 })
+  tentativasLogin!: number;
+
+  @Column({ name: "data_inativacao", type: "timestamp", nullable: true })
+  dataInativacao!: Date | null;
+
+  @Column({ name: "motivo_inativacao", type: "text", nullable: true })
+  motivoInativacao!: string | null;
+
   @CreateDateColumn({ name: "created_at" })
   createdAt!: Date;
 

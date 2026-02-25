@@ -2,6 +2,7 @@
 
 import { useState, FormEvent } from 'react';
 import api from '@/services/api';
+import { validatePassword, getPasswordStrengthColor, getPasswordStrengthText } from '@/utils/passwordValidation';
 
 interface CadastrarseProps {
   onLoginClick: () => void;
@@ -25,8 +26,10 @@ export default function Cadastrarse({ onLoginClick, onSuccess }: CadastrarseProp
       return;
     }
 
-    if (cadastroPassword.length < 6) {
-      setCadastroError('A senha deve ter pelo menos 6 caracteres.');
+    // validar força da senha
+    const passwordValidation = validatePassword(cadastroPassword);
+    if (!passwordValidation.isValid) {
+      setCadastroError(passwordValidation.errors.join('\n'));
       return;
     }
 
@@ -111,10 +114,18 @@ export default function Cadastrarse({ onLoginClick, onSuccess }: CadastrarseProp
             onChange={(e) => setCadastroPassword(e.target.value)}
             required
             minLength={6}
-            className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500  disabled:cursor-not-allowed disabled:opacity-50"
-            placeholder="mínimo 6 caracteres"
+            className={`flex h-10 w-full rounded-md border ${getPasswordStrengthColor(cadastroPassword)} bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500  disabled:cursor-not-allowed disabled:opacity-50`}
+            placeholder="Digite uma Senha forte"
             disabled={cadastroLoading}
           />
+          {cadastroPassword && (
+            <div className={`text-xs mt-1 ${
+              getPasswordStrengthColor(cadastroPassword) === 'border-green-500' ? 'text-green-600' :
+              getPasswordStrengthColor(cadastroPassword) === 'border-yellow-500' ? 'text-yellow-600' : 'text-red-600'
+            }`}>
+              {getPasswordStrengthText(cadastroPassword)}
+            </div>
+          )}
         </div>
 
         <div className="space-y-1">
