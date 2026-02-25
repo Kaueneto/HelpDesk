@@ -34,11 +34,11 @@ export default function ModalConfirmarReabertura({
               />
             </svg>
           </div>
-          <div className="ml-4 flex-1">
+          <div className=" ml-4 flex-1">
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
               Atenção
             </h3>
-            <p className="text-base text-gray-700">
+            <p className=" text-base text-gray-700">
               Ao enviar esta mensagem, o chamado será <strong>reaberto</strong> automaticamente pois ele ja foi concluído.
             </p>
             <p className="text-sm text-gray-600 mt-3">
@@ -50,7 +50,7 @@ export default function ModalConfirmarReabertura({
         <div className="flex gap-3 justify-end mt-6">
           <button
             onClick={onClose}
-            className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 font-medium hover:bg-gray-50 transition"
+            className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 font-medium hover:bg-gray-200 transition"
           >
             Cancelar
           </button>
@@ -59,7 +59,7 @@ export default function ModalConfirmarReabertura({
               onConfirm();
               onClose();
             }}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md font-medium hover:bg-blue-700 transition"
+            className="px-4 py-2 bg-blue-600 text-white rounded-md font-medium hover:bg-blue-800 transition"
           >
             Sim, continuar
           </button>

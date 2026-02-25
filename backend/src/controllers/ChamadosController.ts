@@ -8,6 +8,8 @@ import { Users } from "../entities/Users";
 import { StatusChamado } from "../entities/StatusChamado";
 import { TipoPrioridade } from "../entities/TipoPrioridade";
 import { Departamentos } from "../entities/Departamentos";
+import { PrefUsers } from "../entities/PrefUsers";
+import nodemailer from "nodemailer";
 import { TopicosAjuda } from "../entities/TopicosAjuda";
 import { ParametrosSistema } from "../entities/ParametrosSistema";
 import { verifyToken } from "../Middleware/AuthMiddleware";
@@ -21,7 +23,209 @@ interface AuthenticatedRequest extends Request {
 
 const router = Router();
 
-//cadastrar chamado
+// funcao para verificar preferencias do usuário
+async function verificarPreferenciasUsuario(userId: number): Promise<number[]> {
+  try {
+    const prefUsersRepository = AppDataSource.getRepository(PrefUsers);
+    const preferencias = await prefUsersRepository.find({
+      where: { user_id: userId },
+      select: ["preferencia_id"]
+    });
+    return preferencias.map(pref => pref.preferencia_id);
+  } catch (error) {
+    console.error("Erro ao verificar preferências do usuário:", error);
+    return [];
+  }
+}
+
+// funcao para enviar email de notificação para administradores
+async function enviarEmailNotificacaoAdmin(admin: Users, usuario: Users, chamado: Chamados): Promise<void> {
+  try {
+    const transporter = nodemailer.createTransport({
+      host: process.env.EMAIL_HOST,
+      port: Number(process.env.EMAIL_PORT),
+      secure: false,
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+    const mailOptions = {
+      from: process.env.EMAIL_FROM,
+      to: admin.email,
+      subject: `Novo Chamado #${chamado.numeroChamado} - ${usuario.name}`,
+      html: `
+        <h2>Novo Chamado Aberto!</h2>
+        <p>Olá <strong>${admin.name}</strong>,</p>
+        <p>Um novo chamado foi aberto no sistema com os seguintes detalhes:</p>
+       <div style="background-color: #e9f7ef; padding: 20px; border-radius: 8px; border-left: 4px solid #28a745; margin-bottom: 25px;">
+              <h3 style="color: #1e7e34; margin-top: 0; margin-bottom: 15px;">Detalhes do Chamado:</h3>
+              <ul style="list-style: none; padding: 0; margin: 0;">
+                <li style="margin-bottom: 10px;"><strong>Número:</strong> #${chamado.numeroChamado}</li>
+                <li style="margin-bottom: 10px;"><strong>Resumo:</strong> ${chamado.resumoChamado}</li>
+                <li style="margin-bottom: 10px;"><strong>Data de Abertura:</strong> ${new Date(chamado.dataAbertura).toLocaleString('pt-BR')}</li>
+                <li style="margin-bottom: 10px;"><strong>Status:</strong> <span style="color: #f39c12; font-weight: bold;">Aberto</span></li>
+              </ul>
+            </div>
+        <p>Por favor, acesse o sistema para atender esta solicitação.</p>
+        <p><br><strong>Sistema HelpDesk</strong></p>
+      `
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log(`Email de notificação enviado para admin ${admin.email}`);
+  } catch (error) {
+    console.error("Erro ao enviar email para admin:", error);
+  }
+}
+
+// funcao para enviar email de confirmação para o usuário que abriu o chamado
+async function enviarEmailConfirmacaoUsuario(usuario: Users, chamado: Chamados): Promise<void> {
+  try {
+    const transporter = nodemailer.createTransport({
+      host: process.env.EMAIL_HOST,
+      port: Number(process.env.EMAIL_PORT),
+      secure: false,
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+    const mailOptions = {
+      from: process.env.EMAIL_FROM,
+      to: usuario.email,
+      subject: `Chamado #${chamado.numeroChamado} - Aberto com sucesso`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f8f9fa;">
+          <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <h2 style="color: #28a745; margin-bottom: 20px; text-align: center;">Chamado Aberto com Sucesso!</h2>
+            
+            <p style="font-size: 16px; color: #333; margin-bottom: 20px;">Olá <strong>${usuario.name}</strong>,</p>
+            
+            <p style="font-size: 14px; color: #666; margin-bottom: 25px;">
+              Seu chamado foi registrado com sucesso em nosso sistema. Nossa equipe de TI foi notificada e irá analisar sua solicitação.
+            </p>
+            
+            <div style="background-color: #e9f7ef; padding: 20px; border-radius: 8px; border-left: 4px solid #28a745; margin-bottom: 25px;">
+              <h3 style="color: #1e7e34; margin-top: 0; margin-bottom: 15px;">Detalhes do Chamado:</h3>
+              <ul style="list-style: none; padding: 0; margin: 0;">
+                <li style="margin-bottom: 10px;"><strong>Número:</strong> #${chamado.numeroChamado}</li>
+                <li style="margin-bottom: 10px;"><strong>Resumo:</strong> ${chamado.resumoChamado}</li>
+                <li style="margin-bottom: 10px;"><strong>Data de Abertura:</strong> ${new Date(chamado.dataAbertura).toLocaleString('pt-BR')}</li>
+                <li style="margin-bottom: 10px;"><strong>Status:</strong> <span style="color: #f39c12; font-weight: bold;">Aberto</span></li>
+              </ul>
+            </div>
+            
+    
+            
+            <p style="font-size: 14px; color: #666; margin-bottom: 30px;">
+              Você receberá atualizações sobre o progresso do seu chamado e será notificado quando ele for concluído.
+            </p>
+            
+            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+            
+            <p style="font-size: 12px; color: #888; text-align: center; margin: 0;">
+              Este é um email automático, não responda.
+            </p>
+          </div>
+        </div>
+      `
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log(`Email de confirmação enviado para ${usuario.email}`);
+  } catch (error) {
+    console.error(" Erro ao enviar email de confirmação:", error);
+  }
+}
+
+//funcao pra enviar email de conclusao pro usuario 
+async function enviarEmailConclusaoUsuario(usuario: Users, chamado: Chamados, adminResponsavel: Users | null): Promise<void> {
+  try {
+ 
+    
+    const transporter = nodemailer.createTransport({
+      host: process.env.EMAIL_HOST,
+      port: Number(process.env.EMAIL_PORT),
+      secure: false,
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+ 
+    
+    const nomeResponsavel = adminResponsavel?.name || "Nossa equipe";
+    const dataFechamento = chamado.dataFechamento ? new Date(chamado.dataFechamento).toLocaleString('pt-BR') : "N/A";
+        
+    const mailOptions = {
+      from: process.env.EMAIL_FROM,
+      to: usuario.email,
+      subject: `✓ Chamado #${chamado.numeroChamado} - Concluído`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f8f9fa;">
+          <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <h2 style="color: #28a745; margin-bottom: 20px; text-align: center;">✓ Chamado Concluído!</h2>
+            
+            <p style="font-size: 16px; color: #333; margin-bottom: 20px;">Olá <strong>${usuario.name}</strong>,</p>
+            
+            <p style="font-size: 14px; color: #666; margin-bottom: 25px;">
+              Informamos que o atendimento referente ao seu chamado foi concluído com sucesso! 
+            </p>
+            
+            <div style="background-color: #d4edda; padding: 20px; border-radius: 8px; border-left: 4px solid #28a745; margin-bottom: 25px;">
+              <h3 style="color: #155724; margin-top: 0; margin-bottom: 15px;">Resumo do Atendimento:</h3>
+              <ul style="list-style: none; padding: 0; margin: 0;">
+                <li style="margin-bottom: 10px;"><strong>Número:</strong> #${chamado.numeroChamado}</li>
+                <li style="margin-bottom: 10px;"><strong>Resumo:</strong> ${chamado.resumoChamado}</li>
+                <li style="margin-bottom: 10px;"><strong>Responsável:</strong> ${nomeResponsavel}</li>
+                <li style="margin-bottom: 10px;"><strong>Data de Abertura:</strong> ${new Date(chamado.dataAbertura).toLocaleString('pt-BR')}</li>
+                <li style="margin-bottom: 10px;"><strong>✓ Data de Conclusão:</strong> ${dataFechamento}</li>
+              </ul>
+            </div>
+            
+            <div style="background-color: #d1ecf1; padding: 15px; border-radius: 8px; border-left: 4px solid #17a2b8; margin-bottom: 25px;">
+              <p style="margin: 0; color: #0c5460; font-size: 14px;">
+                <strong>💬 Feedback:</strong> Sua opinião é importante para nós! Se precisar de mais alguma coisa, não hesite em abrir um novo chamado.
+              </p>
+            </div>
+            
+            <p style="font-size: 14px; color: #666; margin-bottom: 30px;">
+              Agradecemos por utilizar nossos serviços. Estamos sempre disponíveis para ajudá-lo!
+            </p>
+            
+            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+            
+            <p style="font-size: 12px; color: #888; text-align: center; margin: 0;">
+              <br>
+              <strong>Equipe HelpDesk</strong><br>
+              Este é um email automático, não responda.
+            </p>
+          </div>
+        </div>
+      `
+    };
+
+
+
+    await transporter.sendMail(mailOptions);
+    console.log(`Email de conclusão enviado SUCESSO para ${usuario.email}`);
+  } catch (error) {
+    console.error("[EMAIL CONCLUSÃO] Erro ao enviar email de conclusão:", error);
+    console.error("[EMAIL CONCLUSÃO] Erro completo:", {
+      message: error instanceof Error ? error.message : 'Erro desconhecido',
+      stack: error instanceof Error ? error.stack : undefined,
+      dados_usuario: { email: usuario.email, name: usuario.name },
+      dados_chamado: { id: chamado.id, numeroChamado: chamado.numeroChamado }
+    });
+  }
+}
+
+
+//cadastrar chamado //novo chamado
 router.post("/chamados", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const {
@@ -79,6 +283,39 @@ router.post("/chamados", verifyToken, async (req: AuthenticatedRequest, res: Res
       where: { id: chamado.id },
       relations: ["usuario", "tipoPrioridade", "departamento", "topicoAjuda", "status"],
     });
+
+    // verif administradores que devem receber notificações
+    const usersRepository = AppDataSource.getRepository(Users);
+    const administradores = await usersRepository.find({
+      where: { roleId: 1 }, // Buscar apenas administradores
+      select: ["id", "name", "email"]
+    });
+    
+    // buscar dados do usuário que abriu o chamado
+    const usuarioSolicitante = await usersRepository.findOne({
+      where: { id: usuarioId },
+      select: ["id", "name", "email"]
+    });
+    
+    if (usuarioSolicitante && administradores.length > 0) {
+      // para cada administrador, verificar suas preferências e notificar
+      for (const admin of administradores) {
+        const preferenciasAdmin = await verificarPreferenciasUsuario(admin.id);
+        
+        // verif se deve enviar email (preferência ID 1)
+        if (preferenciasAdmin.includes(1)) {
+          await enviarEmailNotificacaoAdmin(admin, usuarioSolicitante, chamadoCompleto!);
+        }
+        
+     
+      }
+      
+      // verificar se o usuário quer receber email de abertura (preferência ID 2)
+      const preferenciasUsuario = await verificarPreferenciasUsuario(usuarioSolicitante.id);
+      if (preferenciasUsuario.includes(2)) {
+        await enviarEmailConfirmacaoUsuario(usuarioSolicitante, chamadoCompleto!);
+      }
+    }
 
     return res.status(201).json({
       mensagem: "Chamado aberto com sucesso!",
@@ -835,6 +1072,25 @@ router.put("/chamados/:id/encerrar", verifyToken, async (req: AuthenticatedReque
       relations: ["usuario", "tipoPrioridade", "departamento", "topicoAjuda", "status", "userResponsavel", "userFechamento"],
     });
 
+    // buscar dados do responsável e do usuário para email
+    const userRepository = AppDataSource.getRepository(Users);
+    const [usuarioChamado, adminResponsavel] = await Promise.all([
+      chamado.usuario ? userRepository.findOne({ where: { id: chamado.usuario.id }, select: ["id", "name", "email"] }) : null,
+      chamado.userFechamento ? userRepository.findOne({ where: { id: chamado.userFechamento.id }, select: ["id", "name", "email"] }) : null
+    ]);
+
+    // enviar email de conclusão para o usuário que abriu o chamado
+    if (usuarioChamado) {
+      console.log(`Iniciando envio de email de conclusão para: ${usuarioChamado.email}`);
+      // verificar se o usuário quer receber email de conclusão (preferência ID 3)
+      const preferenciasUsuario = await verificarPreferenciasUsuario(usuarioChamado.id);
+      if (preferenciasUsuario.includes(3)) {
+        await enviarEmailConclusaoUsuario(usuarioChamado, chamadoCompleto!, adminResponsavel);
+      }
+    } else {
+      console.warn("Usuário do chamado não encontrado, email não enviado");
+    }
+
     // formatar resposta para retornar apenas o nome dos ususrios
     const response = {
       ...chamadoCompleto,
@@ -1251,6 +1507,120 @@ router.patch("/chamados/editar-multiplos", verifyToken, async (req: Authenticate
     console.error("Erro ao editar múltiplos chamados:", error);
     return res.status(500).json({
       message: "Erro ao editar chamados",
+    });
+  }
+});
+
+// resolver múltiplos chamados (marcar como resolvido)
+router.patch("/chamados/resolver-multiplos", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { chamadosIds } = req.body;
+    const usuarioId = req.userId;
+
+    if (!chamadosIds || !Array.isArray(chamadosIds) || chamadosIds.length === 0) {
+      return res.status(400).json({
+        mensagem: "Lista de IDs de chamados é obrigatória"
+      });
+    }
+
+    console.log(`[RESOLVER MÚTIPLOS] Usuário ${usuarioId} resolvendo chamados:`, chamadosIds);
+
+    const chamadoRepository = AppDataSource.getRepository(Chamados);
+    const historicoRepository = AppDataSource.getRepository(ChamadoHistorico);
+    const userRepository = AppDataSource.getRepository(Users);
+
+    // buscar chamados que serão resolvidos
+    const chamados = await chamadoRepository.find({
+      where: chamadosIds.map(id => ({ id })),
+      relations: ["usuario", "status", "userFechamento"]
+    });
+
+    if (chamados.length === 0) {
+      return res.status(404).json({
+        mensagem: "Nenhum chamado encontrado"
+      });
+    }
+
+    // verificar se há chamados já encerrados
+    const chamadosJaEncerrados = chamados.filter(chamado => chamado.status?.id === 3);
+    if (chamadosJaEncerrados.length > 0) {
+      return res.status(400).json({
+        mensagem: `${chamadosJaEncerrados.length} chamado(s) já estão encerrados`,
+        chamadosEncerrados: chamadosJaEncerrados.map(c => c.id)
+      });
+    }
+
+    // buscar dados do usuário para log
+    const usuario = await userRepository.findOne({
+      where: { id: usuarioId },
+      select: ["id", "name", "email"]
+    });
+
+    const nomeUsuario = usuario?.name || "Usuário";
+    const dataAtual = new Date();
+    let chamadosProcessados = 0;
+    let emailsEnviados = 0;
+
+    // processar cada chamado
+    for (const chamado of chamados) {
+      try {
+        const statusAnteriorId = chamado.status?.id || 2;
+        
+        // att status para ENCERRADO (3)
+        chamado.status = { id: 3 } as any;
+        chamado.dataFechamento = dataAtual;
+        chamado.userFechamento = { id: usuarioId } as any;
+
+        await chamadoRepository.save(chamado);
+
+        // registrar no histórico
+        await historicoRepository.save({
+          chamado: { id: chamado.id },
+          usuario: { id: usuarioId },
+          acao: `Chamado resolvido por ${nomeUsuario}`,
+          statusAnterior: { id: statusAnteriorId },
+          statusNovo: { id: 3 },
+          dataMov: dataAtual,
+        });
+
+        // buscar dados do usuário do chamado para email
+        if (chamado.usuario?.id) {
+          const usuarioChamado = await userRepository.findOne({
+            where: { id: chamado.usuario.id },
+            select: ["id", "name", "email"]
+          });
+
+          if (usuarioChamado) {
+            console.log(`Enviando email de conclusão para chamado #${chamado.id} - ${usuarioChamado.email}`);
+            // verificar se o usuário quer receber email de conclusão (preferência ID 3)
+            const preferenciasUsuario = await verificarPreferenciasUsuario(usuarioChamado.id);
+            if (preferenciasUsuario.includes(3)) {
+              await enviarEmailConclusaoUsuario(usuarioChamado, chamado, usuario);
+            }
+            emailsEnviados++;
+          }
+        }
+
+        chamadosProcessados++;
+        console.log(`chamado #${chamado.id} resolvido com sucesso`);
+      } catch (error) {
+        console.error(`erro ao processar chamado #${chamado.id}:`, error);
+      }
+    }
+
+    console.log(`[RESOLVER MÚTIPLOS] Processados: ${chamadosProcessados}/${chamados.length}, Emails: ${emailsEnviados}`);
+
+    return res.status(200).json({
+      mensagem: `${chamadosProcessados} chamado(s) resolvido(s) com sucesso!`,
+      processados: chamadosProcessados,
+      total: chamados.length,
+      emailsEnviados
+    });
+  } catch (error) {
+    console.error("[RESOLVER MÚTIPLOS] Erro geral:", error);
+    return res.status(500).json({
+      mensagem: "Erro ao resolver chamados",
+      error: error instanceof Error ? error.message : "Erro desconhecido",
     });
   }
 });
