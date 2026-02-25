@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import api from '@/services/api';
 import ModalEditarChamadoUsuario from './ModalEditarChamadoUsuario';
 import ModalConfirmarReabertura from './ModalConfirmarReabertura';
-
+import { TbPin } from "react-icons/tb";
 interface DetalhesChamadosProps {
   chamado: any;
   onVoltar: () => void;
@@ -200,8 +200,17 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
             <div className="grid grid-cols-5 gap-6">
               <div>
                 <p className="text-base font-semibold text-gray-700 mb-1">Status</p>
-                <p className="text-base font-bold" style={{ color: chamadoAtualizado.status?.id === 1 ? '#2563eb' : chamadoAtualizado.status?.id === 2 ? '#f59e0b' : '#059669' }}>
-                  {chamadoAtualizado.status?.nome}
+              <p
+                className="text-base font-bold"
+                style={{
+                  color:
+                    chamadoAtualizado.status?.id === 1 ? '#f59e0b' : // amarelo
+                    chamadoAtualizado.status?.id === 2 ? '#2563eb' : // azul
+                    chamadoAtualizado.status?.id === 3 ? '#059669' : // verde
+                    chamadoAtualizado.status?.id === 4 ? '#dc2626' : // vermelho
+                    '#000000'
+                }}
+              >                  {chamadoAtualizado.status?.nome}
                 </p>
               </div>
               
@@ -289,7 +298,7 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
       </div>
 
       {/* Conteúdo das tabs */}
-      <div className="overflow-hidden h-[calc(100vh-240px)]">
+      <div className="overflow-hidden h-[calc(100vh-200px)]">
         <div
           className="flex transition-transform duration-300 ease-in-out h-full"
           style={{ transform: detalheTab === 'detalhes' ? 'translateX(0)' : 'translateX(-100%)' }}
@@ -304,16 +313,19 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
                 <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4 bg-gray-50">
                   {/* 1° mensagem do usuário */}
                   <div className="flex justify-end">
-                    <div className="max-w-[70%] bg-green-50 border-r-4 border-green-500 rounded-lg p-4 shadow-sm">
+                    <div className="max-w-[70%] bg-blue-50 border-r-4 border-blue-500 rounded-lg p-4 shadow-sm">
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="font-semibold text-gray-900 text-sm">
+                       <span className="text-blue-500">
+                        <TbPin size={16} />
+                      </span>
+                        <span className="font-semibold text-gray-900 text-base">
                           {chamado.usuario?.name || 'Usuário'}
                         </span>
-                        <span className="text-xs text-gray-500">
+                        <span className="text-base text-gray-500">
                           {formatarDataBrasilia(chamado.dataAbertura)}
                         </span>
                       </div>
-                      <p className="text-gray-800 whitespace-pre-wrap text-sm">
+                      <p className="text-gray-800 whitespace-pre-wrap text-base">
                         {chamado.descricaoChamado}
                       </p>
                     </div>
@@ -336,7 +348,7 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
                           } rounded-lg p-4 shadow-sm`}
                         >
                           <div className="flex items-center gap-2 mb-2">
-                            <span className="font-semibold text-gray-900 text-sm">
+                            <span className="font-semibold text-gray-900 text-base">
                               {msg.usuario?.name}
                             </span>
                             <span className="text-xs text-gray-500">

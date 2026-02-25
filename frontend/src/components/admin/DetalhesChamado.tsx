@@ -696,11 +696,13 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
                     <div className="mt-1">
                       <span
                         className={`inline-block px-3 py-1 rounded-full border text-sm font-medium ${
-                          chamado.status.id === 1
-                            ? 'bg-yellow-100 text-yellow-800 border-yellow-300'
+                               chamado.status.id === 1
+                            ? 'bg-yellow-100 text-yellow-700 border-yellow-500'
                             : chamado.status.id === 2
-                            ? 'bg-blue-50 text-blue-500 border-blue-500'
-                            : 'bg-green-100 text-green-800 border-green-300'
+                            ? 'bg-blue-100 text-blue-600 border-blue-500'
+                            : chamado.status.id === 3
+                             ? 'bg-green-100 text-green-800 border-green-700'
+                            : 'bg-red-100 text-red-800 border-red-700'
                         }`}
                       >
                         {chamado.status.nome}

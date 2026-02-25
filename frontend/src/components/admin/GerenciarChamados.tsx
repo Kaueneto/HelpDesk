@@ -1012,12 +1012,15 @@ export default function GerenciarChamados() {
                       </td>
                       <td className="px-1 py-1 text-center whitespace-nowrap">
                         <span
-                          className={`px-2 py-1 rounded-full text-xs  ${
-                            chamado.status?.id === 1
-                              ? 'bg-yellow-100 text-yellow-800 border border-yellow-600'
-                              : chamado.status?.id === 2
-                              ? 'bg-blue-100 text-blue-800 border border-blue-600'
-                              : 'bg-green-100 text-green-800 border border-green-600'
+                          className={`px-2 py-1 rounded-full text-xs border ${
+                             chamado.status.id === 1
+                            ? 'bg-yellow-100 text-yellow-700 border-yellow-500'
+                            : chamado.status.id === 2
+                            ? 'bg-blue-100 text-blue-600 border-blue-500'
+                            : chamado.status.id === 3
+                             ? 'bg-green-100 text-green-800 border-green-700'
+                            : 'bg-red-100 text-red-800 border-red-700'
+
                           }`}
                         >
                           {chamado.status?.nome || 'Desconhecido'}

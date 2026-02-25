@@ -115,6 +115,15 @@ export default function AdminSidebar({ collapsed }: AdminSidebarProps) {
             </div>
           )}
         </div>
+         <button
+          onClick={() => router.push('/preferencias')}
+          className={`w-full px-4 py-3 text-left flex items-center gap-3 transition ${
+            isActive('/preferencias') ? 'bg-gray-600 text-white' : 'text-gray-300 hover:bg-gray-700'
+          }`}
+        >
+          <img src="/icons/preferences.svg" alt="Preferências" className="w-5 h-5 flex-shrink-0" />
+          {!collapsed && <span>Preferências</span>}
+        </button>
       </nav>
     </aside>
   );

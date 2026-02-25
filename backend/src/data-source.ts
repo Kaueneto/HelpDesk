@@ -19,6 +19,8 @@ import { Roles } from "./entities/Roles";
 import { ChamadoAnexos } from "./entities/ChamadoAnexos";
 import { ParametrosSistema } from "./entities/ParametrosSistema";
 import { LogsSistema } from "./entities/LogsSistema";
+import { Preferences } from "./entities/Preferences";
+import { PrefUsers } from "./entities/PrefUsers";
 //carregar as variaveis  do arquivo .env
 
 
@@ -34,7 +36,7 @@ export const AppDataSource = new DataSource({
   database: process.env.DB_DATABASE,
   synchronize: false, 
   logging: true,
-  entities: [SituationsUsers, Users, ChamadoHistorico, ChamadoMensagens, Departamentos, TipoPrioridade, Chamados, TopicosAjuda, StatusChamado, Roles, ChamadoAnexos, ParametrosSistema, LogsSistema],
+  entities: [SituationsUsers, Users, ChamadoHistorico, ChamadoMensagens, Departamentos, TipoPrioridade, Chamados, TopicosAjuda, StatusChamado, Roles, ChamadoAnexos, ParametrosSistema, LogsSistema, Preferences, PrefUsers],
   subscribers: [],
   migrations: [__dirname + "/migration/*.js"],
   
