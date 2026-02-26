@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import api from '@/services/api';
@@ -8,7 +8,7 @@ import { Toaster, toast } from 'react-hot-toast';
 
 
 export default function PerfilPage() {
-  const { user } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
   const [alterarSenhaAberto, setAlterarSenhaAberto] = useState(false);
   const [senhaAtual, setSenhaAtual] = useState('');
@@ -16,22 +16,62 @@ export default function PerfilPage() {
   const [confirmarSenha, setConfirmarSenha] = useState('');
   const [submittingSenha, setSubmittingSenha] = useState(false);
   const [errorSenha, setErrorSenha] = useState('');
+  const [nomeEditavel, setNomeEditavel] = useState('');
+  const [submittingNome, setSubmittingNome] = useState(false);
+  const [errorNome, setErrorNome] = useState('');
+  const { updateUser } = useAuth();
+
+  // inicializar nome editável quando o usuário carregar
+  useEffect(() => {
+    if (user?.name) {
+      setNomeEditavel(user.name);
+    }
+  }, [user]);
+
+  // proteção de autenticação
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.push('/auth/login');
+    }
+  }, [isLoading, isAuthenticated, router]);
+
+  // validar senha forte
+  const validarSenhaForte = (senha: string) => {
+    const erros = [];
+    if (senha.length < 8) erros.push('pelo menos 8 caracteres');
+    if (!/[A-Z]/.test(senha)) erros.push('uma letra maiúscula');
+    if (!/[a-z]/.test(senha)) erros.push('uma letra minúscula');
+    if (!/\d/.test(senha)) erros.push('um número');
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(senha)) erros.push('um caractere especial');
+    if (/\s/.test(senha)) erros.push('não pode conter espaços');
+    
+    return {
+      valida: erros.length === 0,
+      erros
+    };
+  };
 
   const handleAlterarSenha = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setErrorSenha('');
+    
     if (!senhaAtual || !novaSenha || !confirmarSenha) {
       setErrorSenha('Preencha todos os campos');
       return;
     }
+    
     if (novaSenha !== confirmarSenha) {
       setErrorSenha('A nova senha e a confirmação não coincidem');
       return;
     }
-    if (novaSenha.length < 6) {
-      setErrorSenha('A nova senha deve ter pelo menos 6 caracteres');
+    
+    // validar senha forte
+    const validacao = validarSenhaForte(novaSenha);
+    if (!validacao.valida) {
+      setErrorSenha(`A nova senha deve ter: ${validacao.erros.join(', ')}`);
       return;
     }
+    
     setSubmittingSenha(true);
     try {
       await api.put('/users/alterar-minha-senha', {
@@ -51,6 +91,61 @@ export default function PerfilPage() {
     }
   };
 
+const handleAlterarNome = async () => {
+  setErrorNome('');
+
+  if (!nomeEditavel || nomeEditavel.trim() === '') {
+    setErrorNome('O nome não pode estar vazio');
+    return;
+  }
+
+  if (nomeEditavel.trim().length < 3) {
+    setErrorNome('O nome deve ter pelo menos 3 caracteres');
+    return;
+  }
+
+  if (nomeEditavel.trim() === user?.name) {
+    setErrorNome('O nome não foi alterado');
+    return;
+  }
+
+  setSubmittingNome(true);
+
+  try {
+    const response = await api.put('/users/alterar-meu-nome', {
+      nome: nomeEditavel.trim(),
+    });
+
+    const novoNome = nomeEditavel.trim();
+
+    // att no contexto de autenticação
+    updateUser({ name: novoNome });
+
+    toast.success('Nome alterado com sucesso!');
+    setErrorNome('');
+  } catch (error: any) {
+    const mensagem = error.response?.data?.mensagem || 'Erro ao alterar nome';
+    setErrorNome(mensagem);
+  } finally {
+    setSubmittingNome(false);
+  }
+};
+const nomeAlterado = nomeEditavel.trim() !== '' && nomeEditavel.trim() !== user?.name;
+
+  // mostrar loading enquanto carrega  
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-gray-600 text-lg">Carregando...</div>
+      </div>
+    );
+  }
+
+  // redirecionar se não autenticado
+  if (!isAuthenticated || !user) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
       <Toaster position="top-right" />
@@ -64,7 +159,7 @@ export default function PerfilPage() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
         </button>
-        <h1 className="text-3xl font-bold text-gray-900">Perfil do Usuário</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Perfil do Usuário</h1>
       </div>
 
       <div className="flex-1 overflow-y-auto p-8">
@@ -87,10 +182,24 @@ export default function PerfilPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Nome</label>
                   <input
                     type="text"
-                    value={user?.name}
-                    disabled
+                    value={nomeEditavel}
+                    onChange={(e) => setNomeEditavel(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-700"
                   />
+                </div>
+                <div className="text-red-500 text-sm mt-1">
+                  {errorNome}
+                </div>
+                <div className="mt-4">
+                  <button
+                    onClick={handleAlterarNome}
+                    disabled={submittingNome || !nomeAlterado}
+                    className={`px-4 py-2 rounded-md text-white font-medium ${
+                      submittingNome || !nomeAlterado ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#001960] hover:bg-blue-800'
+                    }`}
+                  >
+                    {submittingNome ? 'Salvando...' : 'Salvar Alterações'}
+                  </button>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
@@ -109,7 +218,7 @@ export default function PerfilPage() {
               <div className="bg-white border border-gray-300 rounded-lg overflow-hidden">
                 <button
                   onClick={() => setAlterarSenhaAberto(!alterarSenhaAberto)}
-                  className="w-full px-6 py-4 flex items-center justify-between bg-blue-500 hover:bg-blue-600 transition-colors"
+                  className="w-full px-6 py-4 flex items-center justify-between bg-[#1A68CF] hover:bg-blue-800 transition-colors"
                 >
                   <div className="flex items-center gap-3">
                     <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -131,7 +240,7 @@ export default function PerfilPage() {
                         type="password"
                         value={senhaAtual}
                         onChange={(e) => setSenhaAtual(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
                         placeholder="Digite sua senha atual"
                         disabled={submittingSenha}
                       />
@@ -142,7 +251,7 @@ export default function PerfilPage() {
                         type="password"
                         value={novaSenha}
                         onChange={(e) => setNovaSenha(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
                         placeholder="Digite a nova senha"
                         disabled={submittingSenha}
                       />
@@ -153,7 +262,7 @@ export default function PerfilPage() {
                         type="password"
                         value={confirmarSenha}
                         onChange={(e) => setConfirmarSenha(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
                         placeholder="Confirme a nova senha"
                         disabled={submittingSenha}
                       />
@@ -166,7 +275,7 @@ export default function PerfilPage() {
                     <button
                       type="submit"
                       disabled={submittingSenha}
-                      className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-full px-6 py-3 bg-[#001960] hover:bg-blue-700 text-white font-medium rounded-md transition disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {submittingSenha ? 'Alterando...' : 'Confirmar'}
                     </button>

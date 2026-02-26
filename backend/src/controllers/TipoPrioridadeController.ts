@@ -3,11 +3,18 @@ import { AppDataSource } from "../data-source";
 import { TipoPrioridade } from "../entities/TipoPrioridade";
 import * as yup from "yup";
 import { Not } from "typeorm";
+import { verifyToken } from "../Middleware/AuthMiddleware";
+
+interface AuthenticatedRequest extends Request {
+  userId?: number;
+  userEmail?: string;
+  userRoleId?: number;
+}
 
 const router = Router();
 
 // listar todos os tipos de prioridade (ordenados)
-router.get("/tipo_prioridade", async (req: Request, res: Response) => {
+router.get("/tipo_prioridade", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const tipoPrioridadeRepository = AppDataSource.getRepository(TipoPrioridade);
     
@@ -26,7 +33,7 @@ router.get("/tipo_prioridade", async (req: Request, res: Response) => {
 });
 
 // buscar tipo de prioridade por ID
-router.get("/tipo_prioridade/:id", async (req: Request, res: Response) => {
+router.get("/tipo_prioridade/:id", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
     const tipoPrioridadeRepository = AppDataSource.getRepository(TipoPrioridade);

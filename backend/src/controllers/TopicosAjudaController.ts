@@ -1,11 +1,18 @@
 import { Router, Request, Response } from "express";
 import { AppDataSource } from "../data-source";
 import { TopicosAjuda } from "../entities/TopicosAjuda";
+import { verifyToken } from "../Middleware/AuthMiddleware";
+
+interface AuthenticatedRequest extends Request {
+  userId?: number;
+  userEmail?: string;
+  userRoleId?: number;
+}
 
 const router = Router();
 
 
-router.get("/topicos_ajuda", async (req: Request, res: Response) => {
+router.get("/topicos_ajuda", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const topicosRepository = AppDataSource.getRepository(TopicosAjuda);
     const topicos = await topicosRepository.find({
@@ -21,7 +28,7 @@ router.get("/topicos_ajuda", async (req: Request, res: Response) => {
 });
 
 
-router.get("/topicos_ajuda/:id", async (req: Request, res: Response) => {
+router.get("/topicos_ajuda/:id", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
     const topicosRepository = AppDataSource.getRepository(TopicosAjuda);

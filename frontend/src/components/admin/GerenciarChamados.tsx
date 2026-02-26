@@ -44,12 +44,14 @@ interface Chamado {
 
 interface Departamento {
   id: number;
+  codigo:string;
   name: string;
   ativo: boolean;
 }
 
 interface TopicoAjuda {
   id: number;
+  codigo:string;
   nome: string;
   ativo: boolean;
 }
@@ -76,7 +78,7 @@ export default function GerenciarChamados() {
     const [linhaAnimando, setLinhaAnimando] = useState<number | null>(null);
     const [pageSliding, setPageSliding] = useState(false);
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   
   // filtros
   const [dataAberturaInicio, setDataAberturaInicio] = useState<Date | null>(null);
@@ -123,6 +125,10 @@ export default function GerenciarChamados() {
   const [submittingEdicao, setSubmittingEdicao] = useState(false);
 
   useEffect(() => {
+    // só carregar dados se estiver autenticado
+    if (authLoading) return;
+    if (!isAuthenticated) return;
+    
     carregarDadosIniciais();
     // Recupera filtros/resultados do localStorage
     const cache = localStorage.getItem('chamadosCache');
@@ -148,7 +154,7 @@ export default function GerenciarChamados() {
         localStorage.removeItem('chamadosCache');
       }
     }
-  }, []);
+  }, [isAuthenticated, authLoading]);
 
   const handleOrdenar = (coluna: 'numeroChamado' | 'prioridade' | 'topico' | 'departamento' | 'status' | 'dataAbertura' | 'dataFechamento' | 'usuario' | 'responsavel' | 'resumo') => {
     if (ordenarPor === coluna) {
@@ -221,6 +227,8 @@ export default function GerenciarChamados() {
     : chamados;
 
   const carregarDadosIniciais = async () => {
+    if (!isAuthenticated) return; // protecao adicional
+    
     try {
       const [deptosRes, topicosRes, prioridadesRes, statusRes, usersRes] = await Promise.all([
         api.get('/departamentos'),
@@ -267,6 +275,8 @@ export default function GerenciarChamados() {
   };
 
   const pesquisarChamados = async (page: number = 1) => {
+    if (!isAuthenticated) return; // protecao adicional
+    
     setLoading(true);
     try {
       const params: any = {
@@ -580,6 +590,61 @@ export default function GerenciarChamados() {
     }
   };
 
+  const excluirChamadosSelecionados = async () => {
+    if (chamadosSelecionados.length === 0) {
+      alert('Selecione ao menos um chamado para excluir');
+      return;
+    }
+
+    const primeiraConfirmacao = window.confirm(
+      `Você está prestes a excluir ${chamadosSelecionados.length} chamado(s).\n\n` +
+      'Esta ação é IRREVERSÍVEL e removerá permanentemente:\n' +
+      '- O chamado e suas informações\n' +
+      '- Todas as mensagens\n' +
+      '- Todo o histórico\n' +
+      '- Todos os anexos\n\n' +
+      'Tem certeza que deseja continuar?'
+    );
+
+    if (!primeiraConfirmacao) {
+      return;
+    }
+
+    const segundaConfirmacao = window.confirm(
+      `CONFIRMAÇÃO FINAL:\n\n` +
+      `Excluir definitivamente ${chamadosSelecionados.length} chamado(s)?\n\n` +
+      'Esta ação NÃO PODE SER DESFEITA!'
+    );
+
+    if (!segundaConfirmacao) {
+      return;
+    }
+
+    try {
+      setSubmittingEdicao(true);
+
+      const response = await api.delete('/chamados/excluir-multiplos', {
+        data: {
+          chamadosIds: chamadosSelecionados,
+        }
+      });
+
+      alert(response.data.mensagem || `${chamadosSelecionados.length} chamado(s) excluído(s) com sucesso!`);
+      setChamadosSelecionados([]);
+      setTodosChecados(false);
+      await pesquisarChamados(paginaAtual);
+    } catch (error: any) {
+      console.error('Erro ao excluir chamados:', error);
+      const errorMessage = error.response?.data?.mensagem || 
+                          error.response?.data?.erros || 
+                          error.message || 
+                          'Erro ao excluir chamados';
+      alert(`Erro: ${errorMessage}`);
+    } finally {
+      setSubmittingEdicao(false);
+    }
+  };
+
   const formatarData = (data: string | null) => {
     if (!data) return '-';
     const date = new Date(data);
@@ -595,15 +660,15 @@ export default function GerenciarChamados() {
 
   return (
     <div className={pageSliding ? 'slideOutLeft' : ''}>
-      <div className="bg-[#51A2FF] px-6 py-4">
-        <h2 className="text-white text-2xl font-semibold">Chamados</h2>
+      <div className="bg-[#1A68CF] px-6 py-4">
+        <h2 className="text-white text-2xl font-semibold">Painel de Chamados</h2>
       </div>
 
-      <div className="p-6 bg-[#EDEDED]">
+      <div className="p-6 bg-[#EDEDED] ">
         <div className="bg-white rounded-lg shadow-lg border border-gray-300 overflow-hidden">
           {/* area de Filtros */}
-          <div className="p-6 border-b border-gray-300">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+          <div className="p-6  border-gray-300 ">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 ">
               {/* Período de abertura */}
               <div className="min-w-0">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -620,7 +685,7 @@ export default function GerenciarChamados() {
                   }}
                   dateFormat="dd/MM/yyyy"
                   placeholderText="Selecione o período"
-                  className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded  focus:ring-1 focus:ring-blue-500 text-sm text-gray-900"
+                  className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded  focus:ring-1 focus:ring-blue-500 text-sm text-gray-900 focus:outline-none"
                   isClearable={true}
                 />
               </div>
@@ -628,7 +693,7 @@ export default function GerenciarChamados() {
               {/* periodo de fechamento */}
               <div className="min-w-0">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Período de fechamento
+                  Período de Conclusão
                 </label>
                 <DatePicker
                   selectsRange={true}
@@ -641,7 +706,7 @@ export default function GerenciarChamados() {
                   }}
                   dateFormat="dd/MM/yyyy"
                   placeholderText="Selecione o período"
-                  className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded  focus:ring-1 focus:ring-blue-500 text-sm text-gray-900"
+                  className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded  focus:ring-1 focus:ring-blue-500 text-sm text-gray-900 focus:outline-none"
                   isClearable={true}
                 />
               </div>
@@ -654,12 +719,12 @@ export default function GerenciarChamados() {
                 <select
                   value={departamentoId}
                   onChange={(e) => setDepartamentoId(e.target.value)}
-                  className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded  focus:ring-1 focus:ring-blue-500 text-sm text-gray-900"
+                  className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded  focus:ring-1 focus:ring-blue-500 text-sm text-gray-900 focus:outline-none"
                 >
                   <option value="">Todos</option>
                   {departamentos.filter(dept => dept.ativo).map((dept) => (
                     <option key={dept.id} value={dept.id}>
-                      {dept.name}
+                      {dept.codigo} - {dept.name}
                     </option>
                   ))}
                 </select>
@@ -673,12 +738,12 @@ export default function GerenciarChamados() {
                 <select
                   value={topicoAjudaId}
                   onChange={(e) => setTopicoAjudaId(e.target.value)}
-                  className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded  focus:ring-1 focus:ring-blue-500 text-sm text-gray-900"
+                  className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded  focus:ring-1 focus:ring-blue-500 text-sm text-gray-900 focus:outline-none"
                 >
                   <option value="">Todos</option>
                   {topicosAjuda.filter(topico => topico.ativo).map((topico) => (
                     <option key={topico.id} value={topico.id}>
-                      {topico.nome}
+                     {topico.codigo} - {topico.nome}
                     </option>
                   ))}
                 </select>
@@ -692,7 +757,7 @@ export default function GerenciarChamados() {
                 <select
                   value={statusId}
                   onChange={(e) => setStatusId(e.target.value)}
-                  className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded  focus:ring-1 focus:ring-blue-500 text-sm text-gray-900"
+                  className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded  focus:ring-1 focus:ring-blue-500 text-sm text-gray-900 focus:outline-none"
                 >
                   <option value="">Todos</option>
                   {statusList.map((status) => (
@@ -716,7 +781,7 @@ export default function GerenciarChamados() {
                   value={assunto}
                   onChange={(e) => setAssunto(e.target.value)}
                   placeholder="Digite o assunto"
-                  className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded  focus:ring-1 focus:ring-blue-500 text-sm text-gray-900"
+                  className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded  focus:ring-1 focus:ring-blue-500 text-sm text-gray-900 focus:outline-none "
                 />
               </div>
 
@@ -730,7 +795,7 @@ export default function GerenciarChamados() {
                   value={nomeUsuario}
                   onChange={(e) => setNomeUsuario(e.target.value)}
                   placeholder="Digite o nome"
-                  className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded  focus:ring-1 focus:ring-blue-500 text-sm text-gray-900"
+                  className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded  focus:ring-1 focus:ring-blue-500 text-sm text-gray-900 focus:outline-none"
                 />
               </div>
 
@@ -782,7 +847,7 @@ export default function GerenciarChamados() {
       <button
                 onClick={() => pesquisarChamados(1)}
                 disabled={loading}
-                className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors font-medium text-sm disabled:bg-blue-400"
+                className="px-6 py-2 bg-[#002B57]  text-white rounded hover:bg-[#315377] transition-colors font-medium text-sm disabled:bg-[#002B57]"
               >
                 {loading ? 'Pesquisando...' : 'Pesquisar'}
               </button>
@@ -795,22 +860,52 @@ export default function GerenciarChamados() {
               <button
                 onClick={marcarComoResolvido}
                 disabled={chamadosSelecionados.length === 0}
-                className="px-5 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors font-medium text-sm disabled:bg-green-300 disabled:cursor-not-allowed"
+                className="
+                  px-5 py-2 rounded border border-[#1A4877]
+                  bg-[#1a4877] text-white
+                  hover:bg-[#1A4877] transition-colors font-medium text-sm
+
+                  disabled:bg-transparent
+                  disabled:text-[#001933]
+                  disabled:border-[#001933]
+                  disabled:cursor-not-allowed
+                  disabled:hover:bg-transparent
+                  "
               >
                 Marcar como resolvido
               </button>
               <button
                 onClick={editarMultiplos}
                 disabled={chamadosSelecionados.length === 0}
-                className="px-5 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors font-medium text-sm disabled:bg-blue-300 disabled:cursor-not-allowed"
-              >
+                className="
+                  px-5 py-2 rounded border border-[#1A4877]
+                  bg-[#1a4877] text-white
+                  hover:bg-[#1A4877] transition-colors font-medium text-sm
+
+                  disabled:bg-transparent
+                  disabled:text-[#001933]
+                  disabled:border-[#001933]
+                  disabled:cursor-not-allowed
+                  disabled:hover:bg-transparent
+                  "
+                                >
                 Editar Múltiplos
               </button>
               <button
                 onClick={atribuirAMim}
                 disabled={chamadosSelecionados.length === 0}
-                className="px-5 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors font-medium text-sm disabled:bg-purple-300 disabled:cursor-not-allowed"
-              >
+                className="
+                  px-5 py-2 rounded border border-[#1A4877]
+                  bg-[#1a4877] text-white
+                  hover:bg-[#1A4877] transition-colors font-medium text-sm
+
+                  disabled:bg-transparent
+                  disabled:text-[#001933]
+                  disabled:border-[#001933]
+                  disabled:cursor-not-allowed
+                  disabled:hover:bg-transparent
+                  "       
+                         >
                 Atribuir a mim
               </button>
               {chamadosSelecionados.length > 0 && (
@@ -833,7 +928,7 @@ export default function GerenciarChamados() {
               </div>
             ) : (
               <table className="w-full">
-                <thead className="bg-gray-100 border-b border-gray-300">
+                <thead className="bg-gray-100  border-gray-300">
                   <tr>
                     <th className="px-4 py-3 text-left">
                       <input
@@ -1051,7 +1146,7 @@ export default function GerenciarChamados() {
 
           {/* Controles de Paginação */}
           {chamados.length > 0 && (
-            <div className="px-6 py-4 bg-gray-50 border-t border-gray-300">
+            <div className="px-6 py-4 bg-gray-100/50 border-t border-gray-300">
               {/* Seletor de registros por página */}
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
@@ -1112,15 +1207,24 @@ export default function GerenciarChamados() {
               </div>
             </div>
           )}
+          <div>
+            <button
+              onClick={excluirChamadosSelecionados}
+              disabled={chamadosSelecionados.length === 0 || submittingEdicao}
+              className="m-5 px-4 py-2 bg-black text-white rounded hover:bg-red-800 transition-colors font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {submittingEdicao ? 'Excluindo...' : `Excluir Chamado(s) Selecionado(s)`}
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Modal de Edição Múltipla */}
       {modalEdicaoAberto && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl transform transition-all">
+        <div className="fixed inset-0 bg-black/60  flex items-center justify-center z-50 p-4 ">
+          <div className="bg-white shadow-2xl w-full max-w-3xl transform transition-all">
             {/* header */}
-            <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 rounded-t-2xl">
+            <div className="bg-gradient-to-r from-[#001933] to-[#1A4877] px-6 py-4 ">
               <div className="flex justify-between items-center">
                 <h3 className="text-xl font-bold text-white">
                   Editar múltiplos chamados
@@ -1155,7 +1259,7 @@ export default function GerenciarChamados() {
       <select
         value={novaPrioridadeId}
         onChange={(e) => setNovaPrioridadeId(e.target.value)}
-        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 bg-white transition-all"
+        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 text-sm text-gray-900 bg-white transition-all"
       >
         <option value="">Manter atual</option>
         {[...prioridades].sort((a, b) => a.id - b.id).map((prioridade) => (
@@ -1174,7 +1278,7 @@ export default function GerenciarChamados() {
       <select
         value={novoDepartamentoId}
         onChange={(e) => setNovoDepartamentoId(e.target.value)}
-        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 bg-white transition-all"
+        className="w-full px-3 py-2 border border-gray-300 rounded-md  text-sm text-gray-900 bg-white transition-all"
       >
         <option value="">Manter atual</option>
         {[...departamentos].filter(dept => dept.ativo).sort((a, b) => a.id - b.id).map((dept) => (
@@ -1193,7 +1297,7 @@ export default function GerenciarChamados() {
       <select
         value={novoStatusId}
         onChange={(e) => setNovoStatusId(e.target.value)}
-        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 bg-white transition-all"
+        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 text-sm text-gray-900 bg-white transition-all"
       >
         <option value="">Manter atual</option>
         {[...statusList].sort((a, b) => a.id - b.id).map((status) => (
@@ -1212,7 +1316,7 @@ export default function GerenciarChamados() {
       <select
         value={novoTopicoAjudaId}
         onChange={(e) => setNovoTopicoAjudaId(e.target.value)}
-        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm text-gray-900 bg-white transition-all"
+        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1text-sm text-gray-900 bg-white transition-all"
       >
         <option value="">Manter atual</option>
         {[...topicosAjuda].filter(topico => topico.ativo).sort((a, b) => a.id - b.id).map((topico) => (
@@ -1226,7 +1330,7 @@ export default function GerenciarChamados() {
 
   <div className="mb-8 p-4 bg-gray-50 border border-gray-200 rounded-lg">
     <div className="flex items-center gap-2 mb-3">
-      <svg className="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg className="w-4 h-4 text-[#1A00FF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
       </svg>
       <h4 className="text-sm font-semibold text-gray-800">Redirecionar Chamado</h4>
@@ -1247,7 +1351,7 @@ export default function GerenciarChamados() {
         </option>
       ))}
     </select>
-    <p className="mt-2 text-[11px] text-gray-500 italic">
+    <p className="mt-2 text-[14px] text-gray-500 italic">
       * Apenas chamados sob sua responsabilidade podem ser redirecionados.
     </p>
   </div>
@@ -1257,21 +1361,18 @@ export default function GerenciarChamados() {
     <button
       onClick={fecharModalEdicao}
       disabled={submittingEdicao}
-      className="px-5 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors disabled:opacity-50"
+      className="px-6 py-2 bg-transparent border border-gray-400 text-gray-700 rounded-lg hover:bg-gray-200 hover:text-gray-900 transition-all duration-200 transform hover:scale-105 font-medium disabled:border-gray-300 disabled:text-gray-400 disabled:bg-transparent disabled:cursor-not-allowed"
     >
       Cancelar
     </button>
     <button
       onClick={confirmarEdicaoMultipla}
       disabled={submittingEdicao}
-      className="px-6 py-2 bg-blue-600 text-white text-sm font-bold rounded-md hover:bg-blue-700 transition-all shadow-sm hover:shadow-md disabled:opacity-50 flex items-center gap-2"
+      className="px-6 py-2 bg-[#001960] text-white rounded-lg hover:bg-[#001960]/80 transition-all transform hover:scale-105 font-medium disabled:bg-blue-400 disabled:cursor-not-allowed disabled:transform-none"
     >
       {submittingEdicao ? (
         <span className="flex items-center gap-2">
-          <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
+      
           Salvando...
         </span>
       ) : (

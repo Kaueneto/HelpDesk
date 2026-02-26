@@ -158,9 +158,9 @@ Informamos que a sua solicitação de alteração de senha foi recebida com suce
 Clique ou copie o link para criar uma nova senha em nosso sistema:
 ${data.urlRecoverPassword}?email=${data.email}&key=${recoverToken}
 
-Esta mensagem foi enviada a você pela empresa ${process.env.APP || "HelpDesk"}.
-Você está recebendo porque está cadastrado no banco de dados da empresa ${process.env.APP || "HelpDesk"}.
-Nenhum e-mail enviado pela empresa ${process.env.APP || "HelpDesk"} tem arquivos anexados ou solicita
+
+Você está recebendo esse e-mail porque está cadastrado no nosso banco de dados
+Nenhum e-mail enviado por nós tem arquivos anexados ou solicita
 o preenchimento de senhas ou informações cadastrais.
 `,
       html: `
@@ -177,12 +177,15 @@ o preenchimento de senhas ou informações cadastrais.
 
         <br>
 
-        <p>Esta mensagem foi enviada a você pela empresa <strong>${process.env.APP || "HelpDesk"}</strong>.</p>
-        <p>
-          Você está recebendo porque está cadastrado no banco de dados da empresa <strong>${process.env.APP || "HelpDesk"}</strong>.
-          Nenhum e-mail enviado pela empresa <strong>${process.env.APP || "HelpDesk"}</strong> tem arquivos anexados ou solicita
-          o preenchimento de senhas e informações cadastrais.
+ 
+         <p style="color: #001531 ; text-align: left; margin: 0;">
+          Você está recebendo esse e-mail porque está cadastrado no nosso banco de dados
+          Nenhum e-mail enviado por nós tem arquivos anexados ou solicita
+          o preenchimento de senhas ou informações cadastrais.
         </p>
+          <p style="font-size: 14px; color: #888; text-align: left; margin: 0;">
+              Este é um email automático, não responda.
+            </p>
       `,
     };
 

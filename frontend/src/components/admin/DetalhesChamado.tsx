@@ -8,6 +8,7 @@ import ModalRedirecionarChamado from '@/app/admin/Modal/RedirecionarChamado';
 import ModalAssumirChamado from '@/app/admin/Modal/AssumirChamado';
 import ModalMarcarResolvido from '@/app/admin/Modal/MarcarResolvido';
 import { Toaster, toast } from 'react-hot-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Anexo {
   id: number;
@@ -93,6 +94,7 @@ interface DetalhesChamadoProps {
 
 export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
   const router = useRouter();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
 
   const [chamado, setChamado] = useState<Chamado | null>(null);
   const [mensagens, setMensagens] = useState<Mensagem[]>([]);
@@ -118,14 +120,18 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
   const [transformOrigin, setTransformOrigin] = useState<string | undefined>(undefined);
 
   useEffect(() => {
+    // só  carregar dados se estiver autenticado
+    if (authLoading) return;
+    if (!isAuthenticated) return;
+    
     carregarDados();
     carregarUsuarioLogado();
-  }, [chamadoId]);
+  }, [chamadoId, isAuthenticated, authLoading]);
 
   // Auto-atualização do chat a cada 5 segundos
   useEffect(() => {
-    // Só atualiza se estiver na aba de detalhes e nao estiver carregando
-    if (abaAtiva !== 'detalhes' || loading) return;
+    // só atualiza se estiver autenticado, na aba de detalhes e não estiver carregando
+    if (!isAuthenticated || abaAtiva !== 'detalhes' || loading) return;
 
     const intervalo = setInterval(() => {
       carregarMensagensEHistorico();
@@ -133,9 +139,11 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
 
     // Limpa o intervalo quando o componente é desmontado ou quando muda de aba
     return () => clearInterval(intervalo);
-  }, [chamadoId, abaAtiva, loading]);
+  }, [chamadoId, abaAtiva, loading, isAuthenticated]);
 
   const carregarMensagensEHistorico = async () => {
+    if (!isAuthenticated) return; // Proteção adicional
+    
     try {
       const [mensagensRes, historicoRes] = await Promise.all([
         api.get(`/chamados/${chamadoId}/mensagens`),
@@ -151,14 +159,15 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
   };
 
   const carregarUsuarioLogado = () => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      setUsuarioLogadoId(payload.id);
+    // obter id do usuário do contexto de autenticação
+    if (user?.id) {
+      setUsuarioLogadoId(user.id);
     }
   };
 
   const carregarDados = async () => {
+    if (!isAuthenticated) return; // protecao adicional
+    
     setLoading(true);
     try {
       const [chamadoRes, mensagensRes, historicoRes] = await Promise.all([
@@ -353,7 +362,6 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
     //verificar se o usuario logado ja é o responsavel pelo chamado
     if (chamado?.userResponsavel?.id === usuarioLogadoId) {
       toast('Você já é o responsável por este chamado.', {
-        icon: 'ℹ️',
         style: {
           background: '#fff',
           color: '#3b82f6',
@@ -420,11 +428,18 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
   };
 
   const handleRedirecionarChamado = async (usuarioSelecionado: number) => {
+    console.log('[REDIRECIONAR] Iniciando redirecionamento:', { 
+      chamadoId: chamadoId, 
+      usuarioSelecionado,
+      usuarioLogado: usuarioLogadoId
+    });
+    
     try {
       await api.put(`/chamados/${chamadoId}/atribuir`, {
         userResponsavelId: usuarioSelecionado,
       });
       
+      console.log(' Sucesso no redirecionamento');
       toast.success('Chamado redirecionado com sucesso!', {
         style: {
           background: '#fff',
@@ -441,7 +456,8 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
       });
       await carregarDados();
     } catch (error: any) {
-      console.error('Erro ao redirecionar chamado:', error);
+      console.error(' Erro no redirecionamento:', error);
+      console.error('[REDIRECIONAR] Detalhes do erro:', error.response?.data);
       const mensagemErro = error.response?.data?.mensagem || 'Erro ao redirecionar chamado';
       toast.error(mensagemErro, {
         style: {
@@ -1020,7 +1036,7 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
           </div>
         ) : (
           <div className="bg-white rounded-lg border border-gray-300 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-3 border-b">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-3 border-b border-gray-300">
               Histórico do Chamado
             </h3>
             <div className="space-y-4">

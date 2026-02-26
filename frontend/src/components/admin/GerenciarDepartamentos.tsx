@@ -323,17 +323,17 @@ export default function GerenciarDepartamentos() {
 
   return (
     <>
-      <div className="bg-[#51A2FF] px-6 py-4">
+      <div className="bg-[#1A68CF] px-6 py-4">
         <h2 className="text-white text-2xl font-semibold">Gerenciar Departamentos</h2>
       </div>
 
       <div className="p-2 bg-[#EDEDED]">
-        <div className="bg-white rounded-lg shadow-lg border border-gray-300 overflow-hidden">
+        <div className="bg-gray-100 rounded-lg shadow-lg border border-gray-300 overflow-hidden">
           {/* Botões de ação acima dos filtros */}
           <div className="px-6 py-3 bg-gray-50 border-b border-gray-300 flex gap-4">
             <button
               onClick={abrirModalCadastro}
-              className="px-4 py-0.5 bg-transparent border border-green-600 text-green-600 rounded-lg hover:bg-green-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm flex items-center gap-2 disabled:border-green-300 disabled:text-green-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-2 focus:ring-green-500/50"
+              className="px-4 py-0.5 bg-transparent border border-green-600 text-green-600 rounded-lg hover:bg-green-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm flex items-center gap-2 disabled:border-green-300 disabled:text-green-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-1 focus:ring-green-500/50"
             >
               <span className="text-lg font-bold">+</span>
               Novo
@@ -341,28 +341,28 @@ export default function GerenciarDepartamentos() {
             <button
               onClick={abrirModalEdicao}
               disabled={departamentosSelecionados.length !== 1}
-              className="px-4 py-0.5 bg-transparent border border-purple-600 text-purple-600 rounded-lg hover:bg-purple-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-purple-300 disabled:text-purple-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+              className="px-4 py-0.5 bg-transparent border border-purple-600 text-purple-600 rounded-lg hover:bg-purple-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-blue-800 disabled:text-blue-800 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-1 focus:ring-purple-500/50"
             >
               Editar
             </button>
             <button
               onClick={excluirDepartamentos}
               disabled={departamentosSelecionados.length === 0}
-              className="px-4 py-0.5 bg-transparent border border-red-600 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-red-300 disabled:text-red-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-2 focus:ring-red-500/50"
+              className="px-4 py-0.5 bg-transparent border border-red-600 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-blue-800 disabled:text-blue-800 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-1 focus:ring-red-500/50"
             >
               Excluir
             </button>
             <button
               onClick={ativarDepartamentosSelecionados}
               disabled={departamentosSelecionados.length === 0}
-              className="px-4 py-0.5 bg-transparent border border-green-600 text-green-600 rounded-lg hover:bg-green-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-green-300 disabled:text-green-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-2 focus:ring-green-500/50"
+              className="px-4 py-0.5 bg-transparent border border-green-600 text-green-600 rounded-lg hover:bg-green-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-blue-800 disabled:text-blue-800 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-1 focus:ring-green-500/50"
             >
               Ativar Selecionados
             </button>
             <button
               onClick={desativarDepartamentosSelecionados}
               disabled={departamentosSelecionados.length === 0}
-              className="px-4 py-0.5 bg-transparent border border-orange-600 text-orange-600 rounded-lg hover:bg-orange-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-orange-300 disabled:text-orange-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-2 focus:ring-orange-500/50"
+              className="px-4 py-0.5 bg-transparent border border-orange-600 text-orange-600 rounded-lg hover:bg-orange-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-blue-800 disabled:text-blue-800 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-1 focus:ring-orange-500/50"
             >
               Desativar Selecionados
             </button>
@@ -386,7 +386,7 @@ export default function GerenciarDepartamentos() {
                   value={nome}
                   onChange={(e) => setNome(e.target.value)}
                   placeholder="Digite o nome"
-                  className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900"
+                  className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm text-gray-900"
                 />
               </div>
 
@@ -398,7 +398,7 @@ export default function GerenciarDepartamentos() {
                 <select
                   value={status}
                   onChange={(e) => setStatus(e.target.value as 'todos' | 'ativo' | 'inativo')}
-                  className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900"
+                  className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm text-gray-900"
                 >
                   <option value="todos">Todos</option>
                   <option value="ativo">Ativo</option>
@@ -418,7 +418,7 @@ export default function GerenciarDepartamentos() {
               <button
                 onClick={carregarDepartamentos}
                 disabled={loading}
-                className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors font-medium text-sm disabled:bg-blue-400"
+                className="px-6 py-2 bg-[#001960] text-white rounded hover:bg-[#001960]/80 transition-colors font-medium text-sm disabled:bg-blue-400"
               >
                 {loading ? 'Pesquisando...' : 'Pesquisar'}
               </button>
@@ -570,7 +570,7 @@ export default function GerenciarDepartamentos() {
                         value={novoCodigo}
                         onChange={(e) => setNovoCodigo(e.target.value)}
                         placeholder="Digite o código"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900"
                         disabled={submittingCadastro}
                       />
                     </div>
@@ -585,7 +585,7 @@ export default function GerenciarDepartamentos() {
                         value={novoNome}
                         onChange={(e) => setNovoNome(e.target.value)}
                         placeholder="Digite o nome do departamento"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900"
                         disabled={submittingCadastro}
                       />
                     </div>
@@ -626,7 +626,7 @@ export default function GerenciarDepartamentos() {
                   <div className="flex justify-end gap-4 mt-6 pt-4 border-t border-gray-200">
                     <button
                       onClick={fecharModalCadastro}
-                      className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors font-medium"
+                     className="px-6 py-2 bg-transparent border border-gray-400 text-gray-700 rounded-lg hover:bg-gray-200 hover:text-gray-900 transition-all duration-200 transform hover:scale-105 font-medium disabled:border-gray-300 disabled:text-gray-400 disabled:bg-transparent disabled:cursor-not-allowed"
                       disabled={submittingCadastro}
                     >
                       Cancelar
@@ -634,7 +634,7 @@ export default function GerenciarDepartamentos() {
                     <button
                       onClick={cadastrarDepartamento}
                       disabled={submittingCadastro}
-                      className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:bg-blue-400"
+                    className="px-6 py-2 bg-[#001960] text-white rounded-lg hover:bg-[#001960]/80 transition-all transform hover:scale-105 font-medium disabled:bg-blue-400 disabled:cursor-not-allowed disabled:transform-none"
                     >
                       {submittingCadastro ? 'Cadastrando...' : 'Cadastrar'}
                     </button>
@@ -706,7 +706,7 @@ export default function GerenciarDepartamentos() {
                         value={editandoCodigo}
                         onChange={(e) => setEditandoCodigo(e.target.value)}
                         placeholder="Digite o código"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900"
                         disabled={submittingEdicao}
                       />
                     </div>
@@ -721,7 +721,7 @@ export default function GerenciarDepartamentos() {
                         value={editandoNome}
                         onChange={(e) => setEditandoNome(e.target.value)}
                         placeholder="Digite o nome do departamento"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900"
                         disabled={submittingEdicao}
                       />
                     </div>
@@ -762,7 +762,7 @@ export default function GerenciarDepartamentos() {
                   <div className="flex justify-end gap-4 mt-6 pt-4 border-t border-gray-200">
                     <button
                       onClick={fecharModalEdicao}
-                      className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors font-medium"
+                     className="px-6 py-2 bg-transparent border border-gray-400 text-gray-700 rounded-lg hover:bg-gray-200 hover:text-gray-900 transition-all duration-200 transform hover:scale-105 font-medium disabled:border-gray-300 disabled:text-gray-400 disabled:bg-transparent disabled:cursor-not-allowed"
                       disabled={submittingEdicao}
                     >
                       Cancelar
@@ -770,7 +770,7 @@ export default function GerenciarDepartamentos() {
                     <button
                       onClick={salvarEdicao}
                       disabled={submittingEdicao}
-                      className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:bg-blue-400"
+                      className="px-6 py-2 bg-[#001960] text-white rounded-lg hover:bg-[#001960]/80 transition-all transform hover:scale-105 font-medium disabled:bg-blue-400 disabled:cursor-not-allowed disabled:transform-none"
                     >
                       {submittingEdicao ? 'Salvando...' : 'Salvar'}
                     </button>

@@ -232,7 +232,7 @@ useEffect(() => {
                     <button
                       onClick={handleAlterarNome}
                       disabled={submittingNome}
-                      className="mt-2 w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium rounded transition"
+                      className="mt-2 w-full px-4 py-2 bg-[#001960] hover:bg-[#001960]/80 disabled:bg-blue-400 text-white font-medium rounded transition"
                     >
                       {submittingNome ? 'Salvando...' : 'Salvar Alterações'}
                     </button>
@@ -256,7 +256,7 @@ useEffect(() => {
               <div className="bg-white border border-gray-300 rounded-lg overflow-hidden">
                 <button
                   onClick={() => setAlterarSenhaAberto(!alterarSenhaAberto)}
-                  className="w-full px-6 py-4 flex items-center justify-between bg-blue-500 hover:bg-blue-600 transition-colors"
+                  className="w-full px-6 py-4 flex items-center justify-between bg-[#1A68CF] hover:bg-[#1A68CF]/80 transition-colors"
                 >
                   <span className="text-white font-semibold">Alterar Senha</span>
                   <svg
@@ -317,7 +317,7 @@ useEffect(() => {
                     <button
                       onClick={handleAlterarSenha}
                       disabled={submittingSenha}
-                      className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium rounded transition"
+                      className="w-full px-4 py-2 bg-[#1A68CF] hover:bg-[#1A68CF]/80 disabled:bg-blue-400 text-white font-medium rounded transition"
                     >
                       {submittingSenha ? 'Atualizando...' : 'Atualizar Senha'}
                     </button>
