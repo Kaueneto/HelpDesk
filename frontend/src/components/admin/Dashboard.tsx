@@ -242,7 +242,7 @@ export default function Dashboard() {
 
   return (
     <>
-      <div className="bg-blue-500 px-6 py-4">
+      <div className="bg-[#1A68CF] px-6 py-4">
         <h2 className="text-white text-2xl font-semibold">Dashboard</h2>
       </div>
 
@@ -267,7 +267,7 @@ export default function Dashboard() {
           <button
             onClick={carregarDados}
             disabled={loading}
-            className="px-6 py-2 bg-blue-600 text-white rounded disabled:opacity-50"
+            className="px-6 py-2 bg-[#002f61] text-white rounded disabled:opacity-50"
           >
             {loading ? 'Pesquisando...' : 'Pesquisar'}
           </button>
@@ -321,7 +321,7 @@ export default function Dashboard() {
 
             {/* Gráfico */}
             {dadosPrioridadeFiltrados.length === 0 ? (
-              <p className="text-gray-500 text-center">Selecione pelo menos uma prioridade</p>
+              <p className="text-gray-500 text-center ">Selecione pelo menos uma prioridade</p>
             ) : (
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
@@ -356,10 +356,10 @@ export default function Dashboard() {
         </div>
         {/* gráfico de Top 5 Tópicos */}
         <div className="mt-6 bg-white border border-gray-400 rounded p-6">
-          <h3 className="font-semibold mb-4 text-gray-900">Top 5 Tópicos de Ajuda Mais Relatados</h3>
-          <p className="text-sm text-gray-600 mb-4">O nome acima de cada barra indica o usuário que mais abre chamados desse tipo</p>
+          <h3 className="font-semibold mb-4 text-gray-900 ">Top 5 Tópicos de Ajuda Mais Relatados</h3>
+          <p className="text-sm text-gray-600 mb-4 ">O nome acima de cada barra indica o usuário que mais abre chamados desse tipo</p>
           {dadosTopicos.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">Nenhum dado disponível no período selecionado</p>
+            <p className="text-gray-500 text-center py-8 ">Nenhum dado disponível no período selecionado</p>
           ) : (
             <ResponsiveContainer width="100%" height={600}>
               <BarChart data={dadosTopicos} margin={{ top: 80, right: 30, left: 20, bottom: 60 }}>
@@ -371,6 +371,7 @@ export default function Dashboard() {
                   height={100}
                   interval={0}
                   tick={{ fill: '#374151', fontSize: 12, fontWeight: 'bold' }}
+                  
                 />
                 <YAxis 
                   tick={{ fill: '#374151' }} 
@@ -381,7 +382,7 @@ export default function Dashboard() {
                     if (active && payload && payload.length && payload[0].payload) {
                       const data = payload[0].payload;
                       return (
-                        <div className="bg-white border border-gray-300 rounded-lg p-4 shadow-lg">
+                        <div className="bg-white border border-gray-300 rounded-lg p-4 shadow-lg ">
                           <h4 className="font-semibold text-gray-900 mb-2">{label}</h4>
                           <p className="text-sm text-gray-700 mb-2">
                             <strong>Total de chamados:</strong> {data.valor}
@@ -429,7 +430,7 @@ export default function Dashboard() {
 
 function Card({ titulo, valor, cor }: any) {
   return (
-    <div className={`${cor} text-white rounded p-6`}>
+    <div className={`${cor} text-white rounded p-6  `}>
       <div className="text-4xl font-bold">{valor}</div>
       <div className="text-lg">{titulo}</div>
     </div>

@@ -234,17 +234,17 @@ export default function GerenciarTiposPrioridade() {
 
   return (
     <>
-      <div className="bg-[#51A2FF] px-6 py-4">
+      <div className="bg-[#1A68CF] px-6 py-4">
         <h2 className="text-white text-2xl font-semibold">Gerenciar Tipos de Prioridade</h2>
       </div>
 
       <div className="p-2 bg-[#EDEDED]">
-        <div className="bg-white rounded-lg shadow-lg border border-gray-300 overflow-hidden">
+        <div className="bg-gray-100 rounded-lg shadow-lg border border-gray-300 overflow-hidden">
           {/* Botões de ação acima dos filtros */}
           <div className="px-6 py-3 bg-gray-50 border-b border-gray-300 flex gap-4">
             <button
               onClick={abrirModalCadastro}
-              className="px-4 py-0.5 bg-transparent border border-green-600 text-green-600 rounded-lg hover:bg-green-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm flex items-center gap-2 disabled:border-green-300 disabled:text-green-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-2 focus:ring-green-500/50"
+              className="px-4 py-0.5 bg-transparent border border-green-600 text-green-600 rounded-lg hover:bg-green-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm flex items-center gap-2 disabled:border-green-300 disabled:text-green-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-1 focus:ring-green-500/50"
             >
               <span className="text-lg font-bold">+</span>
               Novo
@@ -252,14 +252,14 @@ export default function GerenciarTiposPrioridade() {
             <button
               onClick={abrirModalEdicao}
               disabled={tiposSelecionados.length !== 1}
-              className="px-4 py-0.5 bg-transparent border border-purple-600 text-purple-600 rounded-lg hover:bg-purple-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-purple-300 disabled:text-purple-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+              className="px-4 py-0.5 bg-transparent border border-purple-600 text-purple-600 rounded-lg hover:bg-purple-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-blue-800 disabled:text-blue-800 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-1 focus:ring-purple-500/50"
             >
               Editar
             </button>
             <button
               onClick={excluirTipos}
               disabled={tiposSelecionados.length === 0}
-              className="px-4 py-0.5 bg-transparent border border-red-600 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-red-300 disabled:text-red-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-2 focus:ring-red-500/50"
+              className="px-4 py-0.5 bg-transparent border border-red-600 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-blue-800 disabled:text-blue-800 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-1 focus:ring-red-500/50"
             >
               Excluir
             </button>
@@ -283,7 +283,7 @@ export default function GerenciarTiposPrioridade() {
                   value={nome}
                   onChange={(e) => setNome(e.target.value)}
                   placeholder="Digite o nome"
-                  className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900"
+                  className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm text-gray-900"
                 />
               </div>
             </div>
@@ -299,7 +299,7 @@ export default function GerenciarTiposPrioridade() {
               <button
                 onClick={carregarTipos}
                 disabled={loading}
-                className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors font-medium text-sm disabled:bg-blue-400"
+                className="px-6 py-2 bg-[#001960] text-white rounded hover:bg-[#001960]/80 transition-colors font-medium text-sm disabled:bg-blue-400"
               >
                 {loading ? 'Pesquisando...' : 'Pesquisar'}
               </button>
@@ -449,7 +449,7 @@ export default function GerenciarTiposPrioridade() {
                     value={novoNome}
                     onChange={(e) => setNovoNome(e.target.value)}
                     placeholder="Digite o nome do tipo"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900"
                     disabled={submittingCadastro}
                   />
                 </div>
@@ -479,7 +479,7 @@ export default function GerenciarTiposPrioridade() {
                     onChange={(e) => setNovaOrdem(Number(e.target.value))}
                     min={1}
                     placeholder="Digite a ordem"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900"
                     disabled={submittingCadastro}
                   />
                 </div>
@@ -537,7 +537,7 @@ export default function GerenciarTiposPrioridade() {
                     value={editandoNome}
                     onChange={(e) => setEditandoNome(e.target.value)}
                     placeholder="Digite o nome do tipo"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900"
                     disabled={submittingEdicao}
                   />
                 </div>
@@ -567,7 +567,7 @@ export default function GerenciarTiposPrioridade() {
                     onChange={(e) => setEditandoOrdem(Number(e.target.value))}
                     min={1}
                     placeholder="Digite a ordem"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900"
                     disabled={submittingEdicao}
                   />
                 </div>

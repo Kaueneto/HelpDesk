@@ -8,7 +8,14 @@ import { Not } from "typeorm";
 const router = express.Router();
 import bcrypt from "bcryptjs"
 import { verifyToken } from "../Middleware/AuthMiddleware";
+import { AuthService } from "../services/AuthService";
 import { SecurityUtils } from "../utils/SecurityUtils";
+
+interface AuthenticatedRequest extends Request {
+  userId?: number;
+  userEmail?: string;
+  userRoleId?: number;
+}
 
 // listar todos os users
 router.get("/users", verifyToken, async (req: Request, res: Response) => {
@@ -58,7 +65,16 @@ router.get("/users", verifyToken, async (req: Request, res: Response) => {
     const users = await query
       .orderBy("user.id", "DESC")
       .getMany();
-    
+
+    console.log('[USERS] Total de usuários encontrados:', users.length);
+    console.log('[USERS] Administradores (roleId=1):', users.filter(u => u.roleId === 1).length);
+    console.log('[USERS] Lista de admins:', users.filter(u => u.roleId === 1).map(u => ({ 
+      id: u.id, 
+      name: u.name, 
+      roleId: u.roleId, 
+      situationUserId: u.situationUserId 
+    })));
+
     res.status(200).json(users);
   } catch (error) {
     console.error("Erro ao listar usuários:", error);
@@ -67,7 +83,7 @@ router.get("/users", verifyToken, async (req: Request, res: Response) => {
 });
 
 // bsucar usuario pelo id 
-router.get("/users/:id", async (req: Request, res: Response) => {
+router.get("/users/:id", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
     const userRepository = AppDataSource.getRepository(Users);
@@ -437,16 +453,21 @@ router.put("/users/alterar-minha-senha", verifyToken, async (req: AuthenticatedR
     const usuarioId = req.userId;
     const { senhaAtual, novaSenha } = req.body;
 
-    // validação
+    // validação básica
     const schema = yup.object().shape({
       senhaAtual: yup.string().required("A senha atual é obrigatória!"),
-      novaSenha: yup
-        .string()
-        .required("A nova senha é obrigatória!")
-        .min(6, "A nova senha deve conter pelo menos 6 caracteres."),
+      novaSenha: yup.string().required("A nova senha é obrigatória!"),
     });
 
     await schema.validate({ senhaAtual, novaSenha }, { abortEarly: false });
+
+    // validar senha forte
+    const passwordValidation = AuthService.validatePassword(novaSenha);
+    if (!passwordValidation.isValid) {
+      return res.status(400).json({
+        mensagem: SecurityUtils.getPasswordErrorMessage(passwordValidation)
+      });
+    }
 
     const userRepository = AppDataSource.getRepository(Users);
 

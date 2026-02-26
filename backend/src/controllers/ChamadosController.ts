@@ -105,7 +105,7 @@ async function enviarEmailConfirmacaoUsuario(usuario: Users, chamado: Chamados):
             <p style="font-size: 16px; color: #333; margin-bottom: 20px;">Olá <strong>${usuario.name}</strong>,</p>
             
             <p style="font-size: 14px; color: #666; margin-bottom: 25px;">
-              Seu chamado foi registrado com sucesso em nosso sistema. Nossa equipe de TI foi notificada e irá analisar sua solicitação.
+              Seu chamado foi registrado com sucesso, sua solicitação será analisada e entraremos em contato em breve se for necessário.
             </p>
             
             <div style="background-color: #e9f7ef; padding: 20px; border-radius: 8px; border-left: 4px solid #28a745; margin-bottom: 25px;">
@@ -121,7 +121,7 @@ async function enviarEmailConfirmacaoUsuario(usuario: Users, chamado: Chamados):
     
             
             <p style="font-size: 14px; color: #666; margin-bottom: 30px;">
-              Você receberá atualizações sobre o progresso do seu chamado e será notificado quando ele for concluído.
+            Acompanhe seu chamado através da aba "Acompanhar Chamados" no sistema. Você será notificado quando ele for concluído.
             </p>
             
             <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
@@ -138,6 +138,181 @@ async function enviarEmailConfirmacaoUsuario(usuario: Users, chamado: Chamados):
     console.log(`Email de confirmação enviado para ${usuario.email}`);
   } catch (error) {
     console.error(" Erro ao enviar email de confirmação:", error);
+  }
+}
+async function enviarEmailRedirecionamento(novoResponsavel: Users | null, usuarioQueRedirecionou: Users | null, chamado: Chamados): Promise<void> {
+  console.log('📧 [EMAIL_REDIRECT] === INICIANDO FUNÇÃO DE EMAIL ===');
+  console.log('[EMAIL_REDIRECT] Parâmetros recebidos:', {
+    novoResponsavel: {
+      id: novoResponsavel?.id,
+      name: novoResponsavel?.name,
+      email: novoResponsavel?.email
+    },
+    usuarioQueRedirecionou: {
+      id: usuarioQueRedirecionou?.id,
+      name: usuarioQueRedirecionou?.name,
+      email: usuarioQueRedirecionou?.email
+    },
+    chamado: {
+      id: chamado?.id,
+      numero: chamado?.numeroChamado,
+      resumo: chamado?.resumoChamado
+    }
+  });
+
+  // Verificar se todos os parâmetros necessários estão presentes
+  if (!novoResponsavel || !usuarioQueRedirecionou) {
+    console.log('[EMAIL_REDIRECT] ⚠️ Email não enviado - usuários não encontrados:', {
+      novoResponsavel: !!novoResponsavel,
+      usuarioQueRedirecionou: !!usuarioQueRedirecionou,
+      novoResponsavelData: novoResponsavel ? {id: novoResponsavel.id, email: novoResponsavel.email} : null,
+      usuarioQueRedirecionouData: usuarioQueRedirecionou ? {id: usuarioQueRedirecionou.id, email: usuarioQueRedirecionou.email} : null
+    });
+    return; // sair silenciosamente se não há usuários
+  }
+
+  // verificar se é autoatribuicao (mesmo usuário)
+  if (novoResponsavel.id === usuarioQueRedirecionou.id) {
+    console.log('[EMAIL_REDIRECT] autoatribuicao detectada - não enviando email');
+    return; // Não enviar email para si mesmo
+  }
+
+  //  verificar se o email do destinatário existe
+  if (!novoResponsavel.email) {
+    console.error('[EMAIL_REDIRECT] usuário destinatário não tem email válido:', {
+      id: novoResponsavel.id,
+      name: novoResponsavel.name,
+      email: novoResponsavel.email
+    });
+    return; //nao pode enviar email sem destinatário
+  }
+
+  try {
+    // Email de redirecionamento é sempre enviado (ação administrativa crítica)
+    // caso quiser alterar depois e inserir preferencias de usuario pra decidier se envia email ou nao descomentar linhas abaixo:
+    // const preferenciasResponsavel = await verificarPreferenciasUsuario(novoResponsavel.id);
+    // if (preferenciasResponsavel.includes(1)) { // ID 1 = receber notificações de admin
+
+    // verificar se as variáveis de ambiente estão configuradas
+    console.log('[EMAIL] Verificando variáveis de ambiente...');
+    console.log('[EMAIL] Variáveis encontradas:', {
+      EMAIL_HOST: !!process.env.EMAIL_HOST ? 'DEFINIDO' : 'FALTANDO',
+      EMAIL_USER: !!process.env.EMAIL_USER ? 'DEFINIDO' : 'FALTANDO', 
+      EMAIL_PASS: !!process.env.EMAIL_PASS ? 'DEFINIDO' : 'FALTANDO',
+      EMAIL_PORT: process.env.EMAIL_PORT || 'NÃO DEFINIDO'
+    });
+
+    if (!process.env.EMAIL_HOST || !process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+      console.error('[EMAIL] Variáveis de ambiente de email não configuradas');
+      console.error('[EMAIL] Verifique: EMAIL_HOST, EMAIL_USER, EMAIL_PASS, EMAIL_FROM');
+      return;
+    }
+
+    console.log('[EMAIL] Variáveis validadas. Criando transporter...');
+    const transporter = nodemailer.createTransport({
+      host: process.env.EMAIL_HOST,
+      port: Number(process.env.EMAIL_PORT),
+      secure: false,
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+    console.log('[EMAIL] 🔧 Transporter criado com configurações:', {
+      host: process.env.EMAIL_HOST,
+      port: process.env.EMAIL_PORT,
+      user: process.env.EMAIL_USER
+    });
+
+    // testar conexão do transporter
+    try {
+      console.log('[EMAIL] Verificando conexão SMTP...');
+      await transporter.verify();
+      console.log('[EMAIL] Conexão SMTP verificada com sucesso');
+    } catch (verifyError) {
+      console.error('[EMAIL Erro na verificação SMTP:', verifyError);
+      throw new Error('Falha na conexão SMTP');
+    }
+
+    const mailOptions = {
+      from: process.env.EMAIL_FROM,
+      to: novoResponsavel.email,
+      subject: `Chamado #${chamado.numeroChamado} direcionado para você por ${usuarioQueRedirecionou.name}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f8f9fa;">
+          <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <h2 style="color: #007bff; margin-bottom: 20px; text-align: center;">Chamado Redirecionado</h2>
+            
+            <p style="font-size: 16px; color: #333; margin-bottom: 20px;">Olá <strong>${novoResponsavel.name}</strong>,</p>
+            
+            <p style="font-size: 14px; color: #666; margin-bottom: 25px;">
+              O chamado <strong>#${chamado.numeroChamado}</strong> foi redirecionado para você por <strong>${usuarioQueRedirecionou.name}</strong>. 
+              Você agora é o responsável pelo atendimento deste chamado.
+            </p>
+            
+            <div style="background-color: #e3f2fd; padding: 20px; border-radius: 8px; border-left: 4px solid #007bff; margin-bottom: 25px;">
+              <h3 style="color: #1565c0; margin-top: 0; margin-bottom: 15px;">📋 Detalhes do Chamado:</h3>
+              <ul style="list-style: none; padding: 0; margin: 0;">
+                <li style="margin-bottom: 8px;"><strong>Número:</strong> #${chamado.numeroChamado}</li>
+                <li style="margin-bottom: 8px;"><strong>Resumo:</strong> ${chamado.resumoChamado}</li>
+                <li style="margin-bottom: 8px;"><strong>Data de Abertura:</strong> ${new Date(chamado.dataAbertura).toLocaleString('pt-BR')}</li>
+                <li style="margin-bottom: 8px;"><strong>Status:</strong> <span style="color: #f57c00; font-weight: bold;">Em Atendimento</span></li>
+                <li style="margin-bottom: 8px;"><strong>Redirecionado por:</strong> ${usuarioQueRedirecionou.name}</li>
+              </ul>
+            </div>
+            
+            <div style="background-color: #fff3cd; padding: 15px; border-radius: 8px; border-left: 4px solid #ffc107; margin-bottom: 25px;">
+             <p style="margin: 0; color: #856404; font-size: 14px;">
+              <strong>⚡ Ação Necessária:</strong> Acesse o sistema HelpDesk para visualizar todos os detalhes e iniciar o atendimento.
+            </p>
+            </div>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+            
+            <p style="font-size: 12px; color: #888; text-align: center; margin: 0;">
+              <strong>Sistema HelpDesk</strong><br>
+            Este é um email automático, não responda.
+            </p>
+          </div>
+        </div>
+      `
+    };
+
+    console.log('[EMAIL] Enviando email...', {
+      from: mailOptions.from,
+      to: mailOptions.to,
+      subject: mailOptions.subject
+    });
+
+    console.log('[EMAIL] CHAMANDO transporter.sendMail...');
+    const result = await transporter.sendMail(mailOptions);
+    console.log(`[EMAIL] Email de redirecionamento enviado com sucesso!`);
+    console.log(`[EMAIL] Destinatário: ${novoResponsavel.email} (${novoResponsavel.name})`);
+    console.log(`[EMAIL]  Message ID: ${result.messageId}`);
+    console.log(`[EMAIL] Response completa:`, JSON.stringify(result, null, 2));
+    
+    // }
+  } catch (error) {
+    console.error('[EMAIL_REDIRECT] erro ao enviar email de redirecionamento:', error);
+    console.error('[EMAIL_REDIRECT] Detalhes completos do erro:', {
+      errorMessage: error instanceof Error ? error.message : 'Erro desconhecido',
+      stack: error instanceof Error ? error.stack : undefined,
+      novoResponsavel: {
+        id: novoResponsavel?.id,
+        name: novoResponsavel?.name,
+        email: novoResponsavel?.email
+      },
+      usuarioQueRedirecionou: {
+        id: usuarioQueRedirecionou?.id,
+        name: usuarioQueRedirecionou?.name,
+        email: usuarioQueRedirecionou?.email
+      },
+      chamadoId: chamado?.id,
+      numeroChamado: chamado?.numeroChamado
+    });
+    
+    // Re-lançar o erro para que possa ser capturado pela função que chama, se necessário
+    throw error;
   }
 }
 
@@ -194,7 +369,7 @@ async function enviarEmailConclusaoUsuario(usuario: Users, chamado: Chamados, ad
             </div>
             
             <p style="font-size: 14px; color: #666; margin-bottom: 30px;">
-              Agradecemos por utilizar nossos serviços. Estamos sempre disponíveis para ajudá-lo!
+              Estamos sempre disponíveis para ajudá-lo!
             </p>
             
             <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
@@ -603,7 +778,13 @@ router.put("/chamados/:id/atribuir", verifyToken, async (req: AuthenticatedReque
     const { userResponsavelId } = req.body;
     const usuarioId = req.userId; // adm que está atribuindo
 
-    console.log('[ATRIBUIR] Iniciando atribuição:', { chamadoId: id, userResponsavelId, usuarioId });
+
+    console.log('[ATRIBUIR] Iniciando atribuição:', { 
+      chamadoId: id, 
+      userResponsavelId, 
+      usuarioId,
+      timestamp: new Date().toISOString()
+    });
 
     const chamadoRepository = AppDataSource.getRepository(Chamados);
     const historicoRepository = AppDataSource.getRepository(ChamadoHistorico);
@@ -616,7 +797,7 @@ router.put("/chamados/:id/atribuir", verifyToken, async (req: AuthenticatedReque
     });
 
     if (!chamado) {
-      console.log('[ATRIBUIR] Chamado não encontrado');
+      console.log('[ATRIBUIR]Chamado não encontrado');
       return res.status(404).json({ mensagem: "Chamado não encontrado" });
     }
 
@@ -625,23 +806,37 @@ router.put("/chamados/:id/atribuir", verifyToken, async (req: AuthenticatedReque
       responsavelAtual: chamado.userResponsavel?.id 
     });
 
-    //SE O chamado ja tem um reponsavel, verificar se quem esta redirecoinadno é  o responsavel atual
-    if (chamado.userResponsavel && chamado.userResponsavel.id !== usuarioId) {
-      console.log('[ATRIBUIR] Usuário não é o responsável atual');
-      return res.status(403).json({ mensagem: "Apenas o responsável atual pode redirecionar este chamado." });
+    // permite que qualquer administrador redirecione chamados
+    // buscar dados do usuário que está fazendo a atribuição para verificar se é admin
+    const usuarioQueAtribui = await userRepository.findOne({ 
+      where: { id: usuarioId }, 
+      relations: ["role"]
+    });
+    
+    if (!usuarioQueAtribui) {
+      console.log('[ATRIBUIR] Usuário que está atribuindo não encontrado');
+      return res.status(404).json({ mensagem: "Usuário não encontrado" });
     }
+    
+    // verificar se quem está atribuindo é administrador (role_id = 1)
+    if (usuarioQueAtribui.roleId !== 1) {
+      console.log('[ATRIBUIR] Usuário não é administrador');
+      return res.status(403).json({ mensagem: "Apenas administradores podem redirecionar chamados." });
+    }
+    
+    console.log('[ATRIBUIR] Usuário é administrador, pode redirecionar');
 
     // verificar se está tentando redirecionar para si mesmo
     if (userResponsavelId === usuarioId) {
       console.log('[ATRIBUIR] Tentando redirecionar para si mesmo');
-      return res.status(400).json({ mensagem: "Você já é o responsável por este chamado." });
+      return res.status(400).json({ mensagem: "Você não pode redirecionar o chamado para si mesmo." });
     }
 
     console.log('[ATRIBUIR] Buscando usuários...');
     // Buscar nomes dos usuários para o histórico
     const [usuarioAtribuiu, usuarioResponsavel] = await Promise.all([
-      userRepository.findOne({ where: { id: usuarioId }, select: ["id", "name"] }),
-      userRepository.findOne({ where: { id: userResponsavelId }, select: ["id", "name"] })
+      userRepository.findOne({ where: { id: usuarioId }, select: ["id", "name", "email"] }),
+      userRepository.findOne({ where: { id: userResponsavelId }, select: ["id", "name", "email"] })
     ]);
 
     if (!usuarioResponsavel) {
@@ -669,14 +864,42 @@ router.put("/chamados/:id/atribuir", verifyToken, async (req: AuthenticatedReque
       }
     }
 
-    console.log('[ATRIBUIR] Salvando chamado...');
+    console.log('[ATRIBUIR] 💾 Salvando chamado...');
     await chamadoRepository.save(chamado);
 
     // registrar no historico com nomes dos usuários
     const nomeQuemAtribuiu = usuarioAtribuiu?.name || "Usuário";
     const nomeResponsavel = usuarioResponsavel?.name || "Usuário";
-    
-    console.log('[ATRIBUIR] Salvando histórico...');
+
+    console.log('[ATRIBUIR]  PARTE DO EMAIL!');
+    console.log('[ATRIBUIR] Dados para email:', {
+      usuarioResponsavel: usuarioResponsavel ? {
+        id: usuarioResponsavel.id,
+        name: usuarioResponsavel.name,
+        email: usuarioResponsavel.email
+      } : 'NULL',
+      usuarioAtribuiu: usuarioAtribuiu ? {
+        id: usuarioAtribuiu.id,
+        name: usuarioAtribuiu.name,
+        email: usuarioAtribuiu.email
+      } : 'NULL',
+      chamado: {
+        id: chamado.id,
+        numero: chamado.numeroChamado,
+        resumo: chamado.resumoChamado
+      }
+    });
+
+    // Enviar email de redirecionamento
+    try {
+      console.log('[ATRIBUIR] 🚀 Tentando enviar email de redirecionamento...');
+      await enviarEmailRedirecionamento(usuarioResponsavel, usuarioAtribuiu, chamado);
+    } catch (emailError) {
+      // Não falha a operação se o email der erro, apenas registra
+      console.warn('[ATRIBUIR] ⚠️ Email de redirecionamento falhou, mas operação continua');
+    }
+
+    console.log('[ATRIBUIR] 💾 Salvando histórico...');
     await historicoRepository.save({
       chamado: { id: chamado.id },
       usuario: { id: usuarioId },
@@ -1113,7 +1336,7 @@ router.put("/chamados/:id/encerrar", verifyToken, async (req: AuthenticatedReque
 });
 
 
-router.get("/chamados/:id/historico", async (req: Request, res: Response) => {
+router.get("/chamados/:id/historico", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -1465,7 +1688,7 @@ router.patch("/chamados/editar-multiplos", verifyToken, async (req: Authenticate
       if (userResponsavelId && chamado.userResponsavel?.id !== userResponsavelId) {
         const novoResponsavel = await userRepository.findOne({
           where: { id: userResponsavelId },
-          select: ["id", "name"]
+          select: ["id", "name", "email"]
         });
 
         if (novoResponsavel) {
@@ -1483,6 +1706,14 @@ router.patch("/chamados/editar-multiplos", verifyToken, async (req: Authenticate
           });
 
           alterou = true;
+
+          // só enviar email se não for o mesmo usuário (evitar auto-atribuição)
+          if (userResponsavelId !== usuarioId) {
+            console.log('[EDICAO_MULTIPLA] Enviando email de redirecionamento para usuário diferente');
+            await enviarEmailRedirecionamento(novoResponsavel, usuario, chamado);
+          } else {
+            console.log('[EDICAO_MULTIPLA] Não enviando email - usuário atribuiu para si mesmo');
+          }
         }
       }
 
@@ -1645,6 +1876,114 @@ router.get("/status", verifyToken, async (req: AuthenticatedRequest, res: Respon
     console.error("Erro ao buscar status:", error);
     return res.status(500).json({
       mensagem: "Erro ao buscar status",
+    });
+  }
+});
+
+// deletar multiplos chamados (apenas administradores)
+router.delete("/chamados/excluir-multiplos", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { chamadosIds } = req.body;
+    const usuarioId = req.userId;
+    const userRoleId = req.userRoleId;
+
+    // verificar se é administrador
+    if (userRoleId !== 1) {
+      return res.status(403).json({
+        mensagem: "Apenas administradores podem excluir chamados"
+      });
+    }
+
+    if (!chamadosIds || !Array.isArray(chamadosIds) || chamadosIds.length === 0) {
+      return res.status(400).json({
+        mensagem: "Lista de IDs de chamados é obrigatória"
+      });
+    }
+
+    console.log(`[EXCLUIR MULTIPLOS] Usuário ${usuarioId} excluindo chamados:`, chamadosIds);
+
+    const chamadoRepository = AppDataSource.getRepository(Chamados);
+    const historicoRepository = AppDataSource.getRepository(ChamadoHistorico);
+    const mensagensRepository = AppDataSource.getRepository(ChamadoMensagens);
+    const anexosRepository = AppDataSource.getRepository(ChamadoAnexos);
+
+    // buscar chamados que serão excluídos
+    const chamados = await chamadoRepository.find({
+      where: chamadosIds.map(id => ({ id })),
+      relations: ["usuario", "anexos"]
+    });
+
+    if (chamados.length === 0) {
+      return res.status(404).json({
+        mensagem: "Nenhum chamado encontrado"
+      });
+    }
+
+    let chamadosExcluidos = 0;
+    let errosExclusao: string[] = [];
+
+    // processar cada chamado
+    for (const chamado of chamados) {
+      try {
+        console.log(`[EXCLUIR] Processando chamado #${chamado.id}`);
+        
+        // remover anexos do Supabase Storage
+        if (chamado.anexos && chamado.anexos.length > 0) {
+          console.log(`[EXCLUIR] Removendo ${chamado.anexos.length} anexos do chamado #${chamado.id}`);
+          const urlsAnexos = chamado.anexos.map(anexo => anexo.url);
+          
+          try {
+            const { error } = await supabase.storage
+              .from(SUPABASE_BUCKET)
+              .remove(urlsAnexos);
+              
+            if (error) {
+              console.error(`[EXCLUIR] Erro ao remover anexos do Storage:`, error);
+            }
+          } catch (storageError) {
+            console.error(`[EXCLUIR] Erro ao acessar Supabase Storage:`, storageError);
+          }
+        }
+
+        // remover registros relacionados (em ordem de dependência)
+        await anexosRepository.delete({ chamado: { id: chamado.id } });
+        await mensagensRepository.delete({ chamado: { id: chamado.id } });
+        await historicoRepository.delete({ chamado: { id: chamado.id } });
+        
+        // remover o chamado
+        await chamadoRepository.remove(chamado);
+        
+        chamadosExcluidos++;
+        console.log(`[EXCLUIR] Chamado #${chamado.id} excluído com sucesso`);
+        
+      } catch (error) {
+        const mensagemErro = `Erro ao excluir chamado #${chamado.id}: ${error instanceof Error ? error.message : 'Erro desconhecido'}`;
+        console.error(`[EXCLUIR] ${mensagemErro}`);
+        errosExclusao.push(mensagemErro);
+      }
+    }
+
+    console.log(`[EXCLUIR MULTIPLOS] Resultado: ${chamadosExcluidos}/${chamados.length} excluídos, ${errosExclusao.length} erros`);
+
+    if (errosExclusao.length > 0 && chamadosExcluidos === 0) {
+      return res.status(500).json({
+        mensagem: "Falha ao excluir chamados",
+        erros: errosExclusao
+      });
+    }
+
+    return res.status(200).json({
+      mensagem: `${chamadosExcluidos} chamado(s) excluído(s) com sucesso`,
+      excluidos: chamadosExcluidos,
+      total: chamados.length,
+      erros: errosExclusao.length > 0 ? errosExclusao : undefined
+    });
+    
+  } catch (error) {
+    console.error("[EXCLUIR MULTIPLOS] Erro geral:", error);
+    return res.status(500).json({
+      mensagem: "Erro ao excluir chamados",
+      error: error instanceof Error ? error.message : "Erro desconhecido",
     });
   }
 });

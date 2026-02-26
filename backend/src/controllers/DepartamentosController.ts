@@ -3,11 +3,18 @@ import { AppDataSource } from "../data-source";
 import { Departamentos } from "../entities/Departamentos";
 import * as yup from "yup";
 import { Not } from "typeorm";
+import { verifyToken } from "../Middleware/AuthMiddleware";
+
+interface AuthenticatedRequest extends Request {
+  userId?: number;
+  userEmail?: string;
+  userRoleId?: number;
+}
 
 const router = Router();
 
 // listar todos os departamentos
-router.get("/departamentos", async (req: Request, res: Response) => {
+router.get("/departamentos", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const departamentosRepository = AppDataSource.getRepository(Departamentos);
     
@@ -26,7 +33,7 @@ router.get("/departamentos", async (req: Request, res: Response) => {
 });
 
 // buscar departamento por ID
-router.get("/departamentos/:id", async (req: Request, res: Response) => {
+router.get("/departamentos/:id", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
     const departamentosRepository = AppDataSource.getRepository(Departamentos);
@@ -243,6 +250,35 @@ router.patch("/departamentos/:id/status", async (req: Request, res: Response) =>
     console.error("Erro ao alterar status do departamento:", error);
     return res.status(500).json({
       mensagem: "Erro ao alterar status do departamento",
+    });
+  }
+});
+
+// excluir departamento
+router.delete("/departamentos/:id", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const departamentosRepository = AppDataSource.getRepository(Departamentos);
+
+    const departamento = await departamentosRepository.findOne({
+      where: { id: Number(id) },
+    });
+
+    if (!departamento) {
+      return res.status(404).json({ 
+        mensagem: "Departamento não encontrado" 
+      });
+    }
+    await departamentosRepository.remove(departamento);
+
+    return res.status(200).json({
+      mensagem: "Departamento excluído com sucesso"
+    });
+  } catch (error) {
+    console.error("Erro ao excluir departamento:", error);
+    return res.status(500).json({
+      mensagem: "Erro ao excluir departamento",
+      erro: error instanceof Error ? error.message : "Erro desconhecido"
     });
   }
 });

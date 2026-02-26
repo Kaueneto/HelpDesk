@@ -2,15 +2,18 @@
 
 import { useState, useEffect } from 'react';
 import api from '@/services/api';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface TopicosAjuda {
   id: number;
+  codigo: string;
   nome: string;
   ativo: boolean;
 }
 
 interface Departamento {
   id: number;
+  codigo: string;
   name: string;
   ativo: boolean;
 }
@@ -29,6 +32,7 @@ interface AbrirChamadoProps {
 }
 
 export default function AbrirChamado({ userEmail, onSuccess, onCancel }: AbrirChamadoProps) {
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [ramal, setRamal] = useState('');
   const [prioridadeId, setPrioridadeId] = useState<number>(0);
   const [topicoAjudaId, setTopicoAjudaId] = useState<number>(0);
@@ -51,7 +55,12 @@ export default function AbrirChamado({ userEmail, onSuccess, onCancel }: AbrirCh
   const [slideDirection, setSlideDirection] = useState<'left' | 'right'>('right');
 
   useEffect(() => {
+    if (authLoading) return;
+    if (!isAuthenticated) return;
+    
     const fetchData = async () => {
+      if (!isAuthenticated) return;
+      
       try {
         const [topicosRes, departamentosRes, prioridadesRes] = await Promise.all([
           api.get('/topicos_ajuda'),
@@ -71,11 +80,11 @@ export default function AbrirChamado({ userEmail, onSuccess, onCancel }: AbrirCh
       }
     };
     fetchData();
-  }, []);
+  }, [isAuthenticated, authLoading]);
 
   //mostrar o campo de detalhes quando o usuario digitar 3 ou + caracteres
   useEffect(() => {
-    if (resumoChamado.length >= 3) {
+    if (resumoChamado.length >= 5) {
       setMostrarDescricao(true);
     } else {
       setMostrarDescricao(false);
@@ -284,10 +293,12 @@ export default function AbrirChamado({ userEmail, onSuccess, onCancel }: AbrirCh
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm"
               >
                 <option value={0}>Selecione...</option>
-                {topicos.map((topico) => (
-                  <option key={topico.id} value={topico.id}>
-                    {topico.id} - {topico.nome}
-                  </option>
+                {topicos
+                  .sort((a, b) => Number(a.codigo) - Number(b.codigo))
+                  .map((topico) => (
+                    <option key={topico.id} value={topico.id}>
+                      {topico.codigo} - {topico.nome}
+                    </option>
                 ))}
               </select>
             </div>
@@ -424,11 +435,13 @@ export default function AbrirChamado({ userEmail, onSuccess, onCancel }: AbrirCh
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent transition-shadow"
                 >
                   <option value={0}>Selecione...</option>
-                  {departamentos.map((dept) => (
+                 {departamentos
+                  .sort((a, b) => Number(a.codigo) - Number(b.codigo))
+                  .map((dept) => (
                     <option key={dept.id} value={dept.id}>
-                      {dept.id} - {dept.name}
+                      {dept.codigo} - {dept.name}
                     </option>
-                  ))}
+                ))}
                 </select>
               </div>
 

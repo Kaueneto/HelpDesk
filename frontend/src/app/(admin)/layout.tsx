@@ -19,7 +19,7 @@ export default function AdminLayout({
     if (!isLoading && !isAuthenticated) {
       router.push('/auth/login');
     } else if (!isLoading && user && user.roleId !== 1) {
-      router.push('/inicial');
+      router.push('/usuario/inicial');
     }
   }, [isAuthenticated, isLoading, user, router]);
 

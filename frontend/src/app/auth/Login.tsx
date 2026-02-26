@@ -25,14 +25,12 @@ export default function Login({ onCadastrarClick, onEsqueceuSenhaClick }: LoginP
 
     try {
       await login({ email, password });
-      
-      const loggedUser = JSON.parse(localStorage.getItem('user') || '{}');
-      
-      if (loggedUser.roleId === 1) {
-        router.push('/painel');
-      } else {
-        router.push('/usuario/inicial');
-      }
+      // O contexto de auth já carrega os dados do usuário
+      // Aguardar um breve momento para garantir que o estado seja atualizado
+      setTimeout(() => {
+        // usar o  window.location para garantir que vá para a página correta
+        window.location.href = '/painel'; // o admin  sempre vai para painel primeiro
+      }, 100);
     } catch (err: any) {
       setError(
         err.response?.data?.mensagem ||

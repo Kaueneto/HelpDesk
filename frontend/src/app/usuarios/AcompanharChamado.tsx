@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import api from '@/services/api';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface TopicosAjuda {
   id: number;
   nome: string;
   ativo: boolean;
+  codigo: number;
 }
 
 interface AcompanharChamadoProps {
@@ -14,6 +16,7 @@ interface AcompanharChamadoProps {
 }
 
 export default function AcompanharChamado({ onChamadoClick }: AcompanharChamadoProps) {
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [chamados, setChamados] = useState<any[]>([]);
   const [loadingChamados, setLoadingChamados] = useState(false);
   const [statusList, setStatusList] = useState<any[]>([]);
@@ -26,6 +29,10 @@ export default function AcompanharChamado({ onChamadoClick }: AcompanharChamadoP
   const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
+    //so fazer chamadas se estiver audtenticado
+    if (authLoading) return; // aguarda carregar auth
+    if (!isAuthenticated) return; // se nao autenticado, nao faz nada
+    
     const fetchData = async () => {
       try {
         const [statusRes, topicosRes] = await Promise.all([
@@ -40,9 +47,11 @@ export default function AcompanharChamado({ onChamadoClick }: AcompanharChamadoP
     };
     fetchData();
     buscarChamados();
-  }, []);
+  }, [isAuthenticated, authLoading]);
 
   const buscarChamados = async (pagina: number = 1) => {
+    if (!isAuthenticated) return; // protecao adicional
+    
     setLoadingChamados(true);
     try {
       const params: any = {
@@ -118,11 +127,14 @@ export default function AcompanharChamado({ onChamadoClick }: AcompanharChamadoP
               className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
             >
               <option value={0}>Todos</option>
-              {topicos.map((topico) => (
-                <option key={topico.id} value={topico.id}>
-                  {topico.nome}
-                </option>
-              ))}
+              {topicos
+                .sort((a, b) => Number(a.codigo) - Number(b.codigo))
+                .map((topico) => (
+                 <option key={topico.id} value={topico.id}>
+                      {topico.codigo} - {topico.nome}
+                    </option>
+                ))}
+               
             </select>
           </div>
 

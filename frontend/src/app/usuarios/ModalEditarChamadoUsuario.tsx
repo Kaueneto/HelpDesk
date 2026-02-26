@@ -313,7 +313,7 @@ export default function ModalEditarChamadoUsuario({
                   type="text"
                   value={resumoChamado}
                   onChange={(e) => setResumoChamado(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900"
                   disabled={submitting}
                 />
               </div>
@@ -325,7 +325,7 @@ export default function ModalEditarChamadoUsuario({
                   type="number"
                   value={ramal}
                   onChange={(e) => setRamal(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900"
                   disabled={submitting}
                 />
               </div>
@@ -340,7 +340,7 @@ export default function ModalEditarChamadoUsuario({
                 value={descricaoChamado}
                 onChange={(e) => setDescricaoChamado(e.target.value)}
                 rows={4}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 resize-none"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 resize-none"
                 disabled={submitting}
               />
             </div>
@@ -354,7 +354,7 @@ export default function ModalEditarChamadoUsuario({
                 <select
                   value={departamentoId}
                   onChange={(e) => setDepartamentoId(Number(e.target.value))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900"
                   disabled={submitting}
                 >
                   <option value={0}>Selecione</option>
@@ -370,7 +370,7 @@ export default function ModalEditarChamadoUsuario({
                 <select
                   value={topicoAjudaId}
                   onChange={(e) => setTopicoAjudaId(Number(e.target.value))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900"
                   disabled={submitting}
                 >
                   <option value={0}>Selecione</option>

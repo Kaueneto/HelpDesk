@@ -92,7 +92,7 @@ export default function Parametros() {
 
   return (
     <>
-      <div className="bg-blue-400 px-6 py-4">
+      <div className="bg-[#1A68CF] px-6 py-4">
         <h2 className="text-white text-2xl font-semibold">Parâmetros</h2>
       </div>
 
@@ -121,13 +121,15 @@ export default function Parametros() {
             <button
               onClick={salvarParametros}
               disabled={salvandoParametros}
-              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition disabled:opacity-50"
+             className="px-6 py-2 bg-[#001960] text-white rounded-lg hover:bg-[#001960]/80 transition-all transform hover:scale-105 font-medium disabled:bg-blue-400 disabled:cursor-not-allowed disabled:transform-none"
+
             >
               {salvandoParametros ? 'Salvando...' : 'Salvar Alterações'}
             </button>
             <button
               onClick={() => setHorasParaAtrasoEdit(horasParaAtraso)}
-              className="px-6 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 transition"
+              className="px-6 py-2 bg-transparent border border-gray-400 text-gray-700 rounded-lg hover:bg-gray-200 hover:text-gray-900 transition-all duration-200 transform hover:scale-105 font-medium disabled:border-gray-300 disabled:text-gray-400 disabled:bg-transparent disabled:cursor-not-allowed"
+
             >
               Cancelar
             </button>
@@ -180,7 +182,8 @@ export default function Parametros() {
             <button
               onClick={() => carregarLogs()}
               disabled={loadingLogs}
-              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition disabled:opacity-50"
+                 className="px-6 py-2 bg-[#001960] text-white rounded-lg hover:bg-[#001960]/80 transition-all transform hover:scale-105 font-medium disabled:bg-blue-400 disabled:cursor-not-allowed disabled:transform-none"
+
             >
               {loadingLogs ? 'Buscando...' : 'Buscar'}
             </button>

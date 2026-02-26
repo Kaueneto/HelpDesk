@@ -6,6 +6,7 @@ import api from '@/services/api';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { validatePassword, getPasswordStrengthColor, getPasswordStrengthText } from '@/utils/passwordValidation';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Usuario {
   id: number;
@@ -37,6 +38,7 @@ interface SituationUser {
 
 export default function GerenciarUsuarios() {
   const router = useRouter();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   
   // Filtros
   const [dataCadastroInicio, setDataCadastroInicio] = useState<Date | null>(null);
@@ -84,7 +86,12 @@ export default function GerenciarUsuarios() {
 
   // Carregar situações ao montar o componente
   useEffect(() => {
+    if (authLoading) return;
+    if (!isAuthenticated) return;
+    
     const carregarSituacoes = async () => {
+      if (!isAuthenticated) return;
+      
       try {
         const response = await api.get('/SituationsUsers');
         setSituacoes(response.data);
@@ -93,9 +100,11 @@ export default function GerenciarUsuarios() {
       }
     };
     carregarSituacoes();
-  }, []);
+  }, [isAuthenticated, authLoading]);
 
   const carregarUsuarios = async (pageOrEvent?: number | React.MouseEvent<HTMLButtonElement>) => {
+    if (!isAuthenticated) return; // Proteção adicional
+    
     const page = typeof pageOrEvent === 'number' ? pageOrEvent : 1;
     setLoading(true);
     try {
@@ -493,8 +502,8 @@ export default function GerenciarUsuarios() {
 
   return (
     <>
-      <div className="bg-[#51A2FF] px-6 py-4">
-        <h2 className="text-white text-2xl font-semibold">Gerenciar Usuários</h2>
+      <div className="bg-[#1A68CF] px-6 py-4">
+        <h2 className="text-gray-50 text-2xl font-semibold">Gerenciar Usuários</h2>
       </div>
 
       <div className="p-2 bg-[#EDEDED]">
@@ -503,7 +512,7 @@ export default function GerenciarUsuarios() {
           <div className="px-6 py-3 bg-gray-50 border-b border-gray-300 flex gap-4">
             <button
               onClick={abrirModalCadastro}
-              className="px-4 py-0.5 bg-transparent border border-green-600 text-green-600 rounded-lg hover:bg-green-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm flex items-center gap-2 disabled:border-green-300 disabled:text-green-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-2 focus:ring-green-500/50"
+              className="px-4 py-0.5 bg-transparent border border-green-600 text-green-600 rounded-lg hover:bg-green-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm flex items-center gap-2 disabled:border-green-300 disabled:text-green-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-1 focus:ring-green-500/50"
 
             >
               <span className="text-lg font-bold">+</span>
@@ -512,35 +521,35 @@ export default function GerenciarUsuarios() {
             <button
               onClick={resetarSenha}
               disabled={usuariosSelecionados.length === 0}
-              className="px-4 py-0.5 bg-transparent border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-blue-300 disabled:text-blue-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+              className="px-4 py-0.5 bg-transparent border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-blue-800 disabled:text-blue-800 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-1 focus:ring-blue-500/50"
             >
               Resetar Senha
             </button>
             <button
               onClick={abrirModalEdicao}
               disabled={usuariosSelecionados.length !== 1}
-              className="px-4 py-0.5 bg-transparent border border-purple-600 text-purple-600 rounded-lg hover:bg-purple-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-purple-300 disabled:text-purple-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+              className="px-4 py-0.5 bg-transparent border border-purple-600 text-purple-600 rounded-lg hover:bg-purple-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-blue-800 disabled:text-blue-800 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-1 focus:ring-purple-500/50"
             >
               Editar
             </button>
             <button
               onClick={desativarUsuarios}
               disabled={usuariosSelecionados.length === 0}
-              className="px-4 py-0.5 bg-transparent border border-orange-600 text-orange-600 rounded-lg hover:bg-orange-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-orange-300 disabled:text-orange-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-2 focus:ring-orange-500/50"
+              className="px-4 py-0.5 bg-transparent border border-orange-600 text-orange-600 rounded-lg hover:bg-orange-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-blue-800 disabled:text-blue-800 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-1 focus:ring-orange-500/50"
             >
               Desativar
             </button>
             <button
               onClick={ativarUsuarios}
               disabled={usuariosSelecionados.length === 0}
-              className="px-4 py-0.5 bg-transparent border border-emerald-600 text-emerald-600 rounded-lg hover:bg-emerald-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-emerald-300 disabled:text-emerald-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+              className="px-4 py-0.5 bg-transparent border border-emerald-600 text-emerald-600 rounded-lg hover:bg-emerald-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-blue-800 disabled:text-blue-800 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-1 focus:ring-emerald-500/50"
             >
               Ativar
             </button>
             <button
               onClick={excluirUsuarios}
               disabled={usuariosSelecionados.length === 0}
-              className="px-4 py-0.5 bg-transparent border border-red-600 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-red-300 disabled:text-red-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-2 focus:ring-red-500/50"
+              className="px-4 py-0.5 bg-transparent border border-red-600 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-blue-800 disabled:text-blue-800 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-1 focus:ring-red-500/50"
             >
               Excluir
             </button>
@@ -552,11 +561,11 @@ export default function GerenciarUsuarios() {
           </div>
 
           {/* Área de Filtros */}
-          <div className="p-6 border-b border-gray-300">
+          <div className="p-6 border-b border-gray-300 bg-gray-100">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Período de cadastro */}
               <div className="min-w-0">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-base font-medium text-gray-700 mb-1">
                   Período de cadastro
                 </label>
                 <DatePicker
@@ -570,14 +579,14 @@ export default function GerenciarUsuarios() {
                   }}
                   dateFormat="dd/MM/yyyy"
                   placeholderText="Selecione o período"
-                  className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900"
+                  className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm text-gray-900"
                   isClearable={true}
                 />
               </div>
 
               {/* Nome */}
               <div className="min-w-0">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-base font-medium text-gray-700 mb-1">
                   Nome
                 </label>
                 <input
@@ -585,13 +594,13 @@ export default function GerenciarUsuarios() {
                   value={nome}
                   onChange={(e) => setNome(e.target.value)}
                   placeholder="Digite o nome"
-                  className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900"
+                  className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm text-gray-900"
                 />
               </div>
 
               {/* Email */}
               <div className="min-w-0">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-base font-medium text-gray-700 mb-1">
                   Email
                 </label>
                 <input
@@ -599,19 +608,19 @@ export default function GerenciarUsuarios() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Digite o email"
-                  className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900"
+                  className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm text-gray-900"
                 />
               </div>
 
               {/* Situação Usuário */}
               <div className="min-w-0">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-base font-medium text-gray-700 mb-1">
                   Situação Usuário
                 </label>
                 <select
                   value={situationUserId}
                   onChange={(e) => setSituationUserId(e.target.value)}
-                  className="w-full min-w-0 px-3 py-2 border border-gray-400 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900 bg-gray-50"
+                  className="w-full min-w-0 px-3 py-2 border border-gray-400 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm text-gray-900 bg-gray-50"
                 >
                   <option value="">Todas</option>
                   {situacoes.map(situacao => (
@@ -634,7 +643,7 @@ export default function GerenciarUsuarios() {
               <button
                 onClick={() => carregarUsuarios(1)}
                 disabled={loading}
-                className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors font-medium text-sm disabled:bg-blue-400"
+                className="px-6 py-2 bg-[#002B57] text-white rounded hover:bg-[#1A4877] transition-colors font-medium text-sm disabled:bg-[#345677]"
               >
                 {loading ? 'Pesquisando...' : 'Pesquisar'}
               </button>
@@ -820,7 +829,7 @@ export default function GerenciarUsuarios() {
 
           {/* Controles de Paginação */}
           {usuarios.length > 0 && (
-            <div className="px-6 py-4 bg-gray-50 border-t border-gray-300 flex items-center justify-between">
+            <div className="px-6 py-4 bg-gray-100 border-t border-gray-300 flex items-center justify-between">
               <div className="text-sm text-gray-600">
                 Mostrando {(paginaAtual - 1) * pageSize + 1} a {Math.min(paginaAtual * pageSize, totalUsuarios)} de {totalUsuarios} usuário(s)
               </div>
@@ -890,7 +899,7 @@ export default function GerenciarUsuarios() {
                     value={novoUsuarioNome}
                     onChange={(e) => setNovoUsuarioNome(e.target.value)}
                     placeholder="Digite o nome completo"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900"
                     disabled={submittingCadastro}
                   />
                 </div>
@@ -905,7 +914,7 @@ export default function GerenciarUsuarios() {
                     value={novoUsuarioEmail}
                     onChange={(e) => setNovoUsuarioEmail(e.target.value)}
                     placeholder="email@exemplo.com"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900"
                     disabled={submittingCadastro}
                   />
                 </div>
@@ -920,7 +929,7 @@ export default function GerenciarUsuarios() {
                     value={novoUsuarioSenha}
                     onChange={(e) => setNovoUsuarioSenha(e.target.value)}
                     placeholder="Senha forte: 6+ chars, maiúscula, minúscula, número, especial"
-                    className={`w-full px-4 py-2 border ${getPasswordStrengthColor(novoUsuarioSenha)} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900`}
+                    className={`w-full px-4 py-2 border ${getPasswordStrengthColor(novoUsuarioSenha)} rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900`}
                     disabled={submittingCadastro}
                   />
                   {novoUsuarioSenha && novoUsuarioSenha !== 'padrao' && (
@@ -931,7 +940,7 @@ export default function GerenciarUsuarios() {
                       {getPasswordStrengthText(novoUsuarioSenha)}
                     </div>
                   )}
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-sm text-gray-500 mt-1">
                     Use uma senha forte ou mantenha "padrao" para o padrão do sistema.
                   </p>
                 </div>
@@ -944,7 +953,7 @@ export default function GerenciarUsuarios() {
                   <select
                     value={novoUsuarioSituationUserId}
                     onChange={(e) => setNovoUsuarioSituationUserId(parseInt(e.target.value))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900"
                     disabled={submittingCadastro}
                   >
                     {situacoes.map(situacao => (
@@ -963,7 +972,7 @@ export default function GerenciarUsuarios() {
                   <select
                     value={novoUsuarioRoleId}
                     onChange={(e) => setNovoUsuarioRoleId(parseInt(e.target.value))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900"
                     disabled={submittingCadastro}
                   >
                     <option value={1}>Administrador</option>
@@ -986,7 +995,7 @@ export default function GerenciarUsuarios() {
               <button
                 onClick={cadastrarUsuario}
                 disabled={submittingCadastro}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all transform hover:scale-105 font-medium disabled:bg-blue-400 disabled:cursor-not-allowed disabled:transform-none"
+                className="px-6 py-2 bg-[#001960] text-white rounded-lg hover:bg-[#001960]/80 transition-all transform hover:scale-105 font-medium disabled:bg-blue-400 disabled:cursor-not-allowed disabled:transform-none"
               >
                 {submittingCadastro ? 'Cadastrando...' : 'Cadastrar'}
               </button>
@@ -1025,7 +1034,7 @@ export default function GerenciarUsuarios() {
                     value={editandoUsuarioNome}
                     onChange={(e) => setEditandoUsuarioNome(e.target.value)}
                     placeholder="Digite o nome completo"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900"
                     disabled={submittingEdicao}
                   />
                 </div>
@@ -1040,7 +1049,7 @@ export default function GerenciarUsuarios() {
                     value={editandoUsuarioEmail}
                     onChange={(e) => setEditandoUsuarioEmail(e.target.value)}
                     placeholder="email@exemplo.com"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900"
                     disabled={submittingEdicao}
                   />
                 </div>
@@ -1053,7 +1062,7 @@ export default function GerenciarUsuarios() {
                   <select
                     value={editandoUsuarioSituationUserId}
                     onChange={(e) => setEditandoUsuarioSituationUserId(parseInt(e.target.value))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900"
                     disabled={submittingEdicao}
                   >
                     {situacoes.map(situacao => (
@@ -1072,7 +1081,7 @@ export default function GerenciarUsuarios() {
                   <select
                     value={editandoUsuarioRoleId}
                     onChange={(e) => setEditandoUsuarioRoleId(parseInt(e.target.value))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900"
                     disabled={submittingEdicao}
                   >
                     <option value={1}>Administrador</option>
@@ -1094,7 +1103,7 @@ export default function GerenciarUsuarios() {
               <button
                 onClick={salvarEdicaoUsuario}
                 disabled={submittingEdicao}
-                className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-all transform hover:scale-105 font-medium disabled:bg-purple-400 disabled:cursor-not-allowed disabled:transform-none"
+                className="px-6 py-2 bg-[#001960] text-white rounded-lg hover:bg-[#001960]/80 transition-all transform hover:scale-105 font-medium disabled:bg-blue-400 disabled:cursor-not-allowed disabled:transform-none"
               >
                 {submittingEdicao ? 'Salvando...' : 'Salvar Alterações'}
               </button>

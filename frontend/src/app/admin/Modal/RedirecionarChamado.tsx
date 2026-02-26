@@ -2,12 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import api from '@/services/api';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Usuario {
   id: number;
   name: string;
   email: string;
   roleId: number;
+  situationUserId: number;
 }
 
 interface ModalRedirecionarChamadoProps {
@@ -27,19 +29,14 @@ export default function ModalRedirecionarChamado({
   const [usuarioSelecionado, setUsuarioSelecionado] = useState<number | null>(null);
   const [redirecionando, setRedirecionando] = useState(false);
   const [usuarioLogadoId, setUsuarioLogadoId] = useState<number | null>(null);
+  const { user } = useAuth();
 
   useEffect(() => {
-    //pegar id do usuario logado do token
-    const token = localStorage.getItem('token');
-    if (token) {
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        setUsuarioLogadoId(payload.id);
-      } catch (error) {
-        console.error('Erro ao decodificar token:', error);
-      }
+    //pegar id do usuario logado do contexto de autenticação
+    if (user?.id) {
+      setUsuarioLogadoId(user.id);
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     if (isOpen && usuarioLogadoId !== null) {
@@ -50,14 +47,34 @@ export default function ModalRedirecionarChamado({
 
   const carregarAdministradores = async () => {
     try {
+      console.log('[MODAL] Carregando administradores...');
+      console.log('[MODAL] UsuarioLogadoId:', usuarioLogadoId, typeof usuarioLogadoId);
+      
       const response = await api.get('/users');
-      // filtrar admins, excluindo o usuário logado
-      const admins = response.data.filter(
-        (user: Usuario) => user.roleId === 1 && user.id !== usuarioLogadoId
+      console.log('[MODAL] Resposta da API:', response.data.length, 'usuários encontrados');
+      
+      // filtrar admins (roleId === 1) e usuários ativos (situationUserId === 1), incluindo o usuário logado para debug
+      const allAdmins = response.data.filter(
+        (user: Usuario) => user.roleId === 1 && user.situationUserId === 1
       );
+      
+      console.log('[MODAL] Administradores encontrados:', allAdmins.length);
+      console.log('[MODAL] Lista de admins:', allAdmins.map(u => ({ 
+        id: u.id, 
+        name: u.name, 
+        roleId: u.roleId, 
+        situationUserId: u.situationUserId 
+      })));
+      
+      // Agora excluir apenas o usuário logado
+      const admins = allAdmins.filter(
+        (user: Usuario) => Number(user.id) !== Number(usuarioLogadoId)
+      );
+      
+      console.log('[MODAL] Administradores após filtro (sem usuário logado):', admins.length);
       setUsuariosAdmin(admins);
     } catch (error) {
-      console.error('Erro ao carregar administradores:', error);
+      console.error('[MODAL] Erro ao carregar administradores:', error);
       alert('Erro ao carregar lista de administradores');
     }
   };
@@ -94,7 +111,7 @@ export default function ModalRedirecionarChamado({
         style={{ animation: 'slideUp 0.2s ease-out', willChange: 'transform, opacity' }}
       >
         {/* Header do Modal */}
-        <div className="relative bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-5 rounded-t-2xl">
+        <div className="relative bg-gradient-to-r from-[#001933] to-[#1a3c7a] px-6 py-5 rounded-t-2xl">
           <h3 className="text-xl font-bold text-white">
             Direcionar Chamado
           </h3>
@@ -186,7 +203,7 @@ export default function ModalRedirecionarChamado({
           <button
             onClick={handleConfirmar}
             disabled={redirecionando || !usuarioSelecionado}
-            className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all font-medium shadow-lg shadow-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none flex items-center gap-2"
+            className="px-6 py-2.5 bg-[#001933] text-white rounded-lg hover:bg-[#062975] transition-all font-medium shadow-lg shadow-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none flex items-center gap-2"
           >
             {redirecionando ? (
               <>
