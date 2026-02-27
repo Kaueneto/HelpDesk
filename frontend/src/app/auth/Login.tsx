@@ -84,7 +84,7 @@ export default function Login({ onCadastrarClick, onEsqueceuSenhaClick }: LoginP
             <button
               type="button"
               onClick={onEsqueceuSenhaClick}
-              className="text-sm text-blue-600 hover:text-blue-700 hover:underline"
+              className="text-sm text-[#001960] hover:text-blue-700 hover:underline"
             >
               Esqueci minha senha
             </button>
@@ -100,7 +100,7 @@ export default function Login({ onCadastrarClick, onEsqueceuSenhaClick }: LoginP
         <button
           type="submit"
           disabled={isLoading}
-          className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-200 bg-blue-600 text-white shadow hover:bg-blue-700 hover:shadow-md hover:-translate-y-px focus:outline-none focus:ring-1 focus:ring-blue-500  disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2 w-full"
+          className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-200 bg-[#001960] text-white shadow hover:bg-blue-700 hover:shadow-md hover:-translate-y-px focus:outline-none focus:ring-1 focus:ring-blue-500  disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2 w-full"
         >
           {isLoading ? 'Entrando...' : 'Entrar'}
         </button>
@@ -110,7 +110,7 @@ export default function Login({ onCadastrarClick, onEsqueceuSenhaClick }: LoginP
           <button
             type="button"
             onClick={onCadastrarClick}
-            className="text-blue-600 hover:text-blue-700 hover:underline font-medium"
+            className="text-[#001960] hover:text-blue-700 hover:underline font-medium"
           >
             Cadastre-se
           </button>

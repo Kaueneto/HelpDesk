@@ -117,7 +117,7 @@ export default function EsqueceuSenha({ onVoltarClick }: EsqueceuSenhaProps) {
         <button
           type="submit"
           disabled={isLoading}
-          className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-base transition-all duration-200 bg-blue-600 text-white shadow hover:bg-blue-700 hover:shadow-md hover:-translate-y-px focus:outline-none focus:ring-1 focus:ring-blue-500 focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-6 w-full mt-5"
+          className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-base transition-all duration-200 bg-[#001960] text-white shadow hover:bg-blue-700 hover:shadow-md hover:-translate-y-px focus:outline-none focus:ring-1 focus:ring-blue-500 focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-6 w-full mt-5"
         >
           {isLoading ? 'Enviando...' : 'Enviar Link de recuperação'}
         </button>
@@ -126,7 +126,7 @@ export default function EsqueceuSenha({ onVoltarClick }: EsqueceuSenhaProps) {
           <button
             type="button"
             onClick={onVoltarClick}
-            className="text-sm text-blue-600 hover:text-blue-700 hover:underline"
+            className="text-sm text-[#001960] hover:text-blue-700 hover:underline"
           >
             Voltar a tela Inicial
           </button>

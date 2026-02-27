@@ -33,9 +33,18 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-start justify-center bg-gradient-to-br from-gray-50 to-gray-100">
       <div className="mt-24 w-full max-w-md px-4">
         {/* Título */}
-         <h1 className="text-2xl font-bold text-center text-gray-900 mb-10">
+         <h1 className="text-2xl font-bold text-center text-gray-900 mb-6 font-sans">
             HelpDesk
           </h1>
+          
+        {/* Logo da empresa */}
+        <div className="flex justify-center items-center mb-10">
+          <img 
+            src="/logo.png" 
+            alt="Logo da Empresa" 
+            className="h-10 w-auto max-w-xs object-contain"
+          />
+        </div>
         {/* Container Tabs */}
         <div className="w-full">
           {/* Barra de Tabs - ocultar quando estiver em "esqueceu senha" */}
