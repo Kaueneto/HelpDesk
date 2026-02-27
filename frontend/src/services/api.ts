@@ -1,11 +1,6 @@
 import axios from 'axios';
 
-/**
- * Instância configurada do Axios para comunicação com a API
- * - baseURL: URL base da API definida nas variáveis de ambiente
- * - timeout: Tempo máximo de 10 segundos para requisições
- * - withCredentials: Inclui cookies em todas as requisições
- */
+
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000',
   timeout: 10000,
@@ -14,6 +9,11 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
 });
+
+
+if (typeof window !== 'undefined') {
+  console.log(' API URL:', api.defaults.baseURL);
+}
 
 /**
  * Interceptor de requisição  
