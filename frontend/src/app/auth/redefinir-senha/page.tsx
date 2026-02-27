@@ -1,11 +1,14 @@
 'use client';
 
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import RedefinirSenha from '../RedefinirSenha';
 import api from '@/services/api';
 
-export default function RedefinirSenhaPage() {
+// forçar renderização dinâmica para evitar erro de prerender
+export const dynamic = 'force-dynamic';
+
+function RedefinirSenhaContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [isValidating, setIsValidating] = useState(true);
@@ -92,4 +95,23 @@ export default function RedefinirSenhaPage() {
   }
 
   return <RedefinirSenha email={email!} token={token!} />;
+}
+
+function LoadingFallback() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+      <div className="text-center space-y-4">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+        <p className="text-gray-700">Carregando...</p>
+      </div>
+    </div>
+  );
+}
+
+export default function RedefinirSenhaPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <RedefinirSenhaContent />
+    </Suspense>
+  );
 }

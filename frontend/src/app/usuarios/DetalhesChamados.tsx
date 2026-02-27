@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import api from '@/services/api';
 import ModalEditarChamadoUsuario from './ModalEditarChamadoUsuario';
 import ModalConfirmarReabertura from './ModalConfirmarReabertura';
-import { TbPin } from "react-icons/tb";
+
 interface DetalhesChamadosProps {
   chamado: any;
   onVoltar: () => void;
@@ -23,11 +23,13 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
   const [modalEditarAberto, setModalEditarAberto] = useState(false);
   const [chamadoAtualizado, setChamadoAtualizado] = useState(chamado);
   const [modalConfirmarReaberturaAberto, setModalConfirmarReaberturaAberto] = useState(false);
+  const [anexosCarregados, setAnexosCarregados] = useState(false);
 
   useEffect(() => {
     buscarMensagens(chamado.id);
     buscarHistorico(chamado.id);
     setChamadoAtualizado(chamado);
+    carregarAnexosDescricao(chamado.id);
   }, [chamado.id]);
 
   // auto-atualização do chat a cada 5 segundos
@@ -74,9 +76,28 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
       setMensagens(mensagensRes.data);
       setHistorico(historicoRes.data);
       setChamadoAtualizado(chamadoRes.data);
+      
+      // Anexos iniciais só carregam uma vez
     } catch (error) {
       console.error('Erro ao atualizar mensagens:', error);
       // nao mostra alert para nao interromper o usuario
+    }
+  };
+
+  const carregarAnexosDescricao = async (chamadoId: number) => {
+    if (anexosCarregados) return; // evita recarregamento desnecessário
+    
+    try {
+      const response = await api.get(`/chamados/${chamadoId}`);
+      
+      // atualiza especificamente os anexos com signedUrl atualizadas
+      setChamadoAtualizado((prev: any) => ({
+        ...prev,
+        anexos: response.data.anexos || []
+      }));
+      setAnexosCarregados(true);
+    } catch (error) {
+      console.error('Erro ao carregar anexos:', error);
     }
   };
 
@@ -101,21 +122,39 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
     setErrorMessage('');
 
     try {
+      console.log('[DEBUG USER] Enviando mensagem:', { chamadoId: chamado.id, novaMensagem, anexosCount: anexosResposta.length });
+      
       const response = await api.post(`/chamados/${chamado.id}/mensagens`, {
         mensagem: novaMensagem,
       });
 
-      if (anexosResposta.length > 0) {
+      console.log('[DEBUG USER] Resposta da mensagem:', response.data);
+      const mensagemId = response.data.mensagem?.id || response.data.id;
+      console.log('[DEBUG USER] ID da mensagem criada:', mensagemId);
+
+      if (anexosResposta.length > 0 && mensagemId) {
+        console.log('[DEBUG USER] Iniciando upload de anexos para mensagem:', mensagemId);
+        
         const formData = new FormData();
-        anexosResposta.forEach((file) => {
+        anexosResposta.forEach((file, index) => {
           formData.append('arquivos', file);
+          console.log(`[DEBUG USER] Anexo ${index + 1}: ${file.name} (${file.size} bytes)`);
         });
 
-        await api.post(`/chamado/${chamado.id}/anexo`, formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        });
+        try {
+          const responseAnexos = await api.post(`/mensagem/${mensagemId}/anexo`, formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          });
+          console.log('[DEBUG USER] Upload de anexos concluído:', responseAnexos.data);
+        } catch (anexoError: any) {
+          console.error('[ERROR USER] Falha no upload de anexos:', anexoError);
+          setErrorMessage('Mensagem enviada, mas houve erro no envio dos anexos. Tente novamente.');
+        }
+      } else if (anexosResposta.length > 0 && !mensagemId) {
+        console.error('[ERROR USER] Anexos selecionados mas mensagemId não foi retornado');
+        setErrorMessage('Mensagem enviada, mas não foi possível processar os anexos.');
       }
 
       setNovaMensagem('');
@@ -208,6 +247,7 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
                     chamadoAtualizado.status?.id === 2 ? '#2563eb' : // azul
                     chamadoAtualizado.status?.id === 3 ? '#059669' : // verde
                     chamadoAtualizado.status?.id === 4 ? '#dc2626' : // vermelho
+                    chamadoAtualizado.status?.id === 5 ? '#8b5cf6' : // roxor
                     '#000000'
                 }}
               >                  {chamadoAtualizado.status?.nome}
@@ -266,9 +306,11 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
             >
               Editar
             </button>
-            <button className="px-4 py-2 bg-gray-200 rounded-md text-base font-medium text-gray-700 hover:bg-gray-300">
+
+           {/*} <button className="px-4 py-2 bg-gray-200 rounded-md text-base font-medium text-gray-700 hover:bg-gray-300">
               imprimir
-            </button>
+            </button> */}
+
           </div>
         </div>
         
@@ -315,9 +357,7 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
                   <div className="flex justify-end">
                     <div className="max-w-[70%] bg-blue-50 border-r-4 border-blue-500 rounded-lg p-4 shadow-sm">
                       <div className="flex items-center gap-2 mb-2">
-                       <span className="text-blue-500">
-                        <TbPin size={16} />
-                      </span>
+
                         <span className="font-semibold text-gray-900 text-base">
                           {chamado.usuario?.name || 'Usuário'}
                         </span>
@@ -325,9 +365,51 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
                           {formatarDataBrasilia(chamado.dataAbertura)}
                         </span>
                       </div>
+                      <span className="text-sm text-gray-700 font-medium">
+                        Descrição:
+                      </span>
                       <p className="text-gray-800 whitespace-pre-wrap text-base">
                         {chamado.descricaoChamado}
                       </p>
+                      
+                      {/* Anexos da descrição inicial */}
+                      {chamadoAtualizado.anexos && chamadoAtualizado.anexos.length > 0 && (
+                        <div className="mt-3 pt-3 border-t border-blue-200">
+                          <p className="text-sm font-medium text-gray-600 mb-2">Anexos:</p>
+                          <div className="space-y-2">
+                            {chamadoAtualizado.anexos.map((anexo: any) => {
+                              const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(anexo.filename);
+                              const fileUrl = anexo.signedUrl || '#';
+                              
+                              return (
+                                <a
+                                  key={anexo.id}
+                                  href={fileUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center gap-2 px-3 py-2 bg-white border border-blue-300 rounded hover:bg-blue-100 transition text-sm group"
+                                >
+                                  {isImage ? (
+                                    <svg className="w-4 h-4 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                  ) : (
+                                    <svg className="w-4 h-4 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                  )}
+                                  <span className="text-blue-700 group-hover:text-blue-800 truncate flex-1">
+                                    {anexo.filename}
+                                  </span>
+                                  <svg className="w-3 h-3 text-gray-400 group-hover:text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                  </svg>
+                                </a>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -356,6 +438,43 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
                             </span>
                           </div>
                           <p className="text-gray-800 whitespace-pre-wrap text-sm">{msg.mensagem}</p>
+                          
+                          {/* Anexos da mensagem */}
+                          {msg.anexos && msg.anexos.length > 0 && (
+                            <div className="mt-3 space-y-2">
+                              <p className="text-sm font-medium text-gray-600">Anexos:</p>
+                              {msg.anexos.map((anexo: any) => {
+                                const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(anexo.filename);
+                                const fileUrl = anexo.signedUrl || '#';
+                                
+                                return (
+                                  <a
+                                    key={anexo.id}
+                                    href={fileUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 rounded hover:bg-gray-50 hover:border-gray-400 transition text-sm group"
+                                  >
+                                    {isImage ? (
+                                      <svg className="w-4 h-4 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                      </svg>
+                                    ) : (
+                                      <svg className="w-4 h-4 text-gray-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                      </svg>
+                                    )}
+                                    <span className="text-gray-700 group-hover:text-blue-700 truncate flex-1">
+                                      {anexo.filename}
+                                    </span>
+                                    <svg className="w-3 h-3 text-gray-400 group-hover:text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                    </svg>
+                                  </a>
+                                );
+                              })}
+                            </div>
+                          )}
                         </div>
                       </div>
                     );

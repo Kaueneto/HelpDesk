@@ -1047,8 +1047,8 @@ router.put("/chamados/:id/reabrir", verifyToken, async (req: AuthenticatedReques
     chamado.userResponsavel = { id: usuarioId } as Users;
     chamado.dataAtribuicao = new Date();
     
-    // Mudar status para EM ATENDIMENTO (2)
-    chamado.status = { id: 2 } as StatusChamado;
+    // mudar status para REABERTO (5)
+    chamado.status = { id: 5 } as StatusChamado;
 
     await chamadoRepository.save(chamado);
 
@@ -1058,7 +1058,7 @@ router.put("/chamados/:id/reabrir", verifyToken, async (req: AuthenticatedReques
       usuario: { id: usuarioId },
       acao: `${nomeUsuario} reabriu este chamado`,
       statusAnterior: { id: 3 }, // ENCERRADO
-      statusNovo: { id: 2 }, // EM ATENDIMENTO
+      statusNovo: { id: 5 }, // REABERTO
       dataMov: new Date(),
     });
 
@@ -1251,7 +1251,7 @@ router.put("/chamados/:id/encerrar", verifyToken, async (req: AuthenticatedReque
 
     const chamado = await chamadoRepository.findOne({
       where: { id: Number(id) },
-      relations: ["status", "userFechamento"],
+      relations: ["status", "userFechamento", "usuario"],
     });
 
     if (!chamado) {
@@ -1297,21 +1297,47 @@ router.put("/chamados/:id/encerrar", verifyToken, async (req: AuthenticatedReque
 
     // buscar dados do responsável e do usuário para email
     const userRepository = AppDataSource.getRepository(Users);
+    
+    console.log('[EMAIL DEBUG] Dados do chamado para email:', {
+      chamadoId: chamado.id,
+      usuarioId: chamado.usuario?.id,
+      usuarioName: chamado.usuario?.name,
+      usuarioEmail: chamado.usuario?.email,
+      adminResponsavelId: chamado.userFechamento?.id
+    });
+    
     const [usuarioChamado, adminResponsavel] = await Promise.all([
       chamado.usuario ? userRepository.findOne({ where: { id: chamado.usuario.id }, select: ["id", "name", "email"] }) : null,
       chamado.userFechamento ? userRepository.findOne({ where: { id: chamado.userFechamento.id }, select: ["id", "name", "email"] }) : null
     ]);
+    
+    console.log('[EMAIL DEBUG] Usuários encontrados:', {
+      usuarioChamado: usuarioChamado ? { id: usuarioChamado.id, name: usuarioChamado.name, email: usuarioChamado.email } : 'NULL',
+      adminResponsavel: adminResponsavel ? { id: adminResponsavel.id, name: adminResponsavel.name } : 'NULL'
+    });
 
     // enviar email de conclusão para o usuário que abriu o chamado
     if (usuarioChamado) {
-      console.log(`Iniciando envio de email de conclusão para: ${usuarioChamado.email}`);
-      // verificar se o usuário quer receber email de conclusão (preferência ID 3)
-      const preferenciasUsuario = await verificarPreferenciasUsuario(usuarioChamado.id);
-      if (preferenciasUsuario.includes(3)) {
-        await enviarEmailConclusaoUsuario(usuarioChamado, chamadoCompleto!, adminResponsavel);
+      console.log(`[EMAIL DEBUG] Iniciando envio de email de conclusão para: ${usuarioChamado.email}`);
+      
+      try {
+      
+        const preferenciasUsuario = await verificarPreferenciasUsuario(usuarioChamado.id);
+        console.log(`[EMAIL DEBUG] Preferências do usuário ${usuarioChamado.id}:`, preferenciasUsuario);
+        
+        if (preferenciasUsuario.includes(3)) {
+          console.log('[EMAIL DEBUG] Usuário tem preferência de email ativada, enviando email...');
+          await enviarEmailConclusaoUsuario(usuarioChamado, chamadoCompleto!, adminResponsavel);
+          console.log('[EMAIL DEBUG] Email de conclusão enviado com sucesso!');
+        } else {
+          console.log('[EMAIL DEBUG] Usuário NÃO tem preferência de email ativada (ID 3). Email não enviado.');
+        }
+    
+      } catch (emailError) {
+        console.error('[EMAIL ERROR] Erro ao enviar email de conclusão:', emailError);
       }
     } else {
-      console.warn("Usuário do chamado não encontrado, email não enviado");
+      console.warn('[EMAIL DEBUG] Usuário do chamado não encontrado, email não enviado');
     }
 
     // formatar resposta para retornar apenas o nome dos ususrios
@@ -1394,14 +1420,14 @@ router.post("/chamados/:id/mensagens", verifyToken, async (req: AuthenticatedReq
         });
       }
 
-      const statusAberto = await statusRepository.findOne({ where: { id: 1 } }); // 1 = ABERTO
-      if (statusAberto) {
-        chamado.status = statusAberto;
+      const statusReaberto = await statusRepository.findOne({ where: { id: 5 } }); // 5 = REABERTO
+      if (statusReaberto) {
+        chamado.status = statusReaberto;
         chamado.dataFechamento = null;
         chamado.userFechamento = null;
         chamado.vezesReaberto = (chamado.vezesReaberto || 0) + 1;
         await chamadoRepository.save(chamado);
-        statusNovo = statusAberto;
+        statusNovo = statusReaberto;
         acao = `${usuarioAtual?.name || 'Usuário'} reabriu este chamado ao enviar uma mensagem`;
       }
     }

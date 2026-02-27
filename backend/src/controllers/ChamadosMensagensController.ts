@@ -6,21 +6,25 @@ import { ChamadoHistorico } from "../entities/ChamadoHistorico";
 import { Chamados } from "../entities/Chamados";
 import { Users } from "../entities/Users";
 import { supabase, SUPABASE_BUCKET } from "../config/supabase";
+import { verifyToken } from "../Middleware/AuthMiddleware";
 
 interface AuthenticatedRequest extends Request {
   user?: Users;
+  userId?: number;
+  userEmail?: string;
+  userRoleId?: number;
 }
 
 
 const router = Router();
 
 
-router.post("/chamados/:id/mensagens", async (req: AuthenticatedRequest, res: Response) => {
+router.post("/chamados/:id/mensagens", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
     const { mensagem } = req.body;
-    const usuarioId = req.user?.id;
-    const roleId = req.user?.roleId; // Verificar se é admin (roleId = 1)
+    const usuarioId = req.userId;
+    const roleId = req.userRoleId;
 
 
     const mensagensRepository = AppDataSource.getRepository(ChamadoMensagens);
@@ -82,7 +86,7 @@ router.post("/chamados/:id/mensagens", async (req: AuthenticatedRequest, res: Re
   }
 });
 
-router.get("/chamados/:id/mensagens", async (req: AuthenticatedRequest, res: Response) => {
+router.get("/chamados/:id/mensagens", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
 

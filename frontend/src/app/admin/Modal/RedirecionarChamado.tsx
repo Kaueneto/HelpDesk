@@ -59,7 +59,7 @@ export default function ModalRedirecionarChamado({
       );
       
       console.log('[MODAL] Administradores encontrados:', allAdmins.length);
-      console.log('[MODAL] Lista de admins:', allAdmins.map(u => ({ 
+      console.log('[MODAL] Lista de admins:', allAdmins.map((u: Usuario) => ({ 
         id: u.id, 
         name: u.name, 
         roleId: u.roleId, 

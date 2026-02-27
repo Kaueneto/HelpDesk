@@ -84,7 +84,7 @@ export default function AbrirChamado({ userEmail, onSuccess, onCancel }: AbrirCh
 
   //mostrar o campo de detalhes quando o usuario digitar 3 ou + caracteres
   useEffect(() => {
-    if (resumoChamado.length >= 5) {
+    if (resumoChamado.length >= 3) {
       setMostrarDescricao(true);
     } else {
       setMostrarDescricao(false);
@@ -425,7 +425,7 @@ export default function AbrirChamado({ userEmail, onSuccess, onCancel }: AbrirCh
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label htmlFor="departamento" className="block text-base font-medium text-gray-800 mb-3">
-                  Departamento <span className="text-red-500">*</span>
+                  Informe o seu Departamento <span className="text-red-500">*</span>
                 </label>
                 <select
                   id="departamento"
