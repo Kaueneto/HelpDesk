@@ -1114,6 +1114,8 @@ export default function GerenciarChamados() {
                             ? 'bg-blue-100 text-blue-600 border-blue-500'
                             : chamado.status.id === 3
                              ? 'bg-green-100 text-green-800 border-green-700'
+                            : chamado.status.id === 5
+                            ? 'bg-purple-100 text-purple-700 border-purple-500'
                             : 'bg-red-100 text-red-800 border-red-700'
 
                           }`}

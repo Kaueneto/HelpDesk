@@ -58,6 +58,7 @@ interface Chamado {
     nome: string;
   };
   anexos?: Anexo[];
+  vezesreaberto: number;
 }
 
 interface Mensagem {
@@ -254,6 +255,8 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
 
     setEnviandoMensagem(true);
     try {
+      console.log('[DEBUG] Enviando mensagem:', { chamadoId, novaMensagem, anexosCount: anexosResposta.length });
+      
       // Primeiro, criar a mensagem
       const responseMensagem = await api.post(`/chamados/${chamadoId}/mensagens`, {
         mensagem: novaMensagem,
@@ -265,17 +268,57 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
       }
 
       const mensagemId = responseMensagem.data.mensagem?.id || responseMensagem.data.id;
+      console.log('[DEBUG] ID da mensagem criada:', mensagemId);
 
       // Se houver anexos, fazer upload vinculado à mensagem
       if (anexosResposta.length > 0 && mensagemId) {
+        console.log('[DEBUG] Iniciando upload de anexos para mensagem:', mensagemId);
+        
         const formData = new FormData();
-        anexosResposta.forEach((file) => {
+        anexosResposta.forEach((file, index) => {
           formData.append('arquivos', file);
+          console.log(`[DEBUG] Anexo ${index + 1}: ${file.name} (${file.size} bytes)`);
         });
 
-        await api.post(`/mensagem/${mensagemId}/anexo`, formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
+        try {
+          const responseAnexos = await api.post(`/mensagem/${mensagemId}/anexo`, formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          });
+          console.log('[DEBUG] Upload de anexos concluído:', responseAnexos.data);
+        } catch (anexoError: any) {
+          console.error('[ERROR] Falha no upload de anexos:', anexoError);
+          // se o upload de anexos falhar, ainda mostra que a mensagem foi enviada
+          toast.error('Mensagem enviada, mas houve erro no envio dos anexos. Tente novamente.', {
+            style: {
+              background: '#fff',
+              color: '#dc2626',
+              fontWeight: 'bold',
+              fontSize: '1rem',
+              borderRadius: '0.75rem',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+            },
+            iconTheme: {
+              primary: '#dc2626',
+              secondary: '#fff',
+            },
+          });
+        }
+      } else if (anexosResposta.length > 0 && !mensagemId) {
+        console.error('[ERROR] Anexos selecionados mas mensagemId não foi retornado');
+        toast.error('Mensagem enviada, mas não foi possível processar os anexos.', {
+          style: {
+            background: '#fff',
+            color: '#dc2626',
+            fontWeight: 'bold',
+            fontSize: '1rem',
+            borderRadius: '0.75rem',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+          },
+          iconTheme: {
+            primary: '#dc2626',
+            secondary: '#fff',
           },
         });
       }
@@ -283,8 +326,23 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
       setNovaMensagem('');
       setAnexosResposta([]);
       await carregarMensagensEHistorico();
+      
+      toast.success('Resposta enviada com sucesso!', {
+        style: {
+          background: '#fff',
+          color: '#16a34a',
+          fontWeight: 'bold',
+          fontSize: '1rem',
+          borderRadius: '0.75rem',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+        },
+        iconTheme: {
+          primary: '#16a34a',
+          secondary: '#fff',
+        },
+      });
     } catch (error: any) {
-      console.error('Erro ao enviar mensagem:', error);
+      console.error('[ERROR] Erro ao enviar mensagem:', error);
       const mensagemErro = error.response?.data?.mensagem || 'Erro ao enviar mensagem';
       toast.error(mensagemErro, {
         style: {
@@ -603,7 +661,7 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
       >
       <Toaster position="top-right" />
       {/* Header */}
-      <div className="bg-[#51A2FF] px-6 py-4">
+      <div className="bg-[#1A68CF] px-6 py-4">
         <div className="flex items-center gap-4">
           <button
             onClick={handleVoltar}
@@ -771,7 +829,12 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
                     <label className="text-sm font-medium text-gray-600">Tópico de ajuda</label>
                     <p className="text-gray-900 mt-1">{chamado.topicoAjuda.nome}</p>
                   </div>
+                    <div>
+                    <label className="text-sm font-medium text-gray-600">Vezes Reaberto</label>
+                    <p className="text-gray-900 mt-1 whitespace-pre-wrap">{chamado.vezesreaberto}</p>
+                    </div>
                 </div>
+                
               </div>
 
               {/* Dados do Usuario */}
@@ -843,14 +906,14 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="font-semibold text-gray-900">{chamado.usuario.name}</span>
-                        <span className="text-sm text-gray-500">{formatarData(chamado.dataAbertura)}</span>
+                        <span className="text-base text-gray-500">{formatarData(chamado.dataAbertura)}</span>
                       </div>
                       <div className="text-gray-700 whitespace-pre-wrap">{chamado.descricaoChamado}</div>
                       
                       {/* Anexos da descrição inicial */}
                       {chamado.anexos && chamado.anexos.length > 0 && (
                         <div className="mt-3 pt-3 border-t border-green-200">
-                          <p className="text-sm font-medium text-gray-600 mb-2">Anexos:</p>
+                          <p className="text-base font-medium text-gray-600 mb-2">Anexos:</p>
                           <div className="flex flex-wrap gap-2">
                             {chamado.anexos.map((anexo) => {
                               const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(anexo.filename);
@@ -902,12 +965,12 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
                           } rounded-lg p-4`}
                         >
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="font-semibold text-gray-900 text-sm">
+                            <span className="font-semibold text-gray-900 text-base">
                               {msg.usuario.name}
                             </span>
                             <span className="text-xs text-gray-500">{formatarData(msg.dataEnvio)}</span>
                           </div>
-                          <p className="text-gray-700 text-sm whitespace-pre-wrap">{msg.mensagem}</p>
+                          <p className="text-gray-700 text-base whitespace-pre-wrap">{msg.mensagem}</p>
                           
                           {/* Anexos da mensagem */}
                           {msg.anexos && msg.anexos.length > 0 && (
@@ -1025,7 +1088,7 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
                     <button
                       onClick={enviarMensagem}
                       disabled={enviandoMensagem || !novaMensagem.trim()}
-                      className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition font-medium text-sm disabled:bg-gray-400 disabled:cursor-not-allowed"
+                      className="px-6 py-2 bg-[#001960] text-white rounded hover:bg-blue-700 transition font-medium text-sm disabled:bg-gray-400 disabled:cursor-not-allowed"
                     >
                       {enviandoMensagem ? 'Enviando...' : 'Publicar resposta'}
                     </button>

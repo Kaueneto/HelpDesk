@@ -58,9 +58,11 @@ export default function PainelUsuario() {
 
   // Tela de usuário comum
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col">
-      {/* Container principal */}
-      <div className="flex-1 max-w-7xl mx-auto w-full p-8">
+    <>
+   
+      <div className="min-h-screen bg-gray-100 flex flex-col">
+        {/* Container principal */}
+        <div className="flex-1 max-w-7xl mx-auto w-full p-8">
         <div className="bg-[#f8fafc] rounded-lg shadow-lg overflow-hidden h-full flex flex-col">
           {/* Header */}
           <div className="bg-[#f8fafc] border-b border-gray-200 px-8 py-5 flex justify-between items-center">
@@ -218,5 +220,6 @@ export default function PainelUsuario() {
         </div>
       </div>
     </div>
+    </>
   );
 }

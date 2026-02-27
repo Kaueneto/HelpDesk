@@ -38,8 +38,8 @@ export default function ModalConfirmarReabertura({
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
               Atenção
             </h3>
-            <p className=" text-base text-gray-700">
-              Ao enviar esta mensagem, o chamado será <strong>reaberto</strong> automaticamente pois ele ja foi concluído.
+            <p className=" text-base text-gray-900">
+              Ao enviar esta mensagem, o chamado será <strong className="text-lg">reaberto</strong> automaticamente pois ele ja foi <strong className="text-lg" style={{color: '#00A123'}}>concluído</strong>.
             </p>
             <p className="text-sm text-gray-600 mt-3">
               Deseja continuar?
