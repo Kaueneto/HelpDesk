@@ -49,7 +49,7 @@ router.post("/login", async (req: Request, res: Response) => {
       },
     });
   } catch (error: any) {
-    console.error("Erro ao realizar login:", error);
+
     return res.status(401).json({
       mensagem: error.message || "Erro ao realizar o login",
     });
@@ -99,7 +99,7 @@ router.post("/validate-password", async (req: Request, res: Response) => {
       mensagem: validation.isValid ? "Senha válida" : SecurityUtils.getPasswordErrorMessage(validation)
     });
   } catch (error) {
-    console.error("Erro ao validar senha:", error);
+
     return res.status(500).json({
       mensagem: "Erro interno ao validar senha"
     });
@@ -191,7 +191,7 @@ o preenchimento de senhas ou informações cadastrais.
 
     transporter.sendMail(messageContent, function (err) {
       if (err) {
-        console.error("Erro ao enviar email:", err);
+
         return res.status(500).json({
           mensagem: `E-mail não enviado, tente novamente ou contate ${process.env.EMAIL_ADM || "o administrador"}.`,
         });
@@ -207,7 +207,7 @@ o preenchimento de senhas ou informações cadastrais.
       return res.status(400).json({ mensagem: error.errors });
     }
 
-    console.error("Erro ao recuperar senha:", error);
+
     return res.status(500).json({ mensagem: "Erro ao processar recuperação de senha" });
   }
 });
@@ -246,7 +246,7 @@ router.post("/validate-recover-password", async (req: Request, res: Response) =>
       return res.status(400).json({ mensagem: error.errors });
     }
 
-    console.error("Erro ao validar chave:", error);
+
     return res.status(500).json({ mensagem: "Erro interno ao validar a chave" });
   }
 });
@@ -312,12 +312,12 @@ router.put("/update-password", async (req: Request, res: Response) => {
       mensagem: "Senha atualizada com sucesso!",
     });
   } catch (error) {
-    console.error('ERRO no update-password:', error);
+
     if (error instanceof yup.ValidationError) {
       return res.status(400).json({ mensagem: error.errors });
     }
 
-    console.error("Erro ao atualizar senha:", error);
+
     return res.status(500).json({ mensagem: "Erro interno ao atualizar senha" });
   }
 });

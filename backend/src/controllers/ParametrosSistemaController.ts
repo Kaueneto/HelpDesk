@@ -35,7 +35,7 @@ router.get("/parametros", verifyToken, async (req: AuthenticatedRequest, res: Re
 
     return res.status(200).json(parametros);
   } catch (error) {
-    console.error("Erro ao buscar parâmetros:", error);
+
     return res.status(500).json({
       mensagem: "Erro ao buscar parâmetros do sistema",
     });
@@ -117,7 +117,7 @@ router.put("/parametros", verifyToken, async (req: AuthenticatedRequest, res: Re
       parametros: parametrosAtualizado,
     });
   } catch (error) {
-    console.error("Erro ao atualizar parâmetros:", error);
+
     return res.status(500).json({
       mensagem: "Erro ao atualizar parâmetros do sistema",
     });

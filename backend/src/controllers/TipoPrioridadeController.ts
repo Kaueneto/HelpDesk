@@ -24,7 +24,7 @@ router.get("/tipo_prioridade", verifyToken, async (req: AuthenticatedRequest, re
 
     return res.status(200).json(tipos);
   } catch (error) {
-    console.error("Erro ao listar tipos de prioridade:", error);
+
     return res.status(500).json({
       mensagem: "Erro ao listar tipos de prioridade",
       erro: error instanceof Error ? error.message : "Erro desconhecido"
@@ -48,7 +48,7 @@ router.get("/tipo_prioridade/:id", verifyToken, async (req: AuthenticatedRequest
 
     return res.status(200).json(tipo);
   } catch (error) {
-    console.error("Erro ao buscar tipo de prioridade:", error);
+   
     return res.status(500).json({
       mensagem: "Erro ao buscar tipo de prioridade",
     });
@@ -117,7 +117,7 @@ router.post("/tipo_prioridade", async (req: Request, res: Response) => {
       });
     }
 
-    console.error("Erro ao criar tipo de prioridade:", error);
+ 
     return res.status(500).json({
       mensagem: "Erro ao criar tipo de prioridade",
       erro: error instanceof Error ? error.message : "Erro desconhecido"
@@ -205,7 +205,7 @@ router.put("/tipo_prioridade/:id", async (req: Request, res: Response) => {
       });
     }
     
-    console.error("Erro ao atualizar tipo de prioridade:", error);
+
     return res.status(500).json({
       mensagem: "Erro ao atualizar tipo de prioridade",
     });
@@ -234,7 +234,7 @@ router.delete("/tipo_prioridade/:id", async (req: Request, res: Response) => {
       mensagem: "Tipo de prioridade removido com sucesso",
     });
   } catch (error) {
-    console.error("Erro ao remover tipo de prioridade:", error);
+
     return res.status(500).json({
       mensagem: "Erro ao remover tipo de prioridade",
     });

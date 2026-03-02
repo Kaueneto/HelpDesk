@@ -37,13 +37,6 @@ router.post("/chamados/:id/mensagens", verifyToken, async (req: AuthenticatedReq
       relations: ["userResponsavel"],
     });
 
-    console.log("[DEBUG] Chamado encontrado:", {
-      id: chamado?.id,
-      userResponsavelId: chamado?.userResponsavel?.id,
-      userResponsavelName: chamado?.userResponsavel?.name,
-      usuarioRoleId: roleId,
-    });
-
     if (!chamado) {
       return res.status(404).json({
         mensagem: "Chamado não encontrado",
@@ -52,8 +45,6 @@ router.post("/chamados/:id/mensagens", verifyToken, async (req: AuthenticatedReq
 
     // Validação APENAS para admins (roleId = 1)
     // Se for admin e o chamado não tiver userResponsavel atribuído, bloqueia
-    console.log("[DEBUG] Verificando validação: roleId === 1?", roleId === 1, "| !userResponsavel?", !chamado.userResponsavel, "| !userResponsavel.id?", !chamado.userResponsavel?.id);
-    
     if (roleId === 1 && (!chamado.userResponsavel || !chamado.userResponsavel.id)) {
       return res.status(400).json({
         mensagem: "Assuma o chamado antes de responder.",
@@ -79,7 +70,7 @@ router.post("/chamados/:id/mensagens", verifyToken, async (req: AuthenticatedReq
 
     return res.status(201).json(novaMensagem);
   } catch (error) {
-    console.error("[ERROR] Erro ao enviar mensagem:", error);
+
     return res.status(500).json({
       mensagem: "Erro ao enviar mensagem",
     });
@@ -90,8 +81,6 @@ router.get("/chamados/:id/mensagens", verifyToken, async (req: AuthenticatedRequ
   try {
     const { id } = req.params;
 
-    console.log(`[DEBUG] Buscando mensagens do chamado ${id}`);
-
     // Buscar mensagens primeiro
     const mensagens = await AppDataSource.getRepository(ChamadoMensagens)
       .createQueryBuilder("mensagem")
@@ -99,8 +88,6 @@ router.get("/chamados/:id/mensagens", verifyToken, async (req: AuthenticatedRequ
       .where("mensagem.chamado_id = :chamadoId", { chamadoId: Number(id) })
       .orderBy("mensagem.dataEnvio", "ASC")
       .getMany();
-
-    console.log(`[DEBUG] Mensagens encontradas: ${mensagens.length}`);
 
     // Buscar anexos MANUALMENTE para todas as mensagens
     const mensagensIds = mensagens.map(m => m.id);
@@ -114,19 +101,11 @@ router.get("/chamados/:id/mensagens", verifyToken, async (req: AuthenticatedRequ
           .getMany()
       : [];
 
-    console.log(`[DEBUG] Total de anexos encontrados: ${todosAnexos.length}`);
-    todosAnexos.forEach(a => console.log(`  - Anexo: ${a.filename}, mensagemId=${a.mensagemId}, tipoAnexo=${a.tipoAnexo}`));
-
     // Mapear anexos para suas mensagens
     const mensagensComAnexos = mensagens.map(msg => ({
       ...msg,
       anexos: todosAnexos.filter(anexo => anexo.mensagemId === msg.id)
     }));
-
-    console.log(`[DEBUG] Após mapear anexos:`);
-    mensagensComAnexos.forEach((msg, idx) => {
-      console.log(`  Mensagem ${idx + 1}: ID=${msg.id}, Anexos=${msg.anexos.length}`);
-    });
 
     // Gerar signed URLs para todos os anexos
     const mensagensComSignedUrls = await Promise.all(

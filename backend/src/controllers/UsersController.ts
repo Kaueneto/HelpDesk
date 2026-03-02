@@ -66,18 +66,9 @@ router.get("/users", verifyToken, async (req: Request, res: Response) => {
       .orderBy("user.id", "DESC")
       .getMany();
 
-    console.log('[USERS] Total de usuários encontrados:', users.length);
-    console.log('[USERS] Administradores (roleId=1):', users.filter(u => u.roleId === 1).length);
-    console.log('[USERS] Lista de admins:', users.filter(u => u.roleId === 1).map(u => ({ 
-      id: u.id, 
-      name: u.name, 
-      roleId: u.roleId, 
-      situationUserId: u.situationUserId 
-    })));
-
     res.status(200).json(users);
   } catch (error) {
-    console.error("Erro ao listar usuários:", error);
+    
     res.status(500).json({ mensagem: "Erro ao listar usuários" });
   }
 });
@@ -254,7 +245,7 @@ router.patch("/users/resetar-senha-multiplos", verifyToken, async (req: Request,
 
     res.status(200).json({ mensagem: "Senhas resetadas com sucesso!" });
   } catch (error) {
-    console.error("Erro ao resetar senhas:", error);
+
     res.status(500).json({ mensagem: "Erro ao resetar senhas" });
   }
 });
@@ -283,7 +274,7 @@ router.patch("/users/alterar-situacao-multiplos", verifyToken, async (req: Reque
 
     res.status(200).json({ mensagem: "Situação dos usuários alterada com sucesso!" });
   } catch (error) {
-    console.error("Erro ao alterar situação dos usuários:", error);
+    
     res.status(500).json({ mensagem: "Erro ao alterar situação dos usuários" });
   }
 });
@@ -322,7 +313,7 @@ router.patch("/users/desativar-multiplos", verifyToken, async (req: Request, res
 
     res.status(200).json({ mensagem: "Usuários desativados com sucesso!" });
   } catch (error) {
-    console.error("Erro ao desativar usuários:", error);
+  
     res.status(500).json({ mensagem: "Erro ao desativar usuários" });
   }
 });
@@ -358,7 +349,7 @@ router.patch("/users/ativar-multiplos", verifyToken, async (req: Request, res: R
 
     res.status(200).json({ mensagem: "Usuários ativados com sucesso!" });
   } catch (error) {
-    console.error("Erro ao ativar usuários:", error);
+    
     res.status(500).json({ mensagem: "Erro ao ativar usuários" });
   }
 });
@@ -432,7 +423,7 @@ router.delete("/users/excluir-multiplos", verifyToken, async (req: Request, res:
       mensagem: `${usuarios.length} usuário(s) excluído(s) com sucesso!${chamadosAfetados > 0 ? ` ${chamadosAfetados} chamado(s) foram atualizados.` : ''}` 
     });
   } catch (error) {
-    console.error("Erro ao excluir usuários:", error);
+    
     res.status(500).json({ 
       mensagem: "Erro ao excluir usuários",
       erro: error instanceof Error ? error.message : "Erro desconhecido"
@@ -448,7 +439,6 @@ interface AuthenticatedRequest extends Request {
 }
 
 router.put("/users/alterar-minha-senha", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
-    console.log("debug: ROTA ALTERAR SENHA EXECUTADA");
   try {
     const usuarioId = req.userId;
     const { senhaAtual, novaSenha } = req.body;
@@ -498,7 +488,7 @@ router.put("/users/alterar-minha-senha", verifyToken, async (req: AuthenticatedR
 
     res.status(200).json({ mensagem: "Senha alterada com sucesso!" });
   } catch (error: any) {
-    console.error("Erro ao alterar senha:", error);
+  
     
     if (error.name === "ValidationError") {
       return res.status(400).json({ mensagem: error.errors[0] });
@@ -549,7 +539,7 @@ router.put("/users/alterar-meu-nome", verifyToken, async (req: AuthenticatedRequ
       }
     });
   } catch (error: any) {
-    console.error("Erro ao alterar nome:", error);
+
     
     if (error.name === "ValidationError") {
       return res.status(400).json({ mensagem: error.errors[0] });
@@ -629,7 +619,7 @@ router.put("/users/:id",  verifyToken,  async (req: Request, res: Response) => {
       });
     }
 
-    console.error("Erro ao atualizar usuário:", error);
+ 
     return res.status(500).json({
       mensagem: "Erro ao atualizar usuário",  
     });

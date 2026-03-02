@@ -12,7 +12,7 @@ const api = axios.create({
 
 
 if (typeof window !== 'undefined') {
-  console.log(' API URL:', api.defaults.baseURL);
+   //console.log(' API URL:', api.defaults.baseURL);
 }
 
 /**

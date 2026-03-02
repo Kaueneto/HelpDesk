@@ -154,7 +154,7 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
       setMensagens(mensagensRes.data);
       setHistorico(historicoRes.data);
     } catch (error) {
-      console.error('Erro ao atualizar mensagens:', error);
+
       // nao mostra alert para nao interromper o usuario
     }
   };
@@ -181,7 +181,7 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
       setMensagens(mensagensRes.data);
       setHistorico(historicoRes.data);
     } catch (error) {
-      console.error('Erro ao carregar dados:', error);
+  
       toast.error('Erro ao carregar chamado', {
         style: {
           background: '#fff',
@@ -255,8 +255,6 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
 
     setEnviandoMensagem(true);
     try {
-      console.log('[DEBUG] Enviando mensagem:', { chamadoId, novaMensagem, anexosCount: anexosResposta.length });
-      
       // Primeiro, criar a mensagem
       const responseMensagem = await api.post(`/chamados/${chamadoId}/mensagens`, {
         mensagem: novaMensagem,
@@ -268,16 +266,12 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
       }
 
       const mensagemId = responseMensagem.data.mensagem?.id || responseMensagem.data.id;
-      console.log('[DEBUG] ID da mensagem criada:', mensagemId);
 
       // Se houver anexos, fazer upload vinculado à mensagem
       if (anexosResposta.length > 0 && mensagemId) {
-        console.log('[DEBUG] Iniciando upload de anexos para mensagem:', mensagemId);
-        
         const formData = new FormData();
         anexosResposta.forEach((file, index) => {
           formData.append('arquivos', file);
-          console.log(`[DEBUG] Anexo ${index + 1}: ${file.name} (${file.size} bytes)`);
         });
 
         try {
@@ -286,9 +280,7 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
               'Content-Type': 'multipart/form-data',
             },
           });
-          console.log('[DEBUG] Upload de anexos concluído:', responseAnexos.data);
         } catch (anexoError: any) {
-          console.error('[ERROR] Falha no upload de anexos:', anexoError);
           // se o upload de anexos falhar, ainda mostra que a mensagem foi enviada
           toast.error('Mensagem enviada, mas houve erro no envio dos anexos. Tente novamente.', {
             style: {
@@ -306,7 +298,6 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
           });
         }
       } else if (anexosResposta.length > 0 && !mensagemId) {
-        console.error('[ERROR] Anexos selecionados mas mensagemId não foi retornado');
         toast.error('Mensagem enviada, mas não foi possível processar os anexos.', {
           style: {
             background: '#fff',
@@ -342,7 +333,6 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
         },
       });
     } catch (error: any) {
-      console.error('[ERROR] Erro ao enviar mensagem:', error);
       const mensagemErro = error.response?.data?.mensagem || 'Erro ao enviar mensagem';
       toast.error(mensagemErro, {
         style: {
@@ -382,7 +372,7 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
       });
       await carregarDados();
     } catch (error) {
-      console.error('Erro ao resolver chamado:', error);
+ 
       toast.error('Erro ao resolver chamado');
     } finally {
       setModalResolvidoAberto(false);
@@ -408,7 +398,7 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
       });
       await carregarDados();
     } catch (error: any) {
-      console.error('Erro ao assumir chamado:', error);
+    
       const mensagemErro = error.response?.data?.mensagem || 'Erro ao assumir chamado';
       toast.error(mensagemErro);
     } finally {
@@ -458,7 +448,7 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
       });
       await carregarDados();
     } catch (error: any) {
-      console.error('Erro ao reabrir chamado:', error);
+     
       const mensagemErro = error.response?.data?.mensagem || 'Erro ao reabrir chamado';
       toast.error(mensagemErro, {
         style: {
@@ -486,18 +476,11 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
   };
 
   const handleRedirecionarChamado = async (usuarioSelecionado: number) => {
-    console.log('[REDIRECIONAR] Iniciando redirecionamento:', { 
-      chamadoId: chamadoId, 
-      usuarioSelecionado,
-      usuarioLogado: usuarioLogadoId
-    });
-    
     try {
       await api.put(`/chamados/${chamadoId}/atribuir`, {
         userResponsavelId: usuarioSelecionado,
       });
       
-      console.log(' Sucesso no redirecionamento');
       toast.success('Chamado redirecionado com sucesso!', {
         style: {
           background: '#fff',
@@ -514,8 +497,6 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
       });
       await carregarDados();
     } catch (error: any) {
-      console.error(' Erro no redirecionamento:', error);
-      console.error('[REDIRECIONAR] Detalhes do erro:', error.response?.data);
       const mensagemErro = error.response?.data?.mensagem || 'Erro ao redirecionar chamado';
       toast.error(mensagemErro, {
         style: {

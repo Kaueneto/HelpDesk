@@ -138,7 +138,7 @@ const carregarPreferencias = async () => {
     setPreferenciasChamadoAberto(preferencias.some(p => p.preferencia.id === 2));
     setPreferenciasChamadoConcluido(preferencias.some(p => p.preferencia.id === 3));
   } catch (error) {
-    console.error('Erro ao carregar preferências:', error);
+
   } finally {
     setCarregandoPreferencias(false);
   }
@@ -162,7 +162,7 @@ const salvarPreferencia = async (preferenciaId: number, ativa: boolean) => {
     // Recarregar preferências
     await carregarPreferencias();
   } catch (error) {
-    console.error('Erro ao salvar preferência:', error);
+
     alert('Erro ao salvar preferência. Tente novamente.');
   } finally {
     setSalvandoPreferencias(false);

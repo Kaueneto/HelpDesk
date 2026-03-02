@@ -27,17 +27,13 @@ function RedefinirSenhaContent() {
       }
 
       try {
-        console.log('Validando token para:', email);
-        
         const response = await api.post('/validate-recover-password', {
           email,
           recoverPassword: token,
         });
 
-        console.log('Token válido:', response.data);
         setIsValid(true);
       } catch (err: any) {
-        console.error('Erro ao validar token:', err);
         const mensagem = err.response?.data?.mensagem;
         
         if (mensagem === 'a chave de recuperação é inválida') {

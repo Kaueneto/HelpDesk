@@ -43,8 +43,6 @@ export default function RedefinirSenha({ email, token }: RedefinirSenhaProps) {
         password,
       });
 
-      console.log('Resposta da API✅✅✅✅:', response.data);
-      console.log('Status:', response.status);
       setSucesso(true);
 
       // Redirecionar para login após 3 segundos
@@ -52,8 +50,6 @@ export default function RedefinirSenha({ email, token }: RedefinirSenhaProps) {
         router.push('/auth/login');
       }, 3000);
     } catch (err: any) {
-      console.error('ERRO COMPLETO:', err);
-      
       const mensagem = err.response?.data?.mensagem;
       
       if (mensagem === 'A chave de recuperação é inválida') {

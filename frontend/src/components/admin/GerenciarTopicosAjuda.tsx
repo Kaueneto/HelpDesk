@@ -55,7 +55,7 @@ export default function GerenciarTopicosAjuda() {
       const response = await api.get('/topicos_ajuda');
       setTopicos(response.data);
     } catch (error) {
-      console.error('Erro ao carregar tópicos de ajuda:', error);
+    
       alert('Erro ao carregar tópicos de ajuda');
     } finally {
       setLoading(false);
@@ -108,7 +108,7 @@ export default function GerenciarTopicosAjuda() {
       setTodosChecados(false);
       carregarTopicos();
     } catch (error) {
-      console.error('Erro ao excluir tópicos:', error);
+
       alert('Erro ao excluir tópicos');
     }
   };
@@ -161,7 +161,7 @@ export default function GerenciarTopicosAjuda() {
       const mensagem = error.response?.data?.mensagem || 'Erro ao cadastrar tópico';
       // não logar erros de validação (409, 400) no console
       if (error.response?.status !== 409 && error.response?.status !== 400) {
-        console.error('Erro ao cadastrar tópico:', error);
+
       }
       alert(mensagem);
     } finally {
@@ -228,7 +228,7 @@ export default function GerenciarTopicosAjuda() {
       const mensagem = error.response?.data?.mensagem || 'Erro ao atualizar tópico';
       // não logar erros de validação (409, 400) no console
       if (error.response?.status !== 409 && error.response?.status !== 400) {
-        console.error('Erro ao atualizar tópico:', error);
+  
       }
       alert(mensagem);
     } finally {
@@ -251,7 +251,7 @@ export default function GerenciarTopicosAjuda() {
       setTodosChecados(false);
       carregarTopicos();
     } catch (error) {
-      console.error('Erro ao ativar tópicos:', error);
+   
       alert('Erro ao ativar tópicos');
     }
   };
@@ -271,7 +271,7 @@ export default function GerenciarTopicosAjuda() {
       setTodosChecados(false);
       carregarTopicos();
     } catch (error) {
-      console.error('Erro ao desativar tópicos:', error);
+    
       alert('Erro ao desativar tópicos');
     }
   };

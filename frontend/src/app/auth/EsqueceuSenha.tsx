@@ -21,21 +21,13 @@ export default function EsqueceuSenha({ onVoltarClick }: EsqueceuSenhaProps) {
     try {
       const urlRecoverPassword = `${window.location.origin}/auth/redefinir-senha`;
       
-      console.log('Enviando requisição de recuperação para:', email);
-      console.log('URL de recuperação:', urlRecoverPassword);
-      
       const response = await api.post('/recoverPassword', {
         email,
         urlRecoverPassword,
       });
 
-      console.log('Resposta da API:', response.data);
       setEmailEnviado(true);
     } catch (err: any) {
-      console.error('Erro completo:', err);
-      console.error('Resposta do erro:', err.response);
-      console.error('Data do erro:', err.response?.data);
-      
       const mensagem = err.response?.data?.mensagem;
       
       if (mensagem === 'Usuário não encontrado') {

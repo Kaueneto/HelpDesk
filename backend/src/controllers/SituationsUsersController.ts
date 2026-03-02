@@ -20,7 +20,7 @@ router.get("/SituationsUsers", async (req: Request, res: Response) => {
     res.status(200).json(situations);
     return;
   } catch (error) {
-    console.error("Erro ao listar SituationsUsers:", error);
+
     res.status(500).json({
       mensagem: "Erro ao listar situação",
       erro: error instanceof Error ? error.message : "Erro desconhecido"

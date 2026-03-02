@@ -76,7 +76,7 @@ export default function AbrirChamado({ userEmail, onSuccess, onCancel }: AbrirCh
           setPrioridadeId(prioridadePadrao.id);
         }
       } catch (error) {
-        console.error('Erro ao carregar dados:', error);
+
       }
     };
     fetchData();

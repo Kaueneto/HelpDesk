@@ -55,7 +55,6 @@ export default function GerenciarDepartamentos() {
       const response = await api.get('/departamentos');
       setDepartamentos(response.data);
     } catch (error) {
-      console.error('Erro ao carregar departamentos:', error);
       alert('Erro ao carregar departamentos');
     } finally {
       setLoading(false);
@@ -108,7 +107,7 @@ export default function GerenciarDepartamentos() {
       setTodosChecados(false);
       carregarDepartamentos();
     } catch (error) {
-      console.error('Erro ao excluir departamentos:', error);
+
       alert('Erro ao excluir departamentos');
     }
   };
@@ -128,7 +127,7 @@ export default function GerenciarDepartamentos() {
       setTodosChecados(false);
       carregarDepartamentos();
     } catch (error) {
-      console.error('Erro ao ativar departamentos:', error);
+
       alert('Erro ao ativar departamentos');
     }
   };
@@ -148,7 +147,7 @@ export default function GerenciarDepartamentos() {
       setTodosChecados(false);
       carregarDepartamentos();
     } catch (error) {
-      console.error('Erro ao desativar departamentos:', error);
+    
       alert('Erro ao desativar departamentos');
     }
   };
@@ -201,7 +200,7 @@ export default function GerenciarDepartamentos() {
       const mensagem = error.response?.data?.mensagem || 'Erro ao cadastrar departamento';
       // não logar erros de validação (409, 400) no console
       if (error.response?.status !== 409 && error.response?.status !== 400) {
-        console.error('Erro ao cadastrar departamento:', error);
+    
       }
       alert(mensagem);
     } finally {
@@ -268,7 +267,7 @@ export default function GerenciarDepartamentos() {
       const mensagem = error.response?.data?.mensagem || 'Erro ao atualizar departamento';
       // não logar erros de validação (409, 400) no console
       if (error.response?.status !== 409 && error.response?.status !== 400) {
-        console.error('Erro ao atualizar departamento:', error);
+     
       }
       alert(mensagem);
     } finally {

@@ -72,7 +72,6 @@ router.get("/logs-sistema", verifyToken, async (req: AuthenticatedRequest, res: 
       totalPages: Math.ceil(total / limitNum),
     });
   } catch (error) {
-    console.error("Erro ao buscar logs do sistema:", error);
     return res.status(500).json({
       mensagem: "Erro ao buscar logs do sistema",
     });

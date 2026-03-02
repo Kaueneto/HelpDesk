@@ -35,7 +35,7 @@ export default function GerenciarPreferencias() {
         setPreferenciasUsuario(responseUserPrefs.data);
       }
     } catch (error) {
-      console.error('Erro ao carregar preferências:', error);
+
     } finally {
       setLoading(false);
     }
@@ -53,9 +53,6 @@ export default function GerenciarPreferencias() {
 
   // toggle preferencia
   const togglePreferencia = async (preferenceId: number) => {
-    console.log('User object:', user);
-    console.log('User ID:', user?.id);
-    
     if (!user?.id) {
       alert('Usuário não está logado');
       return;
@@ -74,7 +71,7 @@ export default function GerenciarPreferencias() {
         setPreferenciasUsuario(prev => [...prev, preferenceId]);
       }
     } catch (error) {
-      console.error('Erro ao atualizar preferencia:', error);
+
       alert('Erro ao atualizar preferencia');
     }
   };

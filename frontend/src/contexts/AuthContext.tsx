@@ -92,7 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // persiste  apenas dados bsicos no localstorage
       localStorage.setItem('user', JSON.stringify(userData));
     } catch (error) {
-      console.error('Erro ao fazer login:', error);
+      
       throw error;
     }
   };
@@ -102,13 +102,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    * remove cookies de autenticação e limpa localstorage
    */
   const logout = async () => {
-    console.log('[LOGOUT] Iniciando logout...');
-    
     try {
       //chamar endpoint de logou para limpar coookiue
       await api.post('/logout', {}, { withCredentials: true });
     } catch (error) {
-      console.error('Erro ao fazer logout no servidor:', error);
+      // Erro silencioso - não impede o logout
     }
     
     try {
@@ -119,13 +117,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // limpa localstorage
       localStorage.removeItem('user');
       
-      console.log('[LOGOUT] Estado limpo');
-      console.log('[LOGOUT] Redirecionando para /auth/login...');
-      
       // usar replace para evitar voltar com botão de voltar do navegador
       window.location.replace('/auth/login');
     } catch (error) {
-      console.error('[LOGOUT] Erro durante logout:', error);
       window.location.replace('/auth/login');
     }
   };
