@@ -105,7 +105,6 @@ export default function PainelUsuario() {
                   <hr className="my-2 border-gray-200" />
                   <button
                     onClick={() => {
-                      console.log('[PAINEL USUARIO] Botão sair clicado');
                       setUserDropdownOpen(false);
                       logout();
                     }}

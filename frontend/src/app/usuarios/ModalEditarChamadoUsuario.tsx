@@ -101,7 +101,7 @@ export default function ModalEditarChamadoUsuario({
       setTopicosAjuda(topRes.data.filter((t: any) => t.ativo === true));
       setPrioridades(prioRes.data);
     } catch (error) {
-      console.error('Erro ao carregar dados:', error);
+  
     }
   };
 
@@ -117,7 +117,7 @@ export default function ModalEditarChamadoUsuario({
       
       alert('Anexo removido com sucesso!');
     } catch (error: any) {
-      console.error('Erro ao remover anexo:', error);
+
       const mensagem = error.response?.data?.mensagem || 'Erro ao remover anexo';
       alert(mensagem);
       
@@ -232,8 +232,7 @@ export default function ModalEditarChamadoUsuario({
       onSuccess();
       handleClose();
     } catch (error: any) {
-      console.error('Erro ao editar chamado:', error);
-      console.error('Detalhes do erro:', error.response?.data);
+
       const mensagem = error.response?.data?.mensagem || error.message || 'Erro ao editar chamado';
       alert(`Erro: ${mensagem}`);
     } finally {

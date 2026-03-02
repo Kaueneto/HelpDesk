@@ -33,7 +33,7 @@ export class LogsSistemaService {
       
       await logsRepository.save(log);
     } catch (error) {
-      console.error("Erro ao criar log do sistema:", error);
+
       // Não lança erro para não interromper a operação principal
     }
   }

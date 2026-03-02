@@ -50,7 +50,7 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
       const response = await api.get(`/chamados/${chamadoId}/mensagens`);
       setMensagens(response.data);
     } catch (error) {
-      console.error('Erro ao buscar mensagens:', error);
+    
     } finally {
       setLoadingMensagens(false);
     }
@@ -61,7 +61,7 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
       const response = await api.get(`/chamados/${chamadoId}/historico`);
       setHistorico(response.data);
     } catch (error) {
-      console.error('Erro ao buscar histórico:', error);
+      
     }
   };
 
@@ -79,7 +79,7 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
       
       // Anexos iniciais só carregam uma vez
     } catch (error) {
-      console.error('Erro ao atualizar mensagens:', error);
+   
       // nao mostra alert para nao interromper o usuario
     }
   };
@@ -97,7 +97,7 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
       }));
       setAnexosCarregados(true);
     } catch (error) {
-      console.error('Erro ao carregar anexos:', error);
+   
     }
   };
 
@@ -147,13 +147,12 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
               'Content-Type': 'multipart/form-data',
             },
           });
-          console.log('[DEBUG USER] Upload de anexos concluído:', responseAnexos.data);
+         
         } catch (anexoError: any) {
-          console.error('[ERROR USER] Falha no upload de anexos:', anexoError);
+        
           setErrorMessage('Mensagem enviada, mas houve erro no envio dos anexos. Tente novamente.');
         }
       } else if (anexosResposta.length > 0 && !mensagemId) {
-        console.error('[ERROR USER] Anexos selecionados mas mensagemId não foi retornado');
         setErrorMessage('Mensagem enviada, mas não foi possível processar os anexos.');
       }
 

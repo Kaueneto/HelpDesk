@@ -33,7 +33,6 @@ async function verificarPreferenciasUsuario(userId: number): Promise<number[]> {
     });
     return preferencias.map(pref => pref.preferencia_id);
   } catch (error) {
-    console.error("Erro ao verificar preferências do usuário:", error);
     return [];
   }
 }
@@ -74,9 +73,9 @@ async function enviarEmailNotificacaoAdmin(admin: Users, usuario: Users, chamado
     };
 
     await transporter.sendMail(mailOptions);
-    console.log(`Email de notificação enviado para admin ${admin.email}`);
+ 
   } catch (error) {
-    console.error("Erro ao enviar email para admin:", error);
+    //log 
   }
 }
 
@@ -135,55 +134,22 @@ async function enviarEmailConfirmacaoUsuario(usuario: Users, chamado: Chamados):
     };
 
     await transporter.sendMail(mailOptions);
-    console.log(`Email de confirmação enviado para ${usuario.email}`);
   } catch (error) {
-    console.error(" Erro ao enviar email de confirmação:", error);
   }
 }
 async function enviarEmailRedirecionamento(novoResponsavel: Users | null, usuarioQueRedirecionou: Users | null, chamado: Chamados): Promise<void> {
-  console.log('📧 [EMAIL_REDIRECT] === INICIANDO FUNÇÃO DE EMAIL ===');
-  console.log('[EMAIL_REDIRECT] Parâmetros recebidos:', {
-    novoResponsavel: {
-      id: novoResponsavel?.id,
-      name: novoResponsavel?.name,
-      email: novoResponsavel?.email
-    },
-    usuarioQueRedirecionou: {
-      id: usuarioQueRedirecionou?.id,
-      name: usuarioQueRedirecionou?.name,
-      email: usuarioQueRedirecionou?.email
-    },
-    chamado: {
-      id: chamado?.id,
-      numero: chamado?.numeroChamado,
-      resumo: chamado?.resumoChamado
-    }
-  });
-
   // Verificar se todos os parâmetros necessários estão presentes
   if (!novoResponsavel || !usuarioQueRedirecionou) {
-    console.log('[EMAIL_REDIRECT] ⚠️ Email não enviado - usuários não encontrados:', {
-      novoResponsavel: !!novoResponsavel,
-      usuarioQueRedirecionou: !!usuarioQueRedirecionou,
-      novoResponsavelData: novoResponsavel ? {id: novoResponsavel.id, email: novoResponsavel.email} : null,
-      usuarioQueRedirecionouData: usuarioQueRedirecionou ? {id: usuarioQueRedirecionou.id, email: usuarioQueRedirecionou.email} : null
-    });
     return; // sair silenciosamente se não há usuários
   }
 
   // verificar se é autoatribuicao (mesmo usuário)
   if (novoResponsavel.id === usuarioQueRedirecionou.id) {
-    console.log('[EMAIL_REDIRECT] autoatribuicao detectada - não enviando email');
     return; // Não enviar email para si mesmo
   }
 
   //  verificar se o email do destinatário existe
   if (!novoResponsavel.email) {
-    console.error('[EMAIL_REDIRECT] usuário destinatário não tem email válido:', {
-      id: novoResponsavel.id,
-      name: novoResponsavel.name,
-      email: novoResponsavel.email
-    });
     return; //nao pode enviar email sem destinatário
   }
 
@@ -194,21 +160,10 @@ async function enviarEmailRedirecionamento(novoResponsavel: Users | null, usuari
     // if (preferenciasResponsavel.includes(1)) { // ID 1 = receber notificações de admin
 
     // verificar se as variáveis de ambiente estão configuradas
-    console.log('[EMAIL] Verificando variáveis de ambiente...');
-    console.log('[EMAIL] Variáveis encontradas:', {
-      EMAIL_HOST: !!process.env.EMAIL_HOST ? 'DEFINIDO' : 'FALTANDO',
-      EMAIL_USER: !!process.env.EMAIL_USER ? 'DEFINIDO' : 'FALTANDO', 
-      EMAIL_PASS: !!process.env.EMAIL_PASS ? 'DEFINIDO' : 'FALTANDO',
-      EMAIL_PORT: process.env.EMAIL_PORT || 'NÃO DEFINIDO'
-    });
-
     if (!process.env.EMAIL_HOST || !process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-      console.error('[EMAIL] Variáveis de ambiente de email não configuradas');
-      console.error('[EMAIL] Verifique: EMAIL_HOST, EMAIL_USER, EMAIL_PASS, EMAIL_FROM');
       return;
     }
 
-    console.log('[EMAIL] Variáveis validadas. Criando transporter...');
     const transporter = nodemailer.createTransport({
       host: process.env.EMAIL_HOST,
       port: Number(process.env.EMAIL_PORT),
@@ -219,19 +174,10 @@ async function enviarEmailRedirecionamento(novoResponsavel: Users | null, usuari
       },
     });
 
-    console.log('[EMAIL] 🔧 Transporter criado com configurações:', {
-      host: process.env.EMAIL_HOST,
-      port: process.env.EMAIL_PORT,
-      user: process.env.EMAIL_USER
-    });
-
     // testar conexão do transporter
     try {
-      console.log('[EMAIL] Verificando conexão SMTP...');
       await transporter.verify();
-      console.log('[EMAIL] Conexão SMTP verificada com sucesso');
     } catch (verifyError) {
-      console.error('[EMAIL Erro na verificação SMTP:', verifyError);
       throw new Error('Falha na conexão SMTP');
     }
 
@@ -278,39 +224,10 @@ async function enviarEmailRedirecionamento(novoResponsavel: Users | null, usuari
       `
     };
 
-    console.log('[EMAIL] Enviando email...', {
-      from: mailOptions.from,
-      to: mailOptions.to,
-      subject: mailOptions.subject
-    });
-
-    console.log('[EMAIL] CHAMANDO transporter.sendMail...');
     const result = await transporter.sendMail(mailOptions);
-    console.log(`[EMAIL] Email de redirecionamento enviado com sucesso!`);
-    console.log(`[EMAIL] Destinatário: ${novoResponsavel.email} (${novoResponsavel.name})`);
-    console.log(`[EMAIL]  Message ID: ${result.messageId}`);
-    console.log(`[EMAIL] Response completa:`, JSON.stringify(result, null, 2));
     
     // }
   } catch (error) {
-    console.error('[EMAIL_REDIRECT] erro ao enviar email de redirecionamento:', error);
-    console.error('[EMAIL_REDIRECT] Detalhes completos do erro:', {
-      errorMessage: error instanceof Error ? error.message : 'Erro desconhecido',
-      stack: error instanceof Error ? error.stack : undefined,
-      novoResponsavel: {
-        id: novoResponsavel?.id,
-        name: novoResponsavel?.name,
-        email: novoResponsavel?.email
-      },
-      usuarioQueRedirecionou: {
-        id: usuarioQueRedirecionou?.id,
-        name: usuarioQueRedirecionou?.name,
-        email: usuarioQueRedirecionou?.email
-      },
-      chamadoId: chamado?.id,
-      numeroChamado: chamado?.numeroChamado
-    });
-    
     // Re-lançar o erro para que possa ser capturado pela função que chama, se necessário
     throw error;
   }
@@ -387,15 +304,8 @@ async function enviarEmailConclusaoUsuario(usuario: Users, chamado: Chamados, ad
 
 
     await transporter.sendMail(mailOptions);
-    console.log(`Email de conclusão enviado SUCESSO para ${usuario.email}`);
   } catch (error) {
-    console.error("[EMAIL CONCLUSÃO] Erro ao enviar email de conclusão:", error);
-    console.error("[EMAIL CONCLUSÃO] Erro completo:", {
-      message: error instanceof Error ? error.message : 'Erro desconhecido',
-      stack: error instanceof Error ? error.stack : undefined,
-      dados_usuario: { email: usuario.email, name: usuario.name },
-      dados_chamado: { id: chamado.id, numeroChamado: chamado.numeroChamado }
-    });
+    // Log simplificado para produção
   }
 }
 
@@ -419,7 +329,6 @@ router.post("/chamados", verifyToken, async (req: AuthenticatedRequest, res: Res
 
     // criar a data atual + log no backend
     const dataAtual = new Date();
-    console.log('Data de abertura no backend:', dataAtual.toISOString());
 
     // criar chamado com apenas os campos obrigatórios iniciais
     const chamado = chamadoRepository.create({
@@ -441,7 +350,6 @@ router.post("/chamados", verifyToken, async (req: AuthenticatedRequest, res: Res
     });
 
     await chamadoRepository.save(chamado);
-    console.log('Chamado salvo - dataAbertura:', chamado.dataAbertura);
 
     // Registrar no histórico
     await historicoRepository.save({
@@ -497,7 +405,7 @@ router.post("/chamados", verifyToken, async (req: AuthenticatedRequest, res: Res
       chamado: chamadoCompleto,
     });
   } catch (error) {
-    console.error("Erro ao abrir chamado:", error);
+
     return res.status(500).json({
       mensagem: "Erro ao abrir chamado",
       error: error instanceof Error ? error.message : "Erro desconhecido",
@@ -599,7 +507,7 @@ router.get("/chamados/:id", verifyToken, async (req: AuthenticatedRequest, res: 
 
     return res.status(200).json(chamadoFormatado);
   } catch (error) {
-    console.error("Erro ao buscar chamado:", error);
+
     return res.status(500).json({
       mensagem: "Erro ao buscar chamado",
     });
@@ -764,7 +672,7 @@ router.get("/chamados", verifyToken, async (req: AuthenticatedRequest, res: Resp
       pageSize: pageSizeNum,
     });
   } catch (error) {
-    console.error("Erro ao listar chamados:", error);
+   
     return res.status(500).json({
       mensagem: "Erro ao listar chamados",
     });
@@ -778,13 +686,6 @@ router.put("/chamados/:id/atribuir", verifyToken, async (req: AuthenticatedReque
     const { userResponsavelId } = req.body;
     const usuarioId = req.userId; // adm que está atribuindo
 
-
-    console.log('[ATRIBUIR] Iniciando atribuição:', { 
-      chamadoId: id, 
-      userResponsavelId, 
-      usuarioId,
-      timestamp: new Date().toISOString()
-    });
 
     const chamadoRepository = AppDataSource.getRepository(Chamados);
     const historicoRepository = AppDataSource.getRepository(ChamadoHistorico);
@@ -814,25 +715,23 @@ router.put("/chamados/:id/atribuir", verifyToken, async (req: AuthenticatedReque
     });
     
     if (!usuarioQueAtribui) {
-      console.log('[ATRIBUIR] Usuário que está atribuindo não encontrado');
       return res.status(404).json({ mensagem: "Usuário não encontrado" });
     }
     
     // verificar se quem está atribuindo é administrador (role_id = 1)
     if (usuarioQueAtribui.roleId !== 1) {
-      console.log('[ATRIBUIR] Usuário não é administrador');
       return res.status(403).json({ mensagem: "Apenas administradores podem redirecionar chamados." });
     }
     
-    console.log('[ATRIBUIR] Usuário é administrador, pode redirecionar');
+
 
     // verificar se está tentando redirecionar para si mesmo
     if (userResponsavelId === usuarioId) {
-      console.log('[ATRIBUIR] Tentando redirecionar para si mesmo');
+
       return res.status(400).json({ mensagem: "Você não pode redirecionar o chamado para si mesmo." });
     }
 
-    console.log('[ATRIBUIR] Buscando usuários...');
+
     // Buscar nomes dos usuários para o histórico
     const [usuarioAtribuiu, usuarioResponsavel] = await Promise.all([
       userRepository.findOne({ where: { id: usuarioId }, select: ["id", "name", "email"] }),
@@ -840,14 +739,11 @@ router.put("/chamados/:id/atribuir", verifyToken, async (req: AuthenticatedReque
     ]);
 
     if (!usuarioResponsavel) {
-      console.log('[ATRIBUIR] Usuário responsável não encontrado');
+ 
       return res.status(404).json({ mensagem: "Usuário responsável não encontrado" });
     }
 
-    console.log('[ATRIBUIR] Usuários encontrados:', { 
-      atribuiu: usuarioAtribuiu?.name, 
-      novo: usuarioResponsavel?.name 
-    });
+
 
     // save status anterior antes de mudar
     const statusAnteriorId = chamado.status?.id || 2;
@@ -864,31 +760,12 @@ router.put("/chamados/:id/atribuir", verifyToken, async (req: AuthenticatedReque
       }
     }
 
-    console.log('[ATRIBUIR] 💾 Salvando chamado...');
+
     await chamadoRepository.save(chamado);
 
     // registrar no historico com nomes dos usuários
     const nomeQuemAtribuiu = usuarioAtribuiu?.name || "Usuário";
     const nomeResponsavel = usuarioResponsavel?.name || "Usuário";
-
-    console.log('[ATRIBUIR]  PARTE DO EMAIL!');
-    console.log('[ATRIBUIR] Dados para email:', {
-      usuarioResponsavel: usuarioResponsavel ? {
-        id: usuarioResponsavel.id,
-        name: usuarioResponsavel.name,
-        email: usuarioResponsavel.email
-      } : 'NULL',
-      usuarioAtribuiu: usuarioAtribuiu ? {
-        id: usuarioAtribuiu.id,
-        name: usuarioAtribuiu.name,
-        email: usuarioAtribuiu.email
-      } : 'NULL',
-      chamado: {
-        id: chamado.id,
-        numero: chamado.numeroChamado,
-        resumo: chamado.resumoChamado
-      }
-    });
 
     // Enviar email de redirecionamento
     try {
@@ -896,26 +773,15 @@ router.put("/chamados/:id/atribuir", verifyToken, async (req: AuthenticatedReque
       await enviarEmailRedirecionamento(usuarioResponsavel, usuarioAtribuiu, chamado);
     } catch (emailError) {
       // Não falha a operação se o email der erro, apenas registra
-      console.warn('[ATRIBUIR] ⚠️ Email de redirecionamento falhou, mas operação continua');
+   
     }
 
-    console.log('[ATRIBUIR] 💾 Salvando histórico...');
-    await historicoRepository.save({
-      chamado: { id: chamado.id },
-      usuario: { id: usuarioId },
-      acao: `${nomeQuemAtribuiu} redirecionou este chamado para ${nomeResponsavel}`,
-      statusAnterior: { id: statusAnteriorId },
-      statusNovo: { id: chamado.status?.id || 2 },
-      dataMov: new Date(),
-    });
 
-    console.log('[ATRIBUIR] Atribuição concluída com sucesso');
     return res.status(200).json({
       mensagem: "Chamado atribuído com sucesso!",
       chamado,
     });
   } catch (error) {
-    console.error("[ATRIBUIR] Erro ao atribuir chamado:", error);
     return res.status(500).json({
       mensagem: "Erro ao atribuir chamado",
       error: error instanceof Error ? error.message : "Erro desconhecido",
@@ -999,7 +865,6 @@ router.put("/chamados/:id/assumir", verifyToken, async (req: AuthenticatedReques
       chamado: chamadoAtualizado,
     });
   } catch (error) {
-    console.error("Erro ao atribuir chamado:", error);
     return res.status(500).json({
       mensagem: "Erro ao atribuir chamado",
       error: error instanceof Error ? error.message : "Erro desconhecido",
@@ -1081,7 +946,7 @@ router.put("/chamados/:id/reabrir", verifyToken, async (req: AuthenticatedReques
       chamado: chamadoAtualizado,
     });
   } catch (error) {
-    console.error("Erro ao reabrir chamado:", error);
+
     return res.status(500).json({
       mensagem: "Erro ao reabrir chamado",
       error: error instanceof Error ? error.message : "Erro desconhecido",
@@ -1175,7 +1040,8 @@ router.put("/chamados/:id/editar", verifyToken, async (req: AuthenticatedRequest
       chamado: chamadoAtualizado,
     });
   } catch (error) {
-    console.error("Erro ao editar chamado:", error);
+
+  
     return res.status(500).json({
       mensagem: "Erro ao editar chamado",
       error: error instanceof Error ? error.message : "Erro desconhecido",
@@ -1221,10 +1087,10 @@ router.delete("/chamados/:id/anexo/:anexoId", verifyToken, async (req: Authentic
         .remove([anexo.url]);
 
       if (error) {
-        console.error("Erro ao remover arquivo do Supabase:", error);
+
       }
     } catch (storageError) {
-      console.error("Erro ao acessar Supabase Storage:", storageError);
+
     }
 
     // Remover do banco
@@ -1232,7 +1098,6 @@ router.delete("/chamados/:id/anexo/:anexoId", verifyToken, async (req: Authentic
 
     return res.status(200).json({ mensagem: "Anexo removido com sucesso!" });
   } catch (error) {
-    console.error("Erro ao remover anexo:", error);
     return res.status(500).json({
       mensagem: "Erro ao remover anexo",
       error: error instanceof Error ? error.message : "Erro desconhecido",
@@ -1298,46 +1163,24 @@ router.put("/chamados/:id/encerrar", verifyToken, async (req: AuthenticatedReque
     // buscar dados do responsável e do usuário para email
     const userRepository = AppDataSource.getRepository(Users);
     
-    console.log('[EMAIL DEBUG] Dados do chamado para email:', {
-      chamadoId: chamado.id,
-      usuarioId: chamado.usuario?.id,
-      usuarioName: chamado.usuario?.name,
-      usuarioEmail: chamado.usuario?.email,
-      adminResponsavelId: chamado.userFechamento?.id
-    });
-    
     const [usuarioChamado, adminResponsavel] = await Promise.all([
       chamado.usuario ? userRepository.findOne({ where: { id: chamado.usuario.id }, select: ["id", "name", "email"] }) : null,
       chamado.userFechamento ? userRepository.findOne({ where: { id: chamado.userFechamento.id }, select: ["id", "name", "email"] }) : null
     ]);
-    
-    console.log('[EMAIL DEBUG] Usuários encontrados:', {
-      usuarioChamado: usuarioChamado ? { id: usuarioChamado.id, name: usuarioChamado.name, email: usuarioChamado.email } : 'NULL',
-      adminResponsavel: adminResponsavel ? { id: adminResponsavel.id, name: adminResponsavel.name } : 'NULL'
-    });
 
     // enviar email de conclusão para o usuário que abriu o chamado
     if (usuarioChamado) {
-      console.log(`[EMAIL DEBUG] Iniciando envio de email de conclusão para: ${usuarioChamado.email}`);
       
       try {
-      
         const preferenciasUsuario = await verificarPreferenciasUsuario(usuarioChamado.id);
-        console.log(`[EMAIL DEBUG] Preferências do usuário ${usuarioChamado.id}:`, preferenciasUsuario);
         
         if (preferenciasUsuario.includes(3)) {
-          console.log('[EMAIL DEBUG] Usuário tem preferência de email ativada, enviando email...');
           await enviarEmailConclusaoUsuario(usuarioChamado, chamadoCompleto!, adminResponsavel);
-          console.log('[EMAIL DEBUG] Email de conclusão enviado com sucesso!');
-        } else {
-          console.log('[EMAIL DEBUG] Usuário NÃO tem preferência de email ativada (ID 3). Email não enviado.');
         }
     
       } catch (emailError) {
-        console.error('[EMAIL ERROR] Erro ao enviar email de conclusão:', emailError);
+        // Erro silencioso para não quebrar o fluxo
       }
-    } else {
-      console.warn('[EMAIL DEBUG] Usuário do chamado não encontrado, email não enviado');
     }
 
     // formatar resposta para retornar apenas o nome dos ususrios
@@ -1353,7 +1196,7 @@ router.put("/chamados/:id/encerrar", verifyToken, async (req: AuthenticatedReque
       chamado: response,
     });
   } catch (error) {
-    console.error("Erro ao encerrar chamado:", error);
+
     return res.status(500).json({
       mensagem: "Erro ao encerrar chamado",
       error: error instanceof Error ? error.message : "Erro desconhecido",
@@ -1515,13 +1358,13 @@ router.get("/chamados/:id/mensagens", verifyToken, async (req: AuthenticatedRequ
                 .createSignedUrl(anexo.url, 3600);
 
               if (error) {
-                console.error(`[ERROR] Erro ao gerar signed URL para ${anexo.filename}:`, error);
+ 
                 return { ...anexo, signedUrl: null };
               }
 
               return { ...anexo, signedUrl: data?.signedUrl };
             } catch (err) {
-              console.error(`[ERROR] Exceção ao gerar signed URL:`, err);
+
               return { ...anexo, signedUrl: null };
             }
           })
@@ -1534,10 +1377,10 @@ router.get("/chamados/:id/mensagens", verifyToken, async (req: AuthenticatedRequ
       })
     );
 
-    console.log(`[DEBUG] Retornando ${mensagensComAnexos.length} mensagens com anexos`);
+  
     return res.status(200).json(mensagensComAnexos);
   } catch (error) {
-    console.error("Erro ao buscar mensagens:", error);
+
     return res.status(500).json({
       mensagem: "Erro ao buscar mensagens",
     });
@@ -1761,7 +1604,7 @@ router.patch("/chamados/editar-multiplos", verifyToken, async (req: Authenticate
       erros: erros.length > 0 ? erros : undefined,
     });
   } catch (error) {
-    console.error("Erro ao editar múltiplos chamados:", error);
+
     return res.status(500).json({
       message: "Erro ao editar chamados",
     });
@@ -1859,13 +1702,11 @@ router.patch("/chamados/resolver-multiplos", verifyToken, async (req: Authentica
         }
 
         chamadosProcessados++;
-        console.log(`chamado #${chamado.id} resolvido com sucesso`);
+      
       } catch (error) {
-        console.error(`erro ao processar chamado #${chamado.id}:`, error);
       }
     }
 
-    console.log(`[RESOLVER MÚTIPLOS] Processados: ${chamadosProcessados}/${chamados.length}, Emails: ${emailsEnviados}`);
 
     return res.status(200).json({
       mensagem: `${chamadosProcessados} chamado(s) resolvido(s) com sucesso!`,
@@ -1874,7 +1715,7 @@ router.patch("/chamados/resolver-multiplos", verifyToken, async (req: Authentica
       emailsEnviados
     });
   } catch (error) {
-    console.error("[RESOLVER MÚTIPLOS] Erro geral:", error);
+
     return res.status(500).json({
       mensagem: "Erro ao resolver chamados",
       error: error instanceof Error ? error.message : "Erro desconhecido",
@@ -1899,7 +1740,7 @@ router.get("/status", verifyToken, async (req: AuthenticatedRequest, res: Respon
 
     return res.status(200).json(statusFormatted);
   } catch (error) {
-    console.error("Erro ao buscar status:", error);
+
     return res.status(500).json({
       mensagem: "Erro ao buscar status",
     });
@@ -1951,11 +1792,10 @@ router.delete("/chamados/excluir-multiplos", verifyToken, async (req: Authentica
     // processar cada chamado
     for (const chamado of chamados) {
       try {
-        console.log(`[EXCLUIR] Processando chamado #${chamado.id}`);
-        
+
         // remover anexos do Supabase Storage
         if (chamado.anexos && chamado.anexos.length > 0) {
-          console.log(`[EXCLUIR] Removendo ${chamado.anexos.length} anexos do chamado #${chamado.id}`);
+         
           const urlsAnexos = chamado.anexos.map(anexo => anexo.url);
           
           try {
@@ -1964,10 +1804,10 @@ router.delete("/chamados/excluir-multiplos", verifyToken, async (req: Authentica
               .remove(urlsAnexos);
               
             if (error) {
-              console.error(`[EXCLUIR] Erro ao remover anexos do Storage:`, error);
+
             }
           } catch (storageError) {
-            console.error(`[EXCLUIR] Erro ao acessar Supabase Storage:`, storageError);
+            
           }
         }
 
@@ -1980,16 +1820,15 @@ router.delete("/chamados/excluir-multiplos", verifyToken, async (req: Authentica
         await chamadoRepository.remove(chamado);
         
         chamadosExcluidos++;
-        console.log(`[EXCLUIR] Chamado #${chamado.id} excluído com sucesso`);
+
         
       } catch (error) {
         const mensagemErro = `Erro ao excluir chamado #${chamado.id}: ${error instanceof Error ? error.message : 'Erro desconhecido'}`;
-        console.error(`[EXCLUIR] ${mensagemErro}`);
+     
         errosExclusao.push(mensagemErro);
       }
     }
 
-    console.log(`[EXCLUIR MULTIPLOS] Resultado: ${chamadosExcluidos}/${chamados.length} excluídos, ${errosExclusao.length} erros`);
 
     if (errosExclusao.length > 0 && chamadosExcluidos === 0) {
       return res.status(500).json({
@@ -2006,7 +1845,6 @@ router.delete("/chamados/excluir-multiplos", verifyToken, async (req: Authentica
     });
     
   } catch (error) {
-    console.error("[EXCLUIR MULTIPLOS] Erro geral:", error);
     return res.status(500).json({
       mensagem: "Erro ao excluir chamados",
       error: error instanceof Error ? error.message : "Erro desconhecido",

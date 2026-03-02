@@ -61,7 +61,7 @@ router.post("/roles", async (req: Request, res: Response) => {
       role: newRole,
     });
   } catch (error) {
-    console.error("Erro ao criar role:", error);
+
     return res.status(500).json({
       mensagem: "Erro ao criar role",
       error: error instanceof Error ? error.message : String(error)

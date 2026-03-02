@@ -16,7 +16,7 @@ preferencesRouter.get("/", async (req: Request, res: Response) => {
 
     res.json(preferences);
   } catch (error) {
-    console.error("Erro ao buscar preferências:", error);
+  
     res.status(500).json({ message: "Erro interno do servidor" });
   }
 });
@@ -36,7 +36,7 @@ preferencesRouter.get("/user/:userId", async (req: Request, res: Response) => {
     const preferenceIds = userPreferences.map(pref => pref.preferencia_id);
     res.json(preferenceIds);
   } catch (error) {
-    console.error("Erro ao buscar preferências do usuário:", error);
+
     res.status(500).json({ message: "Erro interno do servidor" });
   }
 });
@@ -54,7 +54,7 @@ preferencesRouter.get("/usuario/:userId", async (req: Request, res: Response) =>
 
     res.json({ prefUsers: userPreferences });
   } catch (error) {
-    console.error("Erro ao buscar preferências do usuário:", error);
+ 
     res.status(500).json({ message: "Erro interno do servidor" });
   }
 });
@@ -87,7 +87,7 @@ preferencesRouter.post("/usuario", async (req: Request, res: Response) => {
 
     res.status(201).json({ message: "Preferência adicionada com sucesso" });
   } catch (error) {
-    console.error("Erro ao adicionar preferência:", error);
+
     res.status(500).json({ message: "Erro interno do servidor" });
   }
 });
@@ -114,7 +114,7 @@ preferencesRouter.delete("/usuario/:userId/:preferenciaId", async (req: Request,
 
     res.json({ message: "Preferência removida com sucesso" });
   } catch (error) {
-    console.error("Erro ao remover preferência:", error);
+
     res.status(500).json({ message: "Erro interno do servidor" });
   }
 });
@@ -146,7 +146,7 @@ preferencesRouter.post("/user/:userId/preference/:preferenceId", async (req: Req
 
     res.status(201).json({ message: "Preferência adicionada com sucesso" });
   } catch (error) {
-    console.error("Erro ao adicionar preferência:", error);
+
     res.status(500).json({ message: "Erro interno do servidor" });
   }
 });
@@ -173,7 +173,7 @@ preferencesRouter.delete("/user/:userId/preference/:preferenceId", async (req: R
 
     res.json({ message: "Preferência removida com sucesso" });
   } catch (error) {
-    console.error("Erro ao remover preferência:", error);
+  
     res.status(500).json({ message: "Erro interno do servidor" });
   }
 });

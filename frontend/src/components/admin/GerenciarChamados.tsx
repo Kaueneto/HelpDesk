@@ -238,12 +238,6 @@ export default function GerenciarChamados() {
         api.get('/users'),
       ]);
 
-      console.log('Departamentos:', deptosRes.data);
-      console.log('Tópicos:', topicosRes.data);
-      console.log('Prioridades:', prioridadesRes.data);
-      console.log('Status:', statusRes.data);
-      console.log('Usuários bruto:', usersRes.data);
-
       setDepartamentos(deptosRes.data);
       setTopicosAjuda(topicosRes.data);
       setPrioridades(prioridadesRes.data);
@@ -254,23 +248,14 @@ export default function GerenciarChamados() {
         ? usersRes.data
         : (usersRes.data.usuarios || usersRes.data);
       
-      console.log('=== DEBUG USUÁRIOS ===');
-      console.log('Total de usuários:', todosUsuarios.length);
-      console.log('Estrutura do primeiro usuário:', todosUsuarios[0]);
-      
       // filtrar admins - testar diferentes propriedades
       const admins = todosUsuarios.filter((u: any) => {
         const isAdmin = u.roleId === 1 || u.role?.id === 1;
-        console.log(`User ${u.id} - ${u.name}: roleId=${u.roleId}, role.id=${u.role?.id}, isAdmin=${isAdmin}`);
         return isAdmin;
       });
       
-      console.log('Total de admins encontrados:', admins.length);
-      console.log('Admins:', admins);
-      
       setUsuariosAdmin(admins);
     } catch (error) {
-      console.error('Erro ao carregar dados iniciais:', error);
     }
   };
 
@@ -332,7 +317,7 @@ export default function GerenciarChamados() {
       };
       localStorage.setItem('chamadosCache', JSON.stringify({ filtros, resultados }));
     } catch (error) {
-      console.error('Erro ao pesquisar chamados:', error);
+
       alert('Erro ao buscar chamados');
     } finally {
       setLoading(false);
@@ -400,7 +385,7 @@ export default function GerenciarChamados() {
       alert('Chamados marcados como resolvidos!');
       await pesquisarChamados();
     } catch (error) {
-      console.error('Erro ao resolver chamados:', error);
+
       alert('Erro ao marcar chamados como resolvidos');
     }
   };
@@ -517,7 +502,7 @@ export default function GerenciarChamados() {
       setTodosChecados(false);
       await pesquisarChamados(paginaAtual);
     } catch (error: any) {
-      console.error('Erro ao atribuir chamados:', error);
+
       const errorMessage = error.response?.data?.message || 
                           error.response?.data?.mensagem || 
                           error.response?.data?.erros || 
@@ -578,7 +563,7 @@ export default function GerenciarChamados() {
       setTodosChecados(false);
       await pesquisarChamados(paginaAtual);
     } catch (error: any) {
-      console.error('Erro ao editar chamados:', error);
+
       const errorMessage = error.response?.data?.message || 
                           error.response?.data?.mensagem || 
                           error.response?.data?.erros || 
@@ -634,7 +619,7 @@ export default function GerenciarChamados() {
       setTodosChecados(false);
       await pesquisarChamados(paginaAtual);
     } catch (error: any) {
-      console.error('Erro ao excluir chamados:', error);
+
       const errorMessage = error.response?.data?.mensagem || 
                           error.response?.data?.erros || 
                           error.message || 

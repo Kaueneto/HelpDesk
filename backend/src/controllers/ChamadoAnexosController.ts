@@ -53,7 +53,6 @@ router.post("/chamado/:id/anexo", verifyToken, upload.array("arquivos", 5),
       const chamadoId = Number(req.params.id);
       const files = req.files as Express.Multer.File[];
 
-      console.log(`[DEBUG] Upload inicial para chamado ${chamadoId}, arquivos: ${files?.length || 0}`);
 
       if (!files || files.length === 0) {
         return res.status(400).json({ mensagem: "Nenhum arquivo enviado" });
@@ -87,7 +86,6 @@ router.post("/chamado/:id/anexo", verifyToken, upload.array("arquivos", 5),
           });
 
         if (uploadError) {
-          console.error("Erro ao fazer upload no Supabase:", uploadError);
           return res.status(500).json({
             mensagem: "Erro ao fazer upload do arquivo",
             erro: uploadError.message,
@@ -115,14 +113,11 @@ router.post("/chamado/:id/anexo", verifyToken, upload.array("arquivos", 5),
         });
       }
 
-      console.log(`[DEBUG] ${anexosSalvos.length} anexos iniciais salvos`);
-
       return res.status(201).json({
         mensagem: "Anexos enviados com sucesso",
         anexos: anexosSalvos,
       });
     } catch (error) {
-      console.error("Erro ao fazer upload de anexos:", error);
       return res.status(500).json({
         mensagem: "Erro ao fazer upload de anexos",
         erro: error instanceof Error ? error.message : "Erro desconhecido",
@@ -141,7 +136,6 @@ router.post(
       const mensagemId = Number(req.params.mensagemId);
       const files = req.files as Express.Multer.File[];
 
-      console.log(`[DEBUG] Upload para mensagem ${mensagemId}, arquivos: ${files?.length || 0}`);
 
       if (!files || files.length === 0) {
         return res.status(400).json({ mensagem: "Nenhum arquivo enviado" });
@@ -155,7 +149,6 @@ router.post(
         relations: ["chamado"],
       });
 
-      console.log(`[DEBUG] Mensagem encontrada: ${mensagem ? 'SIM' : 'NÃO'}, ChamadoID: ${mensagem?.chamado?.id}`);
 
       if (!mensagem) {
         return res.status(404).json({ mensagem: "Mensagem não encontrada" });
@@ -181,7 +174,6 @@ router.post(
           });
 
         if (uploadError) {
-          console.error("Erro ao fazer upload no Supabase:", uploadError);
           return res.status(500).json({
             mensagem: "Erro ao fazer upload do arquivo",
             erro: uploadError.message,
@@ -215,7 +207,7 @@ router.post(
         anexos: anexosSalvos,
       });
     } catch (error) {
-      console.error("Erro ao fazer upload de anexos:", error);
+    
       return res.status(500).json({
         mensagem: "Erro ao fazer upload de anexos",
         erro: error instanceof Error ? error.message : "Erro desconhecido",
@@ -256,7 +248,8 @@ router.get(
         .createSignedUrl(anexo.url, 3600);
 
       if (signedUrlError || !signedUrlData) {
-        console.error("Erro ao gerar signed URL:", signedUrlError);
+ 
+        
         return res.status(500).json({
           mensagem: "Erro ao gerar URL do arquivo",
           erro: signedUrlError?.message,
@@ -268,7 +261,6 @@ router.get(
         filename: anexo.filename,
       });
     } catch (error) {
-      console.error("Erro ao gerar signed URL:", error);
       return res.status(500).json({
         mensagem: "Erro ao gerar URL do anexo",
         erro: error instanceof Error ? error.message : "Erro desconhecido",
@@ -320,7 +312,6 @@ router.get("/chamado/:id", verifyToken, async (req: AuthenticatedRequest, res: R
 
     return res.status(200).json(chamado);
   } catch (error) {
-    console.error("Erro ao buscar chamado:", error);
     return res.status(500).json({
       mensagem: "Erro ao buscar chamado",
     });
@@ -356,7 +347,7 @@ router.delete("/anexo/:id", verifyToken, async (req: AuthenticatedRequest, res: 
       .remove([anexo.url]);
 
     if (deleteError) {
-      console.error("Erro ao deletar arquivo do Supabase:", deleteError);
+
       // Continua mesmo com erro, pois queremos remover do banco
     }
 
@@ -365,7 +356,7 @@ router.delete("/anexo/:id", verifyToken, async (req: AuthenticatedRequest, res: 
 
     return res.status(200).json({ mensagem: "Anexo deletado com sucesso" });
   } catch (error) {
-    console.error("Erro ao deletar anexo:", error);
+
     return res.status(500).json({
       mensagem: "Erro ao deletar anexo",
     });

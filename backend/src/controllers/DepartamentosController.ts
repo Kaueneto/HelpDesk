@@ -24,7 +24,7 @@ router.get("/departamentos", verifyToken, async (req: AuthenticatedRequest, res:
 
     return res.status(200).json(departamentos);
   } catch (error) {
-    console.error("Erro ao listar departamentos:", error);
+
     return res.status(500).json({
       mensagem: "Erro ao listar departamentos",
       erro: error instanceof Error ? error.message : "Erro desconhecido"
@@ -48,7 +48,7 @@ router.get("/departamentos/:id", verifyToken, async (req: AuthenticatedRequest, 
 
     return res.status(200).json(departamento);
   } catch (error) {
-    console.error("Erro ao buscar departamento:", error);
+
     return res.status(500).json({
       mensagem: "Erro ao buscar departamento",
     });
@@ -113,7 +113,6 @@ router.post("/departamentos", async (req: Request, res: Response) => {
       });
     }
 
-    console.error("Erro ao cadastrar  departamento:", error);
     return res.status(500).json({
       mensagem: "Erro ao cadastrar departamento",
       erro: error instanceof Error ? error.message : "Erro desconhecido"
@@ -202,7 +201,7 @@ router.put("/departamentos/:id", async (req: Request, res: Response) => {
       });
     }
     
-    console.error("Erro ao atualizar departamento:", error);
+
     return res.status(500).json({
       mensagem: "Erro ao atualizar departamento",
     });
@@ -247,7 +246,7 @@ router.patch("/departamentos/:id/status", async (req: Request, res: Response) =>
       });
     }
     
-    console.error("Erro ao alterar status do departamento:", error);
+
     return res.status(500).json({
       mensagem: "Erro ao alterar status do departamento",
     });
@@ -275,7 +274,7 @@ router.delete("/departamentos/:id", verifyToken, async (req: AuthenticatedReques
       mensagem: "Departamento excluído com sucesso"
     });
   } catch (error) {
-    console.error("Erro ao excluir departamento:", error);
+
     return res.status(500).json({
       mensagem: "Erro ao excluir departamento",
       erro: error instanceof Error ? error.message : "Erro desconhecido"

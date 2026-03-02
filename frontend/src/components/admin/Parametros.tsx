@@ -31,7 +31,7 @@ export default function Parametros() {
       setHorasParaAtraso(response.data.horasParaAtraso);
       setHorasParaAtrasoEdit(response.data.horasParaAtraso);
     } catch (error) {
-      console.error('Erro ao carregar parâmetros:', error);
+
     }
   };
 
@@ -50,7 +50,7 @@ export default function Parametros() {
       alert('Parâmetros atualizados com sucesso!');
       carregarLogs();
     } catch (error: any) {
-      console.error('Erro ao salvar parâmetros:', error);
+
       alert(error.response?.data?.mensagem || 'Erro ao salvar parâmetros');
     } finally {
       setSalvandoParametros(false);
@@ -73,7 +73,7 @@ export default function Parametros() {
       setLogs(response.data.logs);
       setTotalPaginasLogs(response.data.totalPages);
     } catch (error) {
-      console.error('Erro ao carregar logs:', error);
+      alert('Erro ao carregar logs do sistema');
     } finally {
       setLoadingLogs(false);
     }

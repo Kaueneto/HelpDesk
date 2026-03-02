@@ -48,7 +48,7 @@ export default function Dashboard() {
       const response = await api.get('/parametros');
       setHorasParaAtraso(response.data.horasParaAtraso ?? 24);
     } catch (err) {
-      console.error('Erro ao carregar parâmetros', err);
+      alert('Erro ao carregar parâmetros');
     }
   }
 
@@ -74,7 +74,7 @@ export default function Dashboard() {
       processarDepartamentos(chamadosFiltrados);
       processarTopicos(chamadosFiltrados);
     } catch (err) {
-      console.error('Erro ao carregar dados', err);
+      alert('Erro ao carregar dados');
     } finally {
       setLoading(false);
     }

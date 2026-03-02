@@ -96,7 +96,7 @@ export default function GerenciarUsuarios() {
         const response = await api.get('/SituationsUsers');
         setSituacoes(response.data);
       } catch (error) {
-        console.error('Erro ao carregar situações:', error);
+
       }
     };
     carregarSituacoes();
@@ -131,7 +131,7 @@ export default function GerenciarUsuarios() {
       setUsuariosSelecionados([]);
       setTodosChecados(false);
     } catch (error) {
-      console.error('Erro ao carregar usuários:', error);
+   
       alert('Erro ao buscar usuários');
     } finally {
       setLoading(false);
@@ -234,7 +234,7 @@ export default function GerenciarUsuarios() {
       alert('Senhas resetadas com sucesso!');
       await carregarUsuarios();
     } catch (error) {
-      console.error('Erro ao resetar senhas:', error);
+    
       alert('Erro ao resetar senhas');
     }
   };
@@ -276,7 +276,7 @@ export default function GerenciarUsuarios() {
       alert('Usuários desativados com sucesso!');
       await carregarUsuarios();
     } catch (error) {
-      console.error('Erro ao desativar usuários:', error);
+    
       alert('Erro ao desativar usuários');
     }
   };
@@ -355,7 +355,7 @@ export default function GerenciarUsuarios() {
       alert('Usuários ativados com sucesso!');
       await carregarUsuarios();
     } catch (error) {
-      console.error('Erro ao ativar usuários:', error);
+
       alert('Erro ao ativar usuários');
     }
   };
@@ -412,7 +412,6 @@ export default function GerenciarUsuarios() {
       fecharModalCadastro();
       await carregarUsuarios(1);
     } catch (error: any) {
-      console.error('Erro ao cadastrar usuário:', error);
       const mensagemErro = error.response?.data?.mensagem || 'Erro ao cadastrar usuário';
       alert(Array.isArray(mensagemErro) ? mensagemErro.join('\n') : mensagemErro);
     } finally {
@@ -480,7 +479,7 @@ export default function GerenciarUsuarios() {
       fecharModalEdicao();
       await carregarUsuarios(paginaAtual);
     } catch (error: any) {
-      console.error('Erro ao atualizar usuário:', error);
+     
       const mensagemErro = error.response?.data?.mensagem || 'Erro ao atualizar usuário';
       alert(Array.isArray(mensagemErro) ? mensagemErro.join('\n') : mensagemErro);
     } finally {

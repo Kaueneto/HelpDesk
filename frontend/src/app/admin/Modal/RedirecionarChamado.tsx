@@ -47,13 +47,9 @@ export default function ModalRedirecionarChamado({
 
   const carregarAdministradores = async () => {
     try {
-      console.log('[MODAL] Carregando administradores...');
-      console.log('[MODAL] UsuarioLogadoId:', usuarioLogadoId, typeof usuarioLogadoId);
-      
       const response = await api.get('/users');
-      console.log('[MODAL] Resposta da API:', response.data.length, 'usuários encontrados');
       
-      // filtrar admins (roleId === 1) e usuários ativos (situationUserId === 1), incluindo o usuário logado para debug
+      // filtrar admins (roleId === 1) e usuários ativos (situationUserId === 1)
       const allAdmins = response.data.filter(
         (user: Usuario) => user.roleId === 1 && user.situationUserId === 1
       );
@@ -71,10 +67,8 @@ export default function ModalRedirecionarChamado({
         (user: Usuario) => Number(user.id) !== Number(usuarioLogadoId)
       );
       
-      console.log('[MODAL] Administradores após filtro (sem usuário logado):', admins.length);
       setUsuariosAdmin(admins);
     } catch (error) {
-      console.error('[MODAL] Erro ao carregar administradores:', error);
       alert('Erro ao carregar lista de administradores');
     }
   };
@@ -91,7 +85,7 @@ export default function ModalRedirecionarChamado({
       onClose();
       setUsuarioSelecionado(null);
     } catch (error) {
-      console.error('Erro ao redirecionar:', error);
+   
     } finally {
       setRedirecionando(false);
     }

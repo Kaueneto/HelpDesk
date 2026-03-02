@@ -52,7 +52,7 @@ export default function GerenciarTiposPrioridade() {
       const response = await api.get('/tipo_prioridade');
       setTipos(response.data);
     } catch (error) {
-      console.error('Erro ao carregar tipos de prioridade:', error);
+
       alert('Erro ao carregar tipos de prioridade');
     } finally {
       setLoading(false);
@@ -104,7 +104,7 @@ export default function GerenciarTiposPrioridade() {
       setTodosChecados(false);
       carregarTipos();
     } catch (error) {
-      console.error('Erro ao excluir tipos:', error);
+
       alert('Erro ao excluir tipos');
     }
   };
@@ -140,7 +140,7 @@ export default function GerenciarTiposPrioridade() {
       fecharModalCadastro();
       carregarTipos();
     } catch (error: any) {
-      console.error('Erro ao cadastrar tipo:', error);
+     
       alert(error.response?.data?.mensagem || 'Erro ao cadastrar tipo');
     } finally {
       setSubmittingCadastro(false);
@@ -189,7 +189,7 @@ export default function GerenciarTiposPrioridade() {
       fecharModalEdicao();
       carregarTipos();
     } catch (error: any) {
-      console.error('Erro ao atualizar tipo:', error);
+
       alert(error.response?.data?.mensagem || 'Erro ao atualizar tipo');
     } finally {
       setSubmittingEdicao(false);

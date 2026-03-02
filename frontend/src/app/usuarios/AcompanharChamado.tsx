@@ -42,7 +42,7 @@ export default function AcompanharChamado({ onChamadoClick }: AcompanharChamadoP
         setStatusList(statusRes.data);
         setTopicos(topicosRes.data.filter((t: TopicosAjuda) => t.ativo));
       } catch (error) {
-        console.error('Erro ao carregar dados:', error);
+  
       }
     };
     fetchData();
@@ -76,7 +76,7 @@ export default function AcompanharChamado({ onChamadoClick }: AcompanharChamadoP
         setPaginaAtual(pagina);
       }
     } catch (error) {
-      console.error('Erro ao buscar chamados:', error);
+
       setErrorMessage('Erro ao carregar chamados.');
     } finally {
       setLoadingChamados(false);
