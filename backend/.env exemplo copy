@@ -1,32 +1,27 @@
-# informacoes do sistema
-APP=""
-PORT=
-JWT_SECRET=
-EMAIL_ADM=
+# Informações do sistema
+APP="Help Desk"
+PORT=3000
+JWT_SECRET=chavesupersecreta
+EMAIL_ADM=admin@example.com
 
-# Configurações do banco de dados
-DB_DIALECT=""
-DB_HOST=
-DB_PORT=
-DB_USER=rot
-DB_PASSWORD=
-DB_DATABASE=
+# Configurações do banco de dados (SUPABASE)
+DB_DIALECT="postgres"
+DB_HOST=aws-1-sa-east-1.pooler.supabase.com
+DB_PORT=5432
+DB_USER=postgres.dsmqxifeolweawlyitoi
+DB_PASSWORD="5H@L0m $1207"
+DB_DATABASE=postgres
 
 # Credenciais do servidor de email
-EMAIL_FROM=
-EMAIL_HOST=
-EMAIL_PORT=
-EMAIL_USER=
-EMAIL_PASS=
+EMAIL_FROM="HelpDesk <helpdeskcastel@gmail.com>"
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USER=helpdeskcastel@gmail.com
+EMAIL_PASS=pahtjpfzfmwokqzd
 
-# supabase storage
-SUPABASE_URL=
-SUPABASE_SERVICE_ROLE_KEY=
+# URL do frontend para CORS
+SURL=http://192.168.0.157:5001
 
-DB_DIALECT="postgres"
-
-DB_HOST=
-DB_PORT=
-DB_USER=
-DB_PASSWORD=
-DB_DATABASE=
+# Supabase storage
+SUPABASE_URL=https://dsmqxifeolweawlyitoi.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRzbXF4aWZlb2x3ZWF3bHlpdG9pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU4MTgxNDksImV4cCI6MjA4MTM5NDE0OX0.5HJYX3MvPqx0ml9k4hShh1M-WfcAwqy0vYGv8xSbYqA

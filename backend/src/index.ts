@@ -27,8 +27,8 @@ app.use(cors({
   origin: function (origin, callback) {
    
     const allowedOrigins = [
-      'http://localhost:3000',
-      'http://localhost:3001', 
+      'http://localhost:5000',
+      'http://localhost:5001', 
       process.env.SURL
     ];
     
@@ -99,7 +99,7 @@ AppDataSource.initialize()
     console.log("Banco de dados conectado com sucesso!");
 
     // Usar porta configurada no .env
-    const PORT = Number(process.env.PORT) || 3000;
+    const PORT = Number(process.env.PORT) ;
 
     app.listen(PORT, '0.0.0.0', () => {
       console.log(' Servidor backend iniciado com sucesso!');

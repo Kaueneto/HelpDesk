@@ -122,23 +122,23 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
     setErrorMessage('');
 
     try {
-      console.log('[DEBUG USER] Enviando mensagem:', { chamadoId: chamado.id, novaMensagem, anexosCount: anexosResposta.length });
+
       
       const response = await api.post(`/chamados/${chamado.id}/mensagens`, {
         mensagem: novaMensagem,
       });
 
-      console.log('[DEBUG USER] Resposta da mensagem:', response.data);
+   
       const mensagemId = response.data.mensagem?.id || response.data.id;
-      console.log('[DEBUG USER] ID da mensagem criada:', mensagemId);
+  
 
       if (anexosResposta.length > 0 && mensagemId) {
-        console.log('[DEBUG USER] Iniciando upload de anexos para mensagem:', mensagemId);
+      
         
         const formData = new FormData();
         anexosResposta.forEach((file, index) => {
           formData.append('arquivos', file);
-          console.log(`[DEBUG USER] Anexo ${index + 1}: ${file.name} (${file.size} bytes)`);
+          
         });
 
         try {
