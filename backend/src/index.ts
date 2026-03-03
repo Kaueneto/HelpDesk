@@ -62,6 +62,17 @@ app.use(cors({
 }));
 app.use(cookieParser()); // sporte a cookies
 
+// Middleware de log condicional - ignora /validate-token para nao encher logs
+app.use((req, res, next) => {
+ 
+  //ignora os logs do validate token
+  if (req.path === '/validate-token') {
+    return next();
+  }
+  
+  next();
+});
+
 // importar controllers
 import TestConnectionController from "./controllers/TestConnectionController";
 import AuthController from "./controllers/AuthController";
