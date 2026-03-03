@@ -40,7 +40,7 @@ router.post("/login", async (req: Request, res: Response) => {
     // Configurar cookie seguro com o token
     const cookieOptions: any = {
       httpOnly: true, // Não acessível via JavaScript
-      secure: process.env.NODE_ENV === 'production', // HTTPS em produção
+      secure: false, // Desabilitado para HTTP (use HTTPS para ativar)
       sameSite: 'lax', // Proteção CSRF
       maxAge: 8 * 60 * 60 * 1000, // 8 horas em milissegundos
       path: '/'
@@ -84,7 +84,7 @@ router.post("/login", async (req: Request, res: Response) => {
 router.post("/logout", (req: Request, res: Response) => {
   const clearOptions: any = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: false, // Desabilitado para HTTP
     sameSite: 'lax',
     path: '/'
   };

@@ -28,8 +28,7 @@ app.use(cors({
    
     const allowedOrigins = [    
       'http://localhost:5001',  // Desenvolvimento local
-    
-        
+
        process.env.SURL  // URL do .env
     ];
     
