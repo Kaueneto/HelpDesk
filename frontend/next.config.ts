@@ -2,12 +2,12 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   // Configurações para produção
-  standalone: true, // Melhora performance
+   output: "standalone",
   
   // Configurações de produção para rede
   experimental: {
     // Permite acesso via IP da rede
-    allowMiddlewareResponseBody: true,
+    //allowMiddlewareResponseBody: true,
   },
   
   // Headers de segurança
