@@ -35,7 +35,7 @@ export const AppDataSource = new DataSource({
   password: process.env.DB_PASSWORD,
   database: process.env.DB_DATABASE,
   synchronize: false, 
-  logging: true,
+  logging: false,
   entities: [SituationsUsers, Users, ChamadoHistorico, ChamadoMensagens, Departamentos, TipoPrioridade, Chamados, TopicosAjuda, StatusChamado, Roles, ChamadoAnexos, ParametrosSistema, LogsSistema, Preferences, PrefUsers],
   subscribers: [],
   migrations: [__dirname + "/migration/*.js"],
