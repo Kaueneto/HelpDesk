@@ -26,10 +26,11 @@ app.use(express.json());
 app.use(cors({
   origin: function (origin, callback) {
    
-    const allowedOrigins = [
-      'http://localhost:5000',
-      'http://localhost:5001', 
-      process.env.SURL
+    const allowedOrigins = [    
+      'http://localhost:5001',  // Desenvolvimento local
+    
+        
+       process.env.SURL  // URL do .env
     ];
     
     // permitir requisições sem origem (ex: Postman, aplicações mobile)

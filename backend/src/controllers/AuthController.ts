@@ -14,6 +14,14 @@ const router = express.Router();
 // Login de usuário com sistema de segurança
 router.post("/login", async (req: Request, res: Response) => {
   try {
+    // Debug temporário - IMPORTANTE!
+    // console.log("LOGIN REQUEST:");
+    // console.log("Origin:", req.headers.origin);
+    // console.log("Content-Type:", req.headers['content-type']);
+    // console.log("Body:", req.body);
+    // console.log("Email:", req.body?.email);
+    // console.log("Password length:", req.body?.password?.length);
+    
     // Extrair email e senha do corpo da requisição
     const { email, password } = req.body;
 
@@ -30,13 +38,29 @@ router.post("/login", async (req: Request, res: Response) => {
     const userData = await authService.login(email, password);
 
     // Configurar cookie seguro com o token
-    res.cookie('auth-token', userData.token, {
+    const cookieOptions: any = {
       httpOnly: true, // Não acessível via JavaScript
       secure: process.env.NODE_ENV === 'production', // HTTPS em produção
       sameSite: 'lax', // Proteção CSRF
       maxAge: 8 * 60 * 60 * 1000, // 8 horas em milissegundos
       path: '/'
-    });
+    };
+    
+    // Se COOKIE_DOMAIN está configurado, add
+    if (process.env.COOKIE_DOMAIN) {
+      cookieOptions.domain = process.env.COOKIE_DOMAIN;
+    }
+    
+    res.cookie('auth-token', userData.token, cookieOptions);
+    
+    // Debug cookie
+    // console.log("Cookie configurado:", {
+    //   token: userData.token.substring(0, 20) + "...",
+    //   httpOnly: cookieOptions.httpOnly,
+    //   secure: cookieOptions.secure,
+    //   sameSite: cookieOptions.sameSite,
+    //   domain: cookieOptions.domain || 'none'
+    // });
 
     // retornar a resposta de sucesso com apenas os dados básicos do usuário
     return res.status(200).json({
@@ -58,12 +82,19 @@ router.post("/login", async (req: Request, res: Response) => {
 
 // Logout - limpar cookie
 router.post("/logout", (req: Request, res: Response) => {
-  res.clearCookie('auth-token', {
+  const clearOptions: any = {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/'
-  });
+  };
+  
+  // Se COOKIE_DOMAIN está configurado, adicionar
+  if (process.env.COOKIE_DOMAIN) {
+    clearOptions.domain = process.env.COOKIE_DOMAIN;
+  }
+  
+  res.clearCookie('auth-token', clearOptions);
   
   return res.status(200).json({
     mensagem: "Logout realizado com sucesso!"
@@ -72,6 +103,7 @@ router.post("/logout", (req: Request, res: Response) => {
 
 // rota de validação de token com cookies
 router.get("/validate-token", verifyToken, async (req: Request, res: Response) => {
+  console.log("/validate-token chegou até aqui - token valido!");
   return res.status(200).json({
     mensagem: "Token válido OK!",
     userId: (req as any).userId,

@@ -69,7 +69,7 @@ export class AuthService {
         email: user.email,
         roleId: user.roleId 
       },
-      process.env.JWT_SECRET || "secret-key-default",
+      process.env.JWT_SECRET || "",
       { expiresIn: "8h" } // Token expira em 8 horas
     );
 

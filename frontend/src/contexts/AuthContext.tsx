@@ -36,9 +36,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    */
   const validateToken = async (): Promise<boolean> => {
     try {
+      console.log("Validando token...");
       const response = await api.get('/validate-token');
+      console.log("Token válido:", response.status, response.data);
       return true;
     } catch (error) {
+      console.error("Token inválido:", error);
       return false;
     }
   };
@@ -48,26 +51,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    */
   useEffect(() => {
     const loadUser = async () => {
+      console.log("Carregando usuário inicial...");
       const storedUser = localStorage.getItem('user');
 
       if (storedUser) {
+        console.log("Usuário encontrado no localStorage");
         const userData = JSON.parse(storedUser);
         
         // verificar se token ainda é valido
         const isTokenValid = await validateToken();
         
         if (isTokenValid) {
+          console.log("Token válido, usuário logado");
           setUser(userData);
           setIsAuthenticated(true);
         } else {
+          console.log("Token inválido, fazendo logout");
           // Token invalido, fazer logout
           localStorage.removeItem('user');
           setUser(null);
           setIsAuthenticated(false);
         }
+      } else {
+        console.log("Nenhum usuário no localStorage");
       }
 
       setIsLoading(false);
+      console.log("Loading concluído");
     };
 
     loadUser();
@@ -79,20 +89,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    */
   const login = async (credentials: LoginCredentials) => {
     try {
+      console.log("Iniciando login...");
       const response = await api.post<LoginResponse>('/login', credentials, {
         withCredentials: true // incluir cookies na requisicao
       });
       
+      console.log("Login response:", response.status, response.data);
+      
       const { user: userData } = response.data;
 
-
+      console.log("Setando usuário:", userData);
       setUser(userData);
       setIsAuthenticated(true);
 
       // persiste  apenas dados bsicos no localstorage
       localStorage.setItem('user', JSON.stringify(userData));
+      console.log("Usuário salvo no localStorage");
     } catch (error) {
-      
+      console.error("Erro no login:", error);
       throw error;
     }
   };
