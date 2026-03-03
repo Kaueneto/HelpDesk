@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   // Configurações para produção
-   output: "standalone",
+   //output: "standalone",
   
   // Configurações de produção para rede
   experimental: {
