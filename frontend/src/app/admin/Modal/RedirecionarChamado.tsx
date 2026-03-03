@@ -54,13 +54,7 @@ export default function ModalRedirecionarChamado({
         (user: Usuario) => user.roleId === 1 && user.situationUserId === 1
       );
       
-      console.log('[MODAL] Administradores encontrados:', allAdmins.length);
-      console.log('[MODAL] Lista de admins:', allAdmins.map((u: Usuario) => ({ 
-        id: u.id, 
-        name: u.name, 
-        roleId: u.roleId, 
-        situationUserId: u.situationUserId 
-      })));
+  
       
       // Agora excluir apenas o usuário logado
       const admins = allAdmins.filter(

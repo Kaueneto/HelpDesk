@@ -698,14 +698,11 @@ router.put("/chamados/:id/atribuir", verifyToken, async (req: AuthenticatedReque
     });
 
     if (!chamado) {
-      console.log('[ATRIBUIR]Chamado não encontrado');
+
       return res.status(404).json({ mensagem: "Chamado não encontrado" });
     }
 
-    console.log('[ATRIBUIR] Chamado encontrado:', { 
-      chamadoId: chamado.id, 
-      responsavelAtual: chamado.userResponsavel?.id 
-    });
+
 
     // permite que qualquer administrador redirecione chamados
     // buscar dados do usuário que está fazendo a atribuição para verificar se é admin
@@ -769,7 +766,7 @@ router.put("/chamados/:id/atribuir", verifyToken, async (req: AuthenticatedReque
 
     // Enviar email de redirecionamento
     try {
-      console.log('[ATRIBUIR] 🚀 Tentando enviar email de redirecionamento...');
+  
       await enviarEmailRedirecionamento(usuarioResponsavel, usuarioAtribuiu, chamado);
     } catch (emailError) {
       // Não falha a operação se o email der erro, apenas registra
@@ -1315,7 +1312,7 @@ router.post("/chamados/:id/mensagens", verifyToken, async (req: AuthenticatedReq
 router.get("/chamados/:id/mensagens", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
-    console.log(`[DEBUG] Buscando mensagens do chamado ${id}`);
+
     
     const mensagensRepository = AppDataSource.getRepository(ChamadoMensagens);
     const anexosRepository = AppDataSource.getRepository(ChamadoAnexos);
@@ -1328,7 +1325,7 @@ router.get("/chamados/:id/mensagens", verifyToken, async (req: AuthenticatedRequ
       .orderBy("mensagem.dataEnvio", "ASC")
       .getMany();
 
-    console.log(`[DEBUG] Mensagens encontradas: ${mensagens.length}`);
+
 
     if (mensagens.length === 0) {
       return res.status(200).json([]);
@@ -1342,7 +1339,7 @@ router.get("/chamados/:id/mensagens", verifyToken, async (req: AuthenticatedRequ
       .andWhere("anexo.tipoAnexo = :tipo", { tipo: 'MENSAGEM' })
       .getMany();
 
-    console.log(`[DEBUG] Total de anexos encontrados: ${todosAnexos.length}`);
+
 
     // Mapear anexos para as mensagens correspondentes
     const mensagensComAnexos = await Promise.all(
@@ -1578,10 +1575,10 @@ router.patch("/chamados/editar-multiplos", verifyToken, async (req: Authenticate
 
           // só enviar email se não for o mesmo usuário (evitar auto-atribuição)
           if (userResponsavelId !== usuarioId) {
-            console.log('[EDICAO_MULTIPLA] Enviando email de redirecionamento para usuário diferente');
+           
             await enviarEmailRedirecionamento(novoResponsavel, usuario, chamado);
           } else {
-            console.log('[EDICAO_MULTIPLA] Não enviando email - usuário atribuiu para si mesmo');
+            
           }
         }
       }
@@ -1623,7 +1620,7 @@ router.patch("/chamados/resolver-multiplos", verifyToken, async (req: Authentica
       });
     }
 
-    console.log(`[RESOLVER MÚTIPLOS] Usuário ${usuarioId} resolvendo chamados:`, chamadosIds);
+
 
     const chamadoRepository = AppDataSource.getRepository(Chamados);
     const historicoRepository = AppDataSource.getRepository(ChamadoHistorico);
@@ -1691,7 +1688,7 @@ router.patch("/chamados/resolver-multiplos", verifyToken, async (req: Authentica
           });
 
           if (usuarioChamado) {
-            console.log(`Enviando email de conclusão para chamado #${chamado.id} - ${usuarioChamado.email}`);
+         
             // verificar se o usuário quer receber email de conclusão (preferência ID 3)
             const preferenciasUsuario = await verificarPreferenciasUsuario(usuarioChamado.id);
             if (preferenciasUsuario.includes(3)) {
@@ -1767,7 +1764,6 @@ router.delete("/chamados/excluir-multiplos", verifyToken, async (req: Authentica
       });
     }
 
-    console.log(`[EXCLUIR MULTIPLOS] Usuário ${usuarioId} excluindo chamados:`, chamadosIds);
 
     const chamadoRepository = AppDataSource.getRepository(Chamados);
     const historicoRepository = AppDataSource.getRepository(ChamadoHistorico);

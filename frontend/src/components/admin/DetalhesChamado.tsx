@@ -649,7 +649,7 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
             className="text-white hover:text-gray-200 transition flex items-center justify-center"
           >
             <img 
-              src="/icons/arrowPointGerencial.svg" 
+              src="/icons/arrowpointGerencial.svg" 
               alt="Voltar" 
               className="arrowIcon"
             />
