@@ -11,21 +11,21 @@ export const verifyToken = (req: Request, res: Response, next: NextFunction) => 
     // obter token do cookie
     const token = req.cookies['auth-token'];
     
-    console.log("Token encontrado:", token ? `${token.substring(0, 20)}...` : "NENHUM");
+
 
     if (!token) {
-      console.log("Token ausente");
+      
       return res.status(401).json({ mensagem: "Token não fornecido" });
     }
 
     // verif token
     jwt.verify(token, process.env.JWT_SECRET || "secret-key-default", (err: any, decoded: any) => {
       if (err) {
-        console.log("Token inválido:", err.message);
+        
         return res.status(401).json({ mensagem: "Token inválido ou expirado" });
       }
 
-      console.log("Token válido para usuário:", decoded.email);
+
       // add userId ao request para uso nos controllers
       (req as any).userId = Number(decoded.id);
       (req as any).userEmail = decoded.email;

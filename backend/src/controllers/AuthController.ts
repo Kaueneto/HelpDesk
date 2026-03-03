@@ -103,7 +103,7 @@ router.post("/logout", (req: Request, res: Response) => {
 
 // rota de validação de token com cookies
 router.get("/validate-token", verifyToken, async (req: Request, res: Response) => {
-  console.log("/validate-token chegou até aqui - token valido!");
+
   return res.status(200).json({
     mensagem: "Token válido OK!",
     userId: (req as any).userId,

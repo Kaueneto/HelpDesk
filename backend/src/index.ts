@@ -28,7 +28,8 @@ app.use(cors({
    
     const allowedOrigins = [    
       'http://localhost:5001',  // Desenvolvimento local
-
+      'http://192.168.0.157:5001',  // Desenvolvimento IP
+      'http://192.168.0.144:5001',  // Servidor produção
        process.env.SURL  // URL do .env
     ];
     
