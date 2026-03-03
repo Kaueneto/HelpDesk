@@ -34,7 +34,7 @@ export const verifyToken = (req: Request, res: Response, next: NextFunction) => 
       return next();
     });
   } catch (error) {
-    console.log("Erro na validação:", error);
+    // console.log("Erro na validação:", error);
     return res.status(500).json({ mensagem: "Erro ao validar token" });
   }
 };
