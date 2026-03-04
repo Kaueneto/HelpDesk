@@ -7,6 +7,7 @@ import api from '@/services/api';
 import ModalRedirecionarChamado from '@/app/admin/Modal/RedirecionarChamado';
 import ModalAssumirChamado from '@/app/admin/Modal/AssumirChamado';
 import ModalMarcarResolvido from '@/app/admin/Modal/MarcarResolvido';
+import ModalImprimirChamado from '@/app/admin/Modal/ModalImprimirChamado';
 import { Toaster, toast } from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -113,6 +114,8 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
   const [modalAssumirAberto, setModalAssumirAberto] = useState(false);
   // Estado do modal de marcar como resolvido
   const [modalResolvidoAberto, setModalResolvidoAberto] = useState(false);
+  // Estado do modal de impressão
+  const [modalImprimirAberto, setModalImprimirAberto] = useState(false);
   // Estado para animação de saída
   const [animandoSaida, setAnimandoSaida] = useState(false);
   // Estado para animação de entrada (slide-in)
@@ -516,6 +519,243 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
     }
   };
 
+  const handleImprimirChamado = (incluirConversa: boolean, incluirHistorico: boolean) => {
+    if (!chamado) return;
+
+    const formatarData = (data: string) => {
+      const date = new Date(data);
+      return date.toLocaleDateString('pt-BR');
+    };
+
+    const formatarDataHora = (data: string) => {
+      const date = new Date(data);
+      const dataFormatada = date.toLocaleDateString('pt-BR');
+      const horaFormatada = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      return `${dataFormatada} às ${horaFormatada}`;
+    };
+
+      const htmlImpressao = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="UTF-8">
+          <title>Impressão - Chamado #${chamado.numeroChamado}</title>
+          <style>
+            @media print {
+              @page { size: A4; margin: 6cm; }
+              body { -webkit-print-color-adjust: exact; }
+            }
+            
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            
+            body {
+              font-family: "Arial";
+              color: #000;
+              line-height: 1.4;
+              padding: 50px 50px;
+              background: white;
+            }
+            
+            .header-container {
+              display: flex;
+              justify-content: space-between;
+              align-items: flex-start;
+              margin-bottom: 15px;
+            }
+
+            .title {
+              font-size: 24px;
+              font-weight: bold;
+              margin-bottom: 4px;
+            }
+            
+            .numero-chamado {
+              color: #333;
+              font-size: 18px;
+              margin-bottom: 10px;
+            }
+
+            .logo-box {
+     
+              padding: 12px 20px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            }
+            
+            .logo-img {
+              max-width: 150px;
+              max-height: 60px;
+              height: auto;
+              object-fit: contain;
+            }
+
+            .divider {
+              border: 0;
+              border-top: 1px solid #666;
+              margin-bottom: 20px;
+            }
+
+            .main-info-container {
+              display: flex;
+              justify-content: space-between;
+              position: relative;
+              margin-bottom: 40px;
+            }
+
+            .info-grid {
+              display: grid;
+              grid-template-columns: auto 1fr;
+              gap: 8px 15px;
+              flex: 1;
+            }
+
+            .info-label {
+              font-size: 14px;
+              color: #444;
+            }
+            
+            .info-value {
+              font-weight: bold;
+              font-size: 14px;
+            }
+
+            .status-side {
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              margin-left: 20px;
+            }
+
+            .status-box {
+              border: 1px solid #000;
+              border-radius: 10px;
+              padding: 15px;
+              width: 200px;
+              text-align: center;
+              margin-bottom: 10px;
+            }
+            
+            .prioridade-label {
+              font-size: 12px;
+              margin-bottom: 5px;
+            }
+            
+            .prioridade-valor {
+              font-size: 20px;
+              font-weight: bold;
+            }
+            
+            .status-texto {
+              font-size: 14px;
+              text-align: center;
+              width: 100%;
+            }
+
+            .section-title {
+              font-weight: bold;
+              font-size: 17px;
+              margin-bottom: 15px;
+              margin-top: 30px;
+            }
+            
+            .descricao-texto {
+              font-size: 14px;
+              text-align: justify;
+              line-height: 1.6;
+            }
+
+            /* estilos da conversa e historico */
+            .mensagem {
+              border-left: 3px solid #ccc;
+              padding-left: 10px;
+              margin-bottom: 15px;
+              font-size: 13px;
+            }
+            .msg-meta { font-weight: bold; color: #555; margin-bottom: 3px; }
+          </style>
+        </head>
+        <body>
+          
+          <div class="header-container">
+            <div>
+              <div class="title">${chamado.resumoChamado}</div>
+              <div class="numero-chamado">#${chamado.numeroChamado}</div>
+            </div>
+            <div class="logo-box">
+              <img src="${window.location.origin}/logo.png" alt="Logo da Empresa" class="logo-img" onerror="this.parentElement.innerHTML='logo da empresa'" />
+            </div>
+          </div>
+
+          <hr class="divider" />
+
+          <div class="main-info-container">
+            <div class="info-grid">
+              <span class="info-label">Tópico:</span>
+              <span class="info-value">${chamado.topicoAjuda.nome}</span>
+
+              <span class="info-label">Usuário:</span>
+              <span class="info-value">${chamado.usuario.name}</span>
+
+              <span class="info-label">Departamento:</span>
+              <span class="info-value">${chamado.departamento.name}</span>
+
+              <span class="info-label">Data de Solicitação:</span>
+              <span class="info-value">${formatarDataHora(chamado.dataAbertura)}</span>
+
+              <span class="info-label">Data de Conclusão:</span>
+              <span class="info-value">${chamado.dataFechamento ? formatarDataHora(chamado.dataFechamento) : 'data e hora'}</span>
+            </div>
+
+            <div class="status-side">
+              <div class="status-box">
+                <div class="prioridade-label">Prioridade de solicitação</div>
+                <div class="prioridade-valor">${chamado.tipoPrioridade.nome}</div>
+              </div>
+              <div class="status-texto">Status: ${chamado.status.nome}</div>
+            </div>
+          </div>
+
+          <div class="section-title">Descrição:</div>
+          <div class="descricao-texto">${chamado.descricaoChamado}</div>
+
+          ${incluirConversa && mensagens.length > 0 ? `
+            <div class="section-title">Interações:</div>
+            ${mensagens.map(msg => `
+              <div class="mensagem">
+                <div class="msg-meta">${msg.usuario.name} - ${formatarDataHora(msg.dataEnvio)}</div>
+                <div>${msg.mensagem}</div>
+              </div>
+            `).join('')}
+          ` : ''}
+
+          ${incluirHistorico && historico.length > 0 ? `
+            <div class="section-title">Histórico do Chamado:</div>
+            ${historico.map(hist => `
+              <div class="mensagem">
+                <div class="msg-meta">${hist.usuario.name} - ${formatarDataHora(hist.dataMov)}</div>
+                <div>${hist.acao}</div>
+              </div>
+            `).join('')}
+          ` : ''}
+
+          <script>
+            window.onload = function() {
+              window.print();
+            };
+          </script>
+        </body>
+      </html>
+    `;
+
+    // abrir em uma nova guia 
+    const janelaImpressao = window.open('', '_blank');
+    if (janelaImpressao) {
+      janelaImpressao.document.write(htmlImpressao);
+      janelaImpressao.document.close();
+    }
+  };
+
   const handleDragOverResposta = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDraggingResposta(true);
@@ -686,6 +926,7 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
             Editar
           </button>
           <button
+            onClick={() => setModalImprimirAberto(true)}
             className="px-5 py-2 bg-transparent border border-gray-600 text-gray-600 rounded-lg hover:bg-gray-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm active:scale-95 focus:outline-none focus:ring-1 focus:ring-gray-500/50"
           >
             Imprimir
@@ -1119,6 +1360,12 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
         isOpen={modalResolvidoAberto}
         onConfirm={marcarComoResolvido}
         onClose={() => setModalResolvidoAberto(false)}
+      />
+      {/* Modal de Impressão */}
+      <ModalImprimirChamado
+        isOpen={modalImprimirAberto}
+        onClose={() => setModalImprimirAberto(false)}
+        onConfirm={handleImprimirChamado}
       />
     </div>
   );
