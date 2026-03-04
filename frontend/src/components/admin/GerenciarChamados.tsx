@@ -619,7 +619,7 @@ export default function GerenciarChamados() {
       setTodosChecados(false);
       await pesquisarChamados(paginaAtual);
     } catch (error: any) {
-
+    
       const errorMessage = error.response?.data?.mensagem || 
                           error.response?.data?.erros || 
                           error.message || 
