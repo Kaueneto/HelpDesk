@@ -158,7 +158,7 @@ export default function ImpressaoChamado({
           
           .numero-chamado {
             color: #666;
-            font-size: 14px;
+            font-size: 10px;
             margin-bottom: 15px;
           }
           

@@ -704,7 +704,7 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
               <span class="info-value">${formatarDataHora(chamado.dataAbertura)}</span>
 
               <span class="info-label">Data de Conclusão:</span>
-              <span class="info-value">${chamado.dataFechamento ? formatarDataHora(chamado.dataFechamento) : 'data e hora'}</span>
+              <span class="info-value">${chamado.dataFechamento ? formatarDataHora(chamado.dataFechamento) : '-'}</span>
             </div>
 
             <div class="status-side">

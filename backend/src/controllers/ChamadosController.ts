@@ -228,8 +228,8 @@ async function enviarEmailRedirecionamento(novoResponsavel: Users | null, usuari
     
     // }
   } catch (error) {
-    // Re-lançar o erro para que possa ser capturado pela função que chama, se necessário
-    throw error;
+      //nao lancar o erro de email pois ele nao deve interromper as operacoes
+    console.error("Erro ao enviar email de redirecionamento:", error);
   }
 }
 
@@ -367,37 +367,41 @@ router.post("/chamados", verifyToken, async (req: AuthenticatedRequest, res: Res
       relations: ["usuario", "tipoPrioridade", "departamento", "topicoAjuda", "status"],
     });
 
-    // verif administradores que devem receber notificações
-    const usersRepository = AppDataSource.getRepository(Users);
-    const administradores = await usersRepository.find({
-      where: { roleId: 1 }, // Buscar apenas administradores
-      select: ["id", "name", "email"]
-    });
-    
-    // buscar dados do usuário que abriu o chamado
-    const usuarioSolicitante = await usersRepository.findOne({
-      where: { id: usuarioId },
-      select: ["id", "name", "email"]
-    });
-    
-    if (usuarioSolicitante && administradores.length > 0) {
-      // para cada administrador, verificar suas preferências e notificar
-      for (const admin of administradores) {
-        const preferenciasAdmin = await verificarPreferenciasUsuario(admin.id);
-        
-        // verif se deve enviar email (preferência ID 1)
-        if (preferenciasAdmin.includes(1)) {
-          await enviarEmailNotificacaoAdmin(admin, usuarioSolicitante, chamadoCompleto!);
+    //enviar emails de notificacao 
+    try {
+      // verif administradores que devem receber notificações
+      const usersRepository = AppDataSource.getRepository(Users);
+      const administradores = await usersRepository.find({
+        where: { roleId: 1 }, // Buscar apenas administradores
+        select: ["id", "name", "email"]
+      });
+      
+      // buscar dados do usuário que abriu o chamado
+      const usuarioSolicitante = await usersRepository.findOne({
+        where: { id: usuarioId },
+        select: ["id", "name", "email"]
+      });
+      
+      if (usuarioSolicitante && administradores.length > 0) {
+        // para cada administrador, verificar suas preferências e notificar
+        for (const admin of administradores) {
+          const preferenciasAdmin = await verificarPreferenciasUsuario(admin.id);
+          
+          // verif se deve enviar email (preferência ID 1)
+          if (preferenciasAdmin.includes(1)) {
+            await enviarEmailNotificacaoAdmin(admin, usuarioSolicitante, chamadoCompleto!);
+          }
         }
         
-     
+        // verificar se o usuário quer receber email de abertura (preferência ID 2)
+        const preferenciasUsuario = await verificarPreferenciasUsuario(usuarioSolicitante.id);
+        if (preferenciasUsuario.includes(2)) {
+          await enviarEmailConfirmacaoUsuario(usuarioSolicitante, chamadoCompleto!);
+        }
       }
-      
-      // verificar se o usuário quer receber email de abertura (preferência ID 2)
-      const preferenciasUsuario = await verificarPreferenciasUsuario(usuarioSolicitante.id);
-      if (preferenciasUsuario.includes(2)) {
-        await enviarEmailConfirmacaoUsuario(usuarioSolicitante, chamadoCompleto!);
-      }
+    } catch (emailError) {
+      // log do erro de email, mas NÃO interrompe o fluxo de sucesso
+      console.error("Erro ao enviar emails de notificação:", emailError);
     }
 
     return res.status(201).json({
@@ -1575,10 +1579,12 @@ router.patch("/chamados/editar-multiplos", verifyToken, async (req: Authenticate
 
           // só enviar email se não for o mesmo usuário (evitar auto-atribuição)
           if (userResponsavelId !== usuarioId) {
-           
-            await enviarEmailRedirecionamento(novoResponsavel, usuario, chamado);
-          } else {
-            
+            try {
+              await enviarEmailRedirecionamento(novoResponsavel, usuario, chamado);
+            } catch (emailError) {
+              // erro no email não deve interromper a operação
+              console.error("Erro ao enviar email de redirecionamento:", emailError);
+            }
           }
         }
       }
@@ -1688,13 +1694,17 @@ router.patch("/chamados/resolver-multiplos", verifyToken, async (req: Authentica
           });
 
           if (usuarioChamado) {
-         
-            // verificar se o usuário quer receber email de conclusão (preferência ID 3)
-            const preferenciasUsuario = await verificarPreferenciasUsuario(usuarioChamado.id);
-            if (preferenciasUsuario.includes(3)) {
-              await enviarEmailConclusaoUsuario(usuarioChamado, chamado, usuario);
+            try {
+              // verificar se o usuário quer receber email de conclusão (preferência ID 3)
+              const preferenciasUsuario = await verificarPreferenciasUsuario(usuarioChamado.id);
+              if (preferenciasUsuario.includes(3)) {
+                await enviarEmailConclusaoUsuario(usuarioChamado, chamado, usuario);
+              }
+              emailsEnviados++;
+            } catch (emailError) {
+              // erro no email não deve interromper a operação
+              console.error("Erro ao enviar email de conclusão:", emailError);
             }
-            emailsEnviados++;
           }
         }
 
