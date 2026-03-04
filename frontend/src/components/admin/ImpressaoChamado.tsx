@@ -109,7 +109,7 @@ export default function ImpressaoChamado({
           @media print {
             @page {
               size: A4;
-              margin: 10cm;
+              margin: 4cm;
             }
             body {
               margin: 0;
