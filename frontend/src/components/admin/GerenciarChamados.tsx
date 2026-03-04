@@ -91,6 +91,7 @@ export default function GerenciarChamados() {
   const [statusId, setStatusId] = useState('');
   const [assunto, setAssunto] = useState('');
   const [nomeUsuario, setNomeUsuario] = useState('');
+  const [nomeResponsavel, setNomeResponsavel] = useState('');
 
   // dados
   const [chamados, setChamados] = useState<Chamado[]>([]);
@@ -109,7 +110,7 @@ export default function GerenciarChamados() {
   const [paginaAtual, setPaginaAtual] = useState(1);
   const [totalPaginas, setTotalPaginas] = useState(0);
   const [totalChamados, setTotalChamados] = useState(0);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(20);
 
   // ordenação
   const [ordenarPor, setOrdenarPor] = useState<'numeroChamado' | 'prioridade' | 'topico' | 'departamento' | 'status' | 'dataAbertura' | 'dataFechamento' | 'usuario' | 'responsavel' | 'resumo' | null>(null);
@@ -145,6 +146,7 @@ export default function GerenciarChamados() {
         setStatusId(filtros.statusId || '');
         setAssunto(filtros.assunto || '');
         setNomeUsuario(filtros.nomeUsuario || '');
+        setNomeResponsavel(filtros.nomeResponsavel || '');
         setChamados(resultados.chamados || []);
         setTotalChamados(resultados.total || 0);
         setTotalPaginas(resultados.totalPages || 0);
@@ -286,6 +288,7 @@ export default function GerenciarChamados() {
       if (statusId) params.statusId = statusId;
       if (assunto) params.assunto = assunto;
       if (nomeUsuario) params.nomeUsuario = nomeUsuario;
+      if (nomeResponsavel) params.nomeResponsavel = nomeResponsavel;
 
       const response = await api.get('/chamados', { params });
       setChamados(response.data.chamados || response.data);
@@ -294,7 +297,7 @@ export default function GerenciarChamados() {
       setPaginaAtual(page);
       setChamadosSelecionados([]);
       setTodosChecados(false);
-
+      
       // Salva filtros/resultados no localStorage
       const filtros = {
         dataAberturaInicio: dataAberturaInicio ? dataAberturaInicio.toISOString() : null,
@@ -307,6 +310,7 @@ export default function GerenciarChamados() {
         statusId,
         assunto,
         nomeUsuario,
+        nomeResponsavel,
       };
       const resultados = {
         chamados: response.data.chamados || response.data,
@@ -335,6 +339,7 @@ export default function GerenciarChamados() {
     setStatusId('');
     setAssunto('');
     setNomeUsuario('');
+    setNomeResponsavel('');
     setChamados([]);
     setChamadosSelecionados([]);
     setTodosChecados(false);
@@ -820,9 +825,29 @@ export default function GerenciarChamados() {
                 </div>
               </div>
             </div>
+              <div className="justify-start mt-3">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Responsável
+                </label>
+                <select
+                  value={nomeResponsavel}
+                  onChange={(e) => setNomeResponsavel(e.target.value)}
+                  className="w-100 min-w-0 px-3 py-2 border border-gray-300 rounded bg-white focus:ring-1 focus:ring-blue-500 text-sm text-gray-900 focus:outline-none"
+                >
+                  <option value="">Todos os responsáveis</option>
+                  {usuariosAdmin
+                    .sort((a, b) => a.name.localeCompare(b.name))
+                    .map((admin) => (
+                      <option key={admin.id} value={admin.name}>
+                        {admin.name}
+                      </option>
+                    ))}
+                </select>
 
+              </div>
             {/* botoes de acoes dos filtros */}
             <div className="flex gap-3 mt-6 justify-end">
+           
               <button
                 onClick={limparFiltros}
                 className="px-6 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors font-medium text-sm"
@@ -1093,7 +1118,7 @@ export default function GerenciarChamados() {
                       <td className="px-1 py-1 text-center whitespace-nowrap">
                         <span
                           className={`px-2 py-1 rounded-full text-xs border ${
-                             chamado.status.id === 1
+                            chamado.status.id === 1
                             ? 'bg-yellow-100 text-yellow-700 border-yellow-500'
                             : chamado.status.id === 2
                             ? 'bg-blue-100 text-blue-600 border-blue-500'
@@ -1101,8 +1126,15 @@ export default function GerenciarChamados() {
                              ? 'bg-green-100 text-green-800 border-green-700'
                             : chamado.status.id === 5
                             ? 'bg-purple-100 text-purple-700 border-purple-500'
-                            : 'bg-red-100 text-red-800 border-red-700'
-
+                            : chamado.status.id === 4
+                             ? 'bg-gray-100 text-red-800 border-red-700'
+                             : chamado.status.id === 6
+                              ? 'bg-gray-100 text-gray-800 border-gray-700'
+                              : chamado.status.id === 7
+                               ? 'bg-orange-100 text-orange-800 border-orange-700'
+                            : 'bg-red-100 text-red-800 border-red-800'
+                              
+                              
                           }`}
                         >
                           {chamado.status?.nome || 'Desconhecido'}
