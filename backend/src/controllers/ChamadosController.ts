@@ -611,7 +611,7 @@ router.get("/chamados", verifyToken, async (req: AuthenticatedRequest, res: Resp
         queryBuilder.andWhere("usuario.name ILIKE :nomeUsuario", { nomeUsuario: `%${nomeUsuario}%` });
       }
 
-      // Filtro por nome do responsável
+      // filtro por nome do responsável
       if (nomeResponsavel) {
         queryBuilder.andWhere("userResponsavel.name ILIKE :nomeResponsavel", { nomeResponsavel: `%${nomeResponsavel}%` });
       }

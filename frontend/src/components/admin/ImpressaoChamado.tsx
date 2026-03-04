@@ -109,7 +109,7 @@ export default function ImpressaoChamado({
           @media print {
             @page {
               size: A4;
-              margin: 4cm;
+              margin: 1.5cm;
             }
             body {
               margin: 0;
@@ -127,7 +127,7 @@ export default function ImpressaoChamado({
             font-family: Arial, sans-serif;
             color: #333;
             line-height: 1.6;
-            padding: 20px;
+            padding: 15px;
             max-width: 21cm;
             margin: 0 auto;
             background: white;
@@ -137,11 +137,11 @@ export default function ImpressaoChamado({
             display: flex;
             justify-content: space-between;
             align-items: start;
-            margin-bottom: 50px;
+            margin-bottom: 30px;
           }
           
           .logo {
-            width: 150px;
+            width: 120px;
             height: auto;
           }
           
@@ -150,7 +150,7 @@ export default function ImpressaoChamado({
           }
           
           .title {
-            font-size: 24px;
+            font-size: 20px;
             font-weight: bold;
             color: #001933;
             margin-bottom: 5px;
@@ -159,20 +159,20 @@ export default function ImpressaoChamado({
           .numero-chamado {
             color: #666;
             font-size: 10px;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
           }
           
           .divider {
             border: 0;
             border-top: 2px solid #001933;
-            margin: 20px 0;
+            margin: 15px 0;
           }
           
           .info-grid {
             display: grid;
             grid-template-columns: auto 1fr;
-            gap: 10px 20px;
-            margin-bottom: 20px;
+            gap: 8px 20px;
+            margin-bottom: 15px;
           }
           
           .info-label {
@@ -186,40 +186,40 @@ export default function ImpressaoChamado({
           }
           
           .section {
-            margin-top: 30px;
+            margin-top: 20px;
           }
           
           .section-title {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: bold;
             color: #001933;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
             border-bottom: 1px solid #ddd;
             padding-bottom: 5px;
           }
           
           .descricao {
             background: #f9f9f9;
-            padding: 15px;
+            padding: 12px;
             border-radius: 5px;
             border-left: 4px solid #001933;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             white-space: pre-wrap;
           }
           
           .mensagem {
             background: #f5f5f5;
-            padding: 12px;
+            padding: 10px;
             border-radius: 5px;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
             border-left: 3px solid #1A68CF;
           }
           
           .mensagem-header {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 8px;
-            font-size: 12px;
+            margin-bottom: 6px;
+            font-size: 11px;
           }
           
           .mensagem-usuario {
@@ -234,10 +234,11 @@ export default function ImpressaoChamado({
           .mensagem-texto {
             color: #333;
             white-space: pre-wrap;
+            font-size: 13px;
           }
           
           .historico-item {
-            padding: 10px;
+            padding: 8px;
             border-bottom: 1px solid #eee;
             display: flex;
             justify-content: space-between;
@@ -250,17 +251,19 @@ export default function ImpressaoChamado({
           .historico-acao {
             color: #333;
             flex: 1;
+            font-size: 13px;
           }
           
           .historico-info {
             text-align: right;
-            font-size: 12px;
+            font-size: 11px;
             color: #666;
           }
           
           .historico-usuario {
             font-weight: 500;
             color: #001933;
+            font-size: 12px;
           }
         `}</style>
       </head>
