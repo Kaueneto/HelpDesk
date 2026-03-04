@@ -178,22 +178,22 @@ export default function AcompanharChamado({ onChamadoClick }: AcompanharChamadoP
             <table className="min-w-full divide-y divide-gray-300">
               <thead className="bg-gray-100">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-24">
                     Núm.Ticket
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-32">
                     Prioridade
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-40">
                     Data Criação
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-44">
                     Tópico ajuda
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-22">
                     Departamento
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-32">
                     Status
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
@@ -208,10 +208,10 @@ export default function AcompanharChamado({ onChamadoClick }: AcompanharChamadoP
                     className="hover:bg-gray-50 cursor-pointer"
                     onClick={() => onChamadoClick(chamado)}
                   >
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-blue-600 font-medium">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-blue-600 font-medium w-24">
                       {chamado.numeroChamado || chamado.id}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm w-32">
                       <div className="flex items-center gap-2">
                         <div
                           className="w-3 h-3 rounded-full"
@@ -221,19 +221,19 @@ export default function AcompanharChamado({ onChamadoClick }: AcompanharChamadoP
                         <span className="text-gray-900">{chamado.tipoPrioridade?.nome}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 w-40">
                       {formatarDataBrasilia(chamado.dataAbertura)}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                    <td className="px-4 py-3  text-sm text-gray-700 w-20">
                       {chamado.topicoAjuda?.nome}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                    <td className="px-4 py-3  text-sm text-gray-700 w-25">
                       {chamado.departamento?.name}
                     </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
+                  <td className="px-4 py-3 whitespace-nowrap w-32">
                       <span
                         className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border uppercase tracking-wider ${
-                                     chamado.status.id === 1
+                       chamado.status.id === 1
                             ? 'bg-yellow-100 text-yellow-700 border-yellow-500'
                             : chamado.status.id === 2
                             ? 'bg-blue-100 text-blue-600 border-blue-500'
@@ -241,13 +241,20 @@ export default function AcompanharChamado({ onChamadoClick }: AcompanharChamadoP
                              ? 'bg-green-100 text-green-800 border-green-700'
                             : chamado.status.id === 5
                             ? 'bg-purple-100 text-purple-700 border-purple-500'
+                            : chamado.status.id === 4
+                             ? 'bg-gray-100 text-red-800 border-red-700'
+                             : chamado.status.id === 6
+                              ? 'bg-gray-100 text-gray-800 border-gray-700'
+                              : chamado.status.id === 7
+                                ? 'bg-orange-100 text-orange-800 border-orange-700'
                             : 'bg-red-100 text-red-800 border-red-700'
+                              
                         }`}
                       >
                         {chamado.status?.nome || 'Desconhecido'}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-700 max-w-xs truncate" title={chamado.resumoChamado}>
+                    <td className="px-4 py-3 text-sm text-gray-700 truncate" title={chamado.resumoChamado}>
                       {chamado.resumoChamado}
                     </td>
                   </tr>

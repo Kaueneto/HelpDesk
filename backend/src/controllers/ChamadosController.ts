@@ -529,6 +529,7 @@ router.get("/chamados", verifyToken, async (req: AuthenticatedRequest, res: Resp
       departamentoId, 
       prioridadeId, 
       nomeUsuario,
+      nomeResponsavel,
       dataAberturaInicio,
       dataAberturaFim,
       dataFechamentoInicio,
@@ -608,6 +609,11 @@ router.get("/chamados", verifyToken, async (req: AuthenticatedRequest, res: Resp
       // Filtro por nome do usuário
       if (nomeUsuario) {
         queryBuilder.andWhere("usuario.name ILIKE :nomeUsuario", { nomeUsuario: `%${nomeUsuario}%` });
+      }
+
+      // Filtro por nome do responsável
+      if (nomeResponsavel) {
+        queryBuilder.andWhere("userResponsavel.name ILIKE :nomeResponsavel", { nomeResponsavel: `%${nomeResponsavel}%` });
       }
 
       // Filtro por data de abertura
