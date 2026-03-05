@@ -3,7 +3,7 @@ import axios from 'axios';
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
-  timeout: 10000,
+  timeout: 30000, // 30 segundos - aumentado para operações com anexos e emails
   withCredentials: true, // inclui cookies automaticamente
   headers: {
     'Content-Type': 'application/json',

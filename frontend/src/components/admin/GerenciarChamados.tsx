@@ -1241,9 +1241,9 @@ export default function GerenciarChamados() {
       {/* Modal de Edição Múltipla */}
       {modalEdicaoAberto && (
         <div className="fixed inset-0 bg-black/60  flex items-center justify-center z-50 p-4 ">
-          <div className="bg-white shadow-2xl w-full max-w-3xl transform transition-all">
+          <div className="bg-white shadow-2xl w-full max-w-3xl transform transition-all rounded-md">
             {/* header */}
-            <div className="bg-gradient-to-r from-[#001933] to-[#1A4877] px-6 py-4 ">
+            <div className="bg-gradient-to-r from-[#001933] to-[#1A4877] px-6 py-4 rounded-md">
               <div className="flex justify-between items-center">
                 <h3 className="text-xl font-bold text-white">
                   Editar múltiplos chamados
