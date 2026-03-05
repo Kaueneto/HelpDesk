@@ -640,7 +640,7 @@ export default function GerenciarDepartamentos() {
                   </div>
                 </>
               ) : (
-                <div className="flex items-center justify-center min-h-[300px] animate-fade-in">
+                <div className="flex items-center justify-center min-h-75 animate-fade-in">
                   <div className="text-center">
                     <div className="relative inline-block mb-6">
                       <div className="w-32 h-32 bg-green-500 rounded-full flex items-center justify-center animate-scale-in">
@@ -776,7 +776,7 @@ export default function GerenciarDepartamentos() {
                   </div>
                 </>
               ) : (
-                <div className="flex items-center justify-center min-h-[300px] animate-fade-in">
+                <div className="flex items-center justify-center min-h-75 animate-fade-in">
                   <div className="text-center">
                     <div className="relative inline-block mb-6">
                       <div className="w-32 h-32 bg-green-500 rounded-full flex items-center justify-center animate-scale-in">

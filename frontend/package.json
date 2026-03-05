@@ -3,11 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-  "dev": "next dev -p 5001 --hostname 0.0.0.0",
-  "build": "next build", 
-  "start": "next start -p 5001 --hostname 0.0.0.0",
-  "prod:start": "next start -p 5001 -H 0.0.0.0"
-},
+    "dev": "next dev -p 5001 --hostname 0.0.0.0",
+    "build": "next build",
+    "start": "next start -p 5001 --hostname 0.0.0.0",
+    "prod:start": "next start -p 5001 -H 0.0.0.0"
+  },
   "dependencies": {
     "@supabase/supabase-js": "^2.98.0",
     "@types/react-datepicker": "^6.2.0",
@@ -17,6 +17,7 @@
     "react-datepicker": "^9.1.0",
     "react-dom": "19.2.1",
     "react-hot-toast": "^2.6.0",
+    "react-select": "^5.10.2",
     "recharts": "^3.6.0"
   },
   "devDependencies": {
