@@ -7,6 +7,7 @@ import api from '@/services/api';
 import { useAuth } from '@/contexts/AuthContext';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+import ModalNovoChamado from '@/app/admin/Modal/ModalNovoChamado';
 
 interface Chamado {
   id: number;
@@ -124,6 +125,9 @@ export default function GerenciarChamados() {
   const [novoTopicoAjudaId, setNovoTopicoAjudaId] = useState<string>('');
   const [novoResponsavelId, setNovoResponsavelId] = useState<string>('');
   const [submittingEdicao, setSubmittingEdicao] = useState(false);
+
+  // modal de novo chamado
+  const [modalNovoChamadoAberto, setModalNovoChamadoAberto] = useState(false);
 
   useEffect(() => {
     // só carregar dados se estiver autenticado
@@ -654,8 +658,31 @@ export default function GerenciarChamados() {
         <h2 className="text-white text-2xl font-semibold">Painel de Chamados</h2>
       </div>
 
-      <div className="p-6 bg-[#EDEDED] ">
-        <div className="bg-white rounded-lg shadow-lg border border-gray-300 overflow-hidden">
+      <div className=" p-4 bg-[#EDEDED] ">
+          
+         <div className="p-2  bg-[#EDEDED] flex gap-3">
+            <button 
+              onClick={() => setModalNovoChamadoAberto(true)}
+              className=" px-4 py-1.5 bg-transparent border border-green-600 text-green-600 rounded-lg hover:bg-green-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-lg flex items-center gap-2 disabled:border-green-300 disabled:text-green-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-1 focus:ring-green-500/50"
+            >
+              <span className="text-lg font-bold">+</span>
+              Novo Chamado
+            </button>
+
+            <button 
+              className=" px-4 py-1.5 bg-transparent border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-lg flex items-center gap-2 disabled:border-blue-300 disabled:text-blue-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-1 focus:ring-blue-500/50"
+              disabled
+              title="Em desenvolvimento"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+              Editar Chamado
+            </button>
+          </div>
+
+        <div className="bg-white rounded-lg shadow-lg border border-gray-300 overflow-hidden ">
+
           {/* area de Filtros */}
           <div className="p-6  border-gray-300 ">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 ">
@@ -1403,6 +1430,16 @@ export default function GerenciarChamados() {
           </div>
         </div>
       )}
+
+      {/* modal de novochamado */}
+      <ModalNovoChamado
+        isOpen={modalNovoChamadoAberto}
+        onClose={() => setModalNovoChamadoAberto(false)}
+        onSuccess={() => {
+         //atualizar os chamdos depois de criar 
+          pesquisarChamados(paginaAtual);
+        }}
+      />
     </div>
   );
 }
