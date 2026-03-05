@@ -49,6 +49,8 @@ const upload = multer({
 //upload de anexos iniciais na abertura do chamado
 router.post("/chamado/:id/anexo", verifyToken, upload.array("arquivos", 5),
   async (req: AuthenticatedRequest, res: Response) => {
+
+    
     try {
       const chamadoId = Number(req.params.id);
       const files = req.files as Express.Multer.File[];
@@ -65,14 +67,18 @@ router.post("/chamado/:id/anexo", verifyToken, upload.array("arquivos", 5),
       });
 
       if (!chamado) {
+      
         return res.status(404).json({ mensagem: "Chamado não encontrado" });
       }
 
+
+      
       // fazer upload no Supabase Storage e salvar no banco
       const anexoRepository = AppDataSource.getRepository(ChamadoAnexos);
       const anexosSalvos = [];
 
       for (const file of files) {
+   
         // Gerar path único: chamados/{chamadoId}/{timestamp}-{nomeOriginal}
         const timestamp = Date.now();
         const storagePath = `chamados/${chamadoId}/${timestamp}-${file.originalname}`;
@@ -86,12 +92,15 @@ router.post("/chamado/:id/anexo", verifyToken, upload.array("arquivos", 5),
           });
 
         if (uploadError) {
+         
           return res.status(500).json({
             mensagem: "Erro ao fazer upload do arquivo",
             erro: uploadError.message,
           });
         }
 
+
+        
         // Salvar registro no banco SEM mensagemId (anexo inicial)
         const anexo = anexoRepository.create({
           chamadoId,
@@ -118,6 +127,7 @@ router.post("/chamado/:id/anexo", verifyToken, upload.array("arquivos", 5),
         anexos: anexosSalvos,
       });
     } catch (error) {
+    
       return res.status(500).json({
         mensagem: "Erro ao fazer upload de anexos",
         erro: error instanceof Error ? error.message : "Erro desconhecido",

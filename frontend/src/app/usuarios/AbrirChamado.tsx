@@ -164,6 +164,7 @@ export default function AbrirChamado({ userEmail, onSuccess, onCancel }: AbrirCh
     e.preventDefault();
     setErrorMessage('');
 
+
     if (!departamentoId || !prioridadeId || !ramal.trim()) {
       setErrorMessage('Por favor, preencha todos os campos obrigatórios.');
       return;
@@ -172,6 +173,7 @@ export default function AbrirChamado({ userEmail, onSuccess, onCancel }: AbrirCh
     setSubmitting(true);
 
     try {
+      
       const chamadoResponse = await api.post('/chamados', {
         ramal,
         prioridadeId,
@@ -179,23 +181,31 @@ export default function AbrirChamado({ userEmail, onSuccess, onCancel }: AbrirCh
         departamentoId,
         resumoChamado,
         descricaoChamado,
-      });
-
+      });      
       const chamadoId = chamadoResponse.data.chamado?.id;
+  
 
+      // upload de anexos (se houver) - tratado separadamente
       if (selectedFiles.length > 0 && chamadoId) {
-        const formData = new FormData();
-        selectedFiles.forEach((file) => {
-          formData.append('arquivos', file);
-        });
+      
+        try {
+          const formData = new FormData();
+          selectedFiles.forEach((file) => {
+            formData.append('arquivos', file);
+          });
 
-        await api.post(`/chamado/${chamadoId}/anexo`, formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        });
+          await api.post(`/chamado/${chamadoId}/anexo`, formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          });
+
+        } catch (anexoError: any) {
+  
+        }
       }
 
+      // limpar formulário
       setRamal('');
       const prioridadePadrao = prioridades.find((p) => p.ordem === 4);
       setPrioridadeId(prioridadePadrao?.id || 0);
@@ -217,7 +227,9 @@ export default function AbrirChamado({ userEmail, onSuccess, onCancel }: AbrirCh
       setTimeout(() => {
         onSuccess();
       }, 3000);
+      
     } catch (error: any) {
+      //esse erro so acontece agora se a criacao do chamado falhar
       setErrorMessage(error.response?.data?.mensagem || 'Erro ao abrir chamado. Tente novamente.');
     } finally {
       setSubmitting(false);

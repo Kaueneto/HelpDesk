@@ -37,6 +37,147 @@ async function verificarPreferenciasUsuario(userId: number): Promise<number[]> {
   }
 }
 
+
+
+// funcao para enviar email pro usuario sempre que o chamado dele estiver aguardando resposta
+async function enviarEmailEsperandoUsuario(usuario: Users, chamado: Chamados): Promise<void> {
+  try {
+    const transporter = nodemailer.createTransport({
+      host: process.env.EMAIL_HOST,
+      port: Number(process.env.EMAIL_PORT),
+      secure: false,
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+ const mailOptions = {
+  from: process.env.EMAIL_FROM,
+  to: usuario.email,
+  subject: `Chamado #${chamado.numeroChamado} - Aguardando sua resposta`,
+  html: `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f8f9fa;">
+      <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+        
+        <h2 style="color: #f39c12; margin-bottom: 20px; text-align: center;">
+          Seu chamado está aguardando sua resposta
+        </h2>
+
+        <p style="font-size: 16px; color: #333; margin-bottom: 20px;">
+          Olá, <strong>${usuario.name}</strong>.
+        </p>
+
+        <p style="font-size: 14px; color: #666; margin-bottom: 20px;">
+          O chamado com o assunto <strong>"${chamado.resumoChamado}"</strong> está aguardando sua resposta para que possamos continuar o atendimento.
+        </p>
+
+        <div style="background-color: #fff4e5; padding: 20px; border-radius: 8px; border-left: 4px solid #f39c12; margin-bottom: 25px;">
+          <p style="margin: 0; font-size: 14px;">
+            <strong>Número do chamado:</strong> #${chamado.numeroChamado}
+          </p>
+          <p style="margin: 8px 0 0 0; font-size: 14px;">
+            <strong>Status:</strong> 
+            <span style="color: #f39c12; font-weight: bold;">
+              Aguardando resposta do usuário
+            </span>
+          </p>
+        </div>
+
+        <p style="font-size: 14px; color: #666; margin-bottom: 30px;">
+          Por favor, acesse o sistema para visualizar a mensagem enviada pela equipe de suporte e responder ao chamado.
+        </p>
+
+        <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+
+        <p style="font-size: 12px; color: #888; text-align: center; margin: 0;">
+          Este é um email automático, não responda.
+        </p>
+
+      </div>
+    </div>
+  `
+};
+
+    await transporter.sendMail(mailOptions);
+  } catch (error) {
+  }
+}
+
+
+
+// funcao para enviar email pro usuario sempre que o chamado dele estiver aguardando resposta
+async function enviarEmailAguardandoTerceiros(usuario: Users, chamado: Chamados): Promise<void> {
+  try {
+    const transporter = nodemailer.createTransport({
+      host: process.env.EMAIL_HOST,
+      port: Number(process.env.EMAIL_PORT),
+      secure: false,
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+ const mailOptions = {
+  from: process.env.EMAIL_FROM,
+  to: usuario.email,
+  subject: `Chamado #${chamado.numeroChamado} - Aguardando retorno de outro setor`,
+  html: `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f8f9fa;">
+      <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+        
+        <h2 style="color: #6c757d; margin-bottom: 20px; text-align: center;">
+          Seu chamado está aguardando retorno de outro setor
+        </h2>
+
+        <p style="font-size: 16px; color: #333; margin-bottom: 20px;">
+          Olá, <strong>${usuario.name}</strong>.
+        </p>
+
+        <p style="font-size: 14px; color: #666; margin-bottom: 20px;">
+          O chamado com o assunto <strong>"${chamado.resumoChamado}"</strong> foi encaminhado para o responsável e no momento estamos aguardando um retorno para dar continuidade na sua solicitação.
+        </p>
+
+        <p style="font-size: 14px; color: #666; margin-bottom: 25px;">
+          Assim que tivermos um retorno, o atendimento será retomado automaticamente.
+        </p>
+
+        <div style="background-color: #f1f3f5; padding: 20px; border-radius: 8px; border-left: 4px solid #6c757d; margin-bottom: 25px;">
+          <p style="margin: 0; font-size: 14px;">
+            <strong>Número do chamado:</strong> #${chamado.numeroChamado}
+          </p>
+          <p style="margin: 8px 0 0 0; font-size: 14px;">
+            <strong>Status:</strong> 
+            <span style="color: #6c757d; font-weight: bold;">
+              Aguardando retorno de outro setor
+            </span>
+          </p>
+        </div>
+
+        <p style="font-size: 14px; color: #666; margin-bottom: 30px;">
+          Você pode acompanhar o andamento do chamado através da aba 
+          <strong>"Acompanhar Chamados"</strong> no sistema.
+        </p>
+
+        <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+
+        <p style="font-size: 12px; color: #888; text-align: center; margin: 0;">
+          Este é um email automático, não responda.
+        </p>
+
+      </div>
+    </div>
+  `
+};
+
+    await transporter.sendMail(mailOptions);
+  } catch (error) {
+  }
+}
+
+
+
 // funcao para enviar email de notificação para administradores
 async function enviarEmailNotificacaoAdmin(admin: Users, usuario: Users, chamado: Chamados): Promise<void> {
   try {
@@ -312,6 +453,7 @@ async function enviarEmailConclusaoUsuario(usuario: Users, chamado: Chamados, ad
 
 //cadastrar chamado //novo chamado
 router.post("/chamados", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
+   
   try {
     const {
       ramal,
@@ -349,6 +491,7 @@ router.post("/chamados", verifyToken, async (req: AuthenticatedRequest, res: Res
       // - userFechamento (preenchido quando finalizar)
     });
 
+
     await chamadoRepository.save(chamado);
 
     // Registrar no histórico
@@ -367,47 +510,54 @@ router.post("/chamados", verifyToken, async (req: AuthenticatedRequest, res: Res
       relations: ["usuario", "tipoPrioridade", "departamento", "topicoAjuda", "status"],
     });
 
-    //enviar emails de notificacao 
-    try {
-      // verif administradores que devem receber notificações
-      const usersRepository = AppDataSource.getRepository(Users);
-      const administradores = await usersRepository.find({
-        where: { roleId: 1 }, // Buscar apenas administradores
-        select: ["id", "name", "email"]
-      });
-      
-      // buscar dados do usuário que abriu o chamado
-      const usuarioSolicitante = await usersRepository.findOne({
-        where: { id: usuarioId },
-        select: ["id", "name", "email"]
-      });
-      
-      if (usuarioSolicitante && administradores.length > 0) {
-        // para cada administrador, verificar suas preferências e notificar
-        for (const admin of administradores) {
-          const preferenciasAdmin = await verificarPreferenciasUsuario(admin.id);
-          
-          // verif se deve enviar email (preferência ID 1)
-          if (preferenciasAdmin.includes(1)) {
-            await enviarEmailNotificacaoAdmin(admin, usuarioSolicitante, chamadoCompleto!);
-          }
-        }
-        
-        // verificar se o usuário quer receber email de abertura (preferência ID 2)
-        const preferenciasUsuario = await verificarPreferenciasUsuario(usuarioSolicitante.id);
-        if (preferenciasUsuario.includes(2)) {
-          await enviarEmailConfirmacaoUsuario(usuarioSolicitante, chamadoCompleto!);
-        }
-      }
-    } catch (emailError) {
-      // log do erro de email, mas NÃO interrompe o fluxo de sucesso
-      console.error("Erro ao enviar emails de notificação:", emailError);
-    }
 
-    return res.status(201).json({
+    
+    // enviar resposta de imediato, antes dos emails
+    // this evita timeout no frontend
+    const response = res.status(201).json({
       mensagem: "Chamado aberto com sucesso!",
       chamado: chamadoCompleto,
     });
+    //enviar emails de forma assincrone pra nao bloquear a resposta e evitar timeout no frontend
+    setImmediate(async () => {
+      try {
+        // verif administradores que devem receber notificações
+        const usersRepository = AppDataSource.getRepository(Users);
+        const administradores = await usersRepository.find({
+          where: { roleId: 1 }, // Buscar apenas administradores
+          select: ["id", "name", "email"]
+        });
+        
+        // buscar dados do usuário que abriu o chamado
+        const usuarioSolicitante = await usersRepository.findOne({
+          where: { id: usuarioId },
+          select: ["id", "name", "email"]
+        });
+        
+        if (usuarioSolicitante && administradores.length > 0) {
+          // para cada administrador, verificar suas preferências e notificar
+          for (const admin of administradores) {
+            const preferenciasAdmin = await verificarPreferenciasUsuario(admin.id);
+            
+            // verif se deve enviar email (preferência ID 1)
+            if (preferenciasAdmin.includes(1)) {
+              await enviarEmailNotificacaoAdmin(admin, usuarioSolicitante, chamadoCompleto!);
+            }
+          }
+          
+          // verificar se o usuário quer receber email de abertura (preferência ID 2)
+          const preferenciasUsuario = await verificarPreferenciasUsuario(usuarioSolicitante.id);
+          if (preferenciasUsuario.includes(2)) {
+            await enviarEmailConfirmacaoUsuario(usuarioSolicitante, chamadoCompleto!);
+          }
+        }
+
+      } catch (emailError) {
+        // log do erro de email, mas NÃO interrompe o fluxo
+      }
+    });
+
+    return response;
   } catch (error) {
 
     return res.status(500).json({
@@ -1429,11 +1579,14 @@ router.patch("/chamados/editar-multiplos", verifyToken, async (req: Authenticate
     // Buscar chamados
     const chamados = await chamadoRepository.find({
       where: chamadosIds.map((id: number) => ({ id })),
-      relations: ["status", "tipoPrioridade"],
+      relations: ["status", "tipoPrioridade", "usuario"],
     });
 
     const erros: string[] = [];
     const alterados: number[] = [];
+    
+    // arrays para armazenar dados de emails que precisam ser enviados (processamento assíncrono)
+    const emailsParaEnviar: Array<{ tipo: 'status6' | 'status7' | 'redirecionamento', usuario?: Users, novoResponsavel?: Users, chamado: Chamados }> = [];
 
     for (const chamado of chamados) {
       const statusAnterior = chamado.status;
@@ -1480,6 +1633,24 @@ router.patch("/chamados/editar-multiplos", verifyToken, async (req: Authenticate
             statusNovo: { id: novoStatus.id },
             dataMov: new Date(),
           });
+
+          // coletar dados para envio de email assíncrono (Status 6 - Pendente Usuário)
+          if (novoStatus.id === 6 && chamado.usuario) {
+            emailsParaEnviar.push({
+              tipo: 'status6',
+              chamado: { ...chamado, status: novoStatus },
+              usuario: chamado.usuario
+            });
+          }
+          
+          // coletar dados para envio de email assíncrono (Status 7 - Aguardando Terceiros)
+          if (novoStatus.id === 7 && chamado.usuario) {
+            emailsParaEnviar.push({
+              tipo: 'status7',
+              chamado: { ...chamado, status: novoStatus },
+              usuario: chamado.usuario
+            });
+          }
 
           alterou = true;
         }
@@ -1583,14 +1754,14 @@ router.patch("/chamados/editar-multiplos", verifyToken, async (req: Authenticate
 
           alterou = true;
 
-          // só enviar email se não for o mesmo usuário (evitar auto-atribuição)
+          // coletar dados para envio de email assíncrono (apenas se não for auto-atribuição)
           if (userResponsavelId !== usuarioId) {
-            try {
-              await enviarEmailRedirecionamento(novoResponsavel, usuario, chamado);
-            } catch (emailError) {
-              // erro no email não deve interromper a operação
-              console.error("Erro ao enviar email de redirecionamento:", emailError);
-            }
+            emailsParaEnviar.push({
+              tipo: 'redirecionamento',
+              novoResponsavel: novoResponsavel,
+              usuario: usuario,
+              chamado: { ...chamado }
+            });
           }
         }
       }
@@ -1607,11 +1778,37 @@ router.patch("/chamados/editar-multiplos", verifyToken, async (req: Authenticate
       });
     }
 
-    return res.status(200).json({
+    // enviar resposta IMEDIATAMENTE, antes de processar emails
+    const response = res.status(200).json({
       message: `${alterados.length} chamado(s) alterado(s) com sucesso`,
       alterados,
       erros: erros.length > 0 ? erros : undefined,
     });
+
+    // processar envio de emails de forma ASSINCRONA em background
+    if (emailsParaEnviar.length > 0) {
+      setImmediate(async () => {
+        
+        for (const emailData of emailsParaEnviar) {
+          try {
+            if (emailData.tipo === 'status6' && emailData.usuario?.email) {
+              // status 6
+              await enviarEmailEsperandoUsuario(emailData.usuario, emailData.chamado);
+            } else if (emailData.tipo === 'status7' && emailData.usuario?.email) {
+              // status 7
+              await enviarEmailAguardandoTerceiros(emailData.usuario, emailData.chamado);
+            } else if (emailData.tipo === 'redirecionamento') {
+              // email de redirecionamento
+              await enviarEmailRedirecionamento(emailData.novoResponsavel!, emailData.usuario!, emailData.chamado);
+            }
+          } catch (emailError) {
+          }
+        }
+
+      });
+    }
+
+    return response;
   } catch (error) {
 
     return res.status(500).json({
