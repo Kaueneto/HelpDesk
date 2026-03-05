@@ -417,8 +417,12 @@ router.get("/chamados", verifyToken, async (req: AuthenticatedRequest, res: Resp
       queryBuilder.andWhere("chamado.id_user = :userId", { userId });
     }
 
+    // verificar se statusId contem múltiplos valores
+  
+    const statusIds = statusId ? String(statusId).split(',').map(id => id.trim()) : [];
+    
     // Lógica especial para ATRASADO (statusId = 4)
-    if (statusId === '4') {
+    if (statusIds.includes('4')) {
       // Buscar horas para atraso dos parâmetros do sistema
       const parametrosRepository = AppDataSource.getRepository(ParametrosSistema);
       const parametros = await parametrosRepository.findOne({ where: { id: 1 } });
@@ -428,17 +432,40 @@ router.get("/chamados", verifyToken, async (req: AuthenticatedRequest, res: Resp
       const dataLimite = new Date();
       dataLimite.setHours(dataLimite.getHours() - horasParaAtraso);
 
-      // Filtrar chamados ABERTOS (status = 1) que estão abertos há mais tempo que o configurado
-      queryBuilder.andWhere("chamado.id_status = :statusAberto", { statusAberto: 1 });
-      queryBuilder.andWhere("chamado.data_abertura < :dataLimite", { dataLimite });
-    } else if (statusId) {
-      // Status normal (1, 2, 3)
-      queryBuilder.andWhere("chamado.id_status = :statusId", { statusId });
+      // de atrasado for o único status selecionado
+      if (statusIds.length === 1) {
+        // filtrar chamados ABERTOS (status = 1) que estão abertos há mais tempo que o configurado
+        queryBuilder.andWhere("chamado.id_status = :statusAberto", { statusAberto: 1 });
+        queryBuilder.andWhere("chamado.data_abertura < :dataLimite", { dataLimite });
+      } else {
+        // se ATRASADO estiver junto com outros status, use OR
+        const outrosStatus = statusIds.filter(id => id !== '4');
+        
+        // criar condições para cada status
+        const condicoesStatus = [
+          // condição para ATRASADO
+          "(chamado.id_status = 1 AND chamado.data_abertura < :dataLimite)",
+          // pros outros
+          ...outrosStatus.map((_, index) => `chamado.id_status = :statusId${index}`)
+        ];
+        
+        // adicionar parâmetros
+        const parametros: any = { dataLimite };
+        outrosStatus.forEach((id, index) => {
+          parametros[`statusId${index}`] = id;
+        });
+        
+        queryBuilder.andWhere(`(${condicoesStatus.join(' OR ')})`, parametros);
+      }
+    } else if (statusIds.length > 0) {
+      // multipos status normais (sem ATRASADO)
+      queryBuilder.andWhere("chamado.id_status IN (:...statusIds)", { statusIds });
     }
 
-    // Filtro por tópico de ajuda
-    if (topicoAjudaId) {
-      queryBuilder.andWhere("chamado.id_topico_ajuda = :topicoAjudaId", { topicoAjudaId });
+    // Filtro por tópico de ajuda (aceita múltiplos valores)
+    const topicoAjudaIds = topicoAjudaId ? String(topicoAjudaId).split(',').map(id => id.trim()) : [];
+    if (topicoAjudaIds.length > 0) {
+      queryBuilder.andWhere("chamado.id_topico_ajuda IN (:...topicoAjudaIds)", { topicoAjudaIds });
     }
 
     // Filtro por assunto (resumo ou descrição)
@@ -451,9 +478,10 @@ router.get("/chamados", verifyToken, async (req: AuthenticatedRequest, res: Resp
 
     // Filtros extras apenas para administradores (roleId = 1)
     if (userRoleId === 1) {
-      // Filtro por departamento
-      if (departamentoId) {
-        queryBuilder.andWhere("chamado.id_departamento = :departamentoId", { departamentoId });
+      // Filtro por departamento (aceita múltiplos valores)
+      const departamentoIds = departamentoId ? String(departamentoId).split(',').map(id => id.trim()) : [];
+      if (departamentoIds.length > 0) {
+        queryBuilder.andWhere("chamado.id_departamento IN (:...departamentoIds)", { departamentoIds });
       }
 
       // Filtro por prioridade

@@ -35,7 +35,7 @@ export default function ModalImprimirChamado({
         style={{ animation: 'slideUp 0.2s ease-out', willChange: 'transform, opacity' }}
       >
         {/* Header do Modal */}
-        <div className="relative bg-gradient-to-r from-[#001933] to-[#1a3c7a] px-6 py-5 rounded-t-2xl">
+        <div className="relative bg-linear-to-r from-[#001933] to-[#1a3c7a] px-6 py-5 rounded-t-2xl">
           <h3 className="text-xl font-bold text-white">
             Preferências de impressão
           </h3>

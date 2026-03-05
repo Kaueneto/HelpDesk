@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Select from 'react-select';
 import api from '@/services/api';
 import { useAuth } from '@/contexts/AuthContext';
 import DatePicker from 'react-datepicker';
@@ -86,10 +87,10 @@ export default function GerenciarChamados() {
   const [dataAberturaFim, setDataAberturaFim] = useState<Date | null>(null);
   const [dataFechamentoInicio, setDataFechamentoInicio] = useState<Date | null>(null);
   const [dataFechamentoFim, setDataFechamentoFim] = useState<Date | null>(null);
-  const [departamentoId, setDepartamentoId] = useState('');
-  const [topicoAjudaId, setTopicoAjudaId] = useState('');
+  const [departamentoId, setDepartamentoId] = useState<string[]>([]);
+  const [topicoAjudaId, setTopicoAjudaId] = useState<string[]>([]);
   const [prioridadeId, setPrioridadeId] = useState('');
-  const [statusId, setStatusId] = useState('');
+  const [statusId, setStatusId] = useState<string[]>([]);
   const [assunto, setAssunto] = useState('');
   const [nomeUsuario, setNomeUsuario] = useState('');
   const [nomeResponsavel, setNomeResponsavel] = useState('');
@@ -144,10 +145,10 @@ export default function GerenciarChamados() {
         setDataAberturaFim(filtros.dataAberturaFim ? new Date(filtros.dataAberturaFim) : null);
         setDataFechamentoInicio(filtros.dataFechamentoInicio ? new Date(filtros.dataFechamentoInicio) : null);
         setDataFechamentoFim(filtros.dataFechamentoFim ? new Date(filtros.dataFechamentoFim) : null);
-        setDepartamentoId(filtros.departamentoId || '');
-        setTopicoAjudaId(filtros.topicoAjudaId || '');
+        setDepartamentoId(Array.isArray(filtros.departamentoId) ? filtros.departamentoId : []);
+        setTopicoAjudaId(Array.isArray(filtros.topicoAjudaId) ? filtros.topicoAjudaId : []);
         setPrioridadeId(filtros.prioridadeId || '');
-        setStatusId(filtros.statusId || '');
+        setStatusId(Array.isArray(filtros.statusId) ? filtros.statusId : []);
         setAssunto(filtros.assunto || '');
         setNomeUsuario(filtros.nomeUsuario || '');
         setNomeResponsavel(filtros.nomeResponsavel || '');
@@ -286,10 +287,10 @@ export default function GerenciarChamados() {
         fim.setHours(23, 59, 59, 999);
         params.dataFechamentoFim = fim.toISOString();
       }
-      if (departamentoId) params.departamentoId = departamentoId;
-      if (topicoAjudaId) params.topicoAjudaId = topicoAjudaId;
+      if (departamentoId.length > 0) params.departamentoId = departamentoId.join(',');
+      if (topicoAjudaId.length > 0) params.topicoAjudaId = topicoAjudaId.join(',');
       if (prioridadeId) params.prioridadeId = prioridadeId;
-      if (statusId) params.statusId = statusId;
+      if (statusId.length > 0) params.statusId = statusId.join(',');
       if (assunto) params.assunto = assunto;
       if (nomeUsuario) params.nomeUsuario = nomeUsuario;
       if (nomeResponsavel) params.nomeResponsavel = nomeResponsavel;
@@ -337,10 +338,10 @@ export default function GerenciarChamados() {
     setDataAberturaFim(null);
     setDataFechamentoInicio(null);
     setDataFechamentoFim(null);
-    setDepartamentoId('');
-    setTopicoAjudaId('');
+    setDepartamentoId([]);
+    setTopicoAjudaId([]);
     setPrioridadeId('');
-    setStatusId('');
+    setStatusId([]);
     setAssunto('');
     setNomeUsuario('');
     setNomeResponsavel('');
@@ -728,61 +729,200 @@ export default function GerenciarChamados() {
                 />
               </div>
 
-              {/* departamento */}
               <div className="min-w-0">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Departamento
                 </label>
-                <select
-                  value={departamentoId}
-                  onChange={(e) => setDepartamentoId(e.target.value)}
-                  className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded  focus:ring-1 focus:ring-blue-500 text-sm text-gray-900 focus:outline-none"
-                >
-                  <option value="">Todos</option>
-                  {departamentos.filter(dept => dept.ativo).map((dept) => (
-                    <option key={dept.id} value={dept.id}>
-                      {dept.codigo} - {dept.name}
-                    </option>
-                  ))}
-                </select>
+                <Select
+                  isMulti
+                  isClearable
+                  options={departamentos.filter(dept => dept.ativo).map((dept) => ({
+                    value: dept.id.toString(),
+                    label: `${dept.codigo} - ${dept.name}`
+                  }))}
+                  value={
+                    departamentoId.length === 0
+                      ? []
+                      : departamentos
+                          .filter((dept) => departamentoId.includes(dept.id.toString()))
+                          .map((dept) => ({
+                            value: dept.id.toString(),
+                            label: `${dept.codigo} - ${dept.name}`
+                          }))
+                  }
+                  onChange={(selected) => {
+                    if (!selected || selected.length === 0) {
+                      setDepartamentoId([]);
+                    } else {
+                      setDepartamentoId(selected.map(item => item.value));
+                    }
+                  }}
+                  placeholder="Selecione departamentos..."
+                  noOptionsMessage={() => "Nenhuma opção disponível"}
+                  className="text-sm"
+                  styles={{
+                    control: (base) => ({
+                      ...base,
+                      minHeight: '38px',
+                      fontSize: '14px',
+                      borderColor: '#d1d5db',
+                      '&:hover': { borderColor: '#3b82f6' },
+                      boxShadow: 'none',
+                    }),
+                    option: (base) => ({
+                      ...base,
+                      fontSize: '14px',
+                    }),
+                    multiValue: (base) => ({
+                      ...base,
+                      backgroundColor: '#e0e7ff',
+                    }),
+                    multiValueLabel: (base) => ({
+                      ...base,
+                      color: '#002851',
+                      fontSize: '12px',
+                    }),
+                    multiValueRemove: (base) => ({
+                      ...base,
+                      color: '#1e40af',
+                      '&:hover': {
+                        backgroundColor: '#c7d2fe',
+                        color: '#1e3a8a',
+                      },
+                    }),
+                  }}
+                />
               </div>
 
-              {/* topico de ajuda */}
               <div className="min-w-0">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Tópico de ajuda
                 </label>
-                <select
-                  value={topicoAjudaId}
-                  onChange={(e) => setTopicoAjudaId(e.target.value)}
-                  className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded  focus:ring-1 focus:ring-blue-500 text-sm text-gray-900 focus:outline-none"
-                >
-                  <option value="">Todos</option>
-                  {topicosAjuda.filter(topico => topico.ativo).map((topico) => (
-                    <option key={topico.id} value={topico.id}>
-                     {topico.codigo} - {topico.nome}
-                    </option>
-                  ))}
-                </select>
+                <Select
+                  isMulti
+                  isClearable
+                  options={topicosAjuda.filter(topico => topico.ativo).map((topico) => ({
+                    value: topico.id.toString(),
+                    label: `${topico.codigo} - ${topico.nome}`
+                  }))}
+                  value={
+                    topicoAjudaId.length === 0
+                      ? []
+                      : topicosAjuda
+                          .filter((topico) => topicoAjudaId.includes(topico.id.toString()))
+                          .map((topico) => ({
+                            value: topico.id.toString(),
+                            label: `${topico.codigo} - ${topico.nome}`
+                          }))
+                  }
+                  onChange={(selected) => {
+                    if (!selected || selected.length === 0) {
+                      setTopicoAjudaId([]);
+                    } else {
+                      setTopicoAjudaId(selected.map(item => item.value));
+                    }
+                  }}
+                  placeholder="Selecione tópicos..."
+                  noOptionsMessage={() => "Nenhuma opção disponível"}
+                  className="text-base"
+                  styles={{
+                    control: (base) => ({
+                      ...base,
+                      minHeight: '38px',
+                      fontSize: '14px',
+                      borderColor: '#d1d5db',
+                      '&:hover': { borderColor: '#3b82f6' },
+                      boxShadow: 'none',
+                    }),
+                    option: (base) => ({
+                      ...base,
+                      fontSize: '14px',
+                    }),
+                    multiValue: (base) => ({
+                      ...base,
+                      backgroundColor: '#e0e7ff',
+                    }),
+                    multiValueLabel: (base) => ({
+                      ...base,
+                      color: '#002851',
+                      fontSize: '12px',
+                    }),
+                    multiValueRemove: (base) => ({
+                      ...base,
+                      color: '#1e40af',
+                      '&:hover': {
+                        backgroundColor: '#c7d2fe',
+                        color: '#1e3a8a',
+                      },
+                    }),
+                  }}
+                />
               </div>
 
-              {/* status */}
+
               <div className="min-w-0">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Status
                 </label>
-                <select
-                  value={statusId}
-                  onChange={(e) => setStatusId(e.target.value)}
-                  className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded  focus:ring-1 focus:ring-blue-500 text-sm text-gray-900 focus:outline-none"
-                >
-                  <option value="">Todos</option>
-                  {statusList.map((status) => (
-                    <option key={status.id} value={status.id}>
-                      {status.nome}
-                    </option>
-                  ))}
-                </select>
+                <Select
+                  isMulti
+                  isClearable
+                  options={statusList.map((status) => ({
+                    value: status.id.toString(),
+                    label: status.nome
+                  }))}
+                  value={
+                    statusId.length === 0
+                      ? []
+                      : statusList
+                          .filter((status) => statusId.includes(status.id.toString()))
+                          .map((status) => ({
+                            value: status.id.toString(),
+                            label: status.nome
+                          }))
+                  }
+                  onChange={(selected) => {
+                    if (!selected || selected.length === 0) {
+                      setStatusId([]);
+                    } else {
+                      setStatusId(selected.map(item => item.value));
+                    }
+                  }}
+                  placeholder="Selecione status..."
+                  noOptionsMessage={() => "Nenhuma opção disponível"}
+                  className="text-sm"
+                  styles={{
+                    control: (base) => ({
+                      ...base,
+                      minHeight: '38px',
+                      fontSize: '14px',
+                      borderColor: '#d1d5db',
+                      '&:hover': { borderColor: '#3b82f6' },
+                      boxShadow: 'none',
+                    }),
+                    option: (base) => ({
+                      ...base,
+                      fontSize: '14px',
+                    }),
+                    multiValue: (base) => ({
+                      ...base,
+                      backgroundColor: '#e0e7ff',
+                    }),
+                    multiValueLabel: (base) => ({
+                      ...base,
+                      color: '#002851',
+                      fontSize: '12px',
+                    }),
+                    multiValueRemove: (base) => ({
+                      ...base,
+                      color: '#1e40af',
+                      '&:hover': {
+                        backgroundColor: '#c7d2fe',
+                        color: '#1e3a8a',
+                      },
+                    }),
+                  }}
+                />
               </div>
             </div>
 
@@ -1136,10 +1276,10 @@ export default function GerenciarChamados() {
                           </span>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-900 max-w-[150px] truncate">
+                      <td className="px-4 py-3 text-sm text-gray-900 max-w-150 truncate">
                         {chamado.topicoAjuda?.nome || '-'}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-900 max-w-[120px] truncate">
+                      <td className="px-4 py-3 text-sm text-gray-900 max-w-120 truncate">
                         {chamado.departamento?.nome || chamado.departamento?.name || '-'}
                       </td>
                       <td className="px-1 py-1 text-center whitespace-nowrap">
@@ -1173,15 +1313,15 @@ export default function GerenciarChamados() {
                       <td className="px-1 py-3 text-sm text-gray-600 whitespace-nowrap">
                         {formatarData(chamado.dataFechamento)}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-900 max-w-[150px] truncate">
+                      <td className="px-4 py-3 text-sm text-gray-900 max-w-37 truncate">
                         {chamado.usuario?.name || '-'}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-900 max-w-[150px] truncate">
+                      <td className="px-4 py-3 text-sm text-gray-900 max-w-37 truncate">
                         {chamado.userResponsavel?.name || (
                           <span className="text-gray-400 italic">Não atribuído</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-900 max-w-[200px] truncate" title={chamado.resumoChamado}>
+                      <td className="px-4 py-3 text-sm text-gray-900 max-w-50 truncate" title={chamado.resumoChamado}>
                         {chamado.resumoChamado}
                       </td>
                     </tr>))}
@@ -1270,7 +1410,7 @@ export default function GerenciarChamados() {
         <div className="fixed inset-0 bg-black/60  flex items-center justify-center z-50 p-4 ">
           <div className="bg-white shadow-2xl w-full max-w-3xl transform transition-all rounded-md">
             {/* header */}
-            <div className="bg-gradient-to-r from-[#001933] to-[#1A4877] px-6 py-4 rounded-md">
+            <div className="bg-linear-to-r from-[#001933] to-[#1A4877] px-6 py-4 rounded-md">
               <div className="flex justify-between items-center">
                 <h3 className="text-xl font-bold text-white">
                   Editar múltiplos chamados
