@@ -8,12 +8,11 @@ import { Users } from "../entities/Users";
 import { StatusChamado } from "../entities/StatusChamado";
 import { TipoPrioridade } from "../entities/TipoPrioridade";
 import { Departamentos } from "../entities/Departamentos";
-import { PrefUsers } from "../entities/PrefUsers";
-import nodemailer from "nodemailer";
 import { TopicosAjuda } from "../entities/TopicosAjuda";
 import { ParametrosSistema } from "../entities/ParametrosSistema";
 import { verifyToken } from "../Middleware/AuthMiddleware";
 import { supabase, SUPABASE_BUCKET } from "../config/supabase";
+import * as EmailService from "../services/EmailService";
 
 interface AuthenticatedRequest extends Request {
   userId?: number;
@@ -22,433 +21,6 @@ interface AuthenticatedRequest extends Request {
 }
 
 const router = Router();
-
-// funcao para verificar preferencias do usuário
-async function verificarPreferenciasUsuario(userId: number): Promise<number[]> {
-  try {
-    const prefUsersRepository = AppDataSource.getRepository(PrefUsers);
-    const preferencias = await prefUsersRepository.find({
-      where: { user_id: userId },
-      select: ["preferencia_id"]
-    });
-    return preferencias.map(pref => pref.preferencia_id);
-  } catch (error) {
-    return [];
-  }
-}
-
-
-
-// funcao para enviar email pro usuario sempre que o chamado dele estiver aguardando resposta
-async function enviarEmailEsperandoUsuario(usuario: Users, chamado: Chamados): Promise<void> {
-  try {
-    const transporter = nodemailer.createTransport({
-      host: process.env.EMAIL_HOST,
-      port: Number(process.env.EMAIL_PORT),
-      secure: false,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
-
- const mailOptions = {
-  from: process.env.EMAIL_FROM,
-  to: usuario.email,
-  subject: `Chamado #${chamado.numeroChamado} - Aguardando sua resposta`,
-  html: `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f8f9fa;">
-      <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-        
-        <h2 style="color: #f39c12; margin-bottom: 20px; text-align: center;">
-          Seu chamado está aguardando sua resposta
-        </h2>
-
-        <p style="font-size: 16px; color: #333; margin-bottom: 20px;">
-          Olá, <strong>${usuario.name}</strong>.
-        </p>
-
-        <p style="font-size: 14px; color: #666; margin-bottom: 20px;">
-          O chamado com o assunto <strong>"${chamado.resumoChamado}"</strong> está aguardando sua resposta para que possamos continuar o atendimento.
-        </p>
-
-        <div style="background-color: #fff4e5; padding: 20px; border-radius: 8px; border-left: 4px solid #f39c12; margin-bottom: 25px;">
-          <p style="margin: 0; font-size: 14px;">
-            <strong>Número do chamado:</strong> #${chamado.numeroChamado}
-          </p>
-          <p style="margin: 8px 0 0 0; font-size: 14px;">
-            <strong>Status:</strong> 
-            <span style="color: #f39c12; font-weight: bold;">
-              Aguardando resposta do usuário
-            </span>
-          </p>
-        </div>
-
-        <p style="font-size: 14px; color: #666; margin-bottom: 30px;">
-          Por favor, acesse o sistema para visualizar a mensagem enviada pela equipe de suporte e responder ao chamado.
-        </p>
-
-        <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-
-        <p style="font-size: 12px; color: #888; text-align: center; margin: 0;">
-          Este é um email automático, não responda.
-        </p>
-
-      </div>
-    </div>
-  `
-};
-
-    await transporter.sendMail(mailOptions);
-  } catch (error) {
-  }
-}
-
-
-
-// funcao para enviar email pro usuario sempre que o chamado dele estiver aguardando resposta
-async function enviarEmailAguardandoTerceiros(usuario: Users, chamado: Chamados): Promise<void> {
-  try {
-    const transporter = nodemailer.createTransport({
-      host: process.env.EMAIL_HOST,
-      port: Number(process.env.EMAIL_PORT),
-      secure: false,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
-
- const mailOptions = {
-  from: process.env.EMAIL_FROM,
-  to: usuario.email,
-  subject: `Chamado #${chamado.numeroChamado} - Aguardando retorno de outro setor`,
-  html: `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f8f9fa;">
-      <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-        
-        <h2 style="color: #6c757d; margin-bottom: 20px; text-align: center;">
-          Seu chamado está aguardando retorno de outro setor
-        </h2>
-
-        <p style="font-size: 16px; color: #333; margin-bottom: 20px;">
-          Olá, <strong>${usuario.name}</strong>.
-        </p>
-
-        <p style="font-size: 14px; color: #666; margin-bottom: 20px;">
-          O chamado com o assunto <strong>"${chamado.resumoChamado}"</strong> foi encaminhado para o responsável e no momento estamos aguardando um retorno para dar continuidade na sua solicitação.
-        </p>
-
-        <p style="font-size: 14px; color: #666; margin-bottom: 25px;">
-          Assim que tivermos um retorno, o atendimento será retomado automaticamente.
-        </p>
-
-        <div style="background-color: #f1f3f5; padding: 20px; border-radius: 8px; border-left: 4px solid #6c757d; margin-bottom: 25px;">
-          <p style="margin: 0; font-size: 14px;">
-            <strong>Número do chamado:</strong> #${chamado.numeroChamado}
-          </p>
-          <p style="margin: 8px 0 0 0; font-size: 14px;">
-            <strong>Status:</strong> 
-            <span style="color: #6c757d; font-weight: bold;">
-              Aguardando retorno de outro setor
-            </span>
-          </p>
-        </div>
-
-        <p style="font-size: 14px; color: #666; margin-bottom: 30px;">
-          Você pode acompanhar o andamento do chamado através da aba 
-          <strong>"Acompanhar Chamados"</strong> no sistema.
-        </p>
-
-        <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-
-        <p style="font-size: 12px; color: #888; text-align: center; margin: 0;">
-          Este é um email automático, não responda.
-        </p>
-
-      </div>
-    </div>
-  `
-};
-
-    await transporter.sendMail(mailOptions);
-  } catch (error) {
-  }
-}
-
-
-
-// funcao para enviar email de notificação para administradores
-async function enviarEmailNotificacaoAdmin(admin: Users, usuario: Users, chamado: Chamados): Promise<void> {
-  try {
-    const transporter = nodemailer.createTransport({
-      host: process.env.EMAIL_HOST,
-      port: Number(process.env.EMAIL_PORT),
-      secure: false,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
-
-    const mailOptions = {
-      from: process.env.EMAIL_FROM,
-      to: admin.email,
-      subject: `Novo Chamado #${chamado.numeroChamado} - ${usuario.name}`,
-      html: `
-        <h2>Novo Chamado Aberto!</h2>
-        <p>Olá <strong>${admin.name}</strong>,</p>
-        <p>Um novo chamado foi aberto no sistema com os seguintes detalhes:</p>
-       <div style="background-color: #e9f7ef; padding: 20px; border-radius: 8px; border-left: 4px solid #28a745; margin-bottom: 25px;">
-              <h3 style="color: #1e7e34; margin-top: 0; margin-bottom: 15px;">Detalhes do Chamado:</h3>
-              <ul style="list-style: none; padding: 0; margin: 0;">
-                <li style="margin-bottom: 10px;"><strong>Número:</strong> #${chamado.numeroChamado}</li>
-                <li style="margin-bottom: 10px;"><strong>Resumo:</strong> ${chamado.resumoChamado}</li>
-                <li style="margin-bottom: 10px;"><strong>Data de Abertura:</strong> ${new Date(chamado.dataAbertura).toLocaleString('pt-BR')}</li>
-                <li style="margin-bottom: 10px;"><strong>Status:</strong> <span style="color: #f39c12; font-weight: bold;">Aberto</span></li>
-              </ul>
-            </div>
-        <p>Por favor, acesse o sistema para atender esta solicitação.</p>
-        <p><br><strong>Sistema HelpDesk</strong></p>
-      `
-    };
-
-    await transporter.sendMail(mailOptions);
- 
-  } catch (error) {
-    //log 
-  }
-}
-
-// funcao para enviar email de confirmação para o usuário que abriu o chamado
-async function enviarEmailConfirmacaoUsuario(usuario: Users, chamado: Chamados): Promise<void> {
-  try {
-    const transporter = nodemailer.createTransport({
-      host: process.env.EMAIL_HOST,
-      port: Number(process.env.EMAIL_PORT),
-      secure: false,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
-
-    const mailOptions = {
-      from: process.env.EMAIL_FROM,
-      to: usuario.email,
-      subject: `Chamado #${chamado.numeroChamado} - Aberto com sucesso`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f8f9fa;">
-          <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-            <h2 style="color: #28a745; margin-bottom: 20px; text-align: center;">Chamado Aberto com Sucesso!</h2>
-            
-            <p style="font-size: 16px; color: #333; margin-bottom: 20px;">Olá <strong>${usuario.name}</strong>,</p>
-            
-            <p style="font-size: 14px; color: #666; margin-bottom: 25px;">
-              Seu chamado foi registrado com sucesso, sua solicitação será analisada e entraremos em contato em breve se for necessário.
-            </p>
-            
-            <div style="background-color: #e9f7ef; padding: 20px; border-radius: 8px; border-left: 4px solid #28a745; margin-bottom: 25px;">
-              <h3 style="color: #1e7e34; margin-top: 0; margin-bottom: 15px;">Detalhes do Chamado:</h3>
-              <ul style="list-style: none; padding: 0; margin: 0;">
-                <li style="margin-bottom: 10px;"><strong>Número:</strong> #${chamado.numeroChamado}</li>
-                <li style="margin-bottom: 10px;"><strong>Resumo:</strong> ${chamado.resumoChamado}</li>
-                <li style="margin-bottom: 10px;"><strong>Data de Abertura:</strong> ${new Date(chamado.dataAbertura).toLocaleString('pt-BR')}</li>
-                <li style="margin-bottom: 10px;"><strong>Status:</strong> <span style="color: #f39c12; font-weight: bold;">Aberto</span></li>
-              </ul>
-            </div>
-            
-    
-            
-            <p style="font-size: 14px; color: #666; margin-bottom: 30px;">
-            Acompanhe seu chamado através da aba "Acompanhar Chamados" no sistema. Você será notificado quando ele for concluído.
-            </p>
-            
-            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-            
-            <p style="font-size: 12px; color: #888; text-align: center; margin: 0;">
-              Este é um email automático, não responda.
-            </p>
-          </div>
-        </div>
-      `
-    };
-
-    await transporter.sendMail(mailOptions);
-  } catch (error) {
-  }
-}
-async function enviarEmailRedirecionamento(novoResponsavel: Users | null, usuarioQueRedirecionou: Users | null, chamado: Chamados): Promise<void> {
-  // Verificar se todos os parâmetros necessários estão presentes
-  if (!novoResponsavel || !usuarioQueRedirecionou) {
-    return; // sair silenciosamente se não há usuários
-  }
-
-  // verificar se é autoatribuicao (mesmo usuário)
-  if (novoResponsavel.id === usuarioQueRedirecionou.id) {
-    return; // Não enviar email para si mesmo
-  }
-
-  //  verificar se o email do destinatário existe
-  if (!novoResponsavel.email) {
-    return; //nao pode enviar email sem destinatário
-  }
-
-  try {
-    // Email de redirecionamento é sempre enviado (ação administrativa crítica)
-    // caso quiser alterar depois e inserir preferencias de usuario pra decidier se envia email ou nao descomentar linhas abaixo:
-    // const preferenciasResponsavel = await verificarPreferenciasUsuario(novoResponsavel.id);
-    // if (preferenciasResponsavel.includes(1)) { // ID 1 = receber notificações de admin
-
-    // verificar se as variáveis de ambiente estão configuradas
-    if (!process.env.EMAIL_HOST || !process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-      return;
-    }
-
-    const transporter = nodemailer.createTransport({
-      host: process.env.EMAIL_HOST,
-      port: Number(process.env.EMAIL_PORT),
-      secure: false,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
-
-    // testar conexão do transporter
-    try {
-      await transporter.verify();
-    } catch (verifyError) {
-      throw new Error('Falha na conexão SMTP');
-    }
-
-    const mailOptions = {
-      from: process.env.EMAIL_FROM,
-      to: novoResponsavel.email,
-      subject: `Chamado #${chamado.numeroChamado} direcionado para você por ${usuarioQueRedirecionou.name}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f8f9fa;">
-          <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-            <h2 style="color: #007bff; margin-bottom: 20px; text-align: center;">Chamado Redirecionado</h2>
-            
-            <p style="font-size: 16px; color: #333; margin-bottom: 20px;">Olá <strong>${novoResponsavel.name}</strong>,</p>
-            
-            <p style="font-size: 14px; color: #666; margin-bottom: 25px;">
-              O chamado <strong>#${chamado.numeroChamado}</strong> foi redirecionado para você por <strong>${usuarioQueRedirecionou.name}</strong>. 
-              Você agora é o responsável pelo atendimento deste chamado.
-            </p>
-            
-            <div style="background-color: #e3f2fd; padding: 20px; border-radius: 8px; border-left: 4px solid #007bff; margin-bottom: 25px;">
-              <h3 style="color: #1565c0; margin-top: 0; margin-bottom: 15px;">📋 Detalhes do Chamado:</h3>
-              <ul style="list-style: none; padding: 0; margin: 0;">
-                <li style="margin-bottom: 8px;"><strong>Número:</strong> #${chamado.numeroChamado}</li>
-                <li style="margin-bottom: 8px;"><strong>Resumo:</strong> ${chamado.resumoChamado}</li>
-                <li style="margin-bottom: 8px;"><strong>Data de Abertura:</strong> ${new Date(chamado.dataAbertura).toLocaleString('pt-BR')}</li>
-                <li style="margin-bottom: 8px;"><strong>Status:</strong> <span style="color: #f57c00; font-weight: bold;">Em Atendimento</span></li>
-                <li style="margin-bottom: 8px;"><strong>Redirecionado por:</strong> ${usuarioQueRedirecionou.name}</li>
-              </ul>
-            </div>
-            
-            <div style="background-color: #fff3cd; padding: 15px; border-radius: 8px; border-left: 4px solid #ffc107; margin-bottom: 25px;">
-             <p style="margin: 0; color: #856404; font-size: 14px;">
-              <strong>⚡ Ação Necessária:</strong> Acesse o sistema HelpDesk para visualizar todos os detalhes e iniciar o atendimento.
-            </p>
-            </div>
-            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-            
-            <p style="font-size: 12px; color: #888; text-align: center; margin: 0;">
-              <strong>Sistema HelpDesk</strong><br>
-            Este é um email automático, não responda.
-            </p>
-          </div>
-        </div>
-      `
-    };
-
-    const result = await transporter.sendMail(mailOptions);
-    
-    // }
-  } catch (error) {
-      //nao lancar o erro de email pois ele nao deve interromper as operacoes
-    console.error("Erro ao enviar email de redirecionamento:", error);
-  }
-}
-
-//funcao pra enviar email de conclusao pro usuario 
-async function enviarEmailConclusaoUsuario(usuario: Users, chamado: Chamados, adminResponsavel: Users | null): Promise<void> {
-  try {
- 
-    
-    const transporter = nodemailer.createTransport({
-      host: process.env.EMAIL_HOST,
-      port: Number(process.env.EMAIL_PORT),
-      secure: false,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
-
- 
-    
-    const nomeResponsavel = adminResponsavel?.name || "Nossa equipe";
-    const dataFechamento = chamado.dataFechamento ? new Date(chamado.dataFechamento).toLocaleString('pt-BR') : "N/A";
-        
-    const mailOptions = {
-      from: process.env.EMAIL_FROM,
-      to: usuario.email,
-      subject: `✓ Chamado #${chamado.numeroChamado} - Concluído`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f8f9fa;">
-          <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-            <h2 style="color: #28a745; margin-bottom: 20px; text-align: center;">✓ Chamado Concluído!</h2>
-            
-            <p style="font-size: 16px; color: #333; margin-bottom: 20px;">Olá <strong>${usuario.name}</strong>,</p>
-            
-            <p style="font-size: 14px; color: #666; margin-bottom: 25px;">
-              Informamos que o atendimento referente ao seu chamado foi concluído com sucesso! 
-            </p>
-            
-            <div style="background-color: #d4edda; padding: 20px; border-radius: 8px; border-left: 4px solid #28a745; margin-bottom: 25px;">
-              <h3 style="color: #155724; margin-top: 0; margin-bottom: 15px;">Resumo do Atendimento:</h3>
-              <ul style="list-style: none; padding: 0; margin: 0;">
-                <li style="margin-bottom: 10px;"><strong>Número:</strong> #${chamado.numeroChamado}</li>
-                <li style="margin-bottom: 10px;"><strong>Resumo:</strong> ${chamado.resumoChamado}</li>
-                <li style="margin-bottom: 10px;"><strong>Responsável:</strong> ${nomeResponsavel}</li>
-                <li style="margin-bottom: 10px;"><strong>Data de Abertura:</strong> ${new Date(chamado.dataAbertura).toLocaleString('pt-BR')}</li>
-                <li style="margin-bottom: 10px;"><strong>✓ Data de Conclusão:</strong> ${dataFechamento}</li>
-              </ul>
-            </div>
-            
-            <div style="background-color: #d1ecf1; padding: 15px; border-radius: 8px; border-left: 4px solid #17a2b8; margin-bottom: 25px;">
-              <p style="margin: 0; color: #0c5460; font-size: 14px;">
-                <strong>💬 Feedback:</strong> Sua opinião é importante para nós! Se precisar de mais alguma coisa, não hesite em abrir um novo chamado.
-              </p>
-            </div>
-            
-            <p style="font-size: 14px; color: #666; margin-bottom: 30px;">
-              Estamos sempre disponíveis para ajudá-lo!
-            </p>
-            
-            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-            
-            <p style="font-size: 12px; color: #888; text-align: center; margin: 0;">
-              <br>
-              <strong>Equipe HelpDesk</strong><br>
-              Este é um email automático, não responda.
-            </p>
-          </div>
-        </div>
-      `
-    };
-
-
-
-    await transporter.sendMail(mailOptions);
-  } catch (error) {
-    // Log simplificado para produção
-  }
-}
 
 
 //cadastrar chamado //novo chamado
@@ -537,18 +109,18 @@ router.post("/chamados", verifyToken, async (req: AuthenticatedRequest, res: Res
         if (usuarioSolicitante && administradores.length > 0) {
           // para cada administrador, verificar suas preferências e notificar
           for (const admin of administradores) {
-            const preferenciasAdmin = await verificarPreferenciasUsuario(admin.id);
+            const preferenciasAdmin = await EmailService.verificarPreferenciasUsuario(admin.id);
             
             // verif se deve enviar email (preferência ID 1)
             if (preferenciasAdmin.includes(1)) {
-              await enviarEmailNotificacaoAdmin(admin, usuarioSolicitante, chamadoCompleto!);
+              await EmailService.enviarEmailNotificacaoAdmin(admin, usuarioSolicitante, chamadoCompleto!);
             }
           }
           
           // verificar se o usuário quer receber email de abertura (preferência ID 2)
-          const preferenciasUsuario = await verificarPreferenciasUsuario(usuarioSolicitante.id);
+          const preferenciasUsuario = await EmailService.verificarPreferenciasUsuario(usuarioSolicitante.id);
           if (preferenciasUsuario.includes(2)) {
-            await enviarEmailConfirmacaoUsuario(usuarioSolicitante, chamadoCompleto!);
+            await EmailService.enviarEmailConfirmacaoUsuario(usuarioSolicitante, chamadoCompleto!);
           }
         }
 
@@ -567,6 +139,139 @@ router.post("/chamados", verifyToken, async (req: AuthenticatedRequest, res: Res
   }
 });
 
+//rota pra admin abriem chamados
+router.post("/chamados/admin/criar", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
+
+  
+  try {
+    const {
+      resumoChamado,
+      descricaoChamado,
+      topicoAjudaId,
+      departamentoId,
+      prioridadeId,
+      userResponsavelId,
+    } = req.body;
+
+    const adminId = req.userId; // ID do admin que está criando
+    const adminRoleId = req.userRoleId;
+
+    // Verificar se é admin
+    if (adminRoleId !== 1) {
+      return res.status(403).json({
+        mensagem: "Apenas administradores podem usar esta função",
+      });
+    }
+
+    const chamadoRepository = AppDataSource.getRepository(Chamados);
+    const historicoRepository = AppDataSource.getRepository(ChamadoHistorico);
+    const userRepository = AppDataSource.getRepository(Users);
+
+    const dataAtual = new Date();
+
+
+    const chamado = chamadoRepository.create({
+      ramal: 0, 
+      numeroChamado: Date.now(),
+      dataAbertura: dataAtual,
+      status: { id: 1 }, // 1 = ABERTO (inicialmente)
+      resumoChamado,
+      descricaoChamado,
+      usuario: { id: adminId }, // Admin é o "usuário" que abriu
+      tipoPrioridade: { id: prioridadeId },
+      topicoAjuda: { id: topicoAjudaId },
+      departamento: { id: departamentoId },
+    });
+
+
+    await chamadoRepository.save(chamado);
+
+
+    // Buscar nome do admin
+    const admin = await userRepository.findOne({
+      where: { id: adminId },
+      select: ["id", "name", "email"]
+    });
+
+    const nomeAdmin = admin?.name || "Admin";
+
+
+    await historicoRepository.save({
+      chamado,
+      usuario: { id: adminId },
+      acao: `Chamado criado por administrador ${nomeAdmin}`,
+      statusAnterior: undefined,
+      statusNovo: { id: 1 }, // Status ABERTO
+      dataMov: new Date(),
+    });
+
+    // verificar se foi atribuído um responsável
+    if (userResponsavelId && userResponsavelId !== adminId) {
+      
+      // atualizar chamado com responsável
+      chamado.userResponsavel = { id: userResponsavelId } as Users;
+      chamado.dataAtribuicao = new Date();
+      chamado.status = { id: 2 } as StatusChamado; // 2 = EM ANALISE
+      
+      await chamadoRepository.save(chamado);
+
+
+      // registrar5 a atribuicao no historico
+      await historicoRepository.save({
+        chamado,
+        usuario: { id: adminId },
+        acao: `Chamado atribuído durante criação por ${nomeAdmin}`,
+        statusAnterior: { id: 1 },
+        statusNovo: { id: 2 },
+        dataMov: new Date(),
+      });
+
+
+      // enviar email assíncrono para o responsável
+      setImmediate(async () => {
+        try {
+          const responsavel = await userRepository.findOne({
+            where: { id: userResponsavelId },
+            select: ["id", "name", "email"]
+          });
+
+          if (responsavel && admin) {
+            // recarregar chamado com dados completos para o email
+            const chamadoParaEmail = await chamadoRepository.findOne({
+              where: { id: chamado.id },
+              relations: ["usuario", "tipoPrioridade", "departamento", "topicoAjuda", "status", "userResponsavel"],
+            });
+
+            if (chamadoParaEmail) {
+              await EmailService.enviarEmailChamadoCriadoPorAdmin(responsavel, admin, chamadoParaEmail);
+
+            }
+          }
+        } catch (emailError) {
+
+        }
+      });
+    }
+
+
+    const chamadoCompleto = await chamadoRepository.findOne({
+      where: { id: chamado.id },
+      relations: ["usuario", "tipoPrioridade", "departamento", "topicoAjuda", "status", "userResponsavel"],
+    });
+
+    
+    return res.status(201).json({
+      mensagem: userResponsavelId ? "Chamado criado e atribuído com sucesso!" : "Chamado criado com sucesso!",
+      chamado: chamadoCompleto,
+    });
+  } catch (error) {
+    
+    return res.status(500).json({
+      mensagem: "Erro ao criar chamado",
+      error: error instanceof Error ? error.message : "Erro desconhecido",
+    });
+  }
+});
 
 
 //rotar para obter os chamados
@@ -927,7 +632,7 @@ router.put("/chamados/:id/atribuir", verifyToken, async (req: AuthenticatedReque
     // Enviar email de redirecionamento
     try {
   
-      await enviarEmailRedirecionamento(usuarioResponsavel, usuarioAtribuiu, chamado);
+      await EmailService.enviarEmailRedirecionamento(usuarioResponsavel, usuarioAtribuiu, chamado);
     } catch (emailError) {
       // Não falha a operação se o email der erro, apenas registra
    
@@ -1329,10 +1034,10 @@ router.put("/chamados/:id/encerrar", verifyToken, async (req: AuthenticatedReque
     if (usuarioChamado) {
       
       try {
-        const preferenciasUsuario = await verificarPreferenciasUsuario(usuarioChamado.id);
+        const preferenciasUsuario = await EmailService.verificarPreferenciasUsuario(usuarioChamado.id);
         
         if (preferenciasUsuario.includes(3)) {
-          await enviarEmailConclusaoUsuario(usuarioChamado, chamadoCompleto!, adminResponsavel);
+          await EmailService.enviarEmailConclusaoUsuario(usuarioChamado, chamadoCompleto!, adminResponsavel);
         }
     
       } catch (emailError) {
@@ -1793,13 +1498,13 @@ router.patch("/chamados/editar-multiplos", verifyToken, async (req: Authenticate
           try {
             if (emailData.tipo === 'status6' && emailData.usuario?.email) {
               // status 6
-              await enviarEmailEsperandoUsuario(emailData.usuario, emailData.chamado);
+              await EmailService.enviarEmailEsperandoUsuario(emailData.usuario, emailData.chamado);
             } else if (emailData.tipo === 'status7' && emailData.usuario?.email) {
               // status 7
-              await enviarEmailAguardandoTerceiros(emailData.usuario, emailData.chamado);
+              await EmailService.enviarEmailAguardandoTerceiros(emailData.usuario, emailData.chamado);
             } else if (emailData.tipo === 'redirecionamento') {
               // email de redirecionamento
-              await enviarEmailRedirecionamento(emailData.novoResponsavel!, emailData.usuario!, emailData.chamado);
+              await EmailService.enviarEmailRedirecionamento(emailData.novoResponsavel!, emailData.usuario!, emailData.chamado);
             }
           } catch (emailError) {
           }
@@ -1899,9 +1604,9 @@ router.patch("/chamados/resolver-multiplos", verifyToken, async (req: Authentica
           if (usuarioChamado) {
             try {
               // verificar se o usuário quer receber email de conclusão (preferência ID 3)
-              const preferenciasUsuario = await verificarPreferenciasUsuario(usuarioChamado.id);
+              const preferenciasUsuario = await EmailService.verificarPreferenciasUsuario(usuarioChamado.id);
               if (preferenciasUsuario.includes(3)) {
-                await enviarEmailConclusaoUsuario(usuarioChamado, chamado, usuario);
+                await EmailService.enviarEmailConclusaoUsuario(usuarioChamado, chamado, usuario);
               }
               emailsEnviados++;
             } catch (emailError) {
