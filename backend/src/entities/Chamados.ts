@@ -26,8 +26,8 @@ export class Chamados {
   @JoinColumn({ name: "id_user" })
   usuario!: Users;
 
-  @Column()
-  ramal!: number;
+  @Column({ type: 'integer', nullable: true })
+  ramal!: number | null;
 
   @Column({ name: "numero_chamado", unique: true })
   numeroChamado!: number;

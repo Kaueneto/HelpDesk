@@ -255,15 +255,15 @@ export default function AbrirChamado({ userEmail, onSuccess, onCancel }: AbrirCh
 
 
   return (
-    <div className="max-w-5xl mx-auto px-10 py-8">
+    <div className="max-w-5xl mx-auto px-3 sm:px-5 md:px-10 py-4 sm:py-6 md:py-8">
 
       {etapaAtual !== 3 && (
-        <h2 className="text-3xl font-semibold text-blue-500 mb-8 animate-fade-in">
+        <h2 className="text-xl sm:text-2xl md:text-3xl font-semibold text-blue-500 mb-4 sm:mb-6 md:mb-8 animate-fade-in">
           Abrindo um novo Chamado
         </h2>
       )}
 
-    <form onSubmit={handleSubmitChamado} className="relative overflow-hidden min-h-150 px-1">
+    <form onSubmit={handleSubmitChamado} className="relative overflow-hidden min-h-125 sm:min-h-150 px-1">
       {/* Etapa 1: Descrição do Problema */}
       <div
         className={`transition-all duration-700 ease-in-out w-full ${
@@ -276,9 +276,9 @@ export default function AbrirChamado({ userEmail, onSuccess, onCancel }: AbrirCh
       >
         <div className="space-y-6 animate-fade-in">
           {/* Linha 1: Assunto e Tópico de Ajuda */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
             <div className="md:col-span-2">
-              <label htmlFor="assunto" className="block text-base font-medium text-gray-800 mb-3">
+              <label htmlFor="assunto" className="block text-sm sm:text-base font-medium text-gray-800 mb-2 sm:mb-3">
                 Assunto <span className="text-red-500">*</span>
               </label>
               <input
@@ -288,13 +288,13 @@ export default function AbrirChamado({ userEmail, onSuccess, onCancel }: AbrirCh
                 onChange={(e) => setResumoChamado(e.target.value)}
                 required
                 maxLength={200}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm"
-                placeholder="Resume seu problema em poucas palavras"
+                className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg text-sm sm:text-base text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm"
+                placeholder="Resuma seu problema em poucas palavras"
               />
             </div>
 
             <div>
-              <label htmlFor="topico" className="block text-base font-medium text-gray-800 mb-3">
+              <label htmlFor="topico" className="block text-sm sm:text-base font-medium text-gray-800 mb-2 sm:mb-3">
                 Tópico de ajuda <span className="text-red-500">*</span>
               </label>
               <select
@@ -302,7 +302,7 @@ export default function AbrirChamado({ userEmail, onSuccess, onCancel }: AbrirCh
                 value={topicoAjudaId}
                 onChange={(e) => setTopicoAjudaId(Number(e.target.value))}
                 required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm"
+                className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg bg-white text-sm sm:text-base text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm"
               >
                 <option value={0}>Selecione...</option>
                 {topicos
@@ -319,9 +319,9 @@ export default function AbrirChamado({ userEmail, onSuccess, onCancel }: AbrirCh
 
           {mostrarDescricao && (
             <div className="animate-slide-up-fade-in origin-top">
-              <div className="space-y-6 pt-2">
+              <div className="space-y-4 sm:space-y-6 pt-2">
                 <div>
-                  <label htmlFor="descricao" className="block text-base font-medium text-gray-800 mb-3">
+                  <label htmlFor="descricao" className="block text-sm sm:text-base font-medium text-gray-800 mb-2 sm:mb-3">
                     Descrição <span className="text-red-500">*</span>
                   </label>
                   <textarea
@@ -330,21 +330,21 @@ export default function AbrirChamado({ userEmail, onSuccess, onCancel }: AbrirCh
                     onChange={(e) => setDescricaoChamado(e.target.value)}
                     required
                     rows={6}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent resize-y transition-all shadow-sm"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg text-sm sm:text-base text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent resize-y transition-all shadow-sm"
                     placeholder="Descreva seu problema com o maior número de detalhes..."
                   />
                 </div>
 
                 {/* anexos */}
                 <div>
-                  <label className="block text-base font-medium text-gray-800 mb-3">
+                  <label className="block text-sm sm:text-base font-medium text-gray-800 mb-2 sm:mb-3">
                     Anexos (Opcional)
                   </label>
                   <div
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
                     onDrop={handleDrop}
-                    className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                    className={`border-2 border-dashed rounded-lg p-4 sm:p-6 md:p-8 text-center transition-colors ${
                       isDragging
                         ? 'border-blue-500 bg-blue-50'
                         : 'border-gray-300 bg-gray-50'
@@ -354,10 +354,10 @@ export default function AbrirChamado({ userEmail, onSuccess, onCancel }: AbrirCh
                       htmlFor="file-upload"
                       className="cursor-pointer flex flex-col items-center"
                     >
-                      <svg className="h-12 w-12 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 text-gray-400 mb-2 sm:mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                       </svg>
-                      <p className="text-sm font-medium text-gray-700 mb-1">
+                      <p className="text-xs sm:text-sm font-medium text-gray-700 mb-1">
                         Clique para selecionar ou arraste arquivos aqui
                       </p>
                       <p className="text-xs text-gray-500">Máximo de 5 arquivos (10MB cada)</p>
@@ -405,11 +405,11 @@ export default function AbrirChamado({ userEmail, onSuccess, onCancel }: AbrirCh
                 </div>
 
                 {/* bt proximo */}
-                <div className="flex justify-end pt-6">
+                <div className="flex justify-end pt-4 sm:pt-6">
                   <button
                     type="button"
                     onClick={handleProximo}
-                    className="px-12 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-all shadow-sm hover:shadow-md active:scale-95"
+                    className="px-8 sm:px-10 md:px-12 py-2.5 sm:py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm sm:text-base font-medium rounded-lg transition-all shadow-sm hover:shadow-md active:scale-95"
                   >
                     Próximo
                   </button>
@@ -430,13 +430,13 @@ export default function AbrirChamado({ userEmail, onSuccess, onCancel }: AbrirCh
               : 'translate-x-full opacity-0 absolute top-0 left-0'
           }`}
         >
-          <div className="space-y-6">
-            <p className="text-gray-600 mb-6">Agora confirme alguns dados</p>
+          <div className="space-y-4 sm:space-y-6">
+            <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">Agora confirme alguns dados</p>
 
  
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
               <div>
-                <label htmlFor="departamento" className="block text-base font-medium text-gray-800 mb-3">
+                <label htmlFor="departamento" className="block text-sm sm:text-base font-medium text-gray-800 mb-2 sm:mb-3">
                   Informe o seu Departamento <span className="text-red-500">*</span>
                 </label>
                 <select
@@ -444,7 +444,7 @@ export default function AbrirChamado({ userEmail, onSuccess, onCancel }: AbrirCh
                   value={departamentoId}
                   onChange={(e) => setDepartamentoId(Number(e.target.value))}
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent transition-shadow"
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg bg-white text-sm sm:text-base text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent transition-shadow"
                 >
                   <option value={0}>Selecione...</option>
                  {departamentos
@@ -458,10 +458,10 @@ export default function AbrirChamado({ userEmail, onSuccess, onCancel }: AbrirCh
               </div>
 
               <div>
-                <label className="block text-base font-medium text-gray-800 mb-3">
+                <label className="block text-sm sm:text-base font-medium text-gray-800 mb-2 sm:mb-3">
                   Nível de prioridade <span className="text-red-500">*</span>
                 </label>
-                <div className="grid grid-cols-4 h-12 rounded-lg overflow-hidden border border-gray-300">
+                <div className="grid grid-cols-4 h-10 sm:h-12 rounded-lg overflow-hidden border border-gray-300">
                   {prioridades.map((prioridade) => (
                     <button
                       key={prioridade.id}
@@ -484,7 +484,7 @@ export default function AbrirChamado({ userEmail, onSuccess, onCancel }: AbrirCh
             </div>
 
               <div>
-            <label htmlFor="ramal" className="block text-base font-medium text-gray-800 mb-3">
+            <label htmlFor="ramal" className="block text-sm sm:text-base font-medium text-gray-800 mb-2 sm:mb-3">
               Número do Ramal <span className="text-red-500">*</span>
             </label>
 
@@ -492,7 +492,7 @@ export default function AbrirChamado({ userEmail, onSuccess, onCancel }: AbrirCh
               <img
                 src="/icons/iconphone.svg"
                 
-                className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 opacity-60 pointer-events-none"
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 opacity-60 pointer-events-none"
               />
 
               <input
@@ -502,7 +502,7 @@ export default function AbrirChamado({ userEmail, onSuccess, onCancel }: AbrirCh
                 onChange={(e) => setRamal(e.target.value)}
                 required
                 placeholder="Digite o ramal"
-                className="w-full pl-5 pr-4 py-3 border border-gray-300 rounded-lg text-gray-900 
+                className="w-full pl-4 sm:pl-5 pr-3 sm:pr-4 py-2 sm:py-3 border border-gray-300 rounded-lg text-sm sm:text-base text-gray-900 
                           focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent 
                           transition-shadow shadow-sm"
               />
@@ -510,28 +510,28 @@ export default function AbrirChamado({ userEmail, onSuccess, onCancel }: AbrirCh
           </div>
 
  
-            <div className="flex gap-4 justify-between pt-8">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-between pt-4 sm:pt-6 md:pt-8">
               <button
                 type="button"
                 onClick={handleVoltar}
                 disabled={submitting}
-                className="px-8 py-3 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition disabled:opacity-50 shadow-sm"
+                className="w-full sm:w-auto px-6 sm:px-8 py-2.5 sm:py-3 border border-gray-300 rounded-lg text-sm sm:text-base text-gray-700 font-medium hover:bg-gray-50 transition disabled:opacity-50 shadow-sm"
               >
                 Voltar
               </button>
-              <div className="flex gap-4">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                 <button
                   type="button"
                   onClick={handleCancelar}
                   disabled={submitting}
-                  className="px-8 py-3 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition disabled:opacity-50 shadow-sm"
+                  className="w-full sm:w-auto px-6 sm:px-8 py-2.5 sm:py-3 border border-gray-300 rounded-lg text-sm sm:text-base text-gray-700 font-medium hover:bg-gray-50 transition disabled:opacity-50 shadow-sm"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-10 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition disabled:opacity-50 shadow-sm hover:shadow-md"
+                  className="w-full sm:w-auto px-8 sm:px-10 py-2.5 sm:py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm sm:text-base font-medium rounded-lg transition disabled:opacity-50 shadow-sm hover:shadow-md"
                 >
                   {submitting ? 'Abrindo chamado...' : 'Abrir chamado'}
                 </button>
