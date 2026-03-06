@@ -1357,11 +1357,24 @@ router.patch("/chamados/editar-multiplos", verifyToken, async (req: Authenticate
             chamado.userFechamento = { id: usuarioId } as any;
           }
 
+          const mensagensExtras: Record<number, string> = {
+            4: "Algo não saiu como o esperado. Estamos trabalhando para resolver sua demanda o mais rápido possível.",
+            7: "Estamos aguardando retorno externo para continuar a análise desta solicitação.",
+            6: "Estamos aguardando novas informações para continuar a solicitação."
+          };
+
           // Salvar histórico de status
+          let mensagemAcao = `${usuario.name} alterou o status do chamado para '${novoStatus.nome}'`;
+
+
+          if (mensagensExtras[novoStatus.id]) {
+            mensagemAcao += `. ${mensagensExtras[novoStatus.id]}`;
+          }
+
           await historicoRepository.save({
             chamado: { id: chamado.id },
             usuario: { id: usuarioId },
-            acao: `${usuario.name} alterou o status do chamado para '${novoStatus.nome}'`,
+            acao: mensagemAcao,
             statusAnterior: { id: statusAnterior.id },
             statusNovo: { id: novoStatus.id },
             dataMov: new Date(),
@@ -1476,6 +1489,7 @@ router.patch("/chamados/editar-multiplos", verifyToken, async (req: Authenticate
           chamado.dataAtribuicao = new Date();
 
           // salvar histórico
+      
           await historicoRepository.save({
             chamado: { id: chamado.id },
             usuario: { id: usuarioId },
