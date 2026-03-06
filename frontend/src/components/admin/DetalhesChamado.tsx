@@ -882,11 +882,12 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
       >
       <Toaster position="top-right" />
       {/* Header */}
-      <div className="bg-[#1A68CF] px-6 py-4">
-        <div className="flex items-center gap-4">
+      <div className="bg-[#1A68CF] px-4 md:px-6 py-4">
+        <div className="flex items-center gap-3 md:gap-4">
           <button
             onClick={handleVoltar}
-            className="text-white hover:text-gray-200 transition flex items-center justify-center"
+             className="flex items-center justify-center w-8 h-15 rounded-2xl hover:bg-white/50 transition-colors duration-100 focus:outline-none  active:bg-gray-300/50 hover:scale-105 shrink-0"
+
           >
             <img 
               src="/icons/arrowpointGerencial.svg" 
@@ -894,40 +895,40 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
               className="arrowIcon"
             />
           </button>
-          <div>
-            <h2 className="text-white text-2xl font-semibold">
+          <div className="min-w-0 flex-1">
+            <h2 className="text-white text-lg md:text-2xl font-semibold  transition-transform duration-150 truncate">
               {chamado.resumoChamado}
             </h2>
-            <p className="text-blue-100 text-sm">#{chamado.numeroChamado}</p>
+            <p className="text-blue-100 text-xs md:text-sm">#{chamado.numeroChamado}</p>
           </div>
         </div>
       </div>
 
       {/* Action Buttons */}
-      <div className="bg-white border-b border-gray-300 px-6 py-3">
-        <div className="flex gap-3">
+      <div className="bg-white border-b border-gray-300 px-4 md:px-6 py-3">
+        <div className="flex gap-2 md:gap-3 overflow-x-auto action-buttons-scroll pb-1 md:pb-0 -mb-1 md:mb-0">
           <button
             onClick={() => setModalResolvidoAberto(true)}
             disabled={chamado.status.id === 3}
-            className="px-5 py-2 bg-transparent border border-green-600 text-green-600 rounded-lg hover:bg-green-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-gray-300 disabled:text-gray-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-1 focus:ring-green-500/50"
+            className="px-3 md:px-5 py-2 bg-transparent border border-green-600 text-green-600 rounded-lg hover:bg-green-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-xs md:text-sm whitespace-nowrap disabled:border-gray-300 disabled:text-gray-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-1 focus:ring-green-500/50 shrink-0"
           >
             Marcar como Resolvido
           </button>
           <button
             onClick={abrirModalRedirecionar}
             disabled={chamado.status.id === 3}
-            className="px-5 py-2 bg-transparent border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-gray-300 disabled:text-gray-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-1 focus:ring-blue-500/50"
+            className="px-3 md:px-5 py-2 bg-transparent border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-xs md:text-sm whitespace-nowrap disabled:border-gray-300 disabled:text-gray-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-1 focus:ring-blue-500/50 shrink-0"
           >
             Redirecionar
           </button>
           <button
-            className="px-5 py-2 bg-transparent border border-gray-600 text-gray-600 rounded-lg hover:bg-gray-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm active:scale-95 focus:outline-none focus:ring-1 focus:ring-gray-500/50"
+            className="px-3 md:px-5 py-2 bg-transparent border border-gray-600 text-gray-600 rounded-lg hover:bg-gray-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-xs md:text-sm whitespace-nowrap active:scale-95 focus:outline-none focus:ring-1 focus:ring-gray-500/50 shrink-0"
           >
             Editar
           </button>
           <button
             onClick={() => setModalImprimirAberto(true)}
-            className="px-5 py-2 bg-transparent border border-gray-600 text-gray-600 rounded-lg hover:bg-gray-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm active:scale-95 focus:outline-none focus:ring-1 focus:ring-gray-500/50"
+            className="px-3 md:px-5 py-2 bg-transparent border border-gray-600 text-gray-600 rounded-lg hover:bg-gray-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-xs md:text-sm whitespace-nowrap active:scale-95 focus:outline-none focus:ring-1 focus:ring-gray-500/50 shrink-0"
           >
             Imprimir
           </button>
@@ -935,14 +936,14 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
 
              onClick={handleAssumirChamado}
             disabled={chamado.status.id === 3}
-            className="px-5 py-2 bg-transparent border border-purple-600 text-purple-600 rounded-lg hover:bg-purple-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-gray-300 disabled:text-gray-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-1 focus:ring-purple-500/50"
+            className="px-3 md:px-5 py-2 bg-transparent border border-purple-600 text-purple-600 rounded-lg hover:bg-purple-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-xs md:text-sm whitespace-nowrap disabled:border-gray-300 disabled:text-gray-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-1 focus:ring-purple-500/50 shrink-0"
           >
             Atribuir a mim
           </button>
           <button
             onClick={reabrirChamado}
             disabled={chamado.status.id !== 3}
-            className="px-5 py-2 bg-transparent border border-orange-600 text-orange-600 rounded-lg hover:bg-orange-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-gray-300 disabled:text-gray-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-1 focus:ring-orange-500/50"
+            className="px-3 md:px-5 py-2 bg-transparent border border-orange-600 text-orange-600 rounded-lg hover:bg-orange-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-xs md:text-sm whitespace-nowrap disabled:border-gray-300 disabled:text-gray-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-1 focus:ring-orange-500/50 shrink-0"
           >
             Reabrir Chamado
           </button>
@@ -951,7 +952,7 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
 
       {/* Tabs */}
       <div className="bg-white border-b border-gray-300">
-        <div className="px-6 flex gap-1">
+        <div className="px-4 md:px-6 flex gap-1">
           <button
             onClick={() => setAbaAtiva('detalhes')}
             className={`px-6 py-3 font-medium text-sm transition-all relative ${
@@ -976,11 +977,11 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
       </div>
 
       {/* Content */}
-      <div className="p-6">
+      <div className="p-4 md:p-6">
         {abaAtiva === 'detalhes' ? (
-          <div className="grid grid-cols-12 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-6">
             {/* Left Column - Dados */}
-            <div className="col-span-4 space-y-6">
+            <div className="col-span-1 md:col-span-4 space-y-4 md:space-y-6">
               {/* Dados do Chamado */}
               <div className="bg-white rounded-lg border border-gray-300 p-5">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4 pb-3 border-b border-gray-400">
@@ -1068,26 +1069,27 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
                 
               </div>
 
-              {/* Dados do Usuario */}
-              <div className="bg-white rounded-lg border border-gray-300 p-5">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4 pb-3 border-b border-gray-400">
-                  Dados do usuário
-                </h3>
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-sm font-medium text-gray-600">Nome usuário</label>
-                    <p className="text-gray-900 mt-1">{chamado.usuario.name}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-600">E-mail</label>
-                    <p className="text-blue-600 mt-1">{chamado.usuario.email}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-600">Ramal</label>
-                    <p className="text-gray-900 mt-1">{chamado.ramal}</p>
+                  {/* dados do Usuario */}
+                <div className="bg-white rounded-lg border border-gray-200 p-5 shadow-sm">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">
+                    Dados do usuário
+                  </h3>
+
+                  <div className="grid grid-cols-[90px_1fr] gap-y-2 text-sm">
+
+                    <span className="text-gray-500 font-medium">Nome</span>
+                    <span className="text-gray-900 font-medium">{chamado.usuario.name}</span>
+
+                    <span className="text-gray-500 font-medium">E-mail</span>
+                    <span className="text-blue-600 hover:underline">
+                      {chamado.usuario.email}
+                    </span>
+
+                    <span className="text-gray-500 font-medium">Ramal</span>
+                    <span className="text-gray-900">{chamado.ramal}</span>
+
                   </div>
                 </div>
-              </div>
 
               {/* Outros Dados */}
               <div className="bg-white rounded-lg border border-gray-300 p-5">
@@ -1124,12 +1126,12 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
             </div>
 
             {/* Right Column - Mensagens */}
-            <div className="col-span-8">
+            <div className="col-span-1 md:col-span-8">
               <div className="bg-white rounded-lg border border-gray-300">
                 {/* Mensagem inicial do usuário */}
                 <div className="p-5 border-b border-gray-200 bg-green-50">
                   <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-green-200 flex items-center justify-center">
+                    <div className="shrink-0 w-10 h-10 rounded-full bg-green-200 flex items-center justify-center">
                       <span className="text-green-700 font-semibold text-sm">
                         {chamado.usuario.name.charAt(0).toUpperCase()}
                       </span>
@@ -1167,7 +1169,7 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                     </svg>
                                   )}
-                                  <span className="text-green-700 max-w-[200px] truncate">
+                                  <span className="text-green-700 max-w-50 truncate">
                                     {anexo.filename}
                                   </span>
                                 </a>
@@ -1181,7 +1183,7 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
                 </div>
 
                 {/* Lista de Mensagens */}
-                <div className="p-5 space-y-4 max-h-[500px] overflow-y-auto">
+                <div className="p-5 space-y-4 max-h-125 overflow-y-auto">
                   {mensagens.map((msg) => {
                     const isUsuarioChamado = msg.usuario.id === chamado.usuario.id;
                     
@@ -1219,18 +1221,18 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
                                     className="flex items-center gap-2 px-2 py-1.5 bg-white border border-gray-300 rounded hover:bg-blue-50 hover:border-blue-400 transition text-xs group"
                                   >
                                     {isImage ? (
-                                      <svg className="w-4 h-4 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <svg className="w-4 h-4 text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                       </svg>
                                     ) : (
-                                      <svg className="w-4 h-4 text-gray-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <svg className="w-4 h-4 text-gray-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                       </svg>
                                     )}
                                     <span className="text-gray-700 group-hover:text-blue-700 truncate flex-1">
                                       {anexo.filename}
                                     </span>
-                                    <svg className="w-3 h-3 text-gray-400 group-hover:text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg className="w-3 h-3 text-gray-400 group-hover:text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                                     </svg>
                                   </a>
@@ -1321,7 +1323,7 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
                       disabled={enviandoMensagem || !novaMensagem.trim()}
                       className="px-6 py-2 bg-[#001960] text-white rounded hover:bg-blue-700 transition font-medium text-sm disabled:bg-gray-400 disabled:cursor-not-allowed"
                     >
-                      {enviandoMensagem ? 'Enviando...' : 'Publicar resposta'}
+                      {enviandoMensagem ? 'Enviando...' : 'Enviar'}
                     </button>
                   </div>
                 </div>
@@ -1336,7 +1338,7 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
             <div className="space-y-4">
               {historico.map((item) => (
                 <div key={item.id} className="flex gap-4 pb-4 border-b border-gray-200 last:border-0">
-                  <div className="flex-shrink-0 w-2 h-2 rounded-full bg-blue-600 mt-2" />
+                  <div className="shrink-0 w-2 h-2 rounded-full bg-blue-600 mt-2" />
                   <div className="flex-1">
                     <p className="text-gray-900 font-medium">{item.acao}</p>
                     <div className="flex items-center gap-2 mt-1">

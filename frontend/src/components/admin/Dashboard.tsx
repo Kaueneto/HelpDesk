@@ -188,13 +188,13 @@ export default function Dashboard() {
 
   return (
     <div className="pb-10 bg-gray-100 min-h-screen">
-      <div className="bg-[#1A68CF] px-6 py-4">
-        <h2 className="text-white text-2xl font-semibold">Dashboard</h2>
+      <div className="bg-[#1A68CF] px-4 md:px-6 py-4">
+        <h2 className="text-white text-xl md:text-2xl font-semibold">Dashboard</h2>
       </div>
 
-      <div className="p-6">
+      <div className="p-4 md:p-6">
         {/* filtro de periodo */}
-        <div className="flex justify-end gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row justify-end gap-3 md:gap-4 mb-6">
           <DatePicker
             selectsRange
             startDate={dataInicio}
@@ -205,32 +205,32 @@ export default function Dashboard() {
               setDataFim(end);
             }}
             dateFormat="dd/MM/yyyy"
-            className="px-4 py-2 border border-gray-300 rounded text-gray-900"
+            className="px-4 py-2 border border-gray-300 rounded text-gray-900 w-full sm:w-auto"
             isClearable
           />
           <button
             onClick={carregarDados}
             disabled={loading}
-            className="px-6 py-2 bg-[#002f61] text-white rounded disabled:opacity-50"
+            className="px-6 py-2 bg-[#002f61] text-white rounded disabled:opacity-50 w-full sm:w-auto"
           >
             {loading ? 'Pesquisando...' : 'Pesquisar'}
           </button>
         </div>
 
         {/* cards */}
-        <div className="grid grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-6 md:mb-8">
           <Card titulo="ABERTOS" valor={chamadosAbertos} cor="bg-[#2ECC71]" />
           <Card titulo="EM ANDAMENTO" valor={chamadosEmAndamento} cor="bg-purple-700" />
           <Card titulo="FINALIZADOS" valor={chamadosFinalizados} cor="bg-gray-800" />
           <Card titulo="ATRASADOS" valor={chamadosAtrasados} cor="bg-[#E74C3C]" />
         </div>
 
-        <div className="grid grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
           {/* priority */}
-          <div className="bg-[#F8FAFC] border border-gray-200 rounded-xl shadow-sm p-8">
-            <h3 className="text-lg font-bold text-gray-800 mb-4">Distribuição por Prioridade</h3>
+          <div className="bg-[#F8FAFC] border border-gray-200 rounded-xl shadow-sm p-4 md:p-8">
+            <h3 className="text-base md:text-lg font-bold text-gray-800 mb-3 md:mb-4">Distribuição por Prioridade</h3>
             
-            <div className="mb-6 flex flex-wrap gap-2 p-3 bg-gray-50 rounded-lg">
+            <div className="mb-4 md:mb-6 flex flex-wrap gap-2 p-2 md:p-3 bg-gray-50 rounded-lg overflow-x-auto">
               <label className="flex items-center gap-2 px-3 py-1 bg-white border border-gray-200 rounded-full cursor-pointer hover:bg-gray-100 transition-colors">
                 <input type="checkbox" checked={prioridadeSelecionadas.size === dadosPrioridade.length} onChange={toggleTodos} className="w-4 h-4 rounded text-blue-600" />
                 <span className="text-xs font-semibold text-gray-600">Todos</span>
@@ -242,9 +242,9 @@ export default function Dashboard() {
                 </label>
               ))}
             </div>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={280}>
               <PieChart>
-                <Pie data={dadosPrioridadeFiltrados} cx="50%" cy="50%" innerRadius={70} outerRadius={100} paddingAngle={5} dataKey="valor">
+                <Pie data={dadosPrioridadeFiltrados} cx="50%" cy="50%" innerRadius={60} outerRadius={90} paddingAngle={5} dataKey="valor">
                   {dadosPrioridadeFiltrados.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.cor} stroke="none" />
                   ))}
@@ -256,17 +256,17 @@ export default function Dashboard() {
           </div>
 
           {/* grafico por departamento */}
-          <div className="bg-[#F8FAFC] border border-gray-200 rounded-xl shadow-sm p-8">
-            <h3 className="text-lg font-bold text-gray-800 mb-6">Chamados por Departamento</h3>
-            <div className="space-y-5">
+          <div className="bg-[#F8FAFC] border border-gray-200 rounded-xl shadow-sm p-4 md:p-8">
+            <h3 className="text-base md:text-lg font-bold text-gray-800 mb-4 md:mb-6">Chamados por Departamento</h3>
+            <div className="space-y-3 md:space-y-5">
               {dadosDepartamento.map((d, i) => (
                 <div key={i}>
-                  <div className="flex justify-between mb-1">
-                    <span className="text-sm font-normal text-gray-700">{d.nome}</span>
-                    <span className="text-sm font-light text-gray-900">{d.valor} ({d.percentual}%)</span>
+                  <div className="flex justify-between mb-1 gap-2">
+                    <span className="text-xs md:text-sm font-normal text-gray-700 truncate">{d.nome}</span>
+                    <span className="text-xs md:text-sm font-light text-gray-900 whitespace-nowrap">{d.valor} ({d.percentual}%)</span>
                   </div>
-                  <div className="h-8 bg-gray-200 rounded-lg overflow-hidden border border-gray-200">
-                    <div className="h-full bg-[#1A68CF] flex items-center justify-end pr-4 transition-all duration-700" style={{ width: `${d.percentual}%` }}>
+                  <div className="h-6 md:h-8 bg-gray-200 rounded-lg overflow-hidden border border-gray-200">
+                    <div className="h-full bg-[#1A68CF] flex items-center justify-end pr-2 md:pr-4 transition-all duration-700" style={{ width: `${d.percentual}%` }}>
                      
                     </div>
                   </div>
@@ -277,14 +277,15 @@ export default function Dashboard() {
         </div>
 
         {/* grafico top5 */}
-        <div className="mt-8 bg-[#F8FAFC] border border-gray-200 rounded-xl shadow-sm p-8">
-            <h3 className="text-xl font-bold text-gray-800 mb-6">Top 5 Tópicos de Ajuda</h3>
-            <p className="text-sm text-gray-500">Chamados abertos com mais frequencia + usuario mais ativo no tópico</p>
-            <ResponsiveContainer width="100%" height={400}>
+        <div className="mt-6 md:mt-8 bg-[#F8FAFC] border border-gray-200 rounded-xl shadow-sm p-4 md:p-8 overflow-x-auto">
+            <h3 className="text-base md:text-xl font-bold text-gray-800 mb-3 md:mb-6">Top 5 Tópicos de Ajuda</h3>
+            <p className="text-xs md:text-sm text-gray-500 mb-4">Chamados abertos com mais frequencia + usuario mais ativo no tópico</p>
+            <div className="min-w-125">
+            <ResponsiveContainer width="100%" height={350}>
                 <BarChart data={dadosTopicos} margin={{ top: 40, bottom: 60 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="nome" angle={-30} textAnchor="end" interval={0} tick={{fontSize: 12}} />
-                    <YAxis />
+                    <XAxis dataKey="nome" angle={-30} textAnchor="end" interval={0} tick={{fontSize: 11}} />
+                    <YAxis tick={{fontSize: 11}} />
                     <Tooltip />
                     <Bar dataKey="valor" fill="#4C1D95" radius={[10, 10, 0, 0]}>
                         <LabelList 
@@ -292,29 +293,31 @@ export default function Dashboard() {
                           position="top" 
                           offset={10} 
                           formatter={(label) => typeof label === 'string' ? label.split(' ')[0] : label}
-                          style={{fill: '#6D28D9', fontWeight: 'bold', fontSize: '12px'}} 
+                          style={{fill: '#6D28D9', fontWeight: 'bold', fontSize: '11px'}} 
                         />
                     </Bar>
                 </BarChart>
             </ResponsiveContainer>
+            </div>
         </div>
 
        {/* graficos por usuario */}
-<div className="mt-8 bg-[#F8FAFC] border border-gray-200 rounded-xl shadow-sm p-8">
-  <div className="mb-6">
-    <h3 className="text-xl font-bold text-gray-800">Total de Chamados Abertos por Usuário</h3>
-    <p className="text-sm text-gray-500">Quantidade total de chamados abertos por cada usuário no período selecionado</p>
+<div className="mt-6 md:mt-8 bg-[#F8FAFC] border border-gray-200 rounded-xl shadow-sm p-4 md:p-8 overflow-x-auto">
+  <div className="mb-4 md:mb-6">
+    <h3 className="text-base md:text-xl font-bold text-gray-800">Total de Chamados Abertos por Usuário</h3>
+    <p className="text-xs md:text-sm text-gray-500">Quantidade total de chamados abertos por cada usuário no período selecionado</p>
   </div>
 
   {dadosUsuarios.length === 0 ? (
     <div className="flex flex-col items-center justify-center py-12">
-      <p className="text-gray-400 italic">Nenhum dado disponível no período selecionado</p>
+      <p className="text-gray-400 italic text-sm">Nenhum dado disponível no período selecionado</p>
     </div>
   ) : (
-    <ResponsiveContainer width="100%" height={600}>
+    <div className="min-w-125">
+    <ResponsiveContainer width="100%" height={500}>
       <BarChart 
         data={dadosUsuarios} 
-        margin={{ top: 40, right: 30, left: 10, bottom: 100 }}
+        margin={{ top: 40, right: 20, left: 5, bottom: 100 }}
       >
         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F3F4F6" />
         
@@ -322,22 +325,22 @@ export default function Dashboard() {
           dataKey="nome" 
           angle={-45} 
           textAnchor="end" 
-          height={120}
+          height={110}
           interval={0}
-          tick={{ fill: '#4B5563', fontSize: 12, fontWeight: 500 }} 
+          tick={{ fill: '#4B5563', fontSize: 10, fontWeight: 500 }} 
           tickLine={false}
           axisLine={{ stroke: '#E5E7EB' }}
         />
         
         <YAxis 
-          tick={{ fill: '#9CA3AF', fontSize: 12 }} 
+          tick={{ fill: '#9CA3AF', fontSize: 10 }} 
           tickLine={false}
           axisLine={false}
           label={{ 
             value: 'Chamados', 
             angle: -90, 
             position: 'insideLeft', 
-            style: { fill: '#9CA3AF', fontSize: 12, fontWeight: 600 } 
+            style: { fill: '#9CA3AF', fontSize: 11, fontWeight: 600 } 
           }}
         />
         
@@ -371,16 +374,17 @@ export default function Dashboard() {
           <LabelList 
             dataKey="valor"
             position="top"
-            offset={15}
+            offset={12}
             style={{ 
               fill: '#1E40AF', 
               fontWeight: '700', 
-              fontSize: '13px'
+              fontSize: '11px'
             }}
           />
         </Bar>
       </BarChart>
     </ResponsiveContainer>
+    </div>
   )}
 </div>
       </div>
@@ -390,9 +394,9 @@ export default function Dashboard() {
 
 function Card({ titulo, valor, cor }: any) {
   return (
-    <div className={`${cor} text-white rounded-xl p-6 shadow-md transition-transform hover:scale-105`}>
-      <div className="text-4xl font-bold">{valor}</div>
-      <div className="text-sm font-medium opacity-80 uppercase tracking-wider">{titulo}</div>
+    <div className={`${cor} text-white rounded-xl p-4 md:p-6 shadow-md transition-transform hover:scale-105`}>
+      <div className="text-2xl md:text-4xl font-bold">{valor}</div>
+      <div className="text-xs md:text-sm font-medium opacity-80 uppercase tracking-wider mt-1">{titulo}</div>
     </div>
   );
 }

@@ -939,6 +939,94 @@ router.put("/chamados/:id/editar", verifyToken, async (req: AuthenticatedRequest
   }
 });
 
+// editar chamado -admin sem restricao
+router.put("/chamados/:id/editar-admin", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const usuarioId = req.userId;
+    const userRoleId = req.userRoleId;
+    const {
+      resumoChamado,
+      descricaoChamado,
+      ramal,
+      departamentoId,
+      topicoAjudaId,
+      prioridadeId,
+    } = req.body;
+
+    // verificar se é admin
+    if (userRoleId !== 1) {
+      return res.status(403).json({ mensagem: "Apenas administradores podem usar esta função" });
+    }
+
+    const chamadoRepository = AppDataSource.getRepository(Chamados);
+    const historicoRepository = AppDataSource.getRepository(ChamadoHistorico);
+    const userRepository = AppDataSource.getRepository(Users);
+
+    const chamado = await chamadoRepository.findOne({
+      where: { id: Number(id) },
+      relations: ["status", "usuario"],
+    });
+
+    if (!chamado) {
+      return res.status(404).json({ mensagem: "Chamado não encontrado" });
+    }
+
+    // buscar nome do usuário admin
+    const usuario = await userRepository.findOne({
+      where: { id: usuarioId },
+      select: ["id", "name"]
+    });
+    
+
+    const nomeUsuario = usuario?.name || "Administrador";
+
+    // att campos
+    chamado.resumoChamado = resumoChamado;
+    chamado.descricaoChamado = descricaoChamado;
+    chamado.ramal = ramal ? Number(ramal) : null; // Converter para número ou null
+    chamado.departamento = { id: departamentoId } as any;
+    chamado.topicoAjuda = { id: topicoAjudaId } as any;
+    chamado.tipoPrioridade = { id: prioridadeId } as any;
+
+    await chamadoRepository.save(chamado);
+
+    // registrar no histórico
+    await historicoRepository.save({
+      chamado,
+      usuario: { id: usuarioId },
+      acao: `${nomeUsuario} editou este chamado`,
+      statusAnterior: chamado.status,
+      statusNovo: chamado.status,
+      dataMov: new Date(),
+    });
+
+    // recarregar com relações
+    const chamadoAtualizado = await chamadoRepository.findOne({
+      where: { id: Number(id) },
+      relations: [
+        "usuario",
+        "userResponsavel",
+        "userFechamento",
+        "tipoPrioridade",
+        "departamento",
+        "topicoAjuda",
+        "status",
+      ],
+    });
+
+    return res.status(200).json({
+      mensagem: "Chamado editado com sucesso!",
+      chamado: chamadoAtualizado,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      mensagem: "Erro ao editar chamado",
+      error: error instanceof Error ? error.message : "Erro desconhecido",
+    });
+  }
+});
+
 // remover anexo de chamado (usuário criador ou admin)
 router.delete("/chamados/:id/anexo/:anexoId", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
   try {

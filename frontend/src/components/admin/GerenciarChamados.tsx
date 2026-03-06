@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import ModalNovoChamado from '@/app/admin/Modal/ModalNovoChamado';
+import ModalEditarChamadoAdmin from '@/app/admin/Modal/ModalEditarChamadoAdmin';
 
 interface Chamado {
   id: number;
@@ -129,6 +130,10 @@ export default function GerenciarChamados() {
 
   // modal de novo chamado
   const [modalNovoChamadoAberto, setModalNovoChamadoAberto] = useState(false);
+
+  // modal de editar chamado individual
+  const [modalEditarChamadoAberto, setModalEditarChamadoAberto] = useState(false);
+  const [chamadoIdEditar, setChamadoIdEditar] = useState<number | null>(null);
 
   useEffect(() => {
     // só carregar dados se estiver autenticado
@@ -640,6 +645,33 @@ export default function GerenciarChamados() {
     }
   };
 
+  const editarChamadoIndividual = () => {
+    if (chamadosSelecionados.length !== 1) {
+      alert('Selecione exatamente 1 chamado para editar.');
+      return;
+    }
+
+    const chamadoId = chamadosSelecionados[0];
+    const chamado = chamados.find(c => c.id === chamadoId);
+    
+    // Validar se o chamado está encerrado
+    if (chamado && chamado.status?.id === 3) {
+      const confirmacao = window.confirm('Este chamado está encerrado Tem certeza que deseja editar?.');
+      if (!confirmacao) {
+        return;
+      }
+    }
+    
+    setChamadoIdEditar(chamadoId);
+    setModalEditarChamadoAberto(true);
+  };
+
+  const handleSucessoEdicaoChamado = async () => {
+    setChamadosSelecionados([]);
+    setTodosChecados(false);
+    await pesquisarChamados(paginaAtual);
+  };
+
   const formatarData = (data: string | null) => {
     if (!data) return '-';
     const date = new Date(data);
@@ -671,9 +703,10 @@ export default function GerenciarChamados() {
             </button>
 
             <button 
+              onClick={editarChamadoIndividual}
+              disabled={chamadosSelecionados.length !== 1}
+              title={chamadosSelecionados.length !== 1 ? "Selecione exatamente 1 chamado para editar" : "Editar chamado selecionado"}
               className=" px-4 py-1.5 bg-transparent border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-lg flex items-center gap-2 disabled:border-blue-300 disabled:text-blue-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-1 focus:ring-blue-500/50"
-              disabled
-              title="Em desenvolvimento"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -1013,7 +1046,7 @@ export default function GerenciarChamados() {
 
               </div>
             {/* botoes de acoes dos filtros */}
-            <div className="flex gap-3 mt-6 justify-end">
+            <div className="flex gap-3 mt-6 justify-end flex-nowrap overflow-x-auto whitespace-nowrap pb-2">
            
               <button
                 onClick={limparFiltros}
@@ -1021,7 +1054,7 @@ export default function GerenciarChamados() {
               >
                 Limpar Filtros
               </button>
-      <button
+             <button
                 onClick={() => pesquisarChamados(1)}
                 disabled={loading}
                 className="px-6 py-2 bg-[#002B57]  text-white rounded hover:bg-[#315377] transition-colors font-medium text-sm disabled:bg-[#002B57]"
@@ -1033,7 +1066,7 @@ export default function GerenciarChamados() {
 
           {/* acao em multiplos registros */}
           {chamados.length > 0 && (
-            <div className="px-6 py-4 bg-gray-50 border-b border-gray-300 flex gap-3 items-center">
+            <div className="px-6 py-4 bg-gray-50 border-b border-gray-300 flex gap-3 items-center flex-nowrap overflow-x-auto whitespace-nowrap">
               <button
                 onClick={marcarComoResolvido}
                 disabled={chamadosSelecionados.length === 0}
@@ -1094,7 +1127,7 @@ export default function GerenciarChamados() {
           )}
 
           {/* tabela de resultados */}
-          <div className="overflow-x-auto">
+          <div>
             {loading ? (
               <div className="p-8 text-center text-gray-500">
                 Carregando chamados...
@@ -1104,138 +1137,252 @@ export default function GerenciarChamados() {
                 Nenhum chamado encontrado. Use os filtros para pesquisar.
               </div>
             ) : (
-              <table className="w-full">
-                <thead className="bg-gray-100  border-gray-300">
-                  <tr>
-                    <th className="px-4 py-3 text-left">
-                      <input
-                        type="checkbox"
-                        checked={todosChecados}
-                        onChange={handleCheckAll}
-                        className="w-5 h-5 cursor-pointer rounded appearance-none border-2 border-gray-300 checked:bg-blue-600 checked:border-blue-600 relative
-                        before:content-['✓'] before:absolute before:inset-0 before:flex before:items-center before:justify-center before:text-white before:text-sm before:font-bold before:opacity-0 checked:before:opacity-100"
-                      />
-                    </th>
-                    <th 
-                      className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none"
-                      onClick={() => handleOrdenar('numeroChamado')}
-                    >
-                      <div className="flex items-center gap-1">
-                        Cód. Chamado
-                        {ordenarPor === 'numeroChamado' && (
-                          <span>{direcaoOrdem === 'asc' ? '↑' : '↓'}</span>
-                        )}
-                      </div>
-                    </th>
-                    <th 
-                      className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none"
-                      onClick={() => handleOrdenar('prioridade')}
-                    >
-                      <div className="flex items-center gap-1">
-                        Prioridade
-                        {ordenarPor === 'prioridade' && (
-                          <span>{direcaoOrdem === 'asc' ? '↑' : '↓'}</span>
-                        )}
-                      </div>
-                    </th>
-                    <th 
-                      className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none"
-                      onClick={() => handleOrdenar('topico')}
-                    >
-                      <div className="flex items-center gap-1">
-                        Tópico
-                        {ordenarPor === 'topico' && (
-                          <span>{direcaoOrdem === 'asc' ? '↑' : '↓'}</span>
-                        )}
-                      </div>
-                    </th>
-                    <th 
-                      className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none"
-                      onClick={() => handleOrdenar('departamento')}
-                    >
-                      <div className="flex items-center gap-1">
-                        Departamento
-                        {ordenarPor === 'departamento' && (
-                          <span>{direcaoOrdem === 'asc' ? '↑' : '↓'}</span>
-                        )}
-                      </div>
-                    </th>
-                    <th 
-                      className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none"
-                      onClick={() => handleOrdenar('status')}
-                    >
-                      <div className="flex items-center gap-1">
-                        Status
-                        {ordenarPor === 'status' && (
-                          <span>{direcaoOrdem === 'asc' ? '↑' : '↓'}</span>
-                        )}
-                      </div>
-                    </th>
-                    <th 
-                      className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none"
-                      onClick={() => handleOrdenar('dataAbertura')}
-                    >
-                      <div className="flex items-center gap-1">
-                        Abertura
-                        {ordenarPor === 'dataAbertura' && (
-                          <span>{direcaoOrdem === 'asc' ? '↑' : '↓'}</span>
-                        )}
-                      </div>
-                    </th>
-                    <th 
-                      className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none"
-                      onClick={() => handleOrdenar('dataFechamento')}
-                    >
-                      <div className="flex items-center gap-1">
-                        Fechamento
-                        {ordenarPor === 'dataFechamento' && (
-                          <span>{direcaoOrdem === 'asc' ? '↑' : '↓'}</span>
-                        )}
-                      </div>
-                    </th>
-                    <th 
-                      className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none"
-                      onClick={() => handleOrdenar('usuario')}
-                    >
-                      <div className="flex items-center gap-1">
-                        Usuário
-                        {ordenarPor === 'usuario' && (
-                          <span>{direcaoOrdem === 'asc' ? '↑' : '↓'}</span>
-                        )}
-                      </div>
-                    </th>
-                    <th 
-                      className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none"
-                      onClick={() => handleOrdenar('responsavel')}
-                    >
-                      <div className="flex items-center gap-1">
-                        Responsável
-                        {ordenarPor === 'responsavel' && (
-                          <span>{direcaoOrdem === 'asc' ? '↑' : '↓'}</span>
-                        )}
-                      </div>
-                    </th>
-                    <th 
-                      className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none"
-                      onClick={() => handleOrdenar('resumo')}
-                    >
-                      <div className="flex items-center gap-1">
-                        Resumo
-                        {ordenarPor === 'resumo' && (
-                          <span>{direcaoOrdem === 'asc' ? '↑' : '↓'}</span>
-                        )}
-                      </div>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {chamadosOrdenados.map((chamado, index) => (<tr
+              <>
+
+                <div className="overflow-x-auto hidden md:block">
+                  <table className="w-full">
+                    <thead className="bg-gray-100  border-gray-300">
+                      <tr>
+                        <th className="px-4 py-3 text-left">
+                          <input
+                            type="checkbox"
+                            checked={todosChecados}
+                            onChange={handleCheckAll}
+                            className="w-5 h-5 cursor-pointer rounded appearance-none border-2 border-gray-300 checked:bg-blue-600 checked:border-blue-600 relative
+                            before:content-['✓'] before:absolute before:inset-0 before:flex before:items-center before:justify-center before:text-white before:text-sm before:font-bold before:opacity-0 checked:before:opacity-100"
+                          />
+                        </th>
+                        <th 
+                          className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none min-w-20"
+                          onClick={() => handleOrdenar('numeroChamado')}
+                        >
+                          <div className="flex items-center gap-1">
+                            Cód. Chamado
+                            {ordenarPor === 'numeroChamado' && (
+                              <span>{direcaoOrdem === 'asc' ? '↑' : '↓'}</span>
+                            )}
+                          </div>
+                        </th>
+                        <th 
+                          className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none min-w-20"
+                          onClick={() => handleOrdenar('prioridade')}
+                        >
+                          <div className="flex items-center gap-1">
+                            Prioridade
+                            {ordenarPor === 'prioridade' && (
+                              <span>{direcaoOrdem === 'asc' ? '↑' : '↓'}</span>
+                            )}
+                          </div>
+                        </th>
+                        <th 
+                          className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none min-w-50"
+                          onClick={() => handleOrdenar('resumo')}
+                        >
+                          <div className="flex items-center gap-1">
+                            Assunto
+                            {ordenarPor === 'resumo' && (
+                              <span>{direcaoOrdem === 'asc' ? '↑' : '↓'}</span>
+                            )}
+                          </div>
+                        </th>
+                        <th 
+                          className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none min-w-40"
+                          onClick={() => handleOrdenar('usuario')}
+                        >
+                          <div className="flex items-center gap-1">
+                            Usuário
+                            {ordenarPor === 'usuario' && (
+                              <span>{direcaoOrdem === 'asc' ? '↑' : '↓'}</span>
+                            )}
+                          </div>
+                        </th>
+                        <th 
+                          className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none min-w-50"
+                          onClick={() => handleOrdenar('departamento')}
+                        >
+                          <div className="flex items-center gap-1">
+                            Departamento
+                            {ordenarPor === 'departamento' && (
+                              <span>{direcaoOrdem === 'asc' ? '↑' : '↓'}</span>
+                            )}
+                          </div>
+                        </th>
+                        <th 
+                          className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none min-w-38"
+                          onClick={() => handleOrdenar('topico')}
+                        >
+                          <div className="flex items-center gap-1">
+                            Tópico
+                            {ordenarPor === 'topico' && (
+                              <span>{direcaoOrdem === 'asc' ? '↑' : '↓'}</span>
+                            )}
+                          </div>
+                        </th>
+                        <th 
+                          className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none min-w-30"
+                          onClick={() => handleOrdenar('status')}
+                        >
+                          <div className="flex items-center gap-1">
+                            Status
+                            {ordenarPor === 'status' && (
+                              <span>{direcaoOrdem === 'asc' ? '↑' : '↓'}</span>
+                            )}
+                          </div>
+                        </th>
+                        <th 
+                          className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none min-w-25"
+                          onClick={() => handleOrdenar('dataAbertura')}
+                        >
+                          <div className="flex items-center gap-1">
+                            Abertura
+                            {ordenarPor === 'dataAbertura' && (
+                              <span>{direcaoOrdem === 'asc' ? '↑' : '↓'}</span>
+                            )}
+                          </div>
+                        </th>
+                        <th                         className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none min-w-25"
+                          onClick={() => handleOrdenar('dataFechamento')}
+                        >
+                          <div className="flex items-center gap-1">
+                            Fechamento
+                            {ordenarPor === 'dataFechamento' && (
+                              <span>{direcaoOrdem === 'asc' ? '↑' : '↓'}</span>
+                            )}
+                          </div>
+                        </th>
+                        <th 
+                          className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none min-w-50"
+                          onClick={() => handleOrdenar('responsavel')}
+                        >
+                          <div className="flex items-center gap-1">
+                            Responsável
+                            {ordenarPor === 'responsavel' && (
+                              <span>{direcaoOrdem === 'asc' ? '↑' : '↓'}</span>
+                            )}
+                          </div>
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {chamadosOrdenados.map((chamado, index) => (<tr
+                          key={chamado.id}
+                          onClick={(e) => {
+                            if ((e.target as HTMLElement).closest('input[type="checkbox"]')) {
+                              return;
+                            }
+                            // grava posição do clique em porcentagem da viewport
+                            const xPct = (e.clientX / window.innerWidth) * 100;
+                            const yPct = (e.clientY / window.innerHeight) * 100;
+                            try {
+                              sessionStorage.setItem('detailOrigin', JSON.stringify({ x: `${xPct}%`, y: `${yPct}%` }));
+                            } catch (err) {
+                              // ignore
+                            }
+                            setLinhaAnimando(chamado.id);
+                            setPageSliding(true);
+                            setTimeout(() => {
+                              router.push(`/chamado/${chamado.id}`);
+                            }, 240); // aguarda animação slideOutLeft (220ms)
+                          }}
+                          className={`border-b border-gray-200 hover:bg-blue-50 transition-colors cursor-pointer ${
+                            index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+                          } ${linhaAnimando === chamado.id ? 'slideOutLeft' : ''}`}
+                        >
+                          <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                            <input
+                              type="checkbox"
+                              checked={chamadosSelecionados.includes(chamado.id)}
+                              onChange={() => handleCheckChamado(chamado.id)}
+                              className="w-5 h-5 cursor-pointer rounded appearance-none border-2 border-gray-300 checked:bg-blue-600 checked:border-blue-600 relative
+                              before:content-['✓'] before:absolute before:inset-0 before:flex before:items-center before:justify-center before:text-white before:text-sm before:font-bold before:opacity-0 checked:before:opacity-100"
+                            />
+                          </td>
+                          {/* Código chamado */}
+                          <td className="px-4 py-3 text-sm text-gray-900 font-medium whitespace-nowrap">
+                            {chamado.numeroChamado || chamado.id}
+                          </td>
+                          {/* Prioridade */}
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <div className="flex items-center gap-2">
+                              <div
+                                className="w-3 h-3 rounded-full"
+                                style={{ backgroundColor: chamado.tipoPrioridade?.cor || '#gray' }}
+                              ></div>
+                              <span className="text-sm text-gray-900">
+                                {chamado.tipoPrioridade?.nome || '-'}
+                              </span>
+                            </div>
+                          </td>
+                          {/* Assunto/Resumo */}
+                          <td className="px-4 py-3 text-sm text-gray-900 max-w-50 truncate overflow-hidden text-ellipsis" title={chamado.resumoChamado}>
+                            {chamado.resumoChamado}
+                          </td>
+                          {/* Usuário */}
+                          <td className="px-4 py-3 text-sm text-gray-900 max-w-30 truncate overflow-hidden text-ellipsis" title={chamado.usuario?.name}>
+                            {chamado.usuario?.name || '-'}
+                          </td>
+                          {/* Departamento */}
+                          <td className="px-4 py-3 text-sm text-gray-900 max-w-30 truncate overflow-hidden text-ellipsis" title={chamado.departamento?.nome || chamado.departamento?.name}>
+                            {chamado.departamento?.nome || chamado.departamento?.name || '-'}
+                          </td>
+                          {/* Tópico */}
+                          <td className="px-4 py-3 text-sm text-gray-900 max-w-38 truncate overflow-hidden text-ellipsis" title={chamado.topicoAjuda?.nome}>
+                            {chamado.topicoAjuda?.nome || '-'}
+                          </td>
+                          {/* Status */}
+                          <td className="px-1 py-1 text-center whitespace-nowrap">
+                            <span
+                              className={`px-2 py-1 rounded-full text-xs border ${
+                                chamado.status.id === 1
+                                ? 'bg-yellow-100 text-yellow-700 border-yellow-500'
+                                : chamado.status.id === 2
+                                ? 'bg-blue-100 text-blue-600 border-blue-500'
+                                : chamado.status.id === 3
+                                 ? 'bg-green-100 text-green-800 border-green-700'
+                                : chamado.status.id === 5
+                                ? 'bg-purple-100 text-purple-700 border-purple-500'
+                                : chamado.status.id === 4
+                                 ? 'bg-gray-100 text-red-800 border-red-700'
+                                 : chamado.status.id === 6
+                                  ? 'bg-gray-100 text-gray-800 border-gray-700'
+                                  : chamado.status.id === 7
+                                   ? 'bg-orange-100 text-orange-800 border-orange-700'
+                                : 'bg-red-100 text-red-800 border-red-800'
+                                  
+                                  
+                              }`}
+                            >
+                              {chamado.status?.nome || 'Desconhecido'}
+                            </span>
+                          </td>
+                          {/* Data Abertura */}
+                          <td className="px-1 py-3 text-sm text-gray-600 whitespace-nowrap">
+                            {formatarData(chamado.dataAbertura)}
+                          </td>
+                          {/* Data Fechamento */}
+                          <td className="px-1 py-3 text-sm text-gray-600 whitespace-nowrap">
+                            {formatarData(chamado.dataFechamento)}
+                          </td>
+                          {/* Responsável */}
+                          <td className="px-4 py-3 text-sm text-gray-900 max-w-30 truncate overflow-hidden text-ellipsis" title={chamado.userResponsavel?.name}>
+                            {chamado.userResponsavel?.name || (
+                              <span className="text-gray-400 italic">Não atribuído</span>
+                            )}
+                          </td>
+                        </tr>))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* modo mobile, exibir tipo uns cards */}
+                <div className="md:hidden space-y-3 p-3">
+                  {chamadosOrdenados.map((chamado) => (
+                    <div
                       key={chamado.id}
                       onClick={(e) => {
                         if ((e.target as HTMLElement).closest('input[type="checkbox"]')) {
                           return;
                         }
-                        // grava posição do clique em porcentagem da viewport
                         const xPct = (e.clientX / window.innerWidth) * 100;
                         const yPct = (e.clientY / window.innerHeight) * 100;
                         try {
@@ -1247,44 +1394,62 @@ export default function GerenciarChamados() {
                         setPageSliding(true);
                         setTimeout(() => {
                           router.push(`/chamado/${chamado.id}`);
-                        }, 240); // aguarda animação slideOutLeft (220ms)
+                        }, 240);
                       }}
-                      className={`border-b border-gray-200 hover:bg-blue-50 transition-colors cursor-pointer ${
-                        index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-                      } ${linhaAnimando === chamado.id ? 'slideOutLeft' : ''}`}
+                      className={`bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-all cursor-pointer ${
+                        linhaAnimando === chamado.id ? 'slideOutLeft' : ''
+                      }`}
                     >
-                      <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-                        <input
-                          type="checkbox"
-                          checked={chamadosSelecionados.includes(chamado.id)}
-                          onChange={() => handleCheckChamado(chamado.id)}
-                          className="w-5 h-5 cursor-pointer rounded appearance-none border-2 border-gray-300 checked:bg-blue-600 checked:border-blue-600 relative
-                          before:content-['✓'] before:absolute before:inset-0 before:flex before:items-center before:justify-center before:text-white before:text-sm before:font-bold before:opacity-0 checked:before:opacity-100"
-                        />
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-900 font-medium whitespace-nowrap">
-                        {chamado.numeroChamado || chamado.id}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <div className="flex items-center gap-2">
+                      {/* header: Assunto e Checkbox */}
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-gray-900 text-base mb-1 line-clamp-2">
+                            {chamado.resumoChamado}
+                          </h3>
+                          <p className="text-xs text-gray-500">
+                            #{chamado.numeroChamado || chamado.id}
+                          </p>
+                        </div>
+                        <div onClick={(e) => e.stopPropagation()} className="ml-2">
+                          <input
+                            type="checkbox"
+                            checked={chamadosSelecionados.includes(chamado.id)}
+                            onChange={() => handleCheckChamado(chamado.id)}
+                            className="w-5 h-5 cursor-pointer rounded appearance-none border-2 border-gray-300 checked:bg-blue-600 checked:border-blue-600 relative
+                            before:content-['✓'] before:absolute before:inset-0 before:flex before:items-center before:justify-center before:text-white before:text-sm before:font-bold before:opacity-0 checked:before:opacity-100"
+                          />
+                        </div>
+                      </div>
+
+                      {/* info: topico e Departamento */}
+                      <div className="space-y-2 mb-3">
+                        <div className="flex items-start">
+                          <span className="text-xs text-gray-500 w-24 shrink-0">Tópico:</span>
+                          <span className="text-xs text-gray-900 font-medium">{chamado.topicoAjuda?.nome || '-'}</span>
+                        </div>
+                        <div className="flex items-start">
+                          <span className="text-xs text-gray-500 w-24 shrink-0">Departamento:</span>
+                          <span className="text-xs text-gray-900 font-medium">{chamado.departamento?.nome || chamado.departamento?.name || '-'}</span>
+                        </div>
+                        <div className="flex items-start">
+                          <span className="text-xs text-gray-500 w-24 shrink-0">Usuário:</span>
+                          <span className="text-xs text-gray-900 font-medium">{chamado.usuario?.name || '-'}</span>
+                        </div>
+                      </div>
+
+                      {/* badges: prioridade e Status */}
+                      <div className="flex items-center gap-2 mb-3 flex-wrap">
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-50 border border-gray-200">
                           <div
-                            className="w-3 h-3 rounded-full"
+                            className="w-2.5 h-2.5 rounded-full"
                             style={{ backgroundColor: chamado.tipoPrioridade?.cor || '#gray' }}
                           ></div>
-                          <span className="text-sm text-gray-900">
+                          <span className="text-xs font-medium text-gray-700">
                             {chamado.tipoPrioridade?.nome || '-'}
                           </span>
                         </div>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-900 max-w-150 truncate">
-                        {chamado.topicoAjuda?.nome || '-'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-900 max-w-120 truncate">
-                        {chamado.departamento?.nome || chamado.departamento?.name || '-'}
-                      </td>
-                      <td className="px-1 py-1 text-center whitespace-nowrap">
                         <span
-                          className={`px-2 py-1 rounded-full text-xs border ${
+                          className={`px-3 py-1.5 rounded-full text-xs font-medium border ${
                             chamado.status.id === 1
                             ? 'bg-yellow-100 text-yellow-700 border-yellow-500'
                             : chamado.status.id === 2
@@ -1300,33 +1465,23 @@ export default function GerenciarChamados() {
                               : chamado.status.id === 7
                                ? 'bg-orange-100 text-orange-800 border-orange-700'
                             : 'bg-red-100 text-red-800 border-red-800'
-                              
-                              
                           }`}
                         >
                           {chamado.status?.nome || 'Desconhecido'}
                         </span>
-                      </td>
-                      <td className="px-1 py-3 text-sm text-gray-600 whitespace-nowrap">
-                        {formatarData(chamado.dataAbertura)}
-                      </td>
-                      <td className="px-1 py-3 text-sm text-gray-600 whitespace-nowrap">
-                        {formatarData(chamado.dataFechamento)}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-900 max-w-37 truncate">
-                        {chamado.usuario?.name || '-'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-900 max-w-37 truncate">
-                        {chamado.userResponsavel?.name || (
-                          <span className="text-gray-400 italic">Não atribuído</span>
+                      </div>
+
+                      {/* footer data de Abertura */}
+                      <div className="flex items-center justify-between text-xs text-gray-500 pt-2 border-t border-gray-100">
+                        <span>{formatarData(chamado.dataAbertura)}</span>
+                        {chamado.dataFechamento && (
+                          <span>Fechado: {formatarData(chamado.dataFechamento)}</span>
                         )}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-900 max-w-50 truncate" title={chamado.resumoChamado}>
-                        {chamado.resumoChamado}
-                      </td>
-                    </tr>))}
-                </tbody>
-              </table>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
           </div>
 
@@ -1580,6 +1735,19 @@ export default function GerenciarChamados() {
           pesquisarChamados(paginaAtual);
         }}
       />
+
+      {/* modal de editar chamado individual */}
+      {chamadoIdEditar && (
+        <ModalEditarChamadoAdmin
+          isOpen={modalEditarChamadoAberto}
+          onClose={() => {
+            setModalEditarChamadoAberto(false);
+            setChamadoIdEditar(null);
+          }}
+          onSuccess={handleSucessoEdicaoChamado}
+          chamadoId={chamadoIdEditar}
+        />
+      )}
     </div>
   );
 }

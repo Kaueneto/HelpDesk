@@ -345,7 +345,7 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
           style={{ transform: detalheTab === 'detalhes' ? 'translateX(0)' : 'translateX(-100%)' }}
         >
           {/* Tab Detalhes */}
-         <div className="w-full shrink-0 flex flex-col h-full min-h-[500px] sm:min-h-[600px]">
+         <div className="w-full shrink-0 flex flex-col h-full min-h-125 sm:min-h-150">
             {loadingMensagens ? (
               <div className="text-center py-8 text-gray-600">Carregando mensagens...</div>
             ) : (
@@ -571,7 +571,7 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
                       disabled={submittingResposta || !novaMensagem.trim()}
                       className="w-full sm:w-auto px-3 sm:px-4 md:px-6 py-1.5 sm:py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm md:text-base font-medium rounded-md transition disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {submittingResposta ? 'Publicando...' : 'Publicar resposta'}
+                      {submittingResposta ? 'Enviando...' : 'Enviar'}
                     </button>
                     <button
                       onClick={() => {

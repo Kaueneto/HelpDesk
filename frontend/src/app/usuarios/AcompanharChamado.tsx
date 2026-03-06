@@ -102,29 +102,29 @@ export default function AcompanharChamado({ onChamadoClick }: AcompanharChamadoP
   return (
     <>
       {/* Filtros */}
-      <div className=" border border-gray-200 p-6 rounded-lg mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+      <div className=" border border-gray-200 p-3 sm:p-4 md:p-6 rounded-lg mb-4 sm:mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 sm:gap-4 items-end">
           <div>
-            <label className="block text-sm font-medium text-gray-900 mb-2">
+            <label className="block text-xs sm:text-sm font-medium text-gray-900 mb-1.5 sm:mb-2">
               Assunto
             </label>
             <input
               type="text"
               value={filtroAssunto}
               onChange={(e) => setFiltroAssunto(e.target.value)}
-              className="w-full px-3 py-1 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full px-2.5 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded-md text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
               placeholder="Buscar por assunto..."
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-900 mb-2">
+            <label className="block text-xs sm:text-sm font-medium text-gray-900 mb-1.5 sm:mb-2">
               Tópico de ajuda
             </label>
             <select
               value={filtroTopicoId}
               onChange={(e) => setFiltroTopicoId(Number(e.target.value))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full px-2.5 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded-md text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
             >
               <option value={0}>Todos</option>
               {topicos
@@ -139,13 +139,13 @@ export default function AcompanharChamado({ onChamadoClick }: AcompanharChamadoP
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-900 mb-2">
+            <label className="block text-xs sm:text-sm font-medium text-gray-900 mb-1.5 sm:mb-2">
               Status
             </label>
             <select
               value={filtroStatusId}
               onChange={(e) => setFiltroStatusId(Number(e.target.value))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full px-2.5 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded-md text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
             >
               <option value={0}>Todos</option>
               {statusList.map((status) => (
@@ -157,7 +157,7 @@ export default function AcompanharChamado({ onChamadoClick }: AcompanharChamadoP
           </div>
           <button
             onClick={handlePesquisar}
-            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition"
+            className="px-4 sm:px-6 py-1.5 sm:py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md transition"
           >
             Pesquisar
           </button>
@@ -165,7 +165,7 @@ export default function AcompanharChamado({ onChamadoClick }: AcompanharChamadoP
       </div>
 
       {/* Seus chamados */}
-      <h2 className="text-xl font-bold text-gray-900 mb-4">Seus chamados</h2>
+      <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Seus chamados</h2>
 
       {loadingChamados ? (
         <div className="text-center py-8 text-gray-600">Carregando...</div>
@@ -173,8 +173,89 @@ export default function AcompanharChamado({ onChamadoClick }: AcompanharChamadoP
         <div className="text-center py-8 text-gray-600">Nenhum chamado encontrado.</div>
       ) : (
         <>
-          {/* Tabela */}
-          <div className="overflow-x-auto border border-gray-300 rounded-lg">
+          {/* cards pra mobile */}
+          <div className="md:hidden space-y-3 mb-6">
+            {chamados.map((chamado) => (
+              <div
+                key={chamado.id}
+                onClick={() => onChamadoClick(chamado)}
+                className="bg-white border border-gray-300 rounded-lg p-4 shadow-sm hover:shadow-md transition-all cursor-pointer"
+              >
+                {/* cabeçalho */}
+                <div className="flex items-start justify-between mb-3 pb-3 border-b border-gray-200">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-gray-900 text-sm truncate mb-1">
+                      {chamado.resumoChamado}
+                    </h3>
+                    <p className="text-xs text-blue-600 font-medium">
+                      #{chamado.numeroChamado || chamado.id}
+                    </p>
+                  </div>
+                </div>
+
+                {/* informacoes do chamado */}
+                <div className="space-y-2.5 mb-3">
+        
+                  <div className="flex items-start gap-2">
+                    <span className="text-xs font-medium text-gray-500 min-w-18.75">Tópico:</span>
+                    <span className="text-xs text-gray-900 flex-1">{chamado.topicoAjuda?.nome}</span>
+                  </div>
+
+                  <div className="flex items-start gap-2">
+                    <span className="text-xs font-medium text-gray-500 min-w-18.75">Depto:</span>
+                    <span className="text-xs text-gray-900 flex-1">{chamado.departamento?.name}</span>
+                  </div>
+
+                  <div className="flex items-start gap-2">
+                    <span className="text-xs font-medium text-gray-500 min-w-18.75">Prioridade:</span>
+                    <div className="flex items-center gap-1.5">
+                      <div
+                        className="w-2.5 h-2.5 rounded-full"
+                        style={{ backgroundColor: chamado.tipoPrioridade?.cor || '#999' }}
+                      />
+                      <span className="text-xs text-gray-900">{chamado.tipoPrioridade?.nome}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-2">
+                    <span className="text-xs font-medium text-gray-500 min-w-18.75">Status:</span>
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold border uppercase tracking-wider ${
+                        chamado.status.id === 1
+                          ? 'bg-yellow-100 text-yellow-700 border-yellow-500'
+                          : chamado.status.id === 2
+                          ? 'bg-blue-100 text-blue-600 border-blue-500'
+                          : chamado.status.id === 3
+                          ? 'bg-green-100 text-green-800 border-green-700'
+                          : chamado.status.id === 5
+                          ? 'bg-purple-100 text-purple-700 border-purple-500'
+                          : chamado.status.id === 4
+                          ? 'bg-gray-100 text-red-800 border-red-700'
+                          : chamado.status.id === 6
+                          ? 'bg-gray-100 text-gray-800 border-gray-700'
+                          : chamado.status.id === 7
+                          ? 'bg-orange-100 text-orange-800 border-orange-700'
+                          : 'bg-red-100 text-red-800 border-red-700'
+                      }`}
+                    >
+                      {chamado.status?.nome || 'Desconhecido'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="pt-2.5 border-t border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-gray-500">Criado em:</span>
+                    <span className="text-xs text-gray-700 font-medium">
+                      {formatarDataBrasilia(chamado.dataAbertura)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          <div className="hidden md:block overflow-x-auto border border-gray-300 rounded-lg">
             <table className="min-w-full divide-y divide-gray-300">
               <thead className="bg-gray-100">
                 <tr>
@@ -265,23 +346,23 @@ export default function AcompanharChamado({ onChamadoClick }: AcompanharChamadoP
 
           {/* Paginação */}
           {totalPaginas > 1 && (
-            <div className="flex justify-center items-center gap-2 mt-6">
+            <div className="flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-3 mt-4 sm:mt-6">
               <button
                 onClick={() => buscarChamados(paginaAtual - 1)}
                 disabled={paginaAtual === 1}
-                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-md text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Anterior
               </button>
               
-              <span className="text-sm text-gray-700">
+              <span className="text-xs sm:text-sm text-gray-700">
                 Página {paginaAtual} de {totalPaginas}
               </span>
               
               <button
                 onClick={() => buscarChamados(paginaAtual + 1)}
                 disabled={paginaAtual === totalPaginas}
-                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-md text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Próxima
               </button>
