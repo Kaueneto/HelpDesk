@@ -37,10 +37,13 @@ export default function AdminLayout({
 
   return (
     <div className="h-screen flex overflow-hidden" style={{ backgroundColor: '#EDEDED' }}>
-      <AdminSidebar collapsed={sidebarCollapsed} />
+      <AdminSidebar 
+        collapsed={sidebarCollapsed} 
+        onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+      />
       
       <div className="flex-1 flex flex-col overflow-hidden">
-        <AdminHeader onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)} />
+        <AdminHeader />
         
         <main className="flex-1 overflow-auto">
           {children}
