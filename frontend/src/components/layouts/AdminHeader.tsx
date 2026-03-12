@@ -4,11 +4,9 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 
-interface AdminHeaderProps {
-  onToggleSidebar: () => void;
-}
+interface AdminHeaderProps {}
 
-export default function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
+export default function AdminHeader({}: AdminHeaderProps) {
   const { user, logout } = useAuth();
   const router = useRouter();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -31,14 +29,10 @@ export default function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
   }, [userMenuOpen]);
 
   return (
-    <header className="h-14 flex items-center justify-between px-4" style={{ backgroundColor: '#001F3F' }}>
-      <button
-        onClick={onToggleSidebar}
-        className="text-white hover:bg-white/10 p-2 rounded transition"
-      >
-        <img src="/icons/menu.svg" alt="Menu" className="w-6 h-6" />
-      </button>
-
+    <header className="h-14 flex items-center justify-end px-6 shadow-lg" style={{ 
+      backgroundColor: '#001F3F',
+      background: 'linear-gradient(90deg, #001F3F 0%, #002A5C 100%)'
+    }}>
       <div className="relative flex items-center gap-3">
         <button
           onClick={() => router.push('/bookmarks')}
