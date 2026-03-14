@@ -25,6 +25,7 @@ interface TipoPrioridade {
   id: number;
   nome: string;
   cor: string;
+  ordem?: number;
 }
 
 interface ModalEditarChamadoAdminProps {
@@ -53,6 +54,8 @@ export default function ModalEditarChamadoAdmin({
   const [topicosAjuda, setTopicosAjuda] = useState<TopicoAjuda[]>([]);
   const [prioridades, setPrioridades] = useState<TipoPrioridade[]>([]);
   
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [submitting, setSubmitting] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -235,261 +238,245 @@ export default function ModalEditarChamadoAdmin({
 
   if (!isOpen) return null;
 
-  return (
-    <div 
-      className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4 overflow-y-auto py-8"
-      onClick={handleClose}
-      style={{ animation: 'fadeIn 0.15s ease-out' }}
-    >
-      <div 
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl my-auto"
-        onClick={(e) => e.stopPropagation()}
-        style={{ animation: 'slideUp 0.2s ease-out' }}
-      >
-        {/* Header */}
-        <div className="bg-linear-to-r from-[#001933] to-[#004287] px-6 py-5 rounded-t-2xl relative">
-          <h3 className="text-xl font-bold text-white">
-            Editando chamado #{numeroChamado || chamadoId}
-          </h3>
-          <button
-            onClick={handleClose}
-            className="absolute top-4 right-4 text-white/80 hover:bg-white/50 rounded-lg transition-colors"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
+  const prioridadesOrdenadas = [...prioridades].sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0));
 
-        {/* body */}
+  const buttonGhostClass =
+    'px-6 py-2 bg-transparent border border-gray-400 text-gray-700 rounded-lg hover:bg-gray-200 hover:text-gray-900 transition-all duration-200 transform hover:scale-105 font-medium disabled:border-gray-300 disabled:text-gray-400 disabled:bg-transparent disabled:cursor-not-allowed';
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/50 flex items-start sm:items-center justify-center z-50 px-3 sm:px-4 py-4 sm:py-6"
+      onClick={handleClose}
+    >
+      <div
+        className="bg-[#f4f4f4] rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
         {loading ? (
           <div className="p-12 text-center">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-            <p className="mt-4 text-gray-600">Carregando dados...</p>
+            <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600" />
+            <p className="mt-4 text-gray-500 text-sm">Carregando dados...</p>
           </div>
         ) : (
-          <div className="p-6 space-y-4">
-            {/*  assunto e ramal */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Assunto <span className="text-red-500">*</span>
-                </label>
+            <div
+              className="p-5 sm:p-6 md:p-7"
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
+            {/* Título + número + fechar */}
+            <div className="flex justify-between items-start gap-3">
+              <div className="w-full">
+                <p className="text-xs font-medium text-gray-400 mb-1 uppercase tracking-wide">
+                  Chamado #{numeroChamado || chamadoId}
+                </p>
                 <input
                   type="text"
                   value={resumoChamado}
                   onChange={(e) => setResumoChamado(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900"
+                  className="w-full bg-transparent text-2xl md:text-3xl leading-tight font-semibold text-black placeholder:text-gray-400 outline-none"
+                  placeholder="Assunto do chamado"
                   disabled={submitting}
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Ramal
-                </label>
-                <input
-                  type="number"
-                  value={ramal}
-                  onChange={(e) => setRamal(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900"
-                  disabled={submitting}
-                />
-              </div>
+              <button
+                onClick={handleClose}
+                className="text-gray-400 hover:text-gray-600 transition-colors shrink-0"
+                type="button"
+                tabIndex={-1}
+                aria-label="Fechar modal"
+              >
+                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
 
-            {/* descricao */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Descrição do problema <span className="text-red-500">*</span>
-                
-              </label>
-                    <textarea
-                        value={descricaoChamado}
-                        onChange={(e) => setDescricaoChamado(e.target.value)}
-                        rows={4}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 resize-none"
-                        disabled={submitting}
-                    />
+            {/* Descrição */}
+            <div className="mt-3">
+              <textarea
+                value={descricaoChamado}
+                onChange={(e) => setDescricaoChamado(e.target.value)}
+                rows={3}
+                className="w-full bg-transparent text-lg md:text-xl text-gray-800 placeholder:text-gray-400 outline-none resize-none overflow-y-auto max-h-48 pr-2"
+                placeholder="Descrição do problema"
+                disabled={submitting}
+              />
             </div>
 
-            {/* dep. e topico */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Departamento <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={departamentoId}
-                  onChange={(e) => setDepartamentoId(Number(e.target.value))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900"
-                  disabled={submitting}
-                >
-                  <option value={0}>Selecione</option>
-                  {departamentos.map(dep => (
-                    <option key={dep.id} value={dep.id}>{dep.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tópico de ajuda <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={topicoAjudaId}
-                  onChange={(e) => setTopicoAjudaId(Number(e.target.value))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900"
-                  disabled={submitting}
-                >
-                  <option value={0}>Selecione</option>
-                  {topicosAjuda.map(top => (
-                    <option key={top.id} value={top.id}>{top.nome}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
+            {/* Campos + Prioridade */}
+            <div className="mt-5 grid grid-cols-1 xl:grid-cols-[1fr_140px] gap-5 md:gap-6 items-start">
+              <div className="space-y-2.5">
+                <div className="grid grid-cols-1 md:grid-cols-[160px_1fr] items-center gap-2.5">
+                  <label className="text-base md:text-lg leading-none text-gray-600">
+                    Ramal
+                  </label>
+                  <input
+                    type="number"
+                    value={ramal}
+                    onChange={(e) => setRamal(e.target.value)}
+                    placeholder="(opcional)"
+                    className="h-10 px-3 border border-gray-400 rounded-lg bg-[#f4f4f4] text-gray-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    disabled={submitting}
+                  />
+                </div>
 
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Nível de prioridade <span className="text-red-500">*</span>
-              </label>
-              <div className="grid grid-cols-2 sm:flex gap-2 justify-center">
-                {prioridades.map(prioridade => (
-                    <button
-                        key={prioridade.id}
-                        onClick={() => setPrioridadeId(prioridade.id)}
-                        disabled={submitting}
-                        className={`flex-1 px-4 py-2.5 rounded-lg font-medium text-sm transition-all ${
-                        prioridadeId === prioridade.id
-                            ? 'shadow-lg scale-105 border-2'
-                            : 'border-2 border-gray-300 hover:border-gray-400 hover:scale-102'
-                        }`}
-                        style={{
-                        backgroundColor: prioridadeId === prioridade.id ? prioridade.cor : 'transparent',
-                        color: prioridadeId === prioridade.id ? '#fff' : '#6b7280',
-                        borderColor: prioridadeId === prioridade.id ? prioridade.cor : undefined,
-                        }}
+                <div className="grid grid-cols-1 md:grid-cols-[160px_1fr] items-center gap-2.5">
+                  <label className="text-base md:text-lg leading-none text-gray-600">
+                    Departamento <span className="text-red-400">*</span>
+                  </label>
+                  <select
+                    value={departamentoId}
+                    onChange={(e) => setDepartamentoId(Number(e.target.value))}
+                    className="h-10 px-3 border border-gray-400 rounded-lg bg-[#f4f4f4] text-gray-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    disabled={submitting}
                   >
-                    {prioridade.nome}
-                  </button>
-                ))}
+                    <option value={0}>Selecione</option>
+                    {departamentos.map(dep => (
+                      <option key={dep.id} value={dep.id}>{dep.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-[160px_1fr] items-center gap-2.5">
+                  <label className="text-base md:text-lg leading-none text-gray-600">
+                    Tópico <span className="text-red-400">*</span>
+                  </label>
+                  <select
+                    value={topicoAjudaId}
+                    onChange={(e) => setTopicoAjudaId(Number(e.target.value))}
+                    className="h-10 px-3 border border-gray-400 rounded-lg bg-[#f4f4f4] text-gray-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    disabled={submitting}
+                  >
+                    <option value={0}>Selecione</option>
+                    {topicosAjuda.map(top => (
+                      <option key={top.id} value={top.id}>{top.nome}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Botões de prioridade */}
+              <div className="flex flex-col gap-2 pl-4 xl:pl-2 pt-1">
+                {prioridadesOrdenadas.map(prioridade => {
+                  const isActive = prioridadeId === prioridade.id;
+                  return (
+                    <button
+                      key={prioridade.id}
+                      type="button"
+                      onClick={() => setPrioridadeId(prioridade.id)}
+                      disabled={submitting}
+                      className="w-full h-9 rounded-lg text-sm font-semibold tracking-wide transition-all duration-150 hover:brightness-90 shadow-sm disabled:opacity-60"
+                      style={{
+                        backgroundColor: isActive ? prioridade.cor : '#c8c8c8',
+                        color: isActive ? '#ffffff' : '#5a5a5a',
+                      }}
+                    >
+                      {prioridade.nome}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
-            {/* anexos  */}
-            {anexosExistentes.length > 0 && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Anexos atuais
-                </label>
-                <div className="space-y-2">
+            {/* Área de anexos */}
+            <div className={`mt-5 rounded-xl transition-colors ${isDragging ? 'ring-2 ring-blue-400 bg-blue-50/40' : ''}`}>
+              {/* Anexos existentes como pills */}
+              {anexosExistentes.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-3">
                   {anexosExistentes.map(anexo => (
                     <div
                       key={anexo.id}
-                      className="flex items-center justify-between bg-blue-50 border border-blue-200 px-3 py-2 rounded-lg"
+                      className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 border border-blue-200 rounded-full"
                     >
-                        <div className="flex items-center gap-2 flex-1 min-w-0">
-                            <svg className="w-5 h-5 text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                            </svg>
-                            <span className="text-sm text-gray-700 truncate">{anexo.filename}</span>
-                        </div>
+                      <svg className="h-3.5 w-3.5 text-blue-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                          d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                      </svg>
+                      <span className="text-xs text-gray-700 max-w-[160px] truncate">{anexo.filename}</span>
                       <button
+                        type="button"
                         onClick={() => handleRemoverAnexoExistente(anexo.id)}
                         disabled={submitting}
-                        className="ml-2 text-red-500 hover:text-red-700 font-bold text-lg disabled:opacity-50"
-                        title="Remover anexo"
+                        className="text-gray-400 hover:text-red-500 transition-colors disabled:opacity-50"
+                        aria-label={`Remover ${anexo.filename}`}
                       >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-      
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                {anexosExistentes.length > 0 ? 'Adicionar novos anexos' : 'Anexos'}
-              </label>
-              
-              <div
-                className={`border-2 border-dashed rounded-lg p-4 text-center transition ${
-                  isDragging
-                    ? 'border-blue-500 bg-blue-50'
-                    : 'border-gray-300 bg-gray-50'
-                }`}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-              >
-                <input
-                  type="file"
-                  id="file-upload-edit-admin"
-                  multiple
-                  accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip"
-                  onChange={handleFileChange}
-                  className="hidden"
-                  disabled={submitting}
-                />
-                <label
-                  htmlFor="file-upload-edit-admin"
-                  className="cursor-pointer text-sm text-gray-600"
-                >
-                  Arraste os arquivos aqui ou{' '}
-                        <span className="text-blue-600 hover:text-blue-700 font-medium">
-                            clique para selecionar
-                        </span>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Máximo 5 novos arquivos, 10MB cada
-                  </p>
-                </label>
-              </div>
-
-              {novosAnexos.length > 0 && (
-                <div className="mt-3 space-y-2">
-                      <p className="text-sm font-medium text-gray-700">
-                    Novos arquivos ({novosAnexos.length}/5):
-                  </p>
-                  {novosAnexos.map((file, index) => (
-                        <div
-                        key={index}
-                        className="flex items-center justify-between bg-green-50 border border-green-200 px-3 py-2 rounded-lg"
-                    >
-                        <span className="text-sm text-gray-700 truncate flex-1">
-                            {file.name} ({(file.size / 1024).toFixed(1)} KB)
-                      </span>
-                      <button
-                        onClick={() => removeNovoAnexo(index)}
-                        disabled={submitting}
-                        className="ml-2 text-red-500 hover:text-red-700 font-medium text-sm disabled:opacity-50"
-                      >
-                        Remover
+                        <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
                       </button>
                     </div>
                   ))}
                 </div>
               )}
+
+              {/* botao de adicionar +nvos anexos */}
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={submitting}
+                  className="inline-flex items-center gap-2 px-4 py-1.5 border border-gray-300 rounded-lg text-sm text-gray-500 bg-white hover:bg-gray-50 hover:text-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                  </svg>
+                  Arquivos
+                </button>
+
+                {novosAnexos.map((file, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center gap-1.5 px-2.5 py-1 bg-white border border-gray-300 rounded-full"
+                  >
+                    <span className="text-xs text-gray-700 max-w-[160px] truncate">{file.name}</span>
+                    <span className="text-xs text-gray-400 shrink-0">{(file.size / 1024).toFixed(0)} KB</span>
+                    <button
+                      type="button"
+                      onClick={() => removeNovoAnexo(index)}
+                      className="text-gray-400 hover:text-red-500 transition-colors"
+                      aria-label={`Remover ${file.name}`}
+                    >
+                      <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                id="file-upload-edit-admin"
+                multiple
+                accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip"
+                onChange={handleFileChange}
+                className="hidden"
+                disabled={submitting}
+              />
+            </div>
+
+            {/* rodapé */}
+            <div className="mt-7 flex justify-between items-center gap-3">
+              <button
+                onClick={handleClose}
+                disabled={submitting}
+                className={buttonGhostClass}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSubmit}
+                disabled={submitting || loading}
+                className="px-6 py-2 bg-[#001960] text-white rounded-lg hover:bg-[#001960]/80 transition-all transform hover:scale-105 font-medium disabled:bg-blue-400 disabled:cursor-not-allowed disabled:transform-none"
+              >
+                {submitting ? 'Salvando...' : 'Confirmar'}
+              </button>
             </div>
           </div>
         )}
-          <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex gap-3 justify-end rounded-b-2xl">
-               <button
-             onClick={handleClose}
-            disabled={submitting}
-            className="px-6 py-2.5 bg-white border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Cancelar
-          </button>
-          <button
-            onClick={handleSubmit}
-                disabled={submitting || loading}
-                className="px-6 py-2.5 bg-linear-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all font-medium shadow-lg shadow-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
-            >
-                {submitting ? 'Salvando...' : 'Confirmar'}
-          </button>
-        </div>
       </div>
     </div>
   );
