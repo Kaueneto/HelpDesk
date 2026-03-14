@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import api from '@/services/api';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -39,7 +39,12 @@ interface ModalNovoChamadoProps {
 }
 
 export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNovoChamadoProps) {
+  const MAX_FILES = 5;
+  const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
   const { user } = useAuth();
+  const assuntoRef = useRef<HTMLInputElement>(null);
+  const descricaoRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Estados do formulário
   const [assunto, setAssunto] = useState('');
@@ -64,10 +69,11 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
   useEffect(() => {
     if (isOpen) {
       carregarDados();
-      // Definir responsável como usuário logado
       if (user) {
         setResponsavelId(user.id);
       }
+      // foca o campo assunto assim que o modal abre
+      setTimeout(() => assuntoRef.current?.focus(), 50);
     }
   }, [isOpen, user]);
 
@@ -81,18 +87,49 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
       ]);
 
       setTopicos(topicosRes.data.filter((t: TopicosAjuda) => t.ativo));
-      setDepartamentos(departamentosRes.data.filter((d: Departamento) => d.ativo));
-      setPrioridades(prioridadesRes.data);
+      const departamentosAtivos = departamentosRes.data.filter((d: Departamento) => d.ativo);
+      setDepartamentos(departamentosAtivos);
+
+      const prioridadesLista = Array.isArray(prioridadesRes.data) ? prioridadesRes.data : [];
+      setPrioridades(prioridadesLista);
       
       // Filtrar apenas administradores
       const todosUsuarios = Array.isArray(usersRes.data) ? usersRes.data : (usersRes.data.usuarios || []);
       const admins = todosUsuarios.filter((u: User) => u.roleId === 1);
-      setUsuarios(admins);
+      const usuarioLogadoCompleto = todosUsuarios.find((u: User) => u.id === user?.id);
+
+      //garante que o usuario logado vai esta selecionado por padrao
+      const usuariosDisponiveis = [...admins];
+      if (user && !usuariosDisponiveis.some((u) => u.id === user.id)) {
+        usuariosDisponiveis.unshift(
+          usuarioLogadoCompleto || {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            roleId: user.roleId,
+          }
+        );
+      }
+
+      setUsuarios(usuariosDisponiveis);
+
+      //departamento marcado por padrao quando existir
+      const departamentoPadrao = departamentosAtivos.find((d: Departamento) => d.id === 15) || departamentosAtivos[0];
+      if (departamentoPadrao) {
+        setDepartamentoId(departamentoPadrao.id);
+      }
       
       // Definir prioridade padrão (ordem 4 = Média/Baixa)
-      const prioridadePadrao = prioridadesRes.data.find((p: TipoPrioridade) => p.ordem === 4);
+      const prioridadePadrao = prioridadesLista.find((p: TipoPrioridade) => p.ordem === 4) ||
+        [...prioridadesLista].sort((a: TipoPrioridade, b: TipoPrioridade) => a.ordem - b.ordem)[0];
       if (prioridadePadrao) {
         setPrioridadeId(prioridadePadrao.id);
+      }
+
+      if (user) {
+        setResponsavelId(user.id);
+      } else if (usuariosDisponiveis.length > 0) {
+        setResponsavelId(usuariosDisponiveis[0].id);
       }
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
@@ -103,9 +140,11 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
     setAssunto('');
     setDescricao('');
     setTopicoAjudaId(0);
-    setDepartamentoId(15);
     setSelectedFiles([]);
     setErrorMessage('');
+
+    const departamentoPadrao = departamentos.find((d) => d.id === 15) || departamentos[0];
+    setDepartamentoId(departamentoPadrao ? departamentoPadrao.id : 0);
     
     // Resetar prioridade padrão
     const prioridadePadrao = prioridades.find((p) => p.ordem === 4);
@@ -119,15 +158,32 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
     }
   };
 
+  const adicionarArquivos = (files: File[]) => {
+    const arquivoMaiorQuePermitido = files.find((file) => file.size > MAX_FILE_SIZE_BYTES);
+    if (arquivoMaiorQuePermitido) {
+      setErrorMessage(`O arquivo ${arquivoMaiorQuePermitido.name} ultrapassa o limite de 10MB.`);
+      return;
+    }
+
+    const arquivosUnicos = [...selectedFiles, ...files].filter(
+      (file, index, arr) =>
+        index === arr.findIndex((f) => f.name === file.name && f.size === file.size && f.lastModified === file.lastModified)
+    );
+
+    if (arquivosUnicos.length > MAX_FILES) {
+      setErrorMessage('Máximo de 5 arquivos permitidos.');
+      return;
+    }
+
+    setSelectedFiles(arquivosUnicos);
+    setErrorMessage('');
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const filesArray = Array.from(e.target.files);
-      if (filesArray.length > 5) {
-        setErrorMessage('Máximo de 5 arquivos permitidos.');
-        return;
-      }
-      setSelectedFiles(filesArray);
-      setErrorMessage('');
+      adicionarArquivos(filesArray);
+      e.target.value = '';
     }
   };
 
@@ -147,12 +203,14 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
     
     if (e.dataTransfer.files) {
       const filesArray = Array.from(e.dataTransfer.files);
-      if (filesArray.length > 5) {
-        setErrorMessage('Máximo de 5 arquivos permitidos.');
-        return;
-      }
-      setSelectedFiles(filesArray);
-      setErrorMessage('');
+      adicionarArquivos(filesArray);
+    }
+  };
+
+  const handleAssuntoKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' || e.key === 'Tab') {
+      e.preventDefault();
+      descricaoRef.current?.focus();
     }
   };
 
@@ -227,280 +285,244 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
 
   if (!isOpen) return null;
 
+  const topicosOrdenados = [...topicos].sort((a, b) => Number(a.codigo) - Number(b.codigo));
+  const departamentosOrdenados = [...departamentos].sort((a, b) => Number(a.codigo) - Number(b.codigo));
+  const usuariosOrdenados = [...usuarios].sort((a, b) => a.name.localeCompare(b.name));
+  const prioridadesOrdenadas = [...prioridades].sort((a, b) => a.ordem - b.ordem);
+
+  const buttonGhostClass =
+    'px-6 py-2 bg-transparent border border-gray-400 text-gray-700 rounded-lg hover:bg-gray-200 hover:text-gray-900 transition-all duration-200 transform hover:scale-105 font-medium disabled:border-gray-300 disabled:text-gray-400 disabled:bg-transparent disabled:cursor-not-allowed';
+
   return (
-    <div 
-      className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4 rounded-lg"
+    <div
+      className="fixed inset-0 bg-black/50 flex items-start sm:items-center justify-center z-50 px-3 sm:px-4 py-4 sm:py-6"
       onClick={(e) => e.target === e.currentTarget && handleCancel()}
     >
-      <div 
-        className="bg-[#f4f4f4] rounded-2xl w-full max-w-6xl max-h-[90vh] overflow-y-auto"
+      <div
+        className="bg-[#f4f4f4] rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="bg-[#002851] px-6 py-4 flex justify-between items-center  sticky top-0 z-10">
-          <h2 className="text-white text-2xl font-semibold">Abrir novo chamado</h2>
-          <button
-            onClick={handleCancel}
-            className="text-white hover:text-gray-200 transition-colors"
-            type="button"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
+        <form
+          onSubmit={handleSubmit}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          className="p-5 sm:p-6 md:p-7"
+        >
+          <div className="flex justify-between items-start gap-3">
+            <div className="w-full max-w-3xl">
+              <label htmlFor="assunto" className="sr-only">
+                Assunto
+              </label>
+              <input
+                ref={assuntoRef}
+                id="assunto"
+                type="text"
+                value={assunto}
+                onChange={(e) => setAssunto(e.target.value)}
+                onKeyDown={handleAssuntoKeyDown}
+                required
+                maxLength={200}
+                className="w-full bg-transparent text-2xl md:text-3xl leading-tight font-semibold text-black placeholder:text-gray-400 outline-none"
+                placeholder="Assunto/resumo"
+              />
+            </div>
 
-        {/* formulario */}
-        <form onSubmit={handleSubmit} className="p-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* coluna esuqerda */}
-            <div className="lg:col-span-2 space-y-4">
+            <button
+              onClick={handleCancel}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+              type="button"
+              tabIndex={-1}
+              aria-label="Fechar modal"
+            >
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
 
-              <div>
-                <label htmlFor="assunto" className="block text-base font-medium text-gray-700 mb-2">
-                  Assunto <span className="text-red-500">*</span>
-                </label>
-                <input
-                  id="assunto"
-                  type="text"
-                  value={assunto}
-                  onChange={(e) => setAssunto(e.target.value)}
-                  required
-                  maxLength={200}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent transition-all"
-                  placeholder="Digite o assunto do chamado"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="descricao" className="block text-base font-medium text-gray-700 mb-2">
-                  Descrição <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  id="descricao"
-                  value={descricao}
-                  onChange={(e) => setDescricao(e.target.value)}
-                  required
-                  rows={6}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent resize-y transition-all"
-                  placeholder="Descreva o problema ou solicitação com detalhes"
-                />
-              </div>
-
-              <div>
-            <label className="block text-base font-medium text-gray-700 mb-2">
-                Anexos (Opcional)
+          <div className="mt-3">
+            <label htmlFor="descricao" className="sr-only">
+              Descrição
             </label>
+            <textarea
+              id="descricao"
+              ref={descricaoRef}
+              value={descricao}
+              onChange={(e) => setDescricao(e.target.value)}
+              required
+              rows={3}
+              className="w-full bg-transparent text-lg md:text-xl text-gray-800 placeholder:text-gray-400 outline-none resize-none overflow-y-auto max-h-48 pr-2"
+              placeholder="Descrição"
+            />
+          </div>
 
-            <div
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-                className={`border-2 border-dashed rounded-lg p-2 text-center transition-colors ${
-                isDragging
-                    ? "border-blue-500 bg-blue-50"
-                    : "border-gray-300 bg-gray-50"
-                }`} >
-
-                <label
-                htmlFor="file-upload"
-                className="cursor-pointer flex items-center justify-center gap-2">
-                <svg
-                    className="h-6 w-6 text-gray-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                >
-                    <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
-                    />
-                </svg>
-
-                <div className="text-left">
-                    <p className="text-base font-medium text-gray-700">
-                    Clique para selecionar ou arraste arquivos aqui
-                    </p>
-                    <p className="text-xs text-gray-500">
-                    Máximo de 5 arquivos (10MB cada)
-                    </p>
-                </div>
-                </label>
-
-                <input
-                id="file-upload"
-                type="file"
-                multiple
-                accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip"
-                onChange={handleFileChange}
-                className="hidden"
-                disabled={submitting}
-                />
-            </div>
-
-
-                {selectedFiles.length > 0 && (
-                  <div className="mt-3 space-y-2">
-                    {selectedFiles.map((file, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between p-2.5 bg-gray-50 border border-gray-200 rounded-lg"
-                      >
-                        <div className="flex items-center gap-2 min-w-0">
-                          <svg className="h-5 w-5 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                          </svg>
-                          <span className="text-base text-gray-700 truncate">{file.name}</span>
-                          <span className="text-xs text-gray-500 shrink-0">
-                            ({(file.size / 1024).toFixed(2)} KB)
-                          </span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => removeFile(index)}
-                          className="text-red-500 hover:text-red-700 transition-colors shrink-0 ml-2"
-                        >
-                          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* coluna direita */}
-            <div className="space-y-4">
-                 <div>
-                <label htmlFor="topico" className="block text-base font-medium text-gray-700 mb-2">
-                  Tópico de ajuda <span className="text-red-500">*</span>
-                </label>
-                <select
-                  id="topico"
-                  value={topicoAjudaId}
-                  onChange={(e) => setTopicoAjudaId(Number(e.target.value))}
-                  required
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent transition-all"
-                >
-                  <option value={0}>Selecione...</option>
-                  {topicos
-                    .sort((a, b) => Number(a.codigo) - Number(b.codigo))
-                    .map((topico) => (
-                      <option key={topico.id} value={topico.id}>
-                        {topico.codigo} - {topico.nome}
-                      </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label htmlFor="departamento" className="block text-base font-medium text-gray-700 mb-2">
-                  Departamento <span className="text-red-500">*</span>
-                </label>
-                <select
-                  id="departamento"
-                  value={departamentoId}
-                  onChange={(e) => setDepartamentoId(Number(e.target.value))}
-                  required
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent transition-all"
-                >
-                  <option value={0}>Selecione...</option>
-                  {departamentos
-                    .sort((a, b) => Number(a.codigo) - Number(b.codigo))
-                    .map((dept) => (
-                      <option key={dept.id} value={dept.id}>
-                        {dept.codigo} - {dept.name}
-                      </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-base font-medium text-gray-700 mb-2">
-                  Nível de prioridade <span className="text-red-500">*</span>
-                </label>
-                <div className="grid grid-cols-4 h-10 rounded-lg overflow-hidden border border-gray-300">
-                  {prioridades.map((prioridade) => (
-                    <button
-                      key={prioridade.id}
-                      type="button"
-                      onClick={() => setPrioridadeId(prioridade.id)}
-                      className={`flex items-center justify-center text-xs font-medium transition-all ${
-                        prioridadeId === prioridade.id
-                          ? 'text-gray-900'
-                          : 'bg-[#DFDFDF] text-gray-700 hover:opacity-80'
-                      }`}
-                      style={{
-                        backgroundColor: prioridadeId === prioridade.id ? prioridade.cor : undefined,
-                      }}
-                    >
-                      {prioridade.nome}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="responsavel" className="block text-base font-medium text-gray-700 mb-2">
-                  Responsável <span className="text-red-500">*</span>
+          <div className="mt-5 grid grid-cols-1 xl:grid-cols-[1fr_140px] gap-5 md:gap-6 items-start">
+            <div className="space-y-2.5">
+              <div className="grid grid-cols-1 md:grid-cols-[160px_1fr] items-center gap-2.5">
+                <label htmlFor="responsavel" className="text-base md:text-lg leading-none text-gray-600">
+                  Responsável
                 </label>
                 <select
                   id="responsavel"
                   value={responsavelId}
                   onChange={(e) => setResponsavelId(Number(e.target.value))}
                   required
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-[#f4f4f4] text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent transition-all"
+                  className="h-10 px-3 border border-gray-400 rounded-lg bg-[#f4f4f4] text-gray-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 >
                   <option value={0}>Selecione...</option>
-                  {usuarios
-                    .sort((a, b) => a.name.localeCompare(b.name))
-                    .map((usuario) => (
-                      <option key={usuario.id} value={usuario.id}>
-                        {usuario.name}
-                      </option>
+                  {usuariosOrdenados.map((usuario) => (
+                    <option key={usuario.id} value={usuario.id}>
+                      {usuario.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-[160px_1fr] items-center gap-2.5">
+                <label htmlFor="topico" className="text-base md:text-lg leading-none text-gray-600">
+                  Tópico
+                </label>
+                <select
+                  id="topico"
+                  value={topicoAjudaId}
+                  onChange={(e) => setTopicoAjudaId(Number(e.target.value))}
+                  required
+                  className="h-10 px-3 border border-gray-400 rounded-lg bg-[#f4f4f4] text-gray-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                >
+                  <option value={0}>Selecione...</option>
+                  {topicosOrdenados.map((topico) => (
+                    <option key={topico.id} value={topico.id}>
+                      {topico.codigo} - {topico.nome}
+                    </option>
+                  ))}
+                </select> 
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-[160px_1fr] items-center gap-2.5">
+                 <label htmlFor="departamento" className="text-base md:text-lg leading-none text-gray-600">
+                    Departamento
+                </label>
+                <select
+                  id="departamento"
+                  value={departamentoId}
+                  onChange={(e) => setDepartamentoId(Number(e.target.value))}
+                  required
+                  className="h-10 px-3 border border-gray-400 rounded-lg bg-[#f4f4f4] text-gray-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                >
+                  <option value={0}>Selecione...</option>
+                  {departamentosOrdenados.map((dept) => (
+                    <option key={dept.id} value={dept.id}>
+                      {dept.codigo} - {dept.name}
+                    </option>
                   ))}
                 </select>
               </div>
             </div>
+
+          <div className="flex flex-col gap-2 pl-6 xl:pl-5 pt-0 -mt-1 items-end">
+              {prioridadesOrdenadas.map((prioridade) => {
+                const isActive = prioridadeId === prioridade.id;
+                return (
+                  <button
+                    key={prioridade.id}
+                    type="button"
+                    onClick={() => setPrioridadeId(prioridade.id)}
+                    className="w-full h-9 rounded-lg text-sm font-mono transition-all duration-150 hover:brightness-90 shadow-sm"
+                    style={{
+                      backgroundColor: isActive ? prioridade.cor : '#e7e7e7',
+                      color: isActive ? '#ffffff' : '#464646',
+                    }}
+                  >
+                    {prioridade.nome}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
-  
+          {/* Área de anexos */}
+          <div className={`mt-5 transition-colors rounded-xl ${isDragging ? 'ring-2 ring-blue-400 bg-blue-50/40' : ''}`}>
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={submitting}
+                className="inline-flex items-center gap-2 px-4 py-1.5 border border-gray-300 rounded-lg text-sm text-gray-500 bg-white hover:bg-gray-50 hover:text-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                </svg>
+                   Arquivos
+              </button>
+
+              {selectedFiles.map((file, index) => (
+                <div
+                  key={`${file.name}-${file.lastModified}-${index}`}
+                  className="flex items-center gap-1.5 px-2.5 py-1 bg-white border border-gray-300 rounded-full"
+                >
+                   <span className="text-xs text-gray-700 max-w-[160px] truncate">{file.name}</span>
+                    <span className="text-xs text-gray-400 shrink-0">{(file.size / 1024).toFixed(0)} KB</span>
+                   <button
+                    type="button"
+                    onClick={() => removeFile(index)}
+                    className="text-gray-400 hover:text-red-500 transition-colors"
+                    aria-label={`Remover ${file.name}`}
+                  >
+                    <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <input
+              ref={fileInputRef}
+              id="file-upload"
+              type="file"
+              multiple
+              accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip"
+              onChange={handleFileChange}
+              className="hidden"
+              disabled={submitting}
+            />
+          </div>
+
           {errorMessage && (
-            <div className="mt-4 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-base">
+            <div className="mt-4 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
               {errorMessage}
             </div>
           )}
 
-        
-          <div className="flex justify-between items-center mt-6 pt-6 border-t border-gray-200">
-            <div className="flex gap-3">
+          {/* Rodapé */}
+          <div className="mt-7 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <div className="flex flex-wrap gap-3">
               <button
                 type="button"
                 onClick={handleCancel}
                 disabled={submitting}
-                className="px-6 py-2 bg-transparent border border-gray-400 text-gray-700 rounded-lg hover:bg-gray-200 hover:text-gray-900 transition-all duration-200 transform hover:scale-105 font-medium disabled:border-gray-300 disabled:text-gray-400 disabled:bg-transparent disabled:cursor-not-allowed"
+                className={buttonGhostClass}
               >
-                Cancelar
+                 Cancelar
               </button>
               <button
                 type="button"
                 onClick={limparCampos}
                 disabled={submitting}
-                className="px-6 py-2 bg-transparent border border-gray-400 text-gray-700 rounded-lg hover:bg-gray-200 hover:text-gray-900 transition-all duration-200 transform hover:scale-105 font-medium disabled:border-gray-300 disabled:text-gray-400 disabled:bg-transparent disabled:cursor-not-allowed"
+                className={buttonGhostClass}
               >
                 Limpar Campos
               </button>
             </div>
+
             <button
               type="submit"
               disabled={submitting}
-                className="px-6 py-2 bg-[#001960] text-white rounded-lg hover:bg-[#001960]/80 transition-all transform hover:scale-105 font-medium disabled:bg-blue-400 disabled:cursor-not-allowed disabled:transform-none"
+              className="px-6 py-2 bg-[#001960] text-white rounded-lg hover:bg-[#001960]/80 transition-all transform hover:scale-105 font-medium disabled:bg-blue-400 disabled:cursor-not-allowed disabled:transform-none"
             >
-              {submitting ? 'Abrindo chamado...' : 'Confirmar'}
+              {submitting ? 'Abrindo chamado...' : 'Criar'}
             </button>
           </div>
         </form>

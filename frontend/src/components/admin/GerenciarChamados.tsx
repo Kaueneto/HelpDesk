@@ -699,7 +699,7 @@ export default function GerenciarChamados() {
               className=" px-4 py-1.5 bg-transparent border border-green-600 text-green-600 rounded-lg hover:bg-green-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-lg flex items-center gap-2 disabled:border-green-300 disabled:text-green-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-1 focus:ring-green-500/50"
             >
               <span className="text-lg font-bold">+</span>
-              Novo Chamado
+              Novo
             </button>
 
             <button 
@@ -711,7 +711,7 @@ export default function GerenciarChamados() {
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
               </svg>
-              Editar Chamado
+              Editar
             </button>
           </div>
 
@@ -790,7 +790,7 @@ export default function GerenciarChamados() {
                       setDepartamentoId(selected.map(item => item.value));
                     }
                   }}
-                  placeholder="Selecione departamentos..."
+                  placeholder="Selecione..."
                   noOptionsMessage={() => "Nenhuma opção disponível"}
                   className="text-sm"
                   styles={{
@@ -855,7 +855,7 @@ export default function GerenciarChamados() {
                       setTopicoAjudaId(selected.map(item => item.value));
                     }
                   }}
-                  placeholder="Selecione tópicos..."
+                  placeholder="Selecione..."
                   noOptionsMessage={() => "Nenhuma opção disponível"}
                   className="text-base"
                   styles={{
@@ -921,7 +921,7 @@ export default function GerenciarChamados() {
                       setStatusId(selected.map(item => item.value));
                     }
                   }}
-                  placeholder="Selecione status..."
+                  placeholder="Selecione..."
                   noOptionsMessage={() => "Nenhuma opção disponível"}
                   className="text-sm"
                   styles={{
