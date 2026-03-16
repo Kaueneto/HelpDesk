@@ -133,8 +133,8 @@ export default function PainelUsuario() {
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                <img src="/icons/iconhome.svg" alt="Home" className="w-4 h-4 mr-2" />
-                Pagina Inicial
+                <img src="/icons/iconhome.svg" alt="Home" className="w-5 h-5 sm:w-4 sm:h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Pagina Inicial</span>
               </button>
               <button
                 type="button"
@@ -146,8 +146,8 @@ export default function PainelUsuario() {
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                <img src="/icons/iconabrirnovochamado.svg" alt="Abrir Chamado" className="w-4 h-4 mr-2" />
-                Abrir novo Chamado
+                <img src="/icons/iconabrirnovochamado.svg" alt="Abrir Chamado" className="w-5 h-5 sm:w-4 sm:h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Abrir novo Chamado</span>
               </button>
               <button
                 type="button"
@@ -159,8 +159,8 @@ export default function PainelUsuario() {
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                <img src="/icons/iconacompanhar.svg" alt="Acompanhar" className="w-4 h-4 mr-2" />
-                Acompanhar Chamado
+                <img src="/icons/iconacompanhar.svg" alt="Acompanhar" className="w-5 h-5 sm:w-4 sm:h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Acompanhar Chamado</span>
               </button>
             </div>
           </div>

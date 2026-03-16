@@ -194,14 +194,14 @@ export default function AbrirChamado({ userEmail, onSuccess, onCancel }: AbrirCh
             formData.append('arquivos', file);
           });
 
-          await api.post(`/chamado/${chamadoId}/anexo`, formData, {
-            headers: {
-              'Content-Type': 'multipart/form-data',
-            },
-          });
+          await api.post(`/chamado/${chamadoId}/anexo`, formData);
 
         } catch (anexoError: any) {
-  
+          const mensagemErroAnexo = anexoError?.response?.data?.erro
+            ? `${anexoError.response.data.mensagem || 'Erro ao enviar anexos'}: ${anexoError.response.data.erro}`
+            : (anexoError?.response?.data?.mensagem || 'Chamado aberto, mas houve erro ao enviar anexos.');
+
+          setErrorMessage(mensagemErroAnexo);
         }
       }
 

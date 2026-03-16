@@ -278,11 +278,7 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
         });
 
         try {
-          const responseAnexos = await api.post(`/mensagem/${mensagemId}/anexo`, formData, {
-            headers: {
-              'Content-Type': 'multipart/form-data',
-            },
-          });
+          const responseAnexos = await api.post(`/mensagem/${mensagemId}/anexo`, formData);
         } catch (anexoError: any) {
           // se o upload de anexos falhar, ainda mostra que a mensagem foi enviada
           toast.error('Mensagem enviada, mas houve erro no envio dos anexos. Tente novamente.', {

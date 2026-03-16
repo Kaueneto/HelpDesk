@@ -221,11 +221,7 @@ export default function ModalEditarChamadoUsuario({
           formData.append('arquivos', file);
         });
 
-        await api.post(`/chamado/${chamadoId}/anexo`, formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        });
+        await api.post(`/chamado/${chamadoId}/anexo`, formData);
       }
 
       alert('Chamado editado com sucesso!');
