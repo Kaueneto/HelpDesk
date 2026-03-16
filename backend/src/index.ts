@@ -27,7 +27,7 @@ app.use(cors({
   origin: function (origin, callback) {
    
     const allowedOrigins = [    
-      'http://172.16.100.202:5001',  // Desenvolvimento local
+     process.env.NEXT_PUBLIC_API_URL,
 
     ];
     
