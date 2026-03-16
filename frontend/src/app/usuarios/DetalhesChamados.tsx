@@ -142,11 +142,7 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
         });
 
         try {
-          const responseAnexos = await api.post(`/mensagem/${mensagemId}/anexo`, formData, {
-            headers: {
-              'Content-Type': 'multipart/form-data',
-            },
-          });
+          const responseAnexos = await api.post(`/mensagem/${mensagemId}/anexo`, formData);
          
         } catch (anexoError: any) {
         

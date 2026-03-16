@@ -250,13 +250,14 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
             formData.append('arquivos', file);
           });
 
-          await api.post(`/chamado/${chamadoId}/anexo`, formData, {
-            headers: {
-              'Content-Type': 'multipart/form-data',
-            },
-          });
+          await api.post(`/chamado/${chamadoId}/anexo`, formData);
         } catch (anexoError) {
-          console.error('Erro ao enviar anexos:', anexoError);
+          const erro = anexoError as any;
+          const mensagemErroAnexo = erro?.response?.data?.erro
+            ? `${erro.response.data.mensagem || 'Erro ao enviar anexos'}: ${erro.response.data.erro}`
+            : (erro?.response?.data?.mensagem || 'Chamado criado, mas houve erro ao enviar anexos.');
+
+          setErrorMessage(mensagemErroAnexo);
         }
       }
 

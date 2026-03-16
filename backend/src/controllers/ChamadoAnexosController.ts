@@ -12,7 +12,87 @@ interface AuthenticatedRequest extends Request {
   userRoleId?: number;
 }
 
+const isSupabaseConfigured = () => {
+  return Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
+};
+
+const getErrorMessage = (error: unknown) => {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return String(error);
+};
+
 const router = Router();
+
+const ALLOWED_MIMES = new Set([
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+  "image/heic",
+  "image/heif",
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "text/plain",
+  "application/zip",
+  "application/x-zip-compressed",
+  "application/octet-stream",
+]);
+
+const decodeFilename = (filename: string): string => {
+  try {
+    return Buffer.from(filename, "latin1").toString("utf8");
+  } catch {
+    return filename;
+  }
+};
+
+const sanitizeFilename = (filename: string): string => {
+  const decoded = decodeFilename(filename);
+  const withoutControls = decoded.replace(/[\x00-\x1F\x7F]/g, "");
+  const ascii = withoutControls
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9._ -]/g, "_")
+    .replace(/\s+/g, "_");
+
+  const cleaned = ascii.replace(/[\\/:*?"<>|]/g, "_").trim();
+  if (!cleaned) {
+    return "arquivo";
+  }
+
+  if (cleaned.length <= 180) {
+    return cleaned;
+  }
+
+  const extIndex = cleaned.lastIndexOf(".");
+  if (extIndex <= 0) {
+    return cleaned.slice(0, 180);
+  }
+
+  const ext = cleaned.slice(extIndex);
+  const base = cleaned.slice(0, extIndex);
+  const maxBaseLength = Math.max(1, 180 - ext.length);
+  return `${base.slice(0, maxBaseLength)}${ext}`;
+};
+
+const getUploadedFiles = (req: Request): Express.Multer.File[] => {
+  if (!req.files) {
+    return [];
+  }
+
+  if (Array.isArray(req.files)) {
+    return req.files as Express.Multer.File[];
+  }
+
+  const filesByField = req.files as { [fieldname: string]: Express.Multer.File[] };
+  return Object.values(filesByField).flat();
+};
 
 // Configurar multer para processar arquivos em memória (não salvar em disco)
 const upload = multer({
@@ -22,38 +102,64 @@ const upload = multer({
     files: 5, // Máximo 5 arquivos
   },
   fileFilter: (req, file, cb) => {
-    // Aceitar apenas certos tipos de arquivo
-    const allowedMimes = [
-      "image/jpeg",
-      "image/jpg",
-      "image/png",
-      "image/gif",
-      "image/webp",
-      "application/pdf",
-      "application/msword",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      "application/vnd.ms-excel",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      "text/plain",
-      "application/zip",
-    ];
-
-    if (allowedMimes.includes(file.mimetype)) {
+    if (ALLOWED_MIMES.has(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error("Tipo de arquivo não permitido"));
+      cb(new Error(`Tipo de arquivo não permitido: ${file.mimetype || "desconhecido"}`));
     }
   },
 });
 
+const uploadAnexos = upload.fields([
+  { name: "arquivos", maxCount: 5 },
+  { name: "arquivo", maxCount: 5 },
+  { name: "anexos", maxCount: 5 },
+  { name: "anexo", maxCount: 5 },
+]);
+
+const processUpload = (req: Request, res: Response, next: Function) => {
+  uploadAnexos(req, res, (err: any) => {
+    if (!err) {
+      return next();
+    }
+
+    if (err instanceof multer.MulterError) {
+      const mensagem =
+        err.code === "LIMIT_FILE_SIZE"
+          ? "arquivo excede o limite de tamanho(10MB)"
+          : err.code === "LIMIT_FILE_COUNT"
+            ? "Máximo de 5 arquivos por envio"
+            : `erro no upload: ${err.message}`;
+
+      return res.status(400).json({ mensagem, erro: err.code });
+    }
+
+    return res.status(400).json({
+      mensagem: "falha ao processar anexos",
+      erro: err?.message || "Erro desconhecido",
+    });
+  });
+};
+
 //upload de anexos iniciais na abertura do chamado
-router.post("/chamado/:id/anexo", verifyToken, upload.array("arquivos", 5),
+router.post("/chamado/:id/anexo", verifyToken, processUpload,
   async (req: AuthenticatedRequest, res: Response) => {
 
     
     try {
+      if (!isSupabaseConfigured()) {
+        return res.status(500).json({
+          mensagem: "upload indisponível no momento",
+          erro: "configuração do Supabase ausente no servidor",
+        });
+      }
+
       const chamadoId = Number(req.params.id);
-      const files = req.files as Express.Multer.File[];
+      const files = getUploadedFiles(req);
+
+      if (!Number.isFinite(chamadoId) || chamadoId <= 0) {
+        return res.status(400).json({ mensagem: "id do chamado invalido" });
+      }
 
 
       if (!files || files.length === 0) {
@@ -81,21 +187,30 @@ router.post("/chamado/:id/anexo", verifyToken, upload.array("arquivos", 5),
    
         // Gerar path único: chamados/{chamadoId}/{timestamp}-{nomeOriginal}
         const timestamp = Date.now();
-        const storagePath = `chamados/${chamadoId}/${timestamp}-${file.originalname}`;
+        const decodedOriginalName = decodeFilename(file.originalname);
+        const safeFilename = sanitizeFilename(decodedOriginalName);
+        const randomSuffix = Math.random().toString(36).slice(2, 8);
+        const storagePath = `chamados/${chamadoId}/${timestamp}-${randomSuffix}-${safeFilename}`;
 
         // Upload para o Supabase Storage
-        const { data: uploadData, error: uploadError } = await supabase.storage
+        const { error: uploadError } = await supabase.storage
           .from(SUPABASE_BUCKET)
           .upload(storagePath, file.buffer, {
-            contentType: file.mimetype,
+            contentType: file.mimetype || "application/octet-stream",
             upsert: false,
           });
 
         if (uploadError) {
-         
+
           return res.status(500).json({
             mensagem: "Erro ao fazer upload do arquivo",
             erro: uploadError.message,
+            detalhes: {
+              chamadoId,
+              filename: file.originalname,
+              mimetype: file.mimetype,
+              size: file.size,
+            },
           });
         }
 
@@ -105,7 +220,7 @@ router.post("/chamado/:id/anexo", verifyToken, upload.array("arquivos", 5),
         const anexo = anexoRepository.create({
           chamadoId,
           tipoAnexo: 'CHAMADO',
-          filename: file.originalname,
+          filename: decodedOriginalName,
           url: storagePath,
         });
 
@@ -127,10 +242,9 @@ router.post("/chamado/:id/anexo", verifyToken, upload.array("arquivos", 5),
         anexos: anexosSalvos,
       });
     } catch (error) {
-    
       return res.status(500).json({
         mensagem: "Erro ao fazer upload de anexos",
-        erro: error instanceof Error ? error.message : "Erro desconhecido",
+        erro: getErrorMessage(error),
       });
     }
   }
@@ -140,11 +254,22 @@ router.post("/chamado/:id/anexo", verifyToken, upload.array("arquivos", 5),
 router.post(
   "/mensagem/:mensagemId/anexo",
   verifyToken,
-  upload.array("arquivos", 5),
+  processUpload,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
+      if (!isSupabaseConfigured()) {
+        return res.status(500).json({
+          mensagem: "upload indisponível no momento",
+          erro: "configuração do Supabase ausente no servidor",
+        });
+      }
+
       const mensagemId = Number(req.params.mensagemId);
-      const files = req.files as Express.Multer.File[];
+      const files = getUploadedFiles(req);
+
+      if (!Number.isFinite(mensagemId) || mensagemId <= 0) {
+        return res.status(400).json({ mensagem: "id da mensagem inválido" });
+      }
 
 
       if (!files || files.length === 0) {
@@ -173,13 +298,16 @@ router.post(
       for (const file of files) {
         // Gerar path único: chamados/{chamadoId}/{timestamp}-{nomeOriginal}
         const timestamp = Date.now();
-        const storagePath = `chamados/${chamadoId}/${timestamp}-${file.originalname}`;
+        const decodedOriginalName = decodeFilename(file.originalname);
+        const safeFilename = sanitizeFilename(decodedOriginalName);
+        const randomSuffix = Math.random().toString(36).slice(2, 8);
+        const storagePath = `chamados/${chamadoId}/${timestamp}-${randomSuffix}-${safeFilename}`;
 
         // Upload para o Supabase Storage
-        const { data: uploadData, error: uploadError } = await supabase.storage
+        const { error: uploadError } = await supabase.storage
           .from(SUPABASE_BUCKET)
           .upload(storagePath, file.buffer, {
-            contentType: file.mimetype,
+            contentType: file.mimetype || "application/octet-stream",
             upsert: false,
           });
 
@@ -187,6 +315,13 @@ router.post(
           return res.status(500).json({
             mensagem: "Erro ao fazer upload do arquivo",
             erro: uploadError.message,
+            detalhes: {
+              mensagemId,
+              chamadoId,
+              filename: file.originalname,
+              mimetype: file.mimetype,
+              size: file.size,
+            },
           });
         }
 
@@ -195,7 +330,7 @@ router.post(
           chamadoId,
           mensagemId,
           tipoAnexo: 'MENSAGEM',
-          filename: file.originalname,
+          filename: decodedOriginalName,
           url: storagePath,
         });
 
@@ -217,10 +352,9 @@ router.post(
         anexos: anexosSalvos,
       });
     } catch (error) {
-    
       return res.status(500).json({
         mensagem: "Erro ao fazer upload de anexos",
-        erro: error instanceof Error ? error.message : "Erro desconhecido",
+        erro: getErrorMessage(error),
       });
     }
   }
