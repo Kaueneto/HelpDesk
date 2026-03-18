@@ -30,7 +30,7 @@ export class Chamados {
   @Column({ type: 'integer', nullable: true })
   ramal!: number | null;
 
-  @Column({ name: "numero_chamado", unique: true })
+  @Column({ name: "numero_chamado", unique: true, nullable: true, type: "bigint" })
   numeroChamado!: number;
 
   // data de abertura (automatica)
