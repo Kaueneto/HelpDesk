@@ -10,6 +10,10 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import ModalNovoChamado from '@/app/admin/Modal/ModalNovoChamado';
 import ModalEditarChamadoAdmin from '@/app/admin/Modal/ModalEditarChamadoAdmin';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FiGrid, FiList, FiFilter, FiPlus } from 'react-icons/fi';
+import KanbanView from '../kanban/KanbanView';
+
 
 interface Chamado {
   id: number;
@@ -135,37 +139,23 @@ export default function GerenciarChamados() {
   const [modalEditarChamadoAberto, setModalEditarChamadoAberto] = useState(false);
   const [chamadoIdEditar, setChamadoIdEditar] = useState<number | null>(null);
 
+  // visualização Kanban/Tabela
+  const [viewMode, setViewMode] = useState<'table' | 'kanban'>(() => {
+    return (localStorage.getItem('ticketsView') as 'table' | 'kanban') || 'table';
+  });
+
+
+
   useEffect(() => {
     // só carregar dados se estiver autenticado
     if (authLoading) return;
     if (!isAuthenticated) return;
     
     carregarDadosIniciais();
-    // Recupera filtros/resultados do localStorage
-    const cache = localStorage.getItem('chamadosCache');
-    if (cache) {
-      try {
-        const { filtros, resultados } = JSON.parse(cache);
-        setDataAberturaInicio(filtros.dataAberturaInicio ? new Date(filtros.dataAberturaInicio) : null);
-        setDataAberturaFim(filtros.dataAberturaFim ? new Date(filtros.dataAberturaFim) : null);
-        setDataFechamentoInicio(filtros.dataFechamentoInicio ? new Date(filtros.dataFechamentoInicio) : null);
-        setDataFechamentoFim(filtros.dataFechamentoFim ? new Date(filtros.dataFechamentoFim) : null);
-        setDepartamentoId(Array.isArray(filtros.departamentoId) ? filtros.departamentoId : []);
-        setTopicoAjudaId(Array.isArray(filtros.topicoAjudaId) ? filtros.topicoAjudaId : []);
-        setPrioridadeId(filtros.prioridadeId || '');
-        setStatusId(Array.isArray(filtros.statusId) ? filtros.statusId : []);
-        setAssunto(filtros.assunto || '');
-        setNomeUsuario(filtros.nomeUsuario || '');
-        setNomeResponsavel(filtros.nomeResponsavel || '');
-        setChamados(resultados.chamados || []);
-        setTotalChamados(resultados.total || 0);
-        setTotalPaginas(resultados.totalPages || 0);
-        setPaginaAtual(resultados.currentPage || 1);
-        setPageSize(resultados.pageSize || 10);
-      } catch (e) {
-        localStorage.removeItem('chamadosCache');
-      }
-    }
+    // carregar chamados automaticamente ao montar
+    pesquisarChamados(1);
+    // limpar cache antigo para evitar conflitos
+    localStorage.removeItem('chamadosCache');
   }, [isAuthenticated, authLoading]);
 
   const handleOrdenar = (coluna: 'numeroChamado' | 'prioridade' | 'topico' | 'departamento' | 'status' | 'dataAbertura' | 'dataFechamento' | 'usuario' | 'responsavel' | 'resumo') => {
@@ -278,7 +268,7 @@ export default function GerenciarChamados() {
     try {
       const params: any = {
         page,
-        pageSize,
+        pageSize: pageSize || 20, // garantir que sempre tem um valor
       };
       if (dataAberturaInicio) params.dataAberturaInicio = dataAberturaInicio.toISOString();
       if (dataAberturaFim) {
@@ -301,37 +291,17 @@ export default function GerenciarChamados() {
       if (nomeResponsavel) params.nomeResponsavel = nomeResponsavel;
 
       const response = await api.get('/chamados', { params });
-      setChamados(response.data.chamados || response.data);
-      setTotalChamados(response.data.total || response.data.length);
-      setTotalPaginas(response.data.totalPages || Math.ceil((response.data.total || response.data.length) / pageSize));
+    
+      const chamadosRecebidos = response.data.chamados || response.data;
+      setChamados(chamadosRecebidos);
+      setTotalChamados(response.data.total || chamadosRecebidos.length);
+      setTotalPaginas(response.data.totalPages || Math.ceil((response.data.total || chamadosRecebidos.length) / pageSize));
       setPaginaAtual(page);
       setChamadosSelecionados([]);
       setTodosChecados(false);
       
-      // Salva filtros/resultados no localStorage
-      const filtros = {
-        dataAberturaInicio: dataAberturaInicio ? dataAberturaInicio.toISOString() : null,
-        dataAberturaFim: dataAberturaFim ? dataAberturaFim.toISOString() : null,
-        dataFechamentoInicio: dataFechamentoInicio ? dataFechamentoInicio.toISOString() : null,
-        dataFechamentoFim: dataFechamentoFim ? dataFechamentoFim.toISOString() : null,
-        departamentoId,
-        topicoAjudaId,
-        prioridadeId,
-        statusId,
-        assunto,
-        nomeUsuario,
-        nomeResponsavel,
-      };
-      const resultados = {
-        chamados: response.data.chamados || response.data,
-        total: response.data.total || response.data.length,
-        totalPages: response.data.totalPages || Math.ceil((response.data.total || response.data.length) / pageSize),
-        currentPage: page,
-        pageSize,
-      };
-      localStorage.setItem('chamadosCache', JSON.stringify({ filtros, resultados }));
     } catch (error) {
-
+   
       alert('Erro ao buscar chamados');
     } finally {
       setLoading(false);
@@ -356,8 +326,28 @@ export default function GerenciarChamados() {
     setPaginaAtual(1);
     setTotalPaginas(0);
     setTotalChamados(0);
+    setPageSize(20);
     localStorage.removeItem('chamadosCache');
   };
+
+  // Funções para modo Kanban
+  const toggleViewMode = (mode: 'table' | 'kanban') => {
+    setViewMode(mode);
+    localStorage.setItem('ticketsView', mode);
+    // Resetar paginação ao alternar modo
+    setPaginaAtual(1);
+    setPageSize(20);
+  };
+
+  const handleTicketUpdate = (ticketId: number, updatedTickets: Chamado[]) => {
+    // Atualizar tickets localmente SEM fazer refetch
+    setChamados(updatedTickets);
+  };
+
+  const handleTicketClick = (ticket: Chamado) => {
+    router.push(`/chamado/${ticket.id}`);
+  };
+
 
   const handleCheckAll = () => {
     if (todosChecados) {
@@ -693,31 +683,61 @@ export default function GerenciarChamados() {
 
       <div className=" p-4 bg-[#EDEDED] ">
           
-         <div className="p-2  bg-[#EDEDED] flex gap-3">
-            <button 
+        <div className="p-2 bg-[#EDEDED] flex gap-3 justify-between items-center">
+          {/* Botões de ação existentes */}
+          <div className="flex gap-3">
+            <button
               onClick={() => setModalNovoChamadoAberto(true)}
-              className=" px-4 py-1.5 bg-transparent border border-green-600 text-green-600 rounded-lg hover:bg-green-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-lg flex items-center gap-2 disabled:border-green-300 disabled:text-green-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-1 focus:ring-green-500/50"
+              className="px-2.5 py-1 bg-transparent border border-green-600 text-green-600 rounded-lg hover:bg-green-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm flex items-center gap-1.5 disabled:border-green-300 disabled:text-green-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-1 focus:ring-green-500/50"
             >
-              <span className="text-lg font-bold">+</span>
+              <FiPlus className="w-3 h-3" />
               Novo
             </button>
 
-            <button 
+            <button
               onClick={editarChamadoIndividual}
               disabled={chamadosSelecionados.length !== 1}
               title={chamadosSelecionados.length !== 1 ? "Selecione exatamente 1 chamado para editar" : "Editar chamado selecionado"}
-              className=" px-4 py-1.5 bg-transparent border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-lg flex items-center gap-2 disabled:border-blue-300 disabled:text-blue-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-1 focus:ring-blue-500/50"
+              className="px-2.5 py-1 bg-transparent border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm flex items-center gap-1.5 disabled:border-blue-300 disabled:text-blue-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-1 focus:ring-blue-500/50"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
               </svg>
               Editar
             </button>
           </div>
+  {/* container com togglezinho de selecao pra escolher modo de viusalizacao */}
+      <div className="flex overflow-hidden rounded-lg bg-[#E0E0E0]/40 shadow-sm">
+        {(['table', 'kanban'] as const).map((mode) => (
+          <button
+            key={mode}
+            onClick={() => toggleViewMode(mode)}
+            className={`
+              px-4 py-1 text-[13px] font-medium transition-all duration-200 rounded-none 
+              
+              ${viewMode === mode 
+                ? 'bg-[#B0B0B0] text-white shadow-inner' // ativo
+                : 'text-gray-800 hover:bg-white/5' // inativo
+              }
+            `}
+          >
+            {mode === 'table' ? 'Lista' : 'Quadro'}
+          </button>
+        ))}
+      </div>
+   </div>
 
         <div className="bg-white rounded-lg shadow-lg border border-gray-300 overflow-hidden ">
 
-          {/* area de Filtros */}
+          {/* filtros apenas visivel no modo tabela */}
+          {viewMode === 'table' && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+            >
+              {/* area de Filtros */}
           <div className="p-6  border-gray-300 ">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 ">
               {/* Período de abertura */}
@@ -1063,9 +1083,11 @@ export default function GerenciarChamados() {
               </button>
             </div>
           </div>
+            </motion.div>
+          )}
 
-          {/* acao em multiplos registros */}
-          {chamados.length > 0 && (
+          {/* acao em multiplos registros - Visível apenas no modo tabela */}
+          {chamados.length > 0 && viewMode === 'table' && (
             <div className="px-6 py-4 bg-gray-50 border-b border-gray-300 flex gap-3 items-center flex-nowrap overflow-x-auto whitespace-nowrap">
               <button
                 onClick={marcarComoResolvido}
@@ -1126,17 +1148,43 @@ export default function GerenciarChamados() {
             </div>
           )}
 
-          {/* tabela de resultados */}
+          {/* Visualização Principal - Tabela ou Kanban */}
           <div>
             {loading ? (
               <div className="p-8 text-center text-gray-500">
                 Carregando chamados...
               </div>
-            ) : chamados.length === 0 ? (
-              <div className="p-8 text-center text-gray-500">
-                Nenhum chamado encontrado. Use os filtros para pesquisar.
-              </div>
+            ) : viewMode === 'kanban' ? (
+              /* Visualização Kanban */
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, ease: "easeOut" }}
+                className="p-4"
+              >
+                <KanbanView
+                  tickets={chamados}
+                  onTicketClick={handleTicketClick}
+                  onTicketUpdate={handleTicketUpdate}
+                  departamentos={departamentos}
+                  statusList={statusList}
+                  prioridades={prioridades}
+                  usuarios={usuariosAdmin}
+                  topicosAjuda={topicosAjuda}
+                />
+              </motion.div>
             ) : (
+              /* Visualização Tabela Original */
+              chamados.length === 0 ? (
+                <div className="p-8 text-center text-gray-500">
+                  Nenhum chamado encontrado. Use os filtros para pesquisar.
+                </div>
+              ) : (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.3 }}
+                >
               <>
 
                 <div className="overflow-x-auto hidden md:block">
@@ -1482,11 +1530,13 @@ export default function GerenciarChamados() {
                   ))}
                 </div>
               </>
+                </motion.div>
+              )
             )}
           </div>
 
-          {/* Controles de Paginação */}
-          {chamados.length > 0 && (
+          {/* Controles de Paginação - Apenas no modo tabela */}
+          {chamados.length > 0 && viewMode === 'table' && (
             <div className="px-6 py-4 bg-gray-100/50 border-t border-gray-300">
               {/* Seletor de registros por página */}
               <div className="flex items-center justify-between mb-4">

@@ -14,6 +14,7 @@ import { TopicosAjuda } from "./TopicosAjuda";
 import { Departamentos } from "./Departamentos";
 import { StatusChamado } from "./StatusChamado";
 import { ChamadoAnexos } from "./ChamadoAnexos";
+import { ChamadoHistorico } from "./ChamadoHistorico";
 
 @Entity({ name: "chamados", schema: "public" })
 export class Chamados {
@@ -100,4 +101,7 @@ export class Chamados {
 
   @OneToMany(() => ChamadoAnexos, anexo => anexo.chamado)
   anexos!: ChamadoAnexos[];
+
+  @OneToMany(() => ChamadoHistorico, historico => historico.chamado)
+  historico!: ChamadoHistorico[];
 }
