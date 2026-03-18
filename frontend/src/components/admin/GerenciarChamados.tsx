@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Select from 'react-select';
 import api from '@/services/api';
@@ -144,6 +144,9 @@ export default function GerenciarChamados() {
     return (localStorage.getItem('ticketsView') as 'table' | 'kanban') || 'table';
   });
 
+  // filtro de abas (Todos, Meus, Outros)
+  const [abaFiltro, setAbaFiltro] = useState<'todos' | 'meus' | 'outros'>('todos');
+
 
 
   useEffect(() => {
@@ -172,8 +175,21 @@ export default function GerenciarChamados() {
     }
   };
 
+  const chamadosFiltrados = useMemo(() => {
+    if (abaFiltro === 'todos') {
+      return chamados;
+    } else if (abaFiltro === 'meus') {
+      //mostra somente chamados onde o usuario atual é responsavel
+      return chamados.filter(c => c.userResponsavel?.id === user?.id);
+    } else if (abaFiltro === 'outros') {
+      //mostrar chamados onde o usuario naoé responsavel 
+      return chamados.filter(c => c.userResponsavel?.id !== user?.id);
+    }
+    return chamados;
+  }, [chamados, abaFiltro, user?.id]);
+
   const chamadosOrdenados = ordenarPor
-    ? [...chamados].sort((a, b) => {
+    ? [...chamadosFiltrados].sort((a, b) => {
         let valorA: any;
         let valorB: any;
 
@@ -226,7 +242,7 @@ export default function GerenciarChamados() {
         if (valorA > valorB) return direcaoOrdem === 'asc' ? 1 : -1;
         return 0;
       })
-    : chamados;
+    : chamadosFiltrados;
 
   const carregarDadosIniciais = async () => {
     if (!isAuthenticated) return; // protecao adicional
@@ -588,11 +604,9 @@ export default function GerenciarChamados() {
 
     const primeiraConfirmacao = window.confirm(
       `Você está prestes a excluir ${chamadosSelecionados.length} chamado(s).\n\n` +
-      'Esta ação é IRREVERSÍVEL e removerá permanentemente:\n' +
-      '- O chamado e suas informações\n' +
-      '- Todas as mensagens\n' +
-      '- Todo o histórico\n' +
-      '- Todos os anexos\n\n' +
+      'Esta ação é IRREVERSÍVEL e removerá permanentemente\n' +
+      'o chamado e suas informações, todas as mensagens,\n' +
+      'todo o histórico e seus anexos.\n' +
       'Tem certeza que deseja continuar?'
     );
 
@@ -601,9 +615,7 @@ export default function GerenciarChamados() {
     }
 
     const segundaConfirmacao = window.confirm(
-      `CONFIRMAÇÃO FINAL:\n\n` +
-      `Excluir definitivamente ${chamadosSelecionados.length} chamado(s)?\n\n` +
-      'Esta ação NÃO PODE SER DESFEITA!'
+      `Tem certeza que deseja excluir definitivamente ${chamadosSelecionados.length} chamado(s)?` 
     );
 
     if (!segundaConfirmacao) {
@@ -721,7 +733,7 @@ export default function GerenciarChamados() {
               }
             `}
           >
-            {mode === 'table' ? 'Lista' : 'Quadro'}
+            {mode === 'table' ? 'Tabela' : 'Quadro'}
           </button>
         ))}
       </div>
@@ -789,6 +801,7 @@ export default function GerenciarChamados() {
                 <Select
                   isMulti
                   isClearable
+                  closeMenuOnSelect={false}
                   options={departamentos.filter(dept => dept.ativo).map((dept) => ({
                     value: dept.id.toString(),
                     label: `${dept.codigo} - ${dept.name}`
@@ -817,10 +830,14 @@ export default function GerenciarChamados() {
                     control: (base) => ({
                       ...base,
                       minHeight: '38px',
+                      maxHeight: '38px',
+                      height: '38px',
+                      overflowY: 'auto',
                       fontSize: '14px',
                       borderColor: '#d1d5db',
                       '&:hover': { borderColor: '#3b82f6' },
                       boxShadow: 'none',
+                      padding: '2px 4px',
                     }),
                     option: (base) => ({
                       ...base,
@@ -829,11 +846,17 @@ export default function GerenciarChamados() {
                     multiValue: (base) => ({
                       ...base,
                       backgroundColor: '#e0e7ff',
+                      margin: '2px 2px',
+                      padding: '0 4px',
+                      minWidth: 0,
                     }),
                     multiValueLabel: (base) => ({
                       ...base,
                       color: '#002851',
-                      fontSize: '12px',
+                      fontSize: '11px',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
                     }),
                     multiValueRemove: (base) => ({
                       ...base,
@@ -842,6 +865,12 @@ export default function GerenciarChamados() {
                         backgroundColor: '#c7d2fe',
                         color: '#1e3a8a',
                       },
+                    }),
+                    valueContainer: (base) => ({
+                      ...base,
+                      padding: '2px 4px',
+                      maxHeight: '34px',
+                      overflowY: 'auto',
                     }),
                   }}
                 />
@@ -854,6 +883,7 @@ export default function GerenciarChamados() {
                 <Select
                   isMulti
                   isClearable
+                  closeMenuOnSelect={false}
                   options={topicosAjuda.filter(topico => topico.ativo).map((topico) => ({
                     value: topico.id.toString(),
                     label: `${topico.codigo} - ${topico.nome}`
@@ -882,10 +912,14 @@ export default function GerenciarChamados() {
                     control: (base) => ({
                       ...base,
                       minHeight: '38px',
+                      maxHeight: '38px',
+                      height: '38px',
+                      overflowY: 'auto',
                       fontSize: '14px',
                       borderColor: '#d1d5db',
                       '&:hover': { borderColor: '#3b82f6' },
                       boxShadow: 'none',
+                      padding: '2px 4px',
                     }),
                     option: (base) => ({
                       ...base,
@@ -894,11 +928,17 @@ export default function GerenciarChamados() {
                     multiValue: (base) => ({
                       ...base,
                       backgroundColor: '#e0e7ff',
+                      margin: '2px 2px',
+                      padding: '0 4px',
+                      minWidth: 0,
                     }),
                     multiValueLabel: (base) => ({
                       ...base,
                       color: '#002851',
-                      fontSize: '12px',
+                      fontSize: '11px',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
                     }),
                     multiValueRemove: (base) => ({
                       ...base,
@@ -907,6 +947,12 @@ export default function GerenciarChamados() {
                         backgroundColor: '#c7d2fe',
                         color: '#1e3a8a',
                       },
+                    }),
+                    valueContainer: (base) => ({
+                      ...base,
+                      padding: '2px 4px',
+                      maxHeight: '34px',
+                      overflowY: 'auto',
                     }),
                   }}
                 />
@@ -920,6 +966,7 @@ export default function GerenciarChamados() {
                 <Select
                   isMulti
                   isClearable
+                  closeMenuOnSelect={false}
                   options={statusList.map((status) => ({
                     value: status.id.toString(),
                     label: status.nome
@@ -948,10 +995,14 @@ export default function GerenciarChamados() {
                     control: (base) => ({
                       ...base,
                       minHeight: '38px',
+                      maxHeight: '38px',
+                      height: '38px',
+                      overflowY: 'auto',
                       fontSize: '14px',
                       borderColor: '#d1d5db',
                       '&:hover': { borderColor: '#3b82f6' },
                       boxShadow: 'none',
+                      padding: '2px 4px',
                     }),
                     option: (base) => ({
                       ...base,
@@ -960,11 +1011,17 @@ export default function GerenciarChamados() {
                     multiValue: (base) => ({
                       ...base,
                       backgroundColor: '#e0e7ff',
+                      margin: '2px 2px',
+                      padding: '0 4px',
+                      minWidth: 0,
                     }),
                     multiValueLabel: (base) => ({
                       ...base,
                       color: '#002851',
-                      fontSize: '12px',
+                      fontSize: '11px',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
                     }),
                     multiValueRemove: (base) => ({
                       ...base,
@@ -973,6 +1030,12 @@ export default function GerenciarChamados() {
                         backgroundColor: '#c7d2fe',
                         color: '#1e3a8a',
                       },
+                    }),
+                    valueContainer: (base) => ({
+                      ...base,
+                      padding: '2px 4px',
+                      maxHeight: '34px',
+                      overflowY: 'auto',
                     }),
                   }}
                 />
@@ -1186,6 +1249,34 @@ export default function GerenciarChamados() {
                   transition={{ duration: 0.3 }}
                 >
               <>
+                {/* filtro de abas no topo da tabela */}
+                <div className="px-3 py-1 flex gap-1 bg-white border-b border-gray-300">
+                  <div className="flex gap-2 bg-gray-100 p-1 rounded-lg">
+                    {(['todos', 'meus', 'outros'] as const).map((aba) => {
+                      const labels = {
+                        todos: 'Todos',
+                        meus: 'Meus',
+                        outros: 'Outros'
+                      };
+                      
+                      return (
+                        <button
+                          key={aba}
+                          onClick={() => setAbaFiltro(aba)}
+                          className={`
+                            px-4 py-2 rounded-md text-sm font-medium transition-all duration-200
+                            ${abaFiltro === aba
+                              ? 'bg-white text-gray-900 shadow-sm'
+                              : 'text-gray-600 hover:text-gray-900'
+                            }
+                          `}
+                        >
+                          {labels[aba]}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
 
                 <div className="overflow-x-auto hidden md:block">
                   <table className="w-full">

@@ -39,7 +39,7 @@ export const AppDataSource = new DataSource({
   logging: false,
   entities: [SituationsUsers, Users, ChamadoHistorico, ChamadoMensagens, Departamentos, TipoPrioridade, Chamados, TopicosAjuda, StatusChamado, Roles, ChamadoAnexos, ParametrosSistema, LogsSistema, Preferences, PrefUsers, KanbanPositions],
   subscribers: [],
-  migrations: [__dirname + "/migration/*.js"],
+  migrations: [__dirname + "/migrations/*.js"],
   
 });
 //inicializar conexao com bd

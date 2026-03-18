@@ -300,7 +300,7 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
       onClick={(e) => e.target === e.currentTarget && handleCancel()}
     >
       <div
-        className="bg-[#f4f4f4] rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl"
+        className="bg-[#F5F5F5] rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <form
@@ -449,7 +449,7 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={submitting}
-                className="inline-flex items-center gap-2 px-4 py-1.5 border border-gray-300 rounded-lg text-sm text-gray-500 bg-white hover:bg-gray-50 hover:text-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-2 px-4 py-1.5 border border-gray-300 rounded-lg text-sm text-gray-500 bg-[#f4f4f4] hover:bg-gray-50 hover:text-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -463,7 +463,7 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
                   key={`${file.name}-${file.lastModified}-${index}`}
                   className="flex items-center gap-1.5 px-2.5 py-1 bg-white border border-gray-300 rounded-full"
                 >
-                   <span className="text-xs text-gray-700 max-w-[160px] truncate">{file.name}</span>
+                   <span className="text-xs text-gray-700 max-w-40 truncate">{file.name}</span>
                     <span className="text-xs text-gray-400 shrink-0">{(file.size / 1024).toFixed(0)} KB</span>
                    <button
                     type="button"

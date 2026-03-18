@@ -49,7 +49,7 @@ router.post("/chamados", verifyToken, async (req: AuthenticatedRequest, res: Res
     // criar chamado com apenas os campos obrigatórios iniciais
     const chamado = chamadoRepository.create({
       ramal,
-      numeroChamado: Date.now(), // Gerado automaticamente (pode melhorar depois)
+      //numero do chamdo sera gerado automaticamente no banco pela SEQUENCE
       dataAbertura: dataAtual, // defin explicitamente a data
       status: { id: 1 }, // 1 = ABERTO
       resumoChamado,
@@ -174,7 +174,7 @@ router.post("/chamados/admin/criar", verifyToken, async (req: AuthenticatedReque
 
     const chamado = chamadoRepository.create({
       ramal: 0, 
-      numeroChamado: Date.now(),
+      //numero do chamdo sera gerado automaticamente no banco pela SEQUENCE
       dataAbertura: dataAtual,
       status: { id: 1 }, // 1 = ABERTO (inicialmente)
       resumoChamado,
@@ -267,7 +267,6 @@ router.post("/chamados/admin/criar", verifyToken, async (req: AuthenticatedReque
       chamado: chamadoCompleto,
     });
   } catch (error) {
-    
     return res.status(500).json({
       mensagem: "Erro ao criar chamado",
       error: error instanceof Error ? error.message : "Erro desconhecido",
