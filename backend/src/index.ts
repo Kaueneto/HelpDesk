@@ -28,6 +28,7 @@ app.use(cors({
    
     const allowedOrigins = [    
      process.env.NEXT_PUBLIC_API_URL,
+     'http://localhost:5001',
 
     ];
     
@@ -86,6 +87,7 @@ import ChamadosMensagensController from "./controllers/ChamadosMensagensControll
 import ParametrosSistemaController from "./controllers/ParametrosSistemaController";
 import LogsSistemaController from "./controllers/LogsSistemaController";
 import { preferencesRouter } from "./controllers/PreferenciasController";
+import KanbanController from "./controllers/KanbanController";
 
 // registrar rotas
 app.use("/", TestConnectionController);
@@ -99,7 +101,8 @@ app.use("/", DepartamentosController);
 app.use("/", ChamadoAnexosController);
 app.use("/", ChamadosMensagensController);
 app.use("/", LogsSistemaController);
-app.use("/", ParametrosSistemaController); 
+app.use("/", ParametrosSistemaController);
+app.use("/", KanbanController);
 app.use("/preferencias", preferencesRouter);
 app.use(rolesRouter);
 

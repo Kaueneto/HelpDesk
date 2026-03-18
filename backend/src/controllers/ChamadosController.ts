@@ -1,5 +1,6 @@
 import { Router, Request, Response } from "express";
 import { AppDataSource } from "../data-source";
+import { In } from "typeorm";
 import { Chamados } from "../entities/Chamados";
 import { ChamadoHistorico } from "../entities/ChamadoHistorico";
 import { ChamadoMensagens } from "../entities/ChamadoMensagens";
@@ -13,6 +14,7 @@ import { ParametrosSistema } from "../entities/ParametrosSistema";
 import { verifyToken } from "../Middleware/AuthMiddleware";
 import { supabase, SUPABASE_BUCKET } from "../config/supabase";
 import * as EmailService from "../services/EmailService";
+import { KanbanPositions } from "../entities/KanbanPositions";
 
 interface AuthenticatedRequest extends Request {
   userId?: number;
@@ -528,34 +530,66 @@ router.get("/chamados", verifyToken, async (req: AuthenticatedRequest, res: Resp
     queryBuilder.orderBy("chamado.data_abertura", "DESC");
 
     // Obter total de registros ANTES de aplicar paginação
-    const total = await queryBuilder.getCount();
+    // Fazer um clone da query para contar sem os limites
+    const countQuery = queryBuilder.clone();
+    const total = await countQuery.getCount();
 
-    // Aplicar paginação
-    queryBuilder.offset(offset).limit(pageSizeNum);
+    // Aplicar paginação usando .limit() e .offset()
+    queryBuilder.limit(pageSizeNum).offset(offset);
 
     const chamados = await queryBuilder.getMany();
 
     // Calcular total de páginas
     const totalPages = Math.ceil(total / pageSizeNum);
 
+    // Buscar TODAS as posições do kanban para os chamados retornados
+    const chamadoIds = chamados.map(c => c.id);
+    const kanbanPositionsRepo = AppDataSource.getRepository(KanbanPositions);
+    const todasAsPosicoes = chamadoIds.length > 0 
+      ? await kanbanPositionsRepo.find({
+          where: { idChamado: In(chamadoIds) },
+          order: { updatedAt: 'DESC' }
+        })
+      : [];
+
+    // Criar um mapa de posições por chamado
+    const posicoesPorChamado: { [key: number]: any[] } = {};
+    todasAsPosicoes.forEach(pos => {
+      if (!posicoesPorChamado[pos.idChamado]) {
+        posicoesPorChamado[pos.idChamado] = [];
+      }
+      posicoesPorChamado[pos.idChamado].push({
+        groupBy: pos.groupBy,
+        columnValue: pos.columnValue,
+        position: pos.position
+      });
+    });
+
     // Formatar resposta
-    const chamadosFormatados = chamados.map((chamado) => ({
-      id: chamado.id,
-      numeroChamado: chamado.numeroChamado,
-      ramal: chamado.ramal,
-      resumoChamado: chamado.resumoChamado,
-      descricaoChamado: chamado.descricaoChamado,
-      dataAbertura: chamado.dataAbertura,
-      dataAtribuicao: chamado.dataAtribuicao,
-      dataFechamento: chamado.dataFechamento,
-      usuario: chamado.usuario ? { id: chamado.usuario.id, name: chamado.usuario.name } : null,
-      tipoPrioridade: chamado.tipoPrioridade,
-      departamento: chamado.departamento,
-      topicoAjuda: chamado.topicoAjuda,
-      status: chamado.status,
-      userResponsavel: chamado.userResponsavel ? { id: chamado.userResponsavel.id, name: chamado.userResponsavel.name } : null,
-      userFechamento: chamado.userFechamento ? { id: chamado.userFechamento.id, name: chamado.userFechamento.name } : null,
-    }));
+    const chamadosFormatados = chamados.map((chamado: any) => {
+      // Se tiver múltiplas posições, retornar um array; senão retornar null ou a primeira
+      const posicoesDoCard = posicoesPorChamado[chamado.id] || [];
+      
+      return {
+        id: chamado.id,
+        numeroChamado: chamado.numeroChamado,
+        ramal: chamado.ramal,
+        resumoChamado: chamado.resumoChamado,
+        descricaoChamado: chamado.descricaoChamado,
+        dataAbertura: chamado.dataAbertura,
+        dataAtribuicao: chamado.dataAtribuicao,
+        dataFechamento: chamado.dataFechamento,
+        usuario: chamado.usuario ? { id: chamado.usuario.id, name: chamado.usuario.name } : null,
+        tipoPrioridade: chamado.tipoPrioridade,
+        departamento: chamado.departamento,
+        topicoAjuda: chamado.topicoAjuda,
+        status: chamado.status,
+        userResponsavel: chamado.userResponsavel ? { id: chamado.userResponsavel.id, name: chamado.userResponsavel.name } : null,
+        userFechamento: chamado.userFechamento ? { id: chamado.userFechamento.id, name: chamado.userFechamento.name } : null,
+        // Retornar array de todas as posições para o frontend escolher a correta
+        kanbanPositions: posicoesDoCard.length > 0 ? posicoesDoCard : null,
+      };
+    });
 
     return res.status(200).json({
       chamados: chamadosFormatados,
@@ -565,7 +599,7 @@ router.get("/chamados", verifyToken, async (req: AuthenticatedRequest, res: Resp
       pageSize: pageSizeNum,
     });
   } catch (error) {
-   
+    console.error('❌ Erro ao listar chamados:', error);
     return res.status(500).json({
       mensagem: "Erro ao listar chamados",
     });
@@ -1797,101 +1831,30 @@ router.delete("/chamados/excluir-multiplos", verifyToken, async (req: Authentica
   try {
     const { chamadosIds } = req.body;
     const usuarioId = req.userId;
-    const userRoleId = req.userRoleId;
 
-    // verificar se é administrador
-    if (userRoleId !== 1) {
-      return res.status(403).json({
-        mensagem: "Apenas administradores podem excluir chamados"
-      });
-    }
-
-    if (!chamadosIds || !Array.isArray(chamadosIds) || chamadosIds.length === 0) {
+    if (!chamadosIds || chamadosIds.length === 0) {
       return res.status(400).json({
-        mensagem: "Lista de IDs de chamados é obrigatória"
+        error: true,
+        message: "IDs de chamados são obrigatórios"
       });
     }
-
 
     const chamadoRepository = AppDataSource.getRepository(Chamados);
-    const historicoRepository = AppDataSource.getRepository(ChamadoHistorico);
-    const mensagensRepository = AppDataSource.getRepository(ChamadoMensagens);
-    const anexosRepository = AppDataSource.getRepository(ChamadoAnexos);
-
-    // buscar chamados que serão excluídos
-    const chamados = await chamadoRepository.find({
-      where: chamadosIds.map(id => ({ id })),
-      relations: ["usuario", "anexos"]
+    const result = await chamadoRepository.delete({
+      id: In(chamadosIds)
     });
-
-    if (chamados.length === 0) {
-      return res.status(404).json({
-        mensagem: "Nenhum chamado encontrado"
-      });
-    }
-
-    let chamadosExcluidos = 0;
-    let errosExclusao: string[] = [];
-
-    // processar cada chamado
-    for (const chamado of chamados) {
-      try {
-
-        // remover anexos do Supabase Storage
-        if (chamado.anexos && chamado.anexos.length > 0) {
-         
-          const urlsAnexos = chamado.anexos.map(anexo => anexo.url);
-          
-          try {
-            const { error } = await supabase.storage
-              .from(SUPABASE_BUCKET)
-              .remove(urlsAnexos);
-              
-            if (error) {
-
-            }
-          } catch (storageError) {
-            
-          }
-        }
-
-        // remover registros relacionados (em ordem de dependência)
-        await anexosRepository.delete({ chamado: { id: chamado.id } });
-        await mensagensRepository.delete({ chamado: { id: chamado.id } });
-        await historicoRepository.delete({ chamado: { id: chamado.id } });
-        
-        // remover o chamado
-        await chamadoRepository.remove(chamado);
-        
-        chamadosExcluidos++;
-
-        
-      } catch (error) {
-        const mensagemErro = `Erro ao excluir chamado #${chamado.id}: ${error instanceof Error ? error.message : 'Erro desconhecido'}`;
-     
-        errosExclusao.push(mensagemErro);
-      }
-    }
-
-
-    if (errosExclusao.length > 0 && chamadosExcluidos === 0) {
-      return res.status(500).json({
-        mensagem: "Falha ao excluir chamados",
-        erros: errosExclusao
-      });
-    }
 
     return res.status(200).json({
-      mensagem: `${chamadosExcluidos} chamado(s) excluído(s) com sucesso`,
-      excluidos: chamadosExcluidos,
-      total: chamados.length,
-      erros: errosExclusao.length > 0 ? errosExclusao : undefined
+      error: false,
+      message: `${result.affected || 0} chamado(s) deletado(s) com sucesso`,
+      deleted: result.affected || 0
     });
-    
   } catch (error) {
+    console.error("Erro ao deletar múltiplos chamados:", error);
     return res.status(500).json({
-      mensagem: "Erro ao excluir chamados",
-      error: error instanceof Error ? error.message : "Erro desconhecido",
+      error: true,
+      message: "Erro ao deletar chamados",
+      details: error instanceof Error ? error.message : "Erro desconhecido"
     });
   }
 });
