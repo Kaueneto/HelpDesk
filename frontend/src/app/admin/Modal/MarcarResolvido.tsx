@@ -33,7 +33,7 @@ const ModalMarcarResolvido: React.FC<ModalMarcarResolvidoProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-      <div className="bg-[#f4f4f4] rounded-xl shadow-lg w-full max-w-md p-6 modalLightEnter">
+      <div className="bg-white rounded-xl shadow-lg w-full max-w-md p-6 modalLightEnter">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
             <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

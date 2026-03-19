@@ -112,6 +112,38 @@
 
 @import "tailwindcss";
 
+/* remove spinner buttons do input number - deve estar antes de qualquer outro CSS */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none !important;
+  margin: 0 !important;
+  display: none !important;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield !important;
+}
+
+/* remove scrollbar indicators dos select components */
+.react-select__value-container::-webkit-scrollbar {
+  display: none !important;
+}
+
+.react-select__value-container {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+
+/* remove qualquer scroll indicator em selects */
+select::-webkit-scrollbar {
+  display: none !important;
+}
+
+select {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
 :root {
   --background: #DFDFDF;
   --foreground: #171717;
@@ -123,6 +155,9 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+.font-segoe {
+  font-family: "Segoe UI", Helvetica, Arial, sans-serif, "Work Sans", "MonteCarlo", sans-serif;
+}
 /* animacoes para modais - otimizadas para performance */
 @keyframes fadeIn {
   from {
