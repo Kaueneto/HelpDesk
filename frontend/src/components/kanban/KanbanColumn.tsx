@@ -5,6 +5,13 @@ import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { motion } from 'framer-motion';
 import TicketCard from './TicketCard';
+import { Work_Sans } from "next/font/google";
+
+const workSans = Work_Sans({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-worksans",
+});
 
 interface Chamado {
   id: number;
@@ -134,9 +141,9 @@ const KanbanColumn = memo(({
           </span>
 
           {/* titulo vertical */}
-          <div className="flex-1 flex items-center justify-center">
+          <div className={`${workSans.className} flex-1 flex items-center justify-center`}>
             <h3
-              className="text-sm font-semibold text-gray-900 whitespace-nowrap"
+              className={` text-sm font-semibold text-gray-900 whitespace-nowrap`}
               style={{
                 writingMode: 'vertical-rl',
                 textOrientation: 'mixed'
@@ -167,7 +174,7 @@ const KanbanColumn = memo(({
                 className="w-3 h-3 rounded-full"
                 style={{ backgroundColor: color }}
               />
-              <h3 className="text-sm font-semibold text-gray-900 truncate">
+              <h3 className={`${workSans.className} text-sm font-semibold text-gray-900 truncate`}>
                 {title}
               </h3>
             </div>
@@ -225,7 +232,8 @@ const KanbanColumn = memo(({
               items={tickets.map(t => t.id)}
               strategy={verticalListSortingStrategy}
             >
-              <div className="space-y-2 max-h-[calc(100vh-300px)] overflow-y-auto custom-scrollbar">
+              <div className="max-h-[calc(100vh-300px)] overflow-y-auto custom-scrollbar pr-2">
+                <div className="space-y-2">
                 {tickets.length > 0 ? (
                   tickets.map((ticket, index) => (
                     <motion.div
@@ -257,6 +265,7 @@ const KanbanColumn = memo(({
                   </motion.div>
                 )}
               </div>
+            </div>
             </SortableContext>
           </div>
         </>

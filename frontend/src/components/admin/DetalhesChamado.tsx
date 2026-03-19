@@ -882,7 +882,7 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
         <div className="flex items-center gap-3 md:gap-4">
           <button
             onClick={handleVoltar}
-             className="flex items-center justify-center w-8 h-15 rounded-2xl hover:bg-white/50 transition-colors duration-100 focus:outline-none  active:bg-gray-300/50 hover:scale-105 shrink-0"
+             className="flex items-center justify-center w-8 h-15 rounded-2xl hover:bg-white/20 transition-colors duration-100 focus:outline-none  active:bg-gray-300/50 hover:scale-105 shrink-0"
 
           >
             <img 
@@ -980,7 +980,7 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
             <div className="col-span-1 md:col-span-4 space-y-4 md:space-y-6">
               {/* Dados do Chamado */}
               <div className="bg-white rounded-lg border border-gray-300 p-5">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4 pb-3 border-b border-gray-400">
+                <h3 className="font-segoe text-lg font-semibold text-gray-800 mb-4 pb-3 border-b border-gray-300">
                   Dados do chamado
                 </h3>
                 <div className="space-y-3">
@@ -1067,7 +1067,7 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
 
                   {/* dados do Usuario */}
                 <div className="bg-white rounded-lg border border-gray-200 p-5 shadow-sm">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">
+                  <h3 className="font-segoe text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">
                     Dados do usuário
                   </h3>
 
@@ -1089,7 +1089,7 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
 
               {/* Outros Dados */}
               <div className="bg-white rounded-lg border border-gray-300 p-5">
-                <h3 className="text-lg font-semibold text-gray-700 mb-4 pb-3 border-b border-gray-400">
+                <h3 className="font-segoe text-lg font-semibold text-gray-700 mb-4 pb-3 border-b border-gray-400">
                   Outros Dados
                 </h3>
                 <div className="space-y-3">

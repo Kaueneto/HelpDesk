@@ -3,6 +3,12 @@
 import { useState, useEffect } from 'react';
 import api from '@/services/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { Work_Sans } from "next/font/google";
+const workSans = Work_Sans({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-worksans",
+});
 
 interface Usuario {
   id: number;
@@ -99,12 +105,12 @@ export default function ModalRedirecionarChamado({
         style={{ animation: 'slideUp 0.2s ease-out', willChange: 'transform, opacity' }}
       >
         {/* Header do Modal */}
-        <div className="relative bg-gradient-to-r from-[#001933] to-[#1a3c7a] px-6 py-5 rounded-t-2xl">
-          <h3 className="text-xl font-bold text-white">
+        <div className="text-sm sm:text-base md:text-lg px-6 py-4  rounded-t-2xl relative">
+          <h3 className=" text-xl font-bold text-black">
             Direcionar Chamado
           </h3>
-          <p className="text-blue-100 text-sm mt-1">
-            Selecione o administrador responsável
+          <p className="text-gray-600 text-sm mt-1">
+            Selecione o usuário responsável
           </p>
           <button
             onClick={onClose}
@@ -118,8 +124,8 @@ export default function ModalRedirecionarChamado({
 
         {/* Body do Modal */}
         <div className="p-6">
-          <label className="block text-sm font-semibold text-gray-700 mb-3">
-            Administradores disponíveis
+          <label className={`${workSans.className} text-sm text-gray-700 mb-3 px-2 block`}>
+            Usuários disponíveis
           </label>
           
           {usuariosAdmin.length === 0 ? (
@@ -127,7 +133,7 @@ export default function ModalRedirecionarChamado({
               <svg className="w-12 h-12 mx-auto mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
               </svg>
-              Carregando administradores...
+              Carregando Usuários...
             </div>
           ) : (
             <div className="space-y-2 max-h-80 overflow-y-auto pr-2 custom-scrollbar">
@@ -136,7 +142,7 @@ export default function ModalRedirecionarChamado({
                   key={usuario.id}
                   onClick={() => setUsuarioSelecionado(usuario.id)}
                   className={`
-                    relative flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer
+                    relative flex items-center gap-4 p-4 rounded-xl border cursor-pointer
                     transition-all duration-200
                     ${usuarioSelecionado === usuario.id
                       ? 'border-blue-600 bg-blue-50 shadow-md'
@@ -146,7 +152,7 @@ export default function ModalRedirecionarChamado({
                 >
                   {/* Avatar */}
                   <div className={`
-                    flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg
+                    shrink-0 w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg
                     ${usuarioSelecionado === usuario.id
                       ? 'bg-blue-600 text-white'
                       : 'bg-gray-300 text-gray-700'
@@ -167,7 +173,7 @@ export default function ModalRedirecionarChamado({
 
                   {/* Check Icon */}
                   {usuarioSelecionado === usuario.id && (
-                    <div className="flex-shrink-0 w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
+                    <div className="shrink-0 w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
                       <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                       </svg>
@@ -184,7 +190,7 @@ export default function ModalRedirecionarChamado({
           <button
             onClick={onClose}
             disabled={redirecionando}
-            className="px-6 py-2.5 bg-white border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-6 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Cancelar
           </button>
@@ -206,7 +212,7 @@ export default function ModalRedirecionarChamado({
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                Confirmar Redirecionamento
+                Confirmar 
               </>
             )}
           </button>

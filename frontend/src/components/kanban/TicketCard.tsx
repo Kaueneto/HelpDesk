@@ -4,9 +4,17 @@ import { useState, memo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { FiClock, FiUser, FiCalendar, FiCheckCircle, FiFileText, FiCheck } from 'react-icons/fi';
+import { FiFileText, FiCheck, FiEdit } from 'react-icons/fi';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { Work_Sans } from "next/font/google";
+
+const workSans = Work_Sans({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-worksans",
+});
+
 
 interface Chamado {
   id: number;
@@ -223,28 +231,31 @@ const TicketCard = memo(({ chamado, onClick, isDragging = false, onSelect, isSel
         <div className="flex items-start gap-2 mb-2">
           {/* checkbox - aparece ao hover ou quando selecionado */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: isHovered || isSelected ? 1 : 0, scale: isHovered || isSelected ? 1 : 0.8 }}
-            transition={{ duration: 0.15 }}
-            className="mt-0.5 shrink-0"
-            onClick={handleCheckboxClick}
-          >
-            <div className={`
-              w-4 h-4 rounded border-2 flex items-center justify-center cursor-pointer transition-all
-              ${isSelected 
-                ? 'bg-blue-500 border-blue-500' 
-                : 'border-gray-300 hover:border-blue-400'
-              }
-            `}>
-              {isSelected && (
-                <FiCheck className="w-3 h-3 text-white" strokeWidth={3} />
-              )}
-            </div>
-          </motion.div>
+          initial={{ width: 0, opacity: 0 }}
+          animate={{
+            width: isHovered || isSelected ? 20 : 0,
+            opacity: isHovered || isSelected ? 1 : 0
+          }}
+          transition={{ duration: 0.2 }}
+          className="mt-0.5 shrink-0 overflow-hidden flex items-center"
+          onClick={handleCheckboxClick}
+        >
+          <div className={`
+            w-5 h-5 rounded-lg border flex items-center justify-center cursor-pointer transition-all
+            ${isSelected 
+              ? 'bg-blue-500 border-blue-500' 
+              : 'border-gray-300 hover:border-blue-400'
+            }
+          `}>
+            {isSelected && (
+              <FiCheck className="w-3 h-3 text-white" strokeWidth={3} />
+            )}
+          </div>
+        </motion.div>
 
           {/* conteudo principal */}
           <div className="flex-1 min-w-0">
-            <h3 className="text-sm font-semibold text-gray-800 line-clamp-2 leading-tight">
+            <h3 className="font-segoe text-base font-semibold text-gray-800 line-clamp-2 leading-tight">
               {chamado.resumoChamado}
             </h3>
             <p className="text-xs text-gray-500 mt-0.5">
@@ -260,7 +271,7 @@ const TicketCard = memo(({ chamado, onClick, isDragging = false, onSelect, isSel
           {/* prioridade */}
           <div>
             <span className={`
-              inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border
+              inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border 
               ${getPriorityColor(chamado.tipoPrioridade.nome)}
             `}>
               {chamado.tipoPrioridade.nome}
@@ -268,7 +279,7 @@ const TicketCard = memo(({ chamado, onClick, isDragging = false, onSelect, isSel
           </div>
 
           {/* topico */}
-          <div className="flex items-center text-xs text-gray-600 gap-1.5">
+          <div className={`${workSans.className} flex items-center text-sm text-gray-600 gap-1.5`}>
             <FiFileText className="w-3 h-3 text-gray-400 shrink-0" />
             <span className="truncate">{chamado.topicoAjuda.nome}</span>
           </div>
@@ -276,7 +287,7 @@ const TicketCard = memo(({ chamado, onClick, isDragging = false, onSelect, isSel
           {/* status */}
           <div>
             <span className={`
-              inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border
+              inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border 
               ${getStatusColor(chamado.status.id)}
             `}>
               {chamado.status.nome}
@@ -286,13 +297,13 @@ const TicketCard = memo(({ chamado, onClick, isDragging = false, onSelect, isSel
           {/* datas */}
           <div className="space-y-1">
             <div className="flex items-center text-xs text-gray-500 gap-1">
-              <FiClock className="w-3 h-3" />
-              <span>Abertura: {formatDate(chamado.dataAbertura)}</span>
+              <FiEdit  className="w-3 h-3" />
+              <span>{formatDate(chamado.dataAbertura)}</span>
             </div>
             {chamado.dataFechamento && (
               <div className="flex items-center text-xs text-gray-500 gap-1">
-                <FiCheckCircle className="w-3 h-3" />
-                <span>Conclusão: {formatDate(chamado.dataFechamento)}</span>
+                <FiCheck className="w-3 h-3" />
+                <span>{formatDate(chamado.dataFechamento)}</span>
               </div>
             )}
           </div>

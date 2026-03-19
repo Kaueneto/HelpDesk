@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import api from '@/services/api';
 import { useAuth } from '@/contexts/AuthContext';
+import CustomSelect from '@/components/admin/CustomSelect';
 
 interface TopicosAjuda {
   id: number;
@@ -69,9 +70,6 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
   useEffect(() => {
     if (isOpen) {
       carregarDados();
-      if (user) {
-        setResponsavelId(user.id);
-      }
       // foca o campo assunto assim que o modal abre
       setTimeout(() => assuntoRef.current?.focus(), 50);
     }
@@ -292,7 +290,27 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
   const prioridadesOrdenadas = [...prioridades].sort((a, b) => a.ordem - b.ordem);
 
   const buttonGhostClass =
-    'px-6 py-2 bg-transparent border border-gray-400 text-gray-700 rounded-lg hover:bg-gray-200 hover:text-gray-900 transition-all duration-200 transform hover:scale-105 font-medium disabled:border-gray-300 disabled:text-gray-400 disabled:bg-transparent disabled:cursor-not-allowed';
+    'text-sm px-6 py-2 bg-transparent border border-gray-400 text-gray-700 rounded-lg hover:bg-gray-200 hover:text-gray-900 transition-all duration-200 transform hover:scale-105 font-medium disabled:border-gray-300 disabled:text-gray-400 disabled:bg-transparent disabled:cursor-not-allowed';
+
+
+    const responsavelOptions = usuarios.map((u) => ({
+      id: u.id,
+      label: u.name,
+    }));
+
+    const topicoOptions = topicos.map((t) => ({
+      id: t.id,
+      label: `${t.codigo} - ${t.nome}`,
+    }));
+
+    const departamentoOptions = departamentos.map((d) => ({
+      id: d.id,
+      label: `${d.codigo} - ${d.name}`,
+    }));
+
+
+
+
 
   return (
     <div
@@ -300,7 +318,7 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
       onClick={(e) => e.target === e.currentTarget && handleCancel()}
     >
       <div
-        className="bg-[#F5F5F5] rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl"
+        className="bg-white rounded-3xl w-full max-w-4xl max-h-[90vh] shadow-2xl flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         <form
@@ -308,7 +326,7 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
-          className="p-5 sm:p-6 md:p-7"
+          className="p-5 sm:p-6 md:p-7 overflow-y-auto flex-1"
         >
           <div className="flex justify-between items-start gap-3">
             <div className="w-full max-w-3xl">
@@ -364,60 +382,42 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
                 <label htmlFor="responsavel" className="text-base md:text-lg leading-none text-gray-600">
                   Responsável
                 </label>
-                <select
-                  id="responsavel"
-                  value={responsavelId}
-                  onChange={(e) => setResponsavelId(Number(e.target.value))}
-                  required
-                  className="h-10 px-3 border border-gray-400 rounded-lg bg-[#f4f4f4] text-gray-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                >
-                  <option value={0}>Selecione...</option>
-                  {usuariosOrdenados.map((usuario) => (
-                    <option key={usuario.id} value={usuario.id}>
-                      {usuario.name}
-                    </option>
-                  ))}
-                </select>
+              <CustomSelect
+                value={responsavelId}
+                onChange={setResponsavelId}
+                options={responsavelOptions}
+                placeholder="Selecione..."
+              />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-[160px_1fr] items-center gap-2.5">
                 <label htmlFor="topico" className="text-base md:text-lg leading-none text-gray-600">
                   Tópico
                 </label>
-                <select
-                  id="topico"
+                <CustomSelect
                   value={topicoAjudaId}
-                  onChange={(e) => setTopicoAjudaId(Number(e.target.value))}
-                  required
-                  className="h-10 px-3 border border-gray-400 rounded-lg bg-[#f4f4f4] text-gray-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                >
-                  <option value={0}>Selecione...</option>
-                  {topicosOrdenados.map((topico) => (
-                    <option key={topico.id} value={topico.id}>
-                      {topico.codigo} - {topico.nome}
-                    </option>
-                  ))}
-                </select> 
+                  onChange={setTopicoAjudaId}
+                  options={topicosOrdenados.map((t) => ({
+                    id: t.id,
+                    label: `${t.codigo} - ${t.nome}`,
+                  }))}
+                  placeholder="Selecione..."
+                />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-[160px_1fr] items-center gap-2.5">
                  <label htmlFor="departamento" className="text-base md:text-lg leading-none text-gray-600">
                     Departamento
                 </label>
-                <select
-                  id="departamento"
+                <CustomSelect
                   value={departamentoId}
-                  onChange={(e) => setDepartamentoId(Number(e.target.value))}
-                  required
-                  className="h-10 px-3 border border-gray-400 rounded-lg bg-[#f4f4f4] text-gray-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                >
-                  <option value={0}>Selecione...</option>
-                  {departamentosOrdenados.map((dept) => (
-                    <option key={dept.id} value={dept.id}>
-                      {dept.codigo} - {dept.name}
-                    </option>
-                  ))}
-                </select>
+                  onChange={setDepartamentoId}
+                  options={departamentosOrdenados.map((d) => ({
+                    id: d.id,
+                    label: `${d.codigo} - ${d.name}`,
+                  }))}
+                  placeholder="Selecione..."
+                />
               </div>
             </div>
 
@@ -449,7 +449,7 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={submitting}
-                className="inline-flex items-center gap-2 px-4 py-1.5 border border-gray-300 rounded-lg text-sm text-gray-500 bg-[#f4f4f4] hover:bg-gray-50 hover:text-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-2 px-4 py-1.5 border border-gray-300 rounded-lg text-sm text-gray-500 bg-white hover:bg-blue-50 hover:text-gray-700 hover:border-blue-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}

@@ -172,7 +172,7 @@ const KanbanView = ({
     }
     setSelectedTickets(newSelected);
   };
-
+  const [somenteAbertos, setSomenteAbertos] = useState(false);
   // agrupar tickets de acordo com o critério selecionado
   const groupedTickets = useMemo(() => {
     const groups: { [key: string]: Chamado[] } = {};
@@ -266,6 +266,12 @@ const KanbanView = ({
 
     // distribui os tickets nos grupos
     tickets.forEach(ticket => {
+  
+      //filtrar cards concluidos quando o somenteAbertos esta ativado
+      if (somenteAbertos && ticket.status.id === 3) {
+        return;
+      }
+
       let targetGroup: string;
 
       switch (groupBy) {
@@ -330,7 +336,7 @@ const KanbanView = ({
     });
 
     return { groups, columns };
-  }, [tickets, groupBy, statusList, prioridades, departamentos, topicosAjuda]);
+  }, [tickets, groupBy, statusList, prioridades, departamentos, topicosAjuda, somenteAbertos]);
 
   const handleGroupByChange = useCallback((option: GroupByOption | null) => {
     if (!option) return;
@@ -581,7 +587,7 @@ const KanbanView = ({
       {/* seletor de agrupamento */}
       <div className="mb-4 flex justify-between items-center">
         <div className="flex items-center space-x-4">
-          <h2 className="text-sm  text-gray-700">
+          <h2 className="text-sm text-gray-700">
             Exibir por
           </h2>
           <div className="w-60">
@@ -593,7 +599,44 @@ const KanbanView = ({
               className="text-sm"
               classNamePrefix="react-select"
               isSearchable={false}
+              styles={{
+                    control: (base) => ({
+                      ...base,
+                      minHeight: '28px',
+                      height: '30px',
+                    }),
+                    valueContainer: (base) => ({
+                      ...base,
+                      padding: '0 8px',
+                    }),
+                    indicatorsContainer: (base) => ({
+                      ...base,
+                      height: '30px',
+                    }),
+              }}
             />
+          </div>
+          
+          <div className="flex items-center gap-2 ml-4 pl-4 border-l border-gray-300">
+            <span className="text-sm text-gray-600">
+              Ocultar concluídos
+            </span>
+            <button
+              type="button"
+              onClick={() => setSomenteAbertos(!somenteAbertos)}
+              className={`
+                relative w-10 h-5 rounded-full transition-colors duration-200
+                ${somenteAbertos ? "bg-blue-600" : "bg-gray-300"}
+              `}
+            >
+              <span
+                className={`
+                  absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow
+                  transform transition-transform duration-200
+                  ${somenteAbertos ? "translate-x-5" : ""}
+                `}
+              />
+            </button>
           </div>
         </div>
 
