@@ -1173,7 +1173,7 @@ export default function GerenciarChamados() {
 
           {/* pequena setinha que oculta os filtros no modo tabela */}
           {viewMode === 'table' && (
-        <div className="flex justify-center py-1 bg-white border-b border-gray-200">
+       <div className="flex justify-center bg-white border-b border-gray-200 hover:scale-105 transition-transform duration-300">
           <button
             type="button"
             onClick={() => setFiltrosVisiveis(!filtrosVisiveis)}

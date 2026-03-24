@@ -171,20 +171,27 @@ router.post("/chamados/admin/criar", verifyToken, async (req: AuthenticatedReque
 
     const dataAtual = new Date();
 
+    // Validar que responsável foi fornecido
+    if (!userResponsavelId) {
+      return res.status(400).json({
+        mensagem: "Responsável é obrigatório",
+      });
+    }
 
     const chamado = chamadoRepository.create({
       ramal: 0, 
       //numero do chamdo sera gerado automaticamente no banco pela SEQUENCE
       dataAbertura: dataAtual,
-      status: { id: 1 }, // 1 = ABERTO (inicialmente)
+      status: { id: userResponsavelId ? 2 : 1 }, // 2 = EM ANALISE se houver responsável, 1 = ABERTO caso contrário
       resumoChamado,
       descricaoChamado,
       usuario: { id: adminId }, // Admin é o "usuário" que abriu
       tipoPrioridade: { id: prioridadeId },
       topicoAjuda: { id: topicoAjudaId },
       departamento: { id: departamentoId },
+      userResponsavel: userResponsavelId ? { id: userResponsavelId } : null, // Atribuir responsável JÁ na criação
+      dataAtribuicao: userResponsavelId ? new Date() : null, // Data de atribuição se houver responsável
     });
-
 
     await chamadoRepository.save(chamado);
 
@@ -197,39 +204,21 @@ router.post("/chamados/admin/criar", verifyToken, async (req: AuthenticatedReque
 
     const nomeAdmin = admin?.name || "Admin";
 
-
+    // Registrar no histórico
+    const statusNovo = userResponsavelId ? 2 : 1; // EM ANALISE se houver responsável, ABERTO caso contrário
     await historicoRepository.save({
       chamado,
       usuario: { id: adminId },
-      acao: `Chamado criado por administrador ${nomeAdmin}`,
+      acao: userResponsavelId 
+        ? `Chamado criado por administrador ${nomeAdmin} e atribuído a ele.`
+        : `Chamado criado por administrador ${nomeAdmin}`,
       statusAnterior: undefined,
-      statusNovo: { id: 1 }, // Status ABERTO
+      statusNovo: { id: statusNovo },
       dataMov: new Date(),
     });
 
-    // verificar se foi atribuído um responsável
-    if (userResponsavelId && userResponsavelId !== adminId) {
-      
-      // atualizar chamado com responsável
-      chamado.userResponsavel = { id: userResponsavelId } as Users;
-      chamado.dataAtribuicao = new Date();
-      chamado.status = { id: 2 } as StatusChamado; // 2 = EM ANALISE
-      
-      await chamadoRepository.save(chamado);
-
-
-      // registrar5 a atribuicao no historico
-      await historicoRepository.save({
-        chamado,
-        usuario: { id: adminId },
-        acao: `Chamado atribuído durante criação por ${nomeAdmin}`,
-        statusAnterior: { id: 1 },
-        statusNovo: { id: 2 },
-        dataMov: new Date(),
-      });
-
-
-      // enviar email assíncrono para o responsável
+    // Se houver responsável, enviar email
+    if (userResponsavelId) {
       setImmediate(async () => {
         try {
           const responsavel = await userRepository.findOne({
@@ -246,11 +235,10 @@ router.post("/chamados/admin/criar", verifyToken, async (req: AuthenticatedReque
 
             if (chamadoParaEmail) {
               await EmailService.enviarEmailChamadoCriadoPorAdmin(responsavel, admin, chamadoParaEmail);
-
             }
           }
         } catch (emailError) {
-
+          // Log do erro, mas não interrompe
         }
       });
     }

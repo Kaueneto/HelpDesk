@@ -3,7 +3,7 @@
 import { useState, FormEvent } from 'react';
 import api from '@/services/api';
 import { validatePassword, getPasswordStrengthColor, getPasswordStrengthText } from '@/utils/passwordValidation';
-
+import { FiEye, FiEyeOff } from "react-icons/fi";
 interface CadastrarseProps {
   onLoginClick: () => void;
   onSuccess: () => void;
@@ -16,6 +16,8 @@ export default function Cadastrarse({ onLoginClick, onSuccess }: CadastrarseProp
   const [cadastroConfirmPassword, setCadastroConfirmPassword] = useState('');
   const [cadastroError, setCadastroError] = useState('');
   const [cadastroLoading, setCadastroLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -66,7 +68,7 @@ export default function Cadastrarse({ onLoginClick, onSuccess }: CadastrarseProp
             htmlFor="register-name"
             className="text-sm font-medium leading-none text-gray-700"
           >
-            Nome completo
+            Nome 
           </label>
           <input
             id="register-name"
@@ -76,7 +78,7 @@ export default function Cadastrarse({ onLoginClick, onSuccess }: CadastrarseProp
             required
             minLength={3}
             className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
-            placeholder="seu nome completo"
+            placeholder="Nome"
             disabled={cadastroLoading}
           />
         </div>
@@ -95,38 +97,55 @@ export default function Cadastrarse({ onLoginClick, onSuccess }: CadastrarseProp
             onChange={(e) => setCadastroEmail(e.target.value)}
             required
             className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500  disabled:cursor-not-allowed disabled:opacity-50"
-            placeholder="seu@email.com"
+            placeholder="seuemail@email.com"
             disabled={cadastroLoading}
           />
         </div>
 
-        <div className="space-y-1">
-          <label
-            htmlFor="register-password"
-            className="text-sm font-medium leading-none text-gray-700"
-          >
-            Senha
-          </label>
-          <input
-            id="register-password"
-            type="password"
-            value={cadastroPassword}
-            onChange={(e) => setCadastroPassword(e.target.value)}
-            required
-            minLength={6}
-            className={`flex h-10 w-full rounded-md border ${getPasswordStrengthColor(cadastroPassword)} bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500  disabled:cursor-not-allowed disabled:opacity-50`}
-            placeholder="Digite uma Senha forte"
-            disabled={cadastroLoading}
-          />
-          {cadastroPassword && (
-            <div className={`text-xs mt-1 ${
-              getPasswordStrengthColor(cadastroPassword) === 'border-green-500' ? 'text-green-600' :
-              getPasswordStrengthColor(cadastroPassword) === 'border-yellow-500' ? 'text-yellow-600' : 'text-red-600'
-            }`}>
-              {getPasswordStrengthText(cadastroPassword)}
-            </div>
-          )}
-        </div>
+<div className="space-y-1">
+  <label
+    htmlFor="register-password"
+    className="text-sm font-medium leading-none text-gray-700"
+  >
+    Senha
+  </label>
+
+  <div className="relative">
+    <input
+      id="register-password"
+      type={showPassword ? "text" : "password"}
+      value={cadastroPassword}
+      onChange={(e) => setCadastroPassword(e.target.value)}
+      required
+      minLength={6}
+      className={`flex h-10 w-full rounded-md border ${getPasswordStrengthColor(cadastroPassword)} bg-white px-3 py-2 pr-10 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50`}
+      placeholder="Digite uma Senha forte"
+      disabled={cadastroLoading}
+    />
+
+    <button
+      type="button"
+      onClick={() => setShowPassword(!showPassword)}
+      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+    >
+      {showPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
+    </button>
+  </div>
+
+  {cadastroPassword && (
+    <div
+      className={`text-xs mt-1 ${
+        getPasswordStrengthColor(cadastroPassword) === 'border-green-500'
+          ? 'text-green-600'
+          : getPasswordStrengthColor(cadastroPassword) === 'border-yellow-500'
+          ? 'text-yellow-600'
+          : 'text-red-600'
+      }`}
+    >
+      {getPasswordStrengthText(cadastroPassword)}
+    </div>
+  )}
+</div>
 
         <div className="space-y-1">
           <label
@@ -135,19 +154,27 @@ export default function Cadastrarse({ onLoginClick, onSuccess }: CadastrarseProp
           >
             Confirmar senha
           </label>
+        <div className="relative">
           <input
             id="register-confirm"
-            type="password"
+            type={showConfirmPassword ? "text" : "password"}
             value={cadastroConfirmPassword}
             onChange={(e) => setCadastroConfirmPassword(e.target.value)}
             required
             minLength={6}
             className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500  disabled:cursor-not-allowed disabled:opacity-50"
-            placeholder="repita sua senha"
+            placeholder="Repita sua senha"
             disabled={cadastroLoading}
           />
+          <button
+            type="button"
+            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+          >
+            {showConfirmPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
+          </button>
         </div>
-
+        </div>
         {cadastroError && (
           <div className="bg-red-50 border border-red-200 text-red-600 px-3 py-2 rounded-md text-sm">
             {cadastroError}

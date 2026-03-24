@@ -8,7 +8,7 @@ interface Option {
 }
 
 interface Props {
-  value: number;
+  value: number | null;
   onChange: (value: number) => void;
   options: Option[];
   placeholder?: string;

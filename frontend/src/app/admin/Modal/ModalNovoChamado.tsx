@@ -53,8 +53,9 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
   const [topicoAjudaId, setTopicoAjudaId] = useState<number>(0);
   const [departamentoId, setDepartamentoId] = useState<number>(15); // Pré-selecionado
   const [prioridadeId, setPrioridadeId] = useState<number>(0);
-  const [responsavelId, setResponsavelId] = useState<number>(0);
+  const [responsavelId, setResponsavelId] = useState<number | null>(null);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [isLoadingData, setIsLoadingData] = useState(true);
   
   // Dados dos selects
   const [topicos, setTopicos] = useState<TopicosAjuda[]>([]);
@@ -69,6 +70,7 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
 
   useEffect(() => {
     if (isOpen) {
+      setIsLoadingData(true);
       carregarDados();
       // foca o campo assunto assim que o modal abre
       setTimeout(() => assuntoRef.current?.focus(), 50);
@@ -131,6 +133,8 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
       }
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
+    } finally {
+      setIsLoadingData(false);
     }
   };
 
@@ -150,9 +154,13 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
       setPrioridadeId(prioridadePadrao.id);
     }
     
-    // Resetar responsável para usuário logado
+    // Resetar responsável para usuário logado (padrão, não limitado)
     if (user) {
       setResponsavelId(user.id);
+    } else if (usuarios.length > 0) {
+      setResponsavelId(usuarios[0].id);
+    } else {
+      setResponsavelId(null);
     }
   };
 
@@ -220,8 +228,29 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
     e.preventDefault();
     setErrorMessage('');
 
-    if (!assunto.trim() || !descricao.trim() || !topicoAjudaId || !departamentoId || !prioridadeId || !responsavelId) {
-      setErrorMessage('Por favor, preencha todos os campos obrigatórios.');
+    // Validação com mensagens específicas
+    if (!assunto.trim()) {
+      setErrorMessage('Por favor, preencha o assunto.');
+      return;
+    }
+    if (!descricao.trim()) {
+      setErrorMessage('Por favor, preencha a descrição.');
+      return;
+    }
+    if (!topicoAjudaId) {
+      setErrorMessage('Por favor, selecione um tópico.');
+      return;
+    }
+    if (!departamentoId) {
+      setErrorMessage('Por favor, selecione um departamento.');
+      return;
+    }
+    if (!prioridadeId) {
+      setErrorMessage('Por favor, selecione uma prioridade.');
+      return;
+    }
+    if (!responsavelId) {
+      setErrorMessage('Por favor, selecione um responsável.');
       return;
     }
 
@@ -396,7 +425,7 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
                 </label>
                 <CustomSelect
                   value={topicoAjudaId}
-                  onChange={setTopicoAjudaId}
+                  onChange={(val) => setTopicoAjudaId(val)}
                   options={topicosOrdenados.map((t) => ({
                     id: t.id,
                     label: `${t.codigo} - ${t.nome}`,
@@ -411,7 +440,7 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
                 </label>
                 <CustomSelect
                   value={departamentoId}
-                  onChange={setDepartamentoId}
+                  onChange={(val) => setDepartamentoId(val)}
                   options={departamentosOrdenados.map((d) => ({
                     id: d.id,
                     label: `${d.codigo} - ${d.name}`,
@@ -520,10 +549,10 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
 
             <button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || isLoadingData}
               className="px-6 py-2 bg-[#001960] text-white rounded-lg hover:bg-[#001960]/80 transition-all transform hover:scale-105 font-medium disabled:bg-blue-400 disabled:cursor-not-allowed disabled:transform-none"
             >
-              {submitting ? 'Abrindo chamado...' : 'Criar'}
+              {isLoadingData ? 'Carregando...' : submitting ? 'Abrindo chamado...' : 'Criar'}
             </button>
           </div>
         </form>

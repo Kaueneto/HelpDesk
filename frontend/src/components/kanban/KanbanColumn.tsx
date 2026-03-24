@@ -110,7 +110,7 @@ const KanbanColumn = memo(({
         width: isCollapsed ? 'auto' : undefined
       }}
       transition={{ duration: 0.3, ease: "easeOut" }}
-      className={`flex ${isCollapsed ? 'flex-row' : 'flex-col'} h-full ${isCollapsed ? 'min-w-12' : 'min-w-72 max-w-80'}`}
+      className={`flex ${isCollapsed ? 'flex-row' : 'flex-col'} h-full ${isCollapsed ? 'min-w-12' : 'min-w-80 max-w-80'}`}
     >
       {isCollapsed ? (
         /* cxoluna recolhida - vertical */
