@@ -7,6 +7,7 @@ import AbrirChamado from './AbrirChamado';
 import AcompanharChamado from './AcompanharChamado';
 import DetalhesChamados from './DetalhesChamados';
 import Configuracoes from './Configuracoes';
+const baseUrl = process.env.NEXT_PUBLIC_FRONTEND_URL;
 
 export default function PainelUsuario() {
   const { user, isAuthenticated, isLoading, logout } = useAuth();
@@ -18,7 +19,7 @@ export default function PainelUsuario() {
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      router.push('/auth/login');
+      router.push(`${baseUrl}/auth/login`);
     }
   }, [isAuthenticated, isLoading, router]);
 

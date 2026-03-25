@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, usePathname } from 'next/navigation';
-
+const baseUrl = process.env.NEXT_PUBLIC_FRONTEND_URL;
 interface UsuarioSidebarProps {
   collapsed: boolean;
 }
@@ -27,9 +27,9 @@ export default function UsuarioSidebar({ collapsed }: UsuarioSidebarProps) {
 
       <nav className="flex-1 py-4">
         <button
-          onClick={() => router.push('/inicial')}
+          onClick={() => router.push(`${baseUrl}/inicial`)}
           className={`w-full px-4 py-3 text-left flex items-center gap-3 transition ${
-            isActive('/inicial') ? 'bg-gray-600 text-white' : 'text-gray-300 hover:bg-gray-700'
+            isActive(`${baseUrl}/inicial`) ? 'bg-gray-600 text-white' : 'text-gray-300 hover:bg-gray-700'
           }`}
         >
           <img src="/icons/iconhome.svg" alt="Inicio" className="w-5 h-5 flex-shrink-0" />
@@ -37,7 +37,7 @@ export default function UsuarioSidebar({ collapsed }: UsuarioSidebarProps) {
         </button>
 
         <button
-          onClick={() => router.push('/inicial')}
+          onClick={() => router.push(`${baseUrl}/inicial`)}
           className={`w-full px-4 py-3 text-left flex items-center gap-3 transition text-gray-300 hover:bg-gray-700`}
         >
           <img src="/icons/iconabrirnovochamado.svg" alt="Novo Chamado" className="w-5 h-5 flex-shrink-0" />
@@ -45,7 +45,7 @@ export default function UsuarioSidebar({ collapsed }: UsuarioSidebarProps) {
         </button>
 
         <button
-          onClick={() => router.push('/inicial')}
+          onClick={() => router.push(`${baseUrl}/inicial`)}
           className={`w-full px-4 py-3 text-left flex items-center gap-3 transition text-gray-300 hover:bg-gray-700`}
         >
           <img src="/icons/iconacompanhar.svg" alt="Acompanhar" className="w-5 h-5 flex-shrink-0" />

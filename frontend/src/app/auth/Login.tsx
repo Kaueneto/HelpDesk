@@ -9,7 +9,8 @@ interface LoginProps {
   onCadastrarClick: () => void;
   onEsqueceuSenhaClick: () => void;
 }
-
+ const baseUrl = process.env.NEXT_PUBLIC_FRONTEND_URL;
+ 
 export default function Login({ onCadastrarClick, onEsqueceuSenhaClick }: LoginProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -19,7 +20,7 @@ export default function Login({ onCadastrarClick, onEsqueceuSenhaClick }: LoginP
 
   const { login } = useAuth();
   const router = useRouter();
-
+ 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
@@ -31,7 +32,7 @@ export default function Login({ onCadastrarClick, onEsqueceuSenhaClick }: LoginP
       // Aguardar um breve momento para garantir que o estado seja atualizado
       setTimeout(() => {
         // usar o  window.location para garantir que vá para a página correta
-        window.location.href = '/painel'; // o admin  sempre vai para painel primeiro
+        window.location.href = `${baseUrl}/painel`; // o admin  sempre vai para painel primeiro
       }, 100);
     } catch (err: any) {
       setError(

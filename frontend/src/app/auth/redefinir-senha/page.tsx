@@ -7,7 +7,7 @@ import api from '@/services/api';
 
 // forçar renderização dinâmica para evitar erro de prerender
 export const dynamic = 'force-dynamic';
-
+const baseUrl = process.env.NEXT_PUBLIC_FRONTEND_URL;
 function RedefinirSenhaContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -78,7 +78,7 @@ function RedefinirSenhaContent() {
                 {error || 'O link de recuperação é inválido ou já foi utilizado.'}
               </p>
               <button
-                onClick={() => router.push('/auth/login')}
+                onClick={() => router.push(`${baseUrl}/auth/login`)}
                 className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-200 bg-blue-600 text-white shadow hover:bg-blue-700 hover:shadow-md hover:-translate-y-px focus:outline-none focus:ring-1 focus:ring-blue-500 focus:ring-offset-2 h-10 px-4 py-2 w-full"
               >
                 Voltar para o Login

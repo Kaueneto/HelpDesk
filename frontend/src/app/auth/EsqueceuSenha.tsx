@@ -13,13 +13,16 @@ export default function EsqueceuSenha({ onVoltarClick }: EsqueceuSenhaProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [emailEnviado, setEmailEnviado] = useState(false);
 
+  const baseUrl = process.env.NEXT_PUBLIC_FRONTEND_URL;
+
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
 
     try {
-      const urlRecoverPassword = `${window.location.origin}/auth/redefinir-senha`;
+       const urlRecoverPassword = `${baseUrl}/auth/redefinir-senha`;
       
       const response = await api.post('/recoverPassword', {
         email,

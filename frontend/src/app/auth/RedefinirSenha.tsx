@@ -10,7 +10,7 @@ interface RedefinirSenhaProps {
   email: string;
   token: string;
 }
-
+const baseUrl = process.env.NEXT_PUBLIC_FRONTEND_URL;
 export default function RedefinirSenha({ email, token }: RedefinirSenhaProps) {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -47,7 +47,7 @@ export default function RedefinirSenha({ email, token }: RedefinirSenhaProps) {
 
       // Redirecionar para login após 3 segundos
       setTimeout(() => {
-        router.push('/auth/login');
+        router.push(`${baseUrl}/auth/login`);
       }, 3000);
     } catch (err: any) {
       const mensagem = err.response?.data?.mensagem;
