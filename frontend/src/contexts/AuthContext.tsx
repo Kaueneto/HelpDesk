@@ -17,6 +17,9 @@ interface AuthContextData {
   validateToken: () => Promise<boolean>;
 }
 
+const baseUrl = process.env.NEXT_PUBLIC_FRONTEND_URL;
+
+
 /**
  * Contexto de autenticação
  */
@@ -132,9 +135,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem('user');
       
       // usar replace para evitar voltar com botão de voltar do navegador
-      window.location.replace('/auth/login');
+      window.location.replace(`${baseUrl}/auth/login`);
     } catch (error) {
-      window.location.replace('/auth/login');
+      window.location.replace(`${baseUrl}/auth/login`);
     }
   };
 

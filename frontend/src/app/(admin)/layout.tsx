@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import AdminHeader from '@/components/layouts/AdminHeader';
 import AdminSidebar from '@/components/layouts/AdminSidebar';
 
+const baseUrl = process.env.NEXT_PUBLIC_FRONTEND_URL;
 export default function AdminLayout({
   children,
 }: {
@@ -17,9 +18,9 @@ export default function AdminLayout({
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      router.push('/auth/login');
+      router.push(`${baseUrl}/auth/login`);
     } else if (!isLoading && user && user.roleId !== 1) {
-      router.push('/usuario/inicial');
+      router.push(`${baseUrl}/usuario/inicial`);
     }
   }, [isAuthenticated, isLoading, user, router]);
 

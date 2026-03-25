@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import api from '@/services/api';
 import { Toaster, toast } from 'react-hot-toast';
 
+const baseUrl = process.env.NEXT_PUBLIC_FRONTEND_URL;
 
 export default function PerfilPage() {
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -20,7 +21,7 @@ export default function PerfilPage() {
   const [submittingNome, setSubmittingNome] = useState(false);
   const [errorNome, setErrorNome] = useState('');
   const { updateUser } = useAuth();
-
+  
   // inicializar nome editável quando o usuário carregar
   useEffect(() => {
     if (user?.name) {
@@ -31,7 +32,7 @@ export default function PerfilPage() {
   // proteção de autenticação
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      router.push('/auth/login');
+      router.push(`${baseUrl}/auth/login`);
     }
   }, [isLoading, isAuthenticated, router]);
 

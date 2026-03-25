@@ -1,5 +1,6 @@
 import axios from 'axios';
 
+const baseUrl = process.env.NEXT_PUBLIC_FRONTEND_URL;
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
@@ -50,7 +51,7 @@ api.interceptors.response.use(
       
       // Redireciona para login apenas no cliente
       if (typeof window !== 'undefined') {
-        window.location.replace('/auth/login');
+        window.location.replace(`${baseUrl}/auth/login`);
       }
     }
     

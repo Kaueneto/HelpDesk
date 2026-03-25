@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useContext } from 'react';
 import { AuthContext } from '@/contexts/AuthContext';
 
+const baseUrl = process.env.NEXT_PUBLIC_FRONTEND_URL;
 /**
  * Página inicial - Redireciona baseado no estado de autenticação
  */
@@ -18,14 +19,14 @@ export default function Home() {
         // Se o usuário estiver logado, redireciona baseado na role
         if (user.roleId === 1) {
           // Admin vai para o painel administrativo
-          router.push('/painel');
+          router.push(`${baseUrl}/painel`);
         } else {
           // Usuário comum vai para a página de usuários
-          router.push('/usuario/inicial');
+          router.push(`${baseUrl}/usuario/inicial`);
         }
       } else {
         // Se não estiver logado, redireciona para o login
-        router.push('/auth/login');
+        router.push(`${baseUrl}/auth/login`);
       }
     }
   }, [isAuthenticated, isLoading, user, router]);
