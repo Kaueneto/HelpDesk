@@ -210,7 +210,7 @@ router.post("/chamados/admin/criar", verifyToken, async (req: AuthenticatedReque
       chamado,
       usuario: { id: adminId },
       acao: userResponsavelId 
-        ? `Chamado criado por administrador ${nomeAdmin} e atribuído a ele.`
+        ? `Chamado criado por administrador ${nomeAdmin}.`
         : `Chamado criado por administrador ${nomeAdmin}`,
       statusAnterior: undefined,
       statusNovo: { id: statusNovo },
@@ -556,7 +556,6 @@ router.get("/chamados", verifyToken, async (req: AuthenticatedRequest, res: Resp
     const chamadosFormatados = chamados.map((chamado: any) => {
       // Se tiver múltiplas posições, retornar um array; senão retornar null ou a primeira
       const posicoesDoCard = posicoesPorChamado[chamado.id] || [];
-      
       return {
         id: chamado.id,
         numeroChamado: chamado.numeroChamado,
@@ -566,7 +565,11 @@ router.get("/chamados", verifyToken, async (req: AuthenticatedRequest, res: Resp
         dataAbertura: chamado.dataAbertura,
         dataAtribuicao: chamado.dataAtribuicao,
         dataFechamento: chamado.dataFechamento,
-        usuario: chamado.usuario ? { id: chamado.usuario.id, name: chamado.usuario.name } : null,
+        usuario: chamado.usuario ? {
+          id: chamado.usuario.id,
+          name: chamado.usuario.name,
+          roleId: chamado.usuario.roleId // add roleId para o frontend identificar interno/externo
+        } : null,
         tipoPrioridade: chamado.tipoPrioridade,
         departamento: chamado.departamento,
         topicoAjuda: chamado.topicoAjuda,

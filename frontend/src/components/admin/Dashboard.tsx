@@ -6,10 +6,14 @@ import 'react-datepicker/dist/react-datepicker.css';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, LabelList } from 'recharts';
 import api from '@/services/api';
 
+import { LineChart, Line } from 'recharts';
+
 // ids de status
 const STATUS_ABERTO = 1;
 const STATUS_EM_ANDAMENTO = 2;
 const STATUS_FINALIZADO = 3;
+const STATUS_PENDENTE = 7;
+const STATUS_PENDENTE_USUARIO = 6;
 
 export default function Dashboard() {
   const [dataInicio, setDataInicio] = useState<Date | null>(
@@ -23,12 +27,17 @@ export default function Dashboard() {
   const [chamadosEmAndamento, setChamadosEmAndamento] = useState(0);
   const [chamadosFinalizados, setChamadosFinalizados] = useState(0);
   const [chamadosAtrasados, setChamadosAtrasados] = useState(0);
+  const [chamadosPendentes, setChamadosPendentes] = useState(0);
+  const [totalChamados, setTotalChamados] = useState(0);
+  const [chamadosPendentesUsuario, setChamadosPendentesUsuario] = useState(0);
 
   const [dadosPrioridade, setDadosPrioridade] = useState<any[]>([]);
   const [prioridadeSelecionadas, setPrioridadeSelecionadas] = useState<Set<string>>(new Set());
   const [dadosDepartamento, setDadosDepartamento] = useState<any[]>([]);
   const [dadosTopicos, setDadosTopicos] = useState<any[]>([]);
   const [dadosUsuarios, setDadosUsuarios] = useState<any[]>([]);
+
+  const [dadosInternoExterno, setDadosInternoExterno] = useState<any[]>([]);
 
   const [horasParaAtraso, setHorasParaAtraso] = useState(24);
   const [loading, setLoading] = useState(false);
@@ -44,7 +53,7 @@ export default function Dashboard() {
   }, [dataInicio, dataFim, horasParaAtraso]);
 
   async function carregarParametros() {
-    try {
+    try { 
       const response = await api.get('/parametros');
       setHorasParaAtraso(response.data.horasParaAtraso ?? 24);
     } catch (err) {
@@ -56,20 +65,54 @@ export default function Dashboard() {
     if (!dataInicio || !dataFim) return;
     setLoading(true);
     try {
-      const response = await api.get('/chamados', { params: { pageSize: 10000 } });
+      // formatar datas para yyyy-MM-dd
+      const dataAberturaInicio = dataInicio.toISOString().slice(0, 10);
+      const dataAberturaFim = dataFim.toISOString().slice(0, 10);
+      const response = await api.get('/chamados', {
+        params: {
+          pageSize: 10000,
+          dataAberturaInicio,
+          dataAberturaFim
+        }
+      });
       const todosChamados = response.data.chamados ?? response.data;
-      const chamadosFiltrados = filtrarChamadosPorPeriodo(todosChamados);
-
-      processarIndicadores(chamadosFiltrados);
-      processarPrioridades(chamadosFiltrados);
-      processarDepartamentos(chamadosFiltrados);
-      processarTopicos(chamadosFiltrados);
-      processarUsuarios(chamadosFiltrados);
+      // agora o filtro de período já é feito no backend, não precisa filtrar novamente aqui
+      processarIndicadores(todosChamados);
+      processarPrioridades(todosChamados);
+      processarDepartamentos(todosChamados);
+      processarTopicos(todosChamados);
+      processarUsuarios(todosChamados);
+      processarInternoExterno(todosChamados);
     } catch (err) {
       alert('Erro ao carregar dados');
     } finally {
       setLoading(false);
     }
+  }
+ 
+  //funcao pra gerar dados do grafico de linhas de chamados internos x externos 
+  function processarInternoExterno(chamados: any[]) {
+    // agrupar por dia
+    const map: Record<string, { interno: number; externo: number }> = {};
+    chamados.forEach(c => {
+      const data = new Date(c.dataAbertura);
+      // normalizar para data local (ou UTC, conforme padrão do sistema)
+      const dia = data.toISOString().slice(0, 10); // yyyy-mm-dd
+      // se o chamado foi criado por admin (roleId === 1), é interno
+    
+      const isInterno = c.usuario?.roleId === 1 || c.usuario?.role_id === 1 || c.usuario?.role === 1;
+      if (!map[dia]) map[dia] = { interno: 0, externo: 0 };
+      if (isInterno) map[dia].interno++;
+      else map[dia].externo++;
+    });
+    // ordenar por data
+    const datas = Object.keys(map).sort();
+    const dados = datas.map(dia => ({
+      dia,
+      Interno: map[dia].interno,
+      Externo: map[dia].externo,
+    }));
+    setDadosInternoExterno(dados);
   }
 
   function filtrarChamadosPorPeriodo(chamados: any[]) {
@@ -94,6 +137,11 @@ export default function Dashboard() {
     setChamadosFinalizados(chamados.filter(c => c.status?.id === STATUS_FINALIZADO).length);
     const limite = new Date(Date.now() - horasParaAtraso * 60 * 60 * 1000);
     setChamadosAtrasados(chamados.filter(c => c.status?.id === STATUS_ABERTO && new Date(c.dataAbertura) < limite).length);
+    setChamadosPendentes(
+      chamados.filter(c => c.status?.id === STATUS_PENDENTE || c.status?.id === STATUS_PENDENTE_USUARIO).length
+    );
+    setTotalChamados(chamados.length);
+    setChamadosPendentesUsuario(chamados.filter(c => c.status?.id === STATUS_PENDENTE_USUARIO).length);
   }
 
   function processarPrioridades(chamados: any[]) {
@@ -217,15 +265,41 @@ export default function Dashboard() {
           </button>
         </div>
 
-        {/* cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-6 md:mb-8">
-          <Card titulo="ABERTOS" valor={chamadosAbertos} cor="bg-[#2ECC71]" />
-          <Card titulo="EM ANDAMENTO" valor={chamadosEmAndamento} cor="bg-purple-700" />
-          <Card titulo="FINALIZADOS" valor={chamadosFinalizados} cor="bg-gray-800" />
-          <Card titulo="ATRASADOS" valor={chamadosAtrasados} cor="bg-[#E74C3C]" />
-        </div>
+    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
+
+  {/* esquerda */}
+  <div className="lg:col-span-3 grid grid-cols-2 md:grid-cols-3 gap-4">
+
+    <Card titulo="ABERTOS" valor={chamadosAbertos} cor="bg-[#2ECC71]" />
+    <Card titulo="ATRASADOS" valor={chamadosAtrasados} cor="bg-[#E74C3C]" />
+    <Card titulo="EM ANDAMENTO" valor={chamadosEmAndamento} cor="bg-blue-600" />
+    <Card titulo="FINALIZADOS" valor={chamadosFinalizados} cor="bg-slate-800" />
+    <Card titulo="PENDENTES TERCEIROS" valor={chamadosPendentes} cor="bg-amber-500" />
+    <Card titulo="PENDENTE USUARIO" valor={chamadosPendentesUsuario} cor="bg-purple-600" />
+
+  </div>
+
+  {/* direita - destaque */}
+  <div className="lg:col-span-1">
+    <div className="h-full bg-linear-to-br from-slate-700 to-slate-900 text-white rounded-2xl p-6 shadow-lg flex flex-col justify-between">
+      
+      <div>
+        <p className="text-sm opacity-70">Total Geral</p>
+        <h2 className="text-4xl font-bold mt-2">
+          {totalChamados}
+        </h2>
+      </div>
+
+      <div className="text-sm opacity-70">
+        Total de chamados no período
+      </div>
+    </div>
+  </div>
+
+</div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
+               
           {/* priority */}
           <div className="bg-[#F8FAFC] border border-gray-200 rounded-xl shadow-sm p-4 md:p-8">
             <h3 className="text-base md:text-lg font-bold text-gray-800 mb-3 md:mb-4">Distribuição por Prioridade</h3>
@@ -249,7 +323,37 @@ export default function Dashboard() {
                     <Cell key={`cell-${index}`} fill={entry.cor} stroke="none" />
                   ))}
                 </Pie>
-                <Tooltip />
+         <Tooltip
+          content={({ active, payload }) => {
+            if (active && payload && payload.length) {
+              const data = payload[0];
+
+              const valor = Number(data.value ?? 0); 
+
+              const total = dadosPrioridadeFiltrados.reduce(
+                (acc, d) => acc + Number(d.valor ?? 0),
+                0
+              );
+
+              const percentual = total > 0 
+                ? ((valor / total) * 100).toFixed(1)
+                : "0";
+
+              return (
+                <div className="bg-gray-900 text-white p-3 rounded-lg shadow-lg border border-gray-700">
+                  <p className="font-semibold text-sm mb-1">
+                    {data.name}
+                  </p>
+
+                  <p className="text-xs text-gray-300">
+                    {valor} chamados ({percentual}%)
+                  </p>
+                </div>
+              );
+            }
+            return null;
+          }}
+        />
                 <Legend />
               </PieChart>
             </ResponsiveContainer>
@@ -275,6 +379,110 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+        
+   {/* grafico de linhas Interno x Externo */}
+<div className="mt-6 md:mt-8 bg-white border border-gray-100 rounded-2xl shadow-md p-5 md:p-8 transition-all hover:shadow-lg">
+  
+  {/* Header */}
+  <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+    <div>
+      <h3 className="text-lg md:text-xl font-semibold text-gray-800">
+        Chamados Internos vs Externos
+      </h3>
+      <p className="text-xs md:text-sm text-gray-400 mt-1">
+        Volume diário de chamados no período selecionado
+      </p>
+    </div>
+
+    {/* Total destacado */}
+    <div className="mt-3 md:mt-0 bg-gray-50 border border-gray-100 px-4 py-2 rounded-lg">
+      <span className="text-xs text-gray-500">Total</span>
+      <p className="text-sm font-semibold text-gray-800">
+        {dadosInternoExterno.reduce((acc, d) => acc + d.Interno + d.Externo, 0)} chamados
+      </p>
+    </div>
+  </div>
+
+  {/* Chart */}
+  <ResponsiveContainer width="100%" height={320}>
+    <LineChart
+      data={dadosInternoExterno}
+      margin={{ top: 10, right: 20, left: -10, bottom: 20 }}
+    >
+      <CartesianGrid strokeDasharray="2 4" stroke="#E5E7EB" vertical={false} />
+
+          <XAxis
+        dataKey="dia"
+        tickFormatter={(value) =>
+            new Date(value).toLocaleDateString("pt-BR", {
+            day: "2-digit",
+            month: "2-digit"
+          })
+        }
+        tick={{ fontSize: 12, fill: "#6B7280" }}
+        axisLine={false}
+        tickLine={false}
+        angle={-25}
+        textAnchor="end"
+        interval={0}
+      />
+
+      <YAxis
+        tick={{ fontSize: 12, fill: "#6B7280" }}
+        axisLine={false}
+        tickLine={false}
+        allowDecimals={false}
+      />
+
+        <Tooltip
+       labelFormatter={(value) =>
+             new Date(value).toLocaleDateString("pt-BR")
+        }
+        contentStyle={{
+          backgroundColor: "#111827",
+          border: "none",
+          borderRadius: "5px",
+          color: "#fff",
+          fontSize: "14px"
+        }}
+        labelStyle={{ color: "#9CA3AF" }}
+      />
+      <Legend
+        verticalAlign="top"
+        height={36}
+        iconType="circle"
+        formatter={(value) =>
+          value === "Interno" ? (
+            <span className="text-blue-600 font-medium">Interno</span>
+          ) : (
+            <span className="text-amber-500 font-medium">Externo</span>
+          )
+        }
+      />
+
+      {/* linha interno */}
+      <Line
+        type="monotone"
+        dataKey="Interno"
+
+        stroke="#3B82F6"
+        strokeWidth={2.5}
+        dot={false}
+        activeDot={{ r: 6 }}
+      />
+
+      {/* linha externo */}
+      <Line
+        type="monotone"
+        dataKey="Externo"
+        stroke="#F59E0B"
+        strokeWidth={2.5}
+        dot={false}
+        activeDot={{ r: 6 }}
+      />
+    </LineChart>
+  </ResponsiveContainer>
+</div>
 
         {/* grafico top5 */}
         <div className="mt-6 md:mt-8 bg-[#F8FAFC] border border-gray-200 rounded-xl shadow-sm p-4 md:p-8 overflow-x-auto">
@@ -286,7 +494,38 @@ export default function Dashboard() {
                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
                     <XAxis dataKey="nome" angle={-30} textAnchor="end" interval={0} tick={{fontSize: 11}} />
                     <YAxis tick={{fontSize: 11}} />
-                    <Tooltip />
+                    <Tooltip
+                        content={({ active, payload, label }) => {
+                          if (active && payload && payload.length) {
+                            const data = payload[0];
+
+                            const valor = Number(data.value ?? 0);
+                            const usuario = data.payload?.usuarioTop ?? "N/A";
+
+                            return (
+                              <div className="bg-gray-900 text-white p-3 rounded-lg shadow-lg border border-gray-700">
+                                
+                                {/* nome do tópico */}
+                                <p className="text-sm font-semibold mb-1">
+                                  {label}
+                                </p>
+
+                                {/* quantidade */}
+                                <p className="text-xs text-gray-300">
+                                  {valor} chamados
+                                </p>
+
+                                {/* usuário */}
+                                <p className="text-xs text-gray-400 mt-1">
+                                  Usuario que mais solicita: {typeof usuario === "string" ? usuario.split(" ")[0] : usuario}
+                                </p>
+
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
                     <Bar dataKey="valor" fill="#4C1D95" radius={[10, 10, 0, 0]}>
                         <LabelList 
                           dataKey="usuarioTop" 
@@ -343,18 +582,17 @@ export default function Dashboard() {
             style: { fill: '#9CA3AF', fontSize: 11, fontWeight: 600 } 
           }}
         />
-        
-        <Tooltip 
+      <Tooltip 
           cursor={{ fill: '#F9FAFB' }}
           content={({ active, payload }) => {
             if (active && payload && payload.length) {
               const data = payload[0].payload;
               return (
-                <div className="bg-[#F8FAFC] border-none shadow-2xl rounded-lg p-4 ">
-                  <h4 className="font-bold text-gray-900 mb-2 border-b border-gray-300 pb-2 ">{data.nomeCompleto}</h4>
+                <div className="bg-gray-900 border-none rounded-lg p-4 ">
+                  <h4 className="font-bold text-white mb-2 border-b border-gray-300 pb-2 ">{data.nomeCompleto}</h4>
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full bg-blue-600"></div>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-white">
                       <strong>{data.valor}</strong> chamados
                     </p>
                   </div>
@@ -364,7 +602,6 @@ export default function Dashboard() {
             return null;
           }}
         />
-        
         <Bar 
           dataKey="valor" 
           fill="#3B82F6" 
