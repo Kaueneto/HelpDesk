@@ -201,13 +201,8 @@ export default function GerenciarChamados() {
       filtrados = chamados.filter(c => c.userResponsavel?.id !== user?.id);
     }
     
-    // filtrar por status concluído se toggle estiver ativado
-    if (ocultarConcluidos) {
-      filtrados = filtrados.filter(c => c.status?.id !== 3);
-    }
-    
     return filtrados;
-  }, [chamados, abaFiltro, user?.id, ocultarConcluidos]);
+  }, [chamados, abaFiltro, user?.id]);
 
   const chamadosOrdenados = ordenarPor
     ? [...chamadosFiltrados].sort((a, b) => {
@@ -298,14 +293,13 @@ export default function GerenciarChamados() {
     }
   };
 
-  const pesquisarChamados = async (page: number = 1) => {
-    if (!isAuthenticated) return; // protecao adicional
-    
+  const pesquisarChamados = async (page: number = 1, ocultarConcluidosFiltro: boolean = ocultarConcluidos) => {
+    if (!isAuthenticated) return;
     setLoading(true);
     try {
       const params: any = {
         page,
-        pageSize: pageSize || 20, // garantir que sempre tem um valor
+        pageSize: pageSize || 20,
       };
       if (dataAberturaInicio) params.dataAberturaInicio = dataAberturaInicio.toISOString();
       if (dataAberturaFim) {
@@ -322,7 +316,12 @@ export default function GerenciarChamados() {
       if (departamentoId.length > 0) params.departamentoId = departamentoId.join(',');
       if (topicoAjudaId.length > 0) params.topicoAjudaId = topicoAjudaId.join(',');
       if (prioridadeId) params.prioridadeId = prioridadeId;
-      if (statusId.length > 0) params.statusId = statusId.join(',');
+      if (statusId.length > 0) {
+        params.statusId = statusId.join(',');
+      } else if (ocultarConcluidosFiltro) {
+        // Se ocultar concluídos está ativado e nenhum statusId foi selecionado, filtra todos menos o concluído (id 3)
+        params.statusId = [1,2,4,5,6,7].join(',');
+      }
       if (assunto) params.assunto = assunto;
       if (nomeUsuario) params.nomeUsuario = nomeUsuario;
       if (nomeResponsavel) params.nomeResponsavel = nomeResponsavel;
@@ -849,11 +848,10 @@ export default function GerenciarChamados() {
                   className="text-sm"
                   styles={{
                     control: (base) => ({
-                      ...base,
+                       ...base,
                       minHeight: '38px',
-                      maxHeight: '38px',
-                      height: '38px',
-                      overflowY: 'auto',
+                      overflowX: "auto",
+                      whiteSpace: "nowrap",
                       fontSize: '14px',
                       borderColor: '#d1d5db',
                       '&:hover': { borderColor: '#3b82f6' },
@@ -1017,9 +1015,8 @@ export default function GerenciarChamados() {
                     control: (base) => ({
                       ...base,
                       minHeight: '38px',
-                      maxHeight: '38px',
-                      height: '38px',
-                      overflowY: 'auto',
+                      overflowX: "auto",
+                      whiteSpace: "nowrap",
                       fontSize: '14px',
                       borderColor: '#d1d5db',
                       '&:hover': { borderColor: '#3b82f6' },
@@ -1129,37 +1126,64 @@ export default function GerenciarChamados() {
                   ))}
                 </div>
               </div>
-            </div>
-              <div className="justify-start mt-3">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Responsável
-                </label>
-                <select
-                  value={nomeResponsavel}
-                  onChange={(e) => setNomeResponsavel(e.target.value)}
-                  className="w-100 min-w-0 px-3 py-2 border border-gray-300 rounded bg-white focus:ring-1 focus:ring-blue-500 text-sm text-gray-900 focus:outline-none"
-                >
-                  <option value="">Todos os responsáveis</option>
-                  {usuariosAdmin
-                    .sort((a, b) => a.name.localeCompare(b.name))
-                    .map((admin) => (
-                      <option key={admin.id} value={admin.name}>
-                        {admin.name}
-                      </option>
-                    ))}
-                </select>
+           </div>
 
+              <div className="flex items-end gap-6 mt-4">
+                {/* Responsável */}
+                <div className="flex-none"> {/* flex-none impede que ele cresça ou encolha além do necessário */}
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Responsável
+                  </label>
+                  <select
+                    value={nomeResponsavel}
+                    onChange={(e) => setNomeResponsavel(e.target.value)}
+                    // Removido o w-80 para o select não ser forçado, mas você pode manter se quiser um tamanho fixo específico
+                    className="w-64 px-3 py-2 border border-gray-300 rounded bg-white focus:ring-1 focus:ring-blue-500 text-sm text-gray-900 focus:outline-none"
+                  >
+                    <option value="">Todos os responsáveis</option>
+                    {usuariosAdmin
+                      .sort((a, b) => a.name.localeCompare(b.name))
+                      .map((admin) => (
+                        <option key={admin.id} value={admin.name}>
+                          {admin.name}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+
+                {/* Ocultar concluídos */}
+                <div className="flex items-center gap-3 mb-2.5"> {/* items-center coloca na mesma linha e mb-2.5 alinha com o select */}
+                  <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
+                    Ocultar concluídos
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setOcultarConcluidos(!ocultarConcluidos)}
+                    className={`
+                      relative w-10 h-5 rounded-full transition-colors duration-100 flex-shrink-0
+                      ${ocultarConcluidos ? "bg-blue-600" : "bg-gray-300"}
+                    `}
+                  >
+                    <span
+                      className={`
+                        absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow
+                        transform transition-transform duration-100
+                        ${ocultarConcluidos ? "translate-x-5" : ""}
+                      `}
+                    />
+                  </button>
+                </div>
               </div>
+              
             {/* botoes de acoes dos filtros */}
             <div className="flex gap-3 mt-6 justify-end flex-nowrap overflow-x-auto whitespace-nowrap pb-2">
-           
               <button
                 onClick={limparFiltros}
                 className="px-6 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors font-medium text-sm"
               >
                 Limpar Filtros
               </button>
-             <button
+              <button
                 onClick={() => pesquisarChamados(1)}
                 disabled={loading}
                 className="px-6 py-2 bg-[#002B57]  text-white rounded hover:bg-[#315377] transition-colors font-medium text-sm disabled:bg-[#002B57]"
@@ -1320,28 +1344,7 @@ export default function GerenciarChamados() {
                     );
                   })}
                 </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-600">
-                      Ocultar concluídos
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setOcultarConcluidos(!ocultarConcluidos)}
-                      className={`
-                        relative w-10 h-5 rounded-full transition-colors duration-200
-                        ${ocultarConcluidos ? "bg-blue-600" : "bg-gray-300"}
-                      `}
-                    >
-                      <span
-                        className={`
-                          absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow
-                          transform transition-transform duration-200
-                          ${ocultarConcluidos ? "translate-x-5" : ""}
-                        `}
-                      />
-                    </button>
-                  </div>
+
                 </div>
 
                 <div className="overflow-x-auto hidden md:block">
@@ -1864,7 +1867,7 @@ export default function GerenciarChamados() {
       <select
         value={novoTopicoAjudaId}
         onChange={(e) => setNovoTopicoAjudaId(e.target.value)}
-        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1text-sm text-gray-900 bg-white transition-all"
+        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 text-sm text-gray-900 bg-white transition-all"
       >
         <option value="">Manter atual</option>
         {[...topicosAjuda].filter(topico => topico.ativo).sort((a, b) => a.id - b.id).map((topico) => (
