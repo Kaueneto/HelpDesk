@@ -1321,6 +1321,7 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
                     >
                       {enviandoMensagem ? 'Enviando...' : 'Enviar'}
                     </button>
+                    
                   </div>
                 </div>
               </div>
