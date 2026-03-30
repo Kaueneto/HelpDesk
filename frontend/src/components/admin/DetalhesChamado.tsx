@@ -8,6 +8,7 @@ import ModalRedirecionarChamado from '@/app/admin/Modal/RedirecionarChamado';
 import ModalAssumirChamado from '@/app/admin/Modal/AssumirChamado';
 import ModalMarcarResolvido from '@/app/admin/Modal/MarcarResolvido';
 import ModalImprimirChamado from '@/app/admin/Modal/ModalImprimirChamado';
+import ModalEnviarAttPorEmail from '@/app/admin/Modal/EnviarAttPorEmail';
 import { Toaster, toast } from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -116,6 +117,8 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
   const [modalResolvidoAberto, setModalResolvidoAberto] = useState(false);
   // Estado do modal de impressão
   const [modalImprimirAberto, setModalImprimirAberto] = useState(false);
+  // Estado do modal de envio de email
+  const [modalEmailAberto, setModalEmailAberto] = useState(false);
   // Estado para animação de saída
   const [animandoSaida, setAnimandoSaida] = useState(false);
   // Estado para animação de entrada (slide-in)
@@ -201,6 +204,71 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const abrirModalEmail = () => {
+    setModalEmailAberto(true);
+  };
+
+  const fecharModalEmail = () => {
+    setModalEmailAberto(false);
+  };
+
+  const handleEnviarEmail = async (dados: {
+    destinatario: string;
+    mensagem: string;
+    statusId?: number;
+  }) => {
+    try {
+      const payload: any = {
+        destinatario: dados.destinatario,
+        mensagem: dados.mensagem,
+      };
+
+      //se mudar o status, incluir na requisicao
+      if (dados.statusId) {
+        payload.novoStatusId = dados.statusId;
+      }
+
+      await api.post(`/chamados/${chamadoId}/enviar-email`, payload);
+
+      toast.success('Email enviado com sucesso!', {
+        style: {
+          background: '#fff',
+          color: '#16a34a',
+          fontWeight: 'bold',
+          fontSize: '1rem',
+          borderRadius: '0.75rem',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+        },
+        iconTheme: {
+          primary: '#16a34a',
+          secondary: '#fff',
+        },
+      });
+
+      // recarregar dados para atualizar status se foi alterado
+      if (dados.statusId) {
+        await carregarDados();
+      }
+    } catch (error: any) {
+      const mensagemErro = error.response?.data?.mensagem || 'Erro ao enviar email';
+      toast.error(mensagemErro, {
+        style: {
+          background: '#fff',
+          color: '#dc2626',
+          fontWeight: 'bold',
+          fontSize: '1rem',
+          borderRadius: '0.75rem',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+        },
+        iconTheme: {
+          primary: '#dc2626',
+          secondary: '#fff',
+        },
+      });
+      throw error;
     }
   };
 
@@ -1313,11 +1381,17 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
                     </div>
                   )}
 
-                  <div className="flex justify-end mt-3">
+                <div className="flex justify-between mt-3">
+                 <button
+                      onClick={abrirModalEmail}
+                      className="px-6 py-2 border border-[#001960] text-[#001960] rounded hover:bg-[#001960] hover:text-white focus:bg-[#001960] focus:text-white transition font-medium text-sm disabled:border-gray-400 disabled:text-gray-400 disabled:cursor-not-allowed">
+                      {enviandoMensagem ? 'Enviando...' : 'Atualização por Email'}
+                    </button>
+  
                     <button
                       onClick={enviarMensagem}
                       disabled={enviandoMensagem || !novaMensagem.trim()}
-                      className="px-6 py-2 bg-[#001960] text-white rounded hover:bg-blue-700 transition font-medium text-sm disabled:bg-gray-400 disabled:cursor-not-allowed"
+                      className="px-6 py-2 bg-blue-700 text-white rounded hover:bg-blue-800 transition font-medium text-sm disabled:bg-gray-400 disabled:cursor-not-allowed"
                     >
                       {enviandoMensagem ? 'Enviando...' : 'Enviar'}
                     </button>
@@ -1374,6 +1448,14 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
         isOpen={modalImprimirAberto}
         onClose={() => setModalImprimirAberto(false)}
         onConfirm={handleImprimirChamado}
+      />
+      {/* Modal de Enviar Email */}
+      <ModalEnviarAttPorEmail
+        isOpen={modalEmailAberto}
+        onClose={fecharModalEmail}
+        onConfirm={handleEnviarEmail}
+        usuarioEmail={chamado?.usuario.email || ''}
+        chamadoId={chamadoId}
       />
     </div>
   );
