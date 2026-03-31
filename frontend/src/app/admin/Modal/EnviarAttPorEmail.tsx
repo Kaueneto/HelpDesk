@@ -100,20 +100,34 @@ const ModalEnviarAttPorEmail: React.FC<ModalEnviarAttPorEmailProps> = ({
   const [statuses, setStatuses] = useState<Status[]>([]);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (isOpen && chamadoId) {
-      carregarStatuses();
-    }
 
-    if (!isOpen) {
-      setDestinatarios(usuarioEmail ? [usuarioEmail] : []);
-      setMensagem('');
-      setStatusSelecionado(undefined);
-      setCcs([]);
-      setCcos([]);
-      setCcAtivo(false);
-      setCcoAtivo(false);
+  useEffect(() => {
+    async function initModal() {
+      if (isOpen && chamadoId) {
+        await carregarStatus();
+        // buscar status atual do chamado
+        try {
+          const resp = await api.get(`/chamados/${chamadoId}`);
+          if (resp.data && resp.data.status && resp.data.status.id) {
+            setStatusSelecionado(resp.data.status.id);
+          } else {
+            setStatusSelecionado(undefined);
+          }
+        } catch (err) {
+          setStatusSelecionado(undefined);
+        }
+      }
+      if (!isOpen) {
+        setDestinatarios(usuarioEmail ? [usuarioEmail] : []);
+        setMensagem('');
+        setStatusSelecionado(undefined);
+        setCcs([]);
+        setCcos([]);
+        setCcAtivo(false);
+        setCcoAtivo(false);
+      }
     }
+    initModal();
   }, [isOpen, chamadoId, usuarioEmail]);
 
   // quando carregar os statuses, define o status atual do chamado como selecionado
@@ -191,7 +205,7 @@ const ModalEnviarAttPorEmail: React.FC<ModalEnviarAttPorEmailProps> = ({
     }
   }
 
-  const carregarStatuses = async () => {
+  const carregarStatus = async () => {
     try {
       const response = await api.get('/status');
       setStatuses(response.data);
