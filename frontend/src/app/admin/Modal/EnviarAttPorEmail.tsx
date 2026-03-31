@@ -139,25 +139,25 @@ const ModalEnviarAttPorEmail: React.FC<ModalEnviarAttPorEmailProps> = ({
 
   // funcoes para mensagens de status
   function getMensagemStatusAberto() {
-    return 'Recebemos sua solicitação e ela será analisada em breve.';
+    return 'Sua solicitação foi registrada e será analisada em breve.';
   }
   function getMensagemStatusEmAnalise() {
-    return 'Já estamos verificando sua solicitação e seguimos trabalhando nela.';
+    return 'Sua solicitação já está em verificação e segue em andamento.';
   }
   function getMensagemStatusConcluido() {
-    return 'Sua solicitação foi concluída. Se algo não estiver certo, é só nos avisar.';
+    return 'Sua solicitação foi concluída. Se algo não estiver certo, é só avisar.';
   }
   function getMensagemStatusAtrasado() {
-    return 'Tivemos um problema com a resolução da sua demanda, mas ela continua em andamento.';
+    return 'Houve um imprevisto na resolução desta solicitação, mas ela segue em andamento.';
   }
   function getMensagemStatusReaberto() {
-    return 'Retornamos o atendimento para sua solicitação.';
+    return 'A solicitação foi reaberta para continuidade do atendimento.';
   }
   function getMensagemStatusPendenteUsuario() {
-    return 'Estamos aguardando seu retorno para dar continuidade à solicitação.';
+    return 'Aguardando seu retorno para dar continuidade à solicitação.';
   }
   function getMensagemStatusPendenteTerceiros() {
-    return 'Sua solicitação depende de outra área no momento e estamos acompanhando o andamento.';
+  return 'A solicitação depende de outra área no momento e segue em acompanhamento.';
   }
 
   // funcao para obter a mensagem de acordo com o status selecionado

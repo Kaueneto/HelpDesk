@@ -63,24 +63,24 @@ const mailOptions: any = {
       </p>
       <p style="margin: 0; font-size: 14px; color: #111; font-weight: 500;">
         ${(() => {
-          switch (chamado.status?.id) {
-            case 1:
-              return 'Recebemos sua solicitação e vamos analisar em breve.';
-            case 2:
-              return 'Estamos trabalhando na sua solicitação.';
-            case 3:
-              return 'Sua solicitação foi concluída.';
-            case 4:
-              return 'Encontramos um problema, mas seguimos trabalhando na solução.';
-            case 5:
-              return 'O atendimento foi retomado.';
-            case 6:
-              return 'Estamos aguardando seu retorno para continuar.';
-            case 7:
-              return 'No momento, depende de outra área. Estamos acompanhando.';
-            default:
-              return chamado.status?.nome || '';
-          }
+        switch (chamado.status?.id) {
+          case 1:
+            return 'Sua solicitação foi registrada e será analisada em breve.';
+          case 2:
+            return 'Sua solicitação já está em verificação e segue em andamento.';
+          case 3:
+            return 'Sua solicitação foi concluída. Se algo não estiver certo, é só avisar.';
+          case 4:
+            return 'Houve um imprevisto na resolução desta solicitação, mas ela segue em andamento.';
+          case 5:
+            return 'A solicitação foi reaberta para continuidade do atendimento.';
+          case 6:
+            return 'Aguardando seu retorno para dar continuidade à solicitação.';
+          case 7:
+            return 'A solicitação depende de outra área no momento e segue em acompanhamento.';
+          default:
+            return chamado.status?.nome || '';
+        }
         })()}
       </p>
     </div>
