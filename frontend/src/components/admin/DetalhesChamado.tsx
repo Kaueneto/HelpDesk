@@ -1403,7 +1403,7 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
           </div>
         ) : (
           <div className="bg-white rounded-lg border border-gray-300 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-3 border-b border-gray-300">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-3 border-b border-gray-300 font-segoe">
               Histórico do Chamado
             </h3>
             <div className="space-y-4">
