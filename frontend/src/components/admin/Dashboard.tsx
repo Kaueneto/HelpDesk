@@ -65,12 +65,15 @@ export default function Dashboard() {
     if (!dataInicio || !dataFim) return;
     setLoading(true);
     try {
-      // formatar datas para yyyy-MM-dd
+      // formatar datas para yyyy-MM-dd e garantir que dataAberturaFim inclua o final do dia
       const dataAberturaInicio = dataInicio.toISOString().slice(0, 10);
-      const dataAberturaFim = dataFim.toISOString().slice(0, 10);
+      // dataFim ajustado para 23:59:59
+      const dataFimAjustada = new Date(dataFim);
+      dataFimAjustada.setHours(23, 59, 59, 999);
+      const dataAberturaFim = dataFimAjustada.toISOString().slice(0, 19).replace('T', ' ');
       const response = await api.get('/chamados', {
         params: {
-          pageSize: 10000,
+          pageSize: 999999,
           dataAberturaInicio,
           dataAberturaFim
         }
@@ -92,14 +95,16 @@ export default function Dashboard() {
  
   //funcao pra gerar dados do grafico de linhas de chamados internos x externos 
   function processarInternoExterno(chamados: any[]) {
-    // agrupar por dia
+    // agrupar por dia apenas se houver chamados
     const map: Record<string, { interno: number; externo: number }> = {};
     chamados.forEach(c => {
       const data = new Date(c.dataAbertura);
-      // normalizar para data local (ou UTC, conforme padrão do sistema)
-      const dia = data.toISOString().slice(0, 10); // yyyy-mm-dd
+      // Corrigir para data local (yyyy-mm-dd no fuso do navegador)
+      const ano = data.getFullYear();
+      const mes = String(data.getMonth() + 1).padStart(2, '0');
+      const diaNum = String(data.getDate()).padStart(2, '0');
+      const dia = `${ano}-${mes}-${diaNum}`;
       // se o chamado foi criado por admin (roleId === 1), é interno
-    
       const isInterno = c.usuario?.roleId === 1 || c.usuario?.role_id === 1 || c.usuario?.role === 1;
       if (!map[dia]) map[dia] = { interno: 0, externo: 0 };
       if (isInterno) map[dia].interno++;
@@ -107,6 +112,12 @@ export default function Dashboard() {
     });
     // ordenar por data
     const datas = Object.keys(map).sort();
+    // DEBUG: logar datas encontradas e range selecionado
+    if (datas.length > 0) {
+      console.log('Dias com chamados:', datas);
+      console.log('Range selecionado:', dataInicio, dataFim);
+    }
+    // Montar apenas dias com chamados
     const dados = datas.map(dia => ({
       dia,
       Interno: map[dia].interno,
@@ -413,12 +424,14 @@ export default function Dashboard() {
 
           <XAxis
         dataKey="dia"
-        tickFormatter={(value) =>
-            new Date(value).toLocaleDateString("pt-BR", {
-            day: "2-digit",
-            month: "2-digit"
-          })
-        }
+        tickFormatter={(value) => {
+          // value é yyyy-mm-dd, montar data local corretamente
+          if (typeof value === 'string' && value.length === 10) {
+            const [ano, mes, dia] = value.split('-');
+            return `${dia}/${mes}`;
+          }
+          return value;
+        }}
         tick={{ fontSize: 12, fill: "#6B7280" }}
         axisLine={false}
         tickLine={false}
@@ -435,11 +448,16 @@ export default function Dashboard() {
       />
 
         <Tooltip
-       labelFormatter={(value) =>
-             new Date(value).toLocaleDateString("pt-BR")
-        }
+        labelFormatter={(value) => {
+
+          if (typeof value === 'string' && value.length === 10) {
+            const [ano, mes, dia] = value.split('-');
+            return `${dia}/${mes}/${ano}`;
+          }
+          return value;
+        }}
         contentStyle={{
-          backgroundColor: "#111827",
+          background: "#111827",
           border: "none",
           borderRadius: "5px",
           color: "#fff",

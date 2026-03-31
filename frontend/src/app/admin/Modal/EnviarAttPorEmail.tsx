@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import api from '@/services/api';
 import { toast } from 'react-hot-toast';
 
@@ -10,13 +10,76 @@ interface Status {
 interface ModalEnviarAttPorEmailProps {
   isOpen: boolean;
   onConfirm: (dados: {
-    destinatario: string;
+    destinatario: string; // pode ser múltiplos meails separados por vírgula
     mensagem: string;
     statusId?: number;
+    cc?: string; // pode ser múltiplos meails separados por vírgula
+    cco?: string; // pode ser múltiplos meails separados por vírgula
+    incluirTopico?: boolean;
   }) => Promise<void>;
   onClose: () => void;
   usuarioEmail?: string;
   chamadoId?: string;
+}
+
+function EmailBadgeInput({ label, emails, setEmails, disabled }: { label: string, emails: string[], setEmails: (v: string[]) => void, disabled?: boolean }) {
+  const [input, setInput] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  function addEmail(val: string) {
+    const parts = val.split(',').map(e => e.trim()).filter(Boolean);
+    let added = false;
+    parts.forEach(email => {
+      if (emailRegex.test(email) && !emails.includes(email)) {
+        setEmails([...emails, email]);
+        added = true;
+      }
+    });
+    if (added) setInput('');
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      addEmail(input);
+    } else if (e.key === 'Backspace' && !input && emails.length > 0) {
+      setEmails(emails.slice(0, -1));
+    }
+  }
+
+  function handleBlur() {
+    addEmail(input);
+  }
+
+  function removeEmail(idx: number) {
+    setEmails(emails.filter((_, i) => i !== idx));
+  }
+
+  return (
+    <div className="mb-4">
+      <label className="block text-sm font-medium text-gray-700 mb-2">{label}</label>
+      <div className="flex flex-wrap items-center gap-2 border border-gray-300 rounded-lg px-2 py-1 bg-white min-h-11">
+        {emails.map((email, idx) => (
+          <span key={email} className="flex items-center bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium mr-1 mb-1">
+            {email}
+            <button type="button" className="ml-1 text-blue-500 hover:text-red-500 focus:outline-none" onClick={() => removeEmail(idx)} disabled={disabled}>&times;</button>
+          </span>
+        ))}
+        <input
+          ref={inputRef}
+          type="text"
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+          onBlur={handleBlur}
+          disabled={disabled}
+          className="flex-1 min-w-30 px-2 py-1 border-none focus:ring-0 text-gray-900 bg-transparent outline-none"
+          placeholder="Digite e pressione Enter"
+        />
+      </div>
+    </div>
+  );
 }
 
 const ModalEnviarAttPorEmail: React.FC<ModalEnviarAttPorEmailProps> = ({
@@ -26,12 +89,13 @@ const ModalEnviarAttPorEmail: React.FC<ModalEnviarAttPorEmailProps> = ({
   usuarioEmail = '',
   chamadoId,
 }) => {
-  const [destinatario, setDestinatario] = useState(usuarioEmail);
+  const [destinatarios, setDestinatarios] = useState<string[]>(usuarioEmail ? [usuarioEmail] : []);
   const [ccAtivo, setCcAtivo] = useState(false);
   const [ccoAtivo, setCcoAtivo] = useState(false);
-  const [cc, setCc] = useState('');
-  const [cco, setCco] = useState('');
+  const [ccs, setCcs] = useState<string[]>([]);
+  const [ccos, setCcos] = useState<string[]>([]);
   const [mensagem, setMensagem] = useState('');
+  const [incluirTopico, setIncluirTopico] = useState(false);
   const [statusSelecionado, setStatusSelecionado] = useState<number | undefined>(undefined);
   const [statuses, setStatuses] = useState<Status[]>([]);
   const [loading, setLoading] = useState(false);
@@ -42,11 +106,11 @@ const ModalEnviarAttPorEmail: React.FC<ModalEnviarAttPorEmailProps> = ({
     }
 
     if (!isOpen) {
-      setDestinatario(usuarioEmail);
+      setDestinatarios(usuarioEmail ? [usuarioEmail] : []);
       setMensagem('');
       setStatusSelecionado(undefined);
-      setCc('');
-      setCco('');
+      setCcs([]);
+      setCcos([]);
       setCcAtivo(false);
       setCcoAtivo(false);
     }
@@ -140,28 +204,9 @@ const ModalEnviarAttPorEmail: React.FC<ModalEnviarAttPorEmailProps> = ({
 
   const handleConfirm = async () => {
     // validações
-    if (!destinatario.trim()) {
-      toast.error('Por favor, preencha o campo de destinatário', {
-        style: {
-          background: '#fff',
-          color: '#dc2626',
-          fontWeight: 'bold',
-          fontSize: '0.875rem',
-          borderRadius: '0.75rem',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-        },
-        iconTheme: {
-          primary: '#dc2626',
-          secondary: '#fff',
-        },
-      });
-      return;
-    }
 
-    // validar formato de email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(destinatario)) {
-      toast.error('Por favor, insira um email válido', {
+    if (destinatarios.length === 0) {
+      toast.error('Por favor, insira ao menos um email válido para destinatário.', {
         style: {
           background: '#fff',
           color: '#dc2626',
@@ -201,13 +246,16 @@ const ModalEnviarAttPorEmail: React.FC<ModalEnviarAttPorEmailProps> = ({
     try {
       setLoading(true);
       await onConfirm({
-        destinatario,
+        destinatario: destinatarios.join(','),
         mensagem,
         statusId: statusSelecionado,
+        cc: ccs.length > 0 ? ccs.join(',') : undefined,
+        cco: ccos.length > 0 ? ccos.join(',') : undefined,
+        incluirTopico
       });
       onClose();
     } catch (error) {
-
+      // erro silencioso
     } finally {
       setLoading(false);
     }
@@ -220,64 +268,34 @@ const ModalEnviarAttPorEmail: React.FC<ModalEnviarAttPorEmailProps> = ({
           Atualização de chamado por email
         </h2>
 
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Destinatário</label>
-          <div className="flex gap-2 items-center">
-            <input
-              type="email"
-              value={destinatario}
-              onChange={(e) => setDestinatario(e.target.value)}
-              placeholder="Digite o email do destinatário"
-              disabled={loading}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 disabled:bg-gray-100 disabled:cursor-not-allowed transition-all"
-            />
-            <button
-              type="button"
-              onClick={() => setCcAtivo((v) => !v)}
-              className={`px-3 py-2 border rounded-lg font-medium text-xs transition-all duration-150 flex items-center gap-1 ${ccAtivo ? 'bg-blue-100 border-blue-500 text-blue-700' : 'border-gray-300 text-gray-600 hover:bg-gray-100 hover:border-blue-400'}`}
-              disabled={loading}
-              title="Adicionar cópia (CC)"
-            >
-              CC
-            </button>
-            <button
-              type="button"
-              onClick={() => setCcoAtivo((v) => !v)}
-              className={`px-3 py-2 border rounded-lg font-medium text-xs transition-all duration-150 flex items-center gap-1 ${ccoAtivo ? 'bg-blue-100 border-blue-500 text-blue-700' : 'border-gray-300 text-gray-600 hover:bg-gray-100 hover:border-blue-400'}`}
-              disabled={loading}
-              title="Adicionar cópia oculta (CCO)"
-            >
-              CCO
-            </button>
-          </div>
+        <EmailBadgeInput label="Destinatário(s)" emails={destinatarios} setEmails={setDestinatarios} disabled={loading} />
+        <div className="flex gap-2 mb-4">
+          <button
+            type="button"
+            onClick={() => setCcAtivo((v) => !v)}
+            className={`px-3 py-2 border rounded-lg font-medium text-xs transition-all duration-150 flex items-center gap-1 ${ccAtivo ? 'bg-blue-100 border-blue-500 text-blue-700' : 'border-gray-300 text-gray-600 hover:bg-gray-100 hover:border-blue-400'}`}
+            disabled={loading}
+            title="Adicionar cópia (CC)"
+          >
+            CC
+          </button>
+          <button
+            type="button"
+            onClick={() => setCcoAtivo((v) => !v)}
+            className={`px-3 py-2 border rounded-lg font-medium text-xs transition-all duration-150 flex items-center gap-1 ${ccoAtivo ? 'bg-blue-100 border-blue-500 text-blue-700' : 'border-gray-300 text-gray-600 hover:bg-gray-100 hover:border-blue-400'}`}
+            disabled={loading}
+            title="Adicionar cópia oculta (CCO)"
+          >
+            CCO
+          </button>
         </div>
 
         {ccAtivo && (
-          <div className="mb-4 animate-fadeIn">
-            <label className="block text-xs font-medium text-gray-600 mb-1">Cópia (CC)</label>
-            <input
-              type="email"
-              value={cc}
-              onChange={(e) => setCc(e.target.value)}
-              placeholder="Email para cópia (CC)"
-              disabled={loading}
-              className="w-full px-3 py-2 border border-blue-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-400 text-gray-900 disabled:bg-gray-100 disabled:cursor-not-allowed transition-all"
-            />
-          </div>
+          <EmailBadgeInput label="Cópia (CC)" emails={ccs} setEmails={setCcs} disabled={loading} />
         )}
 
         {ccoAtivo && (
-          <div className="mb-4 animate-fadeIn">
-            <label className="block text-xs font-medium text-gray-600 mb-1">Cópia Oculta (CCO)</label>
-            <input
-              type="email"
-              value={cco}
-              onChange={(e) => setCco(e.target.value)}
-              placeholder="Email para cópia oculta (CCO)"
-              disabled={loading}
-              className="w-full px-3 py-2 border border-blue-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-400 text-gray-900 disabled:bg-gray-100 disabled:cursor-not-allowed transition-all"
-            />
-          </div>
+          <EmailBadgeInput label="Cópia Oculta (CCO)" emails={ccos} setEmails={setCcos} disabled={loading} />
         )}
 
 
@@ -291,6 +309,16 @@ const ModalEnviarAttPorEmail: React.FC<ModalEnviarAttPorEmailProps> = ({
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 resize-none disabled:bg-gray-100 disabled:cursor-not-allowed transition-all"
             placeholder="Digite a mensagem ou atualização do chamado..."
           />
+          <label className="flex items-center gap-2 mt-2 select-none">
+            <input
+              type="checkbox"
+              checked={incluirTopico}
+              onChange={() => setIncluirTopico((v) => !v)}
+              disabled={loading}
+              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            />
+            <span className="text-xs text-gray-700">Incluir no email o tópico do chamado</span>
+          </label>
         </div>
 
         <div className="mb-6">
@@ -322,7 +350,7 @@ const ModalEnviarAttPorEmail: React.FC<ModalEnviarAttPorEmailProps> = ({
           <button
             onClick={onClose}
             disabled={loading}
-            className="px-4 py-2 border border-gray-400 text-gray-600 rounded-lg hover:bg-gray-100 hover:text-blue-700 transition-all font-medium text-sm whitespace-nowrap shadow-sm"
+            className="px-4 py-2 border border-gray-400 text-gray-600 rounded-lg hover:bg-gray-100 transition-all font-medium text-sm whitespace-nowrap shadow-sm"
           >
             Cancelar
           </button>

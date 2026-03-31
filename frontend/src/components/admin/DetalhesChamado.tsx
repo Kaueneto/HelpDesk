@@ -2,6 +2,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+
+import { MdEmail } from 'react-icons/md';
 import { useRouter } from 'next/navigation';
 import api from '@/services/api';
 import ModalRedirecionarChamado from '@/app/admin/Modal/RedirecionarChamado';
@@ -72,6 +74,10 @@ interface Mensagem {
     name: string;
   };
   anexos?: Anexo[];
+  enviadoPorEmail?: boolean;
+  email_enviado?: string;
+  email_copia?: string;
+  email_copia_oculta?: string;
 }
 
 interface Historico {
@@ -219,20 +225,20 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
     destinatario: string;
     mensagem: string;
     statusId?: number;
+    cc?: string;
+    cco?: string;
+    incluirTopico?: boolean;
   }) => {
     try {
       const payload: any = {
         destinatario: dados.destinatario,
         mensagem: dados.mensagem,
+        cc: dados.cc,
+        cco: dados.cco,
+        statusId: dados.statusId,
+        incluirTopico: dados.incluirTopico,
       };
-
-      //se mudar o status, incluir na requisicao
-      if (dados.statusId) {
-        payload.novoStatusId = dados.statusId;
-      }
-
-      await api.post(`/chamados/${chamadoId}/enviar-email`, payload);
-
+      await api.post(`/chamados/${chamadoId}/enviar-atualizacao-email`, payload);
       toast.success('Email enviado com sucesso!', {
         style: {
           background: '#fff',
@@ -247,7 +253,6 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
           secondary: '#fff',
         },
       });
-
       // recarregar dados para atualizar status se foi alterado
       if (dados.statusId) {
         await carregarDados();
@@ -1250,7 +1255,7 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
                 <div className="p-5 space-y-4 max-h-125 overflow-y-auto">
                   {mensagens.map((msg) => {
                     const isUsuarioChamado = msg.usuario.id === chamado.usuario.id;
-                    
+                    const enviadoPorEmail = msg.enviadoPorEmail === true;
                     return (
                       <div
                         key={msg.id}
@@ -1266,16 +1271,35 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
                               {msg.usuario.name}
                             </span>
                             <span className="text-xs text-gray-500">{formatarData(msg.dataEnvio)}</span>
+
+                            {enviadoPorEmail && (
+                              <span
+                                title="Mensagem enviada por email"
+                                className="ml-1 align-middle cursor-pointer"
+                              >
+                                <MdEmail className="inline text-blue-500" size={18} />
+                              </span>
+                            )}
                           </div>
+                          {/* exibição de emails enviados na mensagem */}
+                          {enviadoPorEmail && (
+                            <div className="mb-2 text-xs text-gray-600 space-y-0.5 border-b border-gray-300 pb-2">
+                              <div><span className="font-semibold">Enviado para:</span> {msg.email_enviado}</div>
+                              {msg.email_copia && (
+                                <div><span className="font-semibold">Cópia (CC):</span> {msg.email_copia}</div>
+                              )}
+                              {msg.email_copia_oculta && (
+                                <div><span className="font-semibold">Cópia Oculta (CCO):</span> {msg.email_copia_oculta}</div>
+                              )}
+                            </div>
+                          )}
                           <p className="text-gray-700 text-base whitespace-pre-wrap">{msg.mensagem}</p>
-                          
                           {/* Anexos da mensagem */}
                           {msg.anexos && msg.anexos.length > 0 && (
                             <div className="mt-3 space-y-1">
                               {msg.anexos.map((anexo) => {
                                 const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(anexo.filename);
                                 const fileUrl = anexo.signedUrl || '#';
-                                
                                 return (
                                   <a
                                     key={anexo.id}

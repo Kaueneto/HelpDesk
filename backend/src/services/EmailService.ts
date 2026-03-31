@@ -1,10 +1,120 @@
+
+
+
 import nodemailer from "nodemailer";
 import { AppDataSource } from "../data-source";
 import { Users } from "../entities/Users";
 import { Chamados } from "../entities/Chamados";
 import { PrefUsers } from "../entities/PrefUsers";
 
+//enviar atualizacao de chamado por email 
+export async function enviarAtualizacaoChamadoPorEmail({ chamado, usuario, destinatario, mensagem, nomeRemetente, cc, cco, incluirTopico }: {
+  chamado: any,
+  usuario: any,
+  destinatario: string,
+  mensagem: string,
+  nomeRemetente: string,
+  cc?: string,
+  cco?: string,
+  incluirTopico?: boolean,
+}) {
+  try {
+    const transporter = require('nodemailer').createTransport({
+      host: process.env.EMAIL_HOST,
+      port: Number(process.env.EMAIL_PORT),
+      secure: false,
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+const mailOptions: any = {
+  from: process.env.EMAIL_FROM,
+  to: destinatario,
+  subject: `Atualização no Ticket #${chamado.numeroChamado} - ${chamado.resumoChamado}`,
+  html: `
+<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f6f8;">
+  <div style="background-color: #ffffff; padding: 24px 28px; border-radius: 8px; border: 1px solid #e5e7eb;">
+    
+    <!-- TÍTULO -->
+    <h2 style="color: #2563eb; margin-bottom: 16px;">
+      Atualização no Ticket #${chamado.numeroChamado}
+    </h2>
 
+    <p style="font-size: 14px; color: #111; margin-bottom: 14px;">
+      <strong>Assunto:</strong> ${chamado.resumoChamado}
+    </p>
+
+    <!-- MENSAGEM -->
+    <div style="margin-bottom: 20px;">
+      <p style="font-size: 13px; color: #555; margin-bottom: 6px;">
+        <strong>${nomeRemetente} comentou:</strong>
+      </p>
+
+      <div style="font-size: 14px; color: #111; line-height: 1.5; background-color: #f4f6f8; padding: 12px; border-radius: 4px;">
+        ${mensagem.replace(/\n/g, '<br>')}
+      </div>
+    </div>
+
+    <!-- STATUS (DEPOIS DA MENSAGEM) -->
+    <div style="background-color: #f4f6f8; padding: 14px 16px; border-radius: 6px; border-left: 4px solid ${chamado.status?.cor || '#2563eb'}; margin-bottom: 20px;">
+      <p style="margin: 0 0 6px 0; font-size: 13px; color: #555;">
+        <strong>Status atual:</strong>
+      </p>
+      <p style="margin: 0; font-size: 14px; color: #111; font-weight: 500;">
+        ${(() => {
+          switch (chamado.status?.id) {
+            case 1:
+              return 'Recebemos sua solicitação e vamos analisar em breve.';
+            case 2:
+              return 'Estamos trabalhando na sua solicitação.';
+            case 3:
+              return 'Sua solicitação foi concluída.';
+            case 4:
+              return 'Encontramos um problema, mas seguimos trabalhando na solução.';
+            case 5:
+              return 'O atendimento foi retomado.';
+            case 6:
+              return 'Estamos aguardando seu retorno para continuar.';
+            case 7:
+              return 'No momento, depende de outra área. Estamos acompanhando.';
+            default:
+              return chamado.status?.nome || '';
+          }
+        })()}
+      </p>
+    </div>
+
+    <!-- DETALHES -->
+    <div style="margin-bottom: 20px;">
+      <p style="margin: 0 0 6px 0; font-size: 13px; color: #555;">
+        <strong>Número do ticket:</strong> #${chamado.numeroChamado}
+      </p>
+      <p style="margin: 0 0 6px 0; font-size: 13px; color: #555;">
+        <strong>Data de abertura:</strong> ${new Date(chamado.dataAbertura).toLocaleString('pt-BR')}
+      </p>
+      ${incluirTopico ? `<p style="margin: 0; font-size: 13px; color: #555;"><strong>Tópico de assunto:</strong> ${chamado.topicoAjuda?.nome || chamado.topico?.nome}</p>` : ''}
+    </div>
+
+    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;">
+
+    <p style="font-size: 12px; color: #777; margin: 0;">
+      Este e-mail é apenas informativo, não responda.
+    </p>
+
+  </div>
+</div>
+`
+    };
+    if (cc) mailOptions.cc = cc;
+    if (cco) mailOptions.bcc = cco;
+    await transporter.sendMail(mailOptions);
+  } catch (error) {
+    console.error('Erro ao enviar email de atualização:', error);
+    // lançar o  erro para o controller capturar e retornar ao frontend
+    throw new Error('Falha ao enviar email. Verifique os destinatários e tente novamente.');
+  }
+}
 
 //  verificar preferencias do usuário
 export async function verificarPreferenciasUsuario(userId: number): Promise<number[]> {
@@ -229,10 +339,10 @@ export async function enviarEmailConfirmacaoUsuario(usuario: Users, chamado: Cha
             <div style="background-color: #e9f7ef; padding: 20px; border-radius: 8px; border-left: 4px solid #28a745; margin-bottom: 25px;">
               <h3 style="color: #1e7e34; margin-top: 0; margin-bottom: 15px;">Detalhes do Chamado:</h3>
               <ul style="list-style: none; padding: 0; margin: 0;">
-                <li style="margin-bottom: 10px;"><strong>Número:</strong> #${chamado.numeroChamado}</li>
+                <li style="margin-bottom: 10px;"><strong>Número do ticket:</strong> #${chamado.numeroChamado}</li>
                 <li style="margin-bottom: 10px;"><strong>Resumo:</strong> ${chamado.resumoChamado}</li>
                 <li style="margin-bottom: 10px;"><strong>Data de Abertura:</strong> ${new Date(chamado.dataAbertura).toLocaleString('pt-BR')}</li>
-                <li style="margin-bottom: 10px;"><strong>Status:</strong> <span style="color: #f39c12; font-weight: bold;">Aberto</span></li>
+                <li style="margin-bottom: 10px;"><strong>Status atual:</strong> <span style="color: #f39c12; font-weight: bold;">Aberto</span></li>
               </ul>
             </div>
             
@@ -512,3 +622,5 @@ export async function enviarEmailChamadoCriadoPorAdmin(
     console.error("Erro ao enviar email de chamado criado por admin:", error);
   }
 }
+
+

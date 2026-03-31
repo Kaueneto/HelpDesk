@@ -1160,7 +1160,7 @@ export default function GerenciarChamados() {
                     type="button"
                     onClick={() => setOcultarConcluidos(!ocultarConcluidos)}
                     className={`
-                      relative w-10 h-5 rounded-full transition-colors duration-100 flex-shrink-0
+                      relative w-10 h-5 rounded-full transition-colors duration-100 shrink-0
                       ${ocultarConcluidos ? "bg-blue-600" : "bg-gray-300"}
                     `}
                   >

@@ -24,6 +24,121 @@ interface AuthenticatedRequest extends Request {
 
 const router = Router();
 
+// rota pra enviar atualizacao por email com cc, cco e alteracao de status
+router.post(
+  "/chamados/:id/enviar-atualizacao-email",
+  verifyToken,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { destinatario, mensagem, statusId, cc, cco, incluirTopico } = req.body;
+      const chamadoId = Number(req.params.id);
+      const usuarioId = req.userId;
+
+      if (!destinatario || !mensagem || !chamadoId) {
+        return res.status(400).json({ error: 'Campos obrigatórios ausentes.' });
+      }
+
+      const chamadoRepository = AppDataSource.getRepository(Chamados);
+      const userRepository = AppDataSource.getRepository(Users);
+      const statusRepository = AppDataSource.getRepository(StatusChamado);
+
+      const chamado = await chamadoRepository.findOne({
+        where: { id: chamadoId },
+        relations: ["usuario", "status", "topicoAjuda"],
+      });
+      if (!chamado) return res.status(404).json({ error: 'Chamado não encontrado.' });
+      const usuario = chamado.usuario;
+
+      // salvar status anterior antes de qualquer alteração
+      let statusAnterior = chamado.status;
+      let statusNovo = chamado.status;
+      let alterouStatus = false;
+      if (statusId && chamado.status?.id !== statusId) {
+        const novoStatus = await statusRepository.findOne({ where: { id: statusId } });
+        if (novoStatus) {
+          chamado.status = novoStatus;
+          await chamadoRepository.save(chamado);
+          statusNovo = novoStatus;
+          alterouStatus = true;
+        }
+      }
+
+      // buscar nome do usuário que está enviando (admin ou usuario normalç)
+      let nomeRemetente = "Equipe de Suporte";
+      if (usuarioId) {
+        const remetente = await userRepository.findOne({ where: { id: usuarioId } });
+        if (remetente) nomeRemetente = remetente.name;
+      }
+
+
+      const mensagensRepository = AppDataSource.getRepository(ChamadoMensagens);
+      const usuarioMensagem = usuarioId
+        ? await userRepository.findOne({ where: { id: usuarioId } })
+        : null;
+
+      console.log('EMAIL DEBUG:', {
+        destinatario,
+        cc,
+        cco,
+        mensagem,
+        chamadoId,
+        usuarioId
+      });
+
+      await mensagensRepository.save({
+        usuario: usuarioMensagem || usuario,
+        chamado: chamado,
+        mensagem: mensagem,
+        enviadoPorEmail: true,
+        email_enviado: destinatario || '',
+        email_copia: cc || '',
+        email_copia_oculta: cco || '',
+      });
+
+      // registrar o  histórico sempre que enviar atualização por email
+      const historicoRepository = AppDataSource.getRepository(require("../entities/ChamadoHistorico").ChamadoHistorico);
+      let acaoHistorico = "Mensagem enviada através de atualização no Email.";
+      if (alterouStatus && statusNovo) {
+        acaoHistorico = `Mensagem enviada através de atualização no Email e status atualizado para: ${statusNovo.nome}`;
+      }
+      await historicoRepository.save({
+        chamado: chamado,
+        usuario: usuarioMensagem || usuario,
+        acao: acaoHistorico,
+        dataMov: new Date(),
+        statusAnterior: statusAnterior,
+        statusNovo: statusNovo,
+      });
+
+      // enviar o email
+      try {
+        await EmailService.enviarAtualizacaoChamadoPorEmail({
+          chamado,
+          usuario,
+          destinatario,
+          mensagem,
+          nomeRemetente,
+          cc,
+          cco,
+          incluirTopico: !!incluirTopico,
+        });
+        return res.status(200).json({ message: 'Email enviado com sucesso.' });
+
+      } catch (error: any) {
+        console.error(error);
+        // retorna mensagem amigável ao frontend caso tenha erro
+        return res.status(500).json({ mensagem: error.message || 'Erro ao enviar o email.' });
+      }
+    }catch (error: any) {
+      console.error(error);
+      return res.status(500).json({
+        mensagem: error.message || 'Erro geral na rota.'
+      });
+    }
+  
+  }
+  
+);
 
 //cadastrar chamado //novo chamado
 router.post("/chamados", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
@@ -488,16 +603,48 @@ router.get("/chamados", verifyToken, async (req: AuthenticatedRequest, res: Resp
         queryBuilder.andWhere("userResponsavel.name ILIKE :nomeResponsavel", { nomeResponsavel: `%${nomeResponsavel}%` });
       }
 
-      // Filtro por data de abertura
-      if (dataAberturaInicio && dataAberturaFim) {
+      // filtro por data de abertura
+      let dataAberturaFimAjustada = dataAberturaFim;
+      if (
+        typeof dataAberturaFim === 'string' &&
+        dataAberturaFim.length >= 10 &&
+        !Array.isArray(dataAberturaFim)
+      ) {
+        // ajustar para o final do dia no horário local do Brasil (BRT)
+        const [ano, mes, dia] = dataAberturaFim.split('T')[0].split('-').map(Number);
+        if (ano && mes && dia) {
+
+          const fimLocal = new Date(ano, mes - 1, dia, 23, 59, 59, 999);
+          // converter para string no formato ISO local (sem UTC/Z)
+          const pad = (n: number) => n.toString().padStart(2, '0');
+          const dataAberturaFimStr = `${ano}-${pad(mes)}-${pad(dia)} 23:59:59`;
+          dataAberturaFimAjustada = dataAberturaFimStr;
+        }
+      }
+      if (
+        typeof dataAberturaInicio === 'string' &&
+        dataAberturaInicio.length >= 10 &&
+        !Array.isArray(dataAberturaInicio) &&
+        typeof dataAberturaFimAjustada === 'string' &&
+        dataAberturaFimAjustada.length >= 10 &&
+        !Array.isArray(dataAberturaFimAjustada)
+      ) {
         queryBuilder.andWhere("chamado.data_abertura BETWEEN :dataAberturaInicio AND :dataAberturaFim", {
           dataAberturaInicio,
-          dataAberturaFim,
+          dataAberturaFim: dataAberturaFimAjustada,
         });
-      } else if (dataAberturaInicio) {
+      } else if (
+        typeof dataAberturaInicio === 'string' &&
+        dataAberturaInicio.length >= 10 &&
+        !Array.isArray(dataAberturaInicio)
+      ) {
         queryBuilder.andWhere("chamado.data_abertura >= :dataAberturaInicio", { dataAberturaInicio });
-      } else if (dataAberturaFim) {
-        queryBuilder.andWhere("chamado.data_abertura <= :dataAberturaFim", { dataAberturaFim });
+      } else if (
+        typeof dataAberturaFimAjustada === 'string' &&
+        dataAberturaFimAjustada.length >= 10 &&
+        !Array.isArray(dataAberturaFimAjustada)
+      ) {
+        queryBuilder.andWhere("chamado.data_abertura <= :dataAberturaFim", { dataAberturaFim: dataAberturaFimAjustada });
       }
 
       // Filtro por data de fechamento
@@ -1848,5 +1995,5 @@ router.delete("/chamados/excluir-multiplos", verifyToken, async (req: Authentica
     });
   }
 });
-
+  
 export default router;

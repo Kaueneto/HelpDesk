@@ -32,4 +32,17 @@ export class ChamadoMensagens {
 
   @CreateDateColumn({ name: "data_envio", type: "timestamp" })
   dataEnvio!: Date;
+
+  @Column({ name: "enviado_por_email", type: "boolean", default: false })
+  enviadoPorEmail!: boolean;
+
+  @Column({ name: "email_enviado", type: "text" })
+  email_enviado!: string;
+  
+  @Column({ name: "email_copia", type: "text" })
+  email_copia!: string;
+  
+  @Column({ name: "email_copia_oculta", type: "text" })
+  email_copia_oculta!: string;
+
 }
