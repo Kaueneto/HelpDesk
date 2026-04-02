@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import Select from 'react-select';
 import api from '@/services/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import ModalNovoChamado from '@/app/admin/Modal/ModalNovoChamado';
@@ -88,6 +89,7 @@ export default function GerenciarChamados() {
     const [pageSliding, setPageSliding] = useState(false);
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { theme } = useTheme();
   
   // filtros
   const [dataAberturaInicio, setDataAberturaInicio] = useState<Date | null>(null);
@@ -708,14 +710,14 @@ export default function GerenciarChamados() {
   };
 
   return (
-    <div className={pageSliding ? 'slideOutLeft' : ''}>
-      <div className="bg-[#1A68CF] px-6 py-3">
+    <div className={pageSliding ? 'slideOutLeft' : ''} style={{ backgroundColor: `rgb(var(--bg-primary))` }}>
+      <div className="px-6 py-3" style={{ backgroundColor: `rgb(var(--cor-header-fundo))` }}>
         <h2 className="text-white text-2xl font-semibold">Painel de Chamados</h2>
       </div>
 
-      <div className=" px-2 bg-[#EDEDED] ">
+      <div className="px-2 min-h-screen" style={{ backgroundColor: `rgb(var(--bg-primary))` }}>
           
-        <div className="p-2 bg-[#EDEDED] flex gap-3 justify-between items-center">
+        <div className="p-2 flex gap-3 justify-between items-center" style={{ backgroundColor: `rgb(var(--bg-primary))` }}>
           {/* Botões de ação existentes */}
           <div className="flex gap-3">
             <button
@@ -739,19 +741,20 @@ export default function GerenciarChamados() {
             </button>
           </div>
   {/* container com togglezinho de selecao pra escolher modo de viusalizacao */}
-      <div className="flex overflow-hidden rounded-lg bg-[#E0E0E0]/40 shadow-sm">
+      <div className="flex overflow-hidden rounded-lg shadow-sm" style={{ backgroundColor: `rgba(var(--bg-hover), 0.4)` }}>
         {(['table', 'kanban'] as const).map((mode) => (
           <button
             key={mode}
             onClick={() => toggleViewMode(mode)}
             className={`
               px-4 py-1 text-[13px] font-medium transition-all duration-200 rounded-none 
-              
-              ${viewMode === mode 
-                ? 'bg-[#B0B0B0] text-white shadow-inner' // ativo
-                : 'text-gray-800 hover:bg-white/5' // inativo
-              }
             `}
+            style={viewMode === mode ? {
+              backgroundColor: `rgb(var(--bg-cinzaescuro))`,
+              color: 'white'
+            } : {
+              color: `rgb(var(--text-primary))`
+            }}
           >
             {mode === 'table' ? 'Tabela' : 'Quadro'}
           </button>
@@ -759,7 +762,11 @@ export default function GerenciarChamados() {
       </div>
    </div>
 
-        <div className="bg-white rounded-lg shadow-lg border border-gray-300 overflow-hidden ">
+        <div className="rounded-lg shadow-lg overflow-hidden" style={{
+          backgroundColor: `rgb(var(--bg-elevated))`,
+          borderColor: `rgb(var(--border-secondary))`,
+          borderWidth: '1px'
+        }}>
 
           {/* filtros apenas visivel no modo tabela */}
           {viewMode === 'table' && filtrosVisiveis && (
@@ -770,11 +777,16 @@ export default function GerenciarChamados() {
               transition={{ duration: 0.3, ease: "easeOut" }}
             >
               {/* area de Filtros */}
-          <div className="p-6  border-gray-300 ">
+          <div className="p-6" style={{
+            borderColor: `rgb(var(--cor-borda-primaria))`,
+            backgroundColor: `rgb(var(--bg-filtros))`,
+            borderBottomWidth: '2px',
+            borderBottomStyle: 'solid'
+          }}>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 ">
               {/* Período de abertura */}
               <div className="min-w-0">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{ color: `rgb(var(--text-primary))` }}>
                   Período de abertura
                 </label>
                 <DatePicker
@@ -788,14 +800,14 @@ export default function GerenciarChamados() {
                   }}
                   dateFormat="dd/MM/yyyy"
                   placeholderText="Selecione o período"
-                  className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded  focus:ring-1 focus:ring-blue-500 text-sm text-gray-900 focus:outline-none"
+                  className="w-full min-w-0 px-3 py-2 border rounded text-sm focus:outline-none transition-all"
                   isClearable={true}
                 />
               </div>
 
               {/* periodo de fechamento */}
               <div className="min-w-0">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{ color: `rgb(var(--text-primary))` }}>
                   Período de Conclusão
                 </label>
                 <DatePicker
@@ -809,13 +821,13 @@ export default function GerenciarChamados() {
                   }}
                   dateFormat="dd/MM/yyyy"
                   placeholderText="Selecione o período"
-                  className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded  focus:ring-1 focus:ring-blue-500 text-sm text-gray-900 focus:outline-none"
+                  className="w-full min-w-0 px-3 py-2 border rounded text-sm focus:outline-none transition-all"
                   isClearable={true}
                 />
               </div>
 
               <div className="min-w-0">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{ color: `rgb(var(--text-primary))` }}>
                   Departamento
                 </label>
                 <Select
@@ -853,25 +865,44 @@ export default function GerenciarChamados() {
                       overflowX: "auto",
                       whiteSpace: "nowrap",
                       fontSize: '14px',
-                      borderColor: '#d1d5db',
-                      '&:hover': { borderColor: '#3b82f6' },
+                      borderColor: 'rgb(var(--border-secondary))',
+                      backgroundColor: 'rgb(var(--bg-secondary))',
+                      '&:hover': { borderColor: '#3b82f6', backgroundColor: 'rgb(var(--bg-secondary))' },
                       boxShadow: 'none',
                       padding: '2px 4px',
+                      color: 'rgb(var(--text-primary))',
                     }),
-                    option: (base) => ({
+                    menu: (base) => ({
+                      ...base,
+                      backgroundColor: 'rgb(var(--bg-secondary))',
+                      borderColor: 'rgb(var(--border-secondary))',
+                      border: '1px solid rgb(var(--border-secondary))',
+                    }),
+                    menuList: (base) => ({
+                      ...base,
+                      backgroundColor: 'rgb(var(--bg-secondary))',
+                      color: 'rgb(var(--text-primary))',
+                    }),
+                    option: (base, state) => ({
                       ...base,
                       fontSize: '14px',
+                      backgroundColor: state.isSelected ? '#0066CC' : (state.isFocused ? 'rgb(var(--bg-hover))' : 'rgb(var(--bg-secondary))'),
+                      color: state.isSelected ? 'white' : 'rgb(var(--text-primary))',
+                      cursor: 'pointer',
+                      '&:hover': {                   backgroundColor: 'rgb(var(--bg-hover))',
+                        color: 'rgb(var(--text-primary))'
+                      }
                     }),
                     multiValue: (base) => ({
                       ...base,
-                      backgroundColor: '#e0e7ff',
+                      backgroundColor: '#0066CC',
                       margin: '2px 2px',
                       padding: '0 4px',
                       minWidth: 0,
                     }),
                     multiValueLabel: (base) => ({
                       ...base,
-                      color: '#002851',
+                      color: 'white',
                       fontSize: '11px',
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
@@ -879,10 +910,10 @@ export default function GerenciarChamados() {
                     }),
                     multiValueRemove: (base) => ({
                       ...base,
-                      color: '#1e40af',
+                      color: 'white',
                       '&:hover': {
-                        backgroundColor: '#c7d2fe',
-                        color: '#1e3a8a',
+                        backgroundColor: '#004399',
+                        color: 'white',
                       },
                     }),
                     valueContainer: (base) => ({
@@ -891,12 +922,24 @@ export default function GerenciarChamados() {
                       maxHeight: '34px',
                       overflowY: 'auto',
                     }),
+                    input: (base) => ({
+                      ...base,
+                      color: 'rgb(var(--text-primary))',
+                    }),
+                    placeholder: (base) => ({
+                      ...base,
+                      color: 'rgb(var(--text-secondary))',
+                    }),
+                    singleValue: (base) => ({
+                      ...base,
+                      color: 'rgb(var(--text-primary))',
+                    }),
                   }}
                 />
               </div>
 
               <div className="min-w-0">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{ color: `rgb(var(--text-primary))` }}>
                   Tópico de ajuda
                 </label>
                 <Select
@@ -934,26 +977,45 @@ export default function GerenciarChamados() {
                       overflowX: "auto",
                       whiteSpace: "nowrap",
                       fontSize: '14px',
-                      borderColor: '#d1d5db',
-                      '&:hover': { borderColor: '#3b82f6' },
+                      borderColor: 'rgb(var(--border-secondary))',
+                      backgroundColor: 'rgb(var(--bg-secondary))',
+                      '&:hover': { borderColor: '#3b82f6', backgroundColor: 'rgb(var(--bg-secondary))' },
                       boxShadow: 'none',
                       padding: '2px 4px',
+                      color: 'rgb(var(--text-primary))',
                     }),
-                    option: (base) => ({
+                    menu: (base) => ({
+                      ...base,
+                      backgroundColor: 'rgb(var(--bg-secondary))',
+                      borderColor: 'rgb(var(--border-secondary))',
+                      border: '1px solid rgb(var(--border-secondary))',
+                    }),
+                    menuList: (base) => ({
+                      ...base,
+                      backgroundColor: 'rgb(var(--bg-secondary))',
+                      color: 'rgb(var(--text-primary))',
+                    }),
+                    option: (base, state) => ({
                       ...base,
                       fontSize: '14px',
+                      backgroundColor: state.isSelected ? '#0066CC' : (state.isFocused ? 'rgb(var(--bg-hover))' : 'rgb(var(--bg-secondary))'),
+                      color: state.isSelected ? 'white' : 'rgb(var(--text-primary))',
+                      cursor: 'pointer',
+                      '&:hover': {
+                        backgroundColor: 'rgb(var(--bg-hover))',
+                        color: 'rgb(var(--text-primary))'
+                      }
                     }),
-
                     multiValue: (base) => ({
                       ...base,
-                      backgroundColor: '#e0e7ff',
+                      backgroundColor: '#0066CC',
                       margin: '2px 2px',
                       padding: '0 4px',
                       minWidth: 0,
                     }),
                     multiValueLabel: (base) => ({
                       ...base,
-                      color: '#002851',
+                      color: 'white',
                       fontSize: '11px',
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
@@ -961,10 +1023,10 @@ export default function GerenciarChamados() {
                     }),
                     multiValueRemove: (base) => ({
                       ...base,
-                      color: '#1e40af',
+                      color: 'white',
                       '&:hover': {
-                        backgroundColor: '#c7d2fe',
-                        color: '#1e3a8a',
+                        backgroundColor: '#004399',
+                        color: 'white',
                       },
                     }),
                     valueContainer: (base) => ({
@@ -973,14 +1035,25 @@ export default function GerenciarChamados() {
                       maxHeight: '34px',
                       overflowY: 'auto',
                     }),
-                    
+                    input: (base) => ({
+                      ...base,
+                      color: 'rgb(var(--text-primary))',
+                    }),
+                    placeholder: (base) => ({
+                      ...base,
+                      color: 'rgb(var(--text-secondary))',
+                    }),
+                    singleValue: (base) => ({
+                      ...base,
+                      color: 'rgb(var(--text-primary))',
+                    }),
                   }}
                 />
               </div>
 
 
               <div className="min-w-0">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{ color: `rgb(var(--text-primary))` }}>
                   Status
                 </label>
                 <Select
@@ -1018,25 +1091,45 @@ export default function GerenciarChamados() {
                       overflowX: "auto",
                       whiteSpace: "nowrap",
                       fontSize: '14px',
-                      borderColor: '#d1d5db',
-                      '&:hover': { borderColor: '#3b82f6' },
+                      borderColor: 'rgb(var(--border-secondary))',
+                      backgroundColor: 'rgb(var(--bg-secondary))',
+                      '&:hover': { borderColor: '#3b82f6', backgroundColor: 'rgb(var(--bg-secondary))' },
                       boxShadow: 'none',
                       padding: '2px 4px',
+                      color: 'rgb(var(--text-primary))',
                     }),
-                    option: (base) => ({
+                    menu: (base) => ({
+                      ...base,
+                      backgroundColor: 'rgb(var(--bg-secondary))',
+                      borderColor: 'rgb(var(--border-secondary))',
+                      border: '1px solid rgb(var(--border-secondary))',
+                    }),
+                    menuList: (base) => ({
+                      ...base,
+                      backgroundColor: 'rgb(var(--bg-secondary))',
+                      color: 'rgb(var(--text-primary))',
+                    }),
+                    option: (base, state) => ({
                       ...base,
                       fontSize: '14px',
+                      backgroundColor: state.isSelected ? '#0066CC' : (state.isFocused ? 'rgb(var(--bg-hover))' : 'rgb(var(--bg-secondary))'),
+                      color: state.isSelected ? 'white' : 'rgb(var(--text-primary))',
+                      cursor: 'pointer',
+                      '&:hover': {
+                        backgroundColor: 'rgb(var(--bg-hover))',
+                        color: 'rgb(var(--text-primary))'
+                      }
                     }),
                     multiValue: (base) => ({
                       ...base,
-                      backgroundColor: '#e0e7ff',
+                      backgroundColor: '#0066CC',
                       margin: '2px 2px',
                       padding: '0 4px',
                       minWidth: 0,
                     }),
                     multiValueLabel: (base) => ({
                       ...base,
-                      color: '#002851',
+                      color: 'white',
                       fontSize: '11px',
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
@@ -1044,10 +1137,10 @@ export default function GerenciarChamados() {
                     }),
                     multiValueRemove: (base) => ({
                       ...base,
-                      color: '#1e40af',
+                      color: 'white',
                       '&:hover': {
-                        backgroundColor: '#c7d2fe',
-                        color: '#1e3a8a',
+                        backgroundColor: '#004399',
+                        color: 'white',
                       },
                     }),
                     valueContainer: (base) => ({
@@ -1055,6 +1148,18 @@ export default function GerenciarChamados() {
                       padding: '2px 4px',
                       maxHeight: '34px',
                       overflowY: 'auto',
+                    }),
+                    input: (base) => ({
+                      ...base,
+                      color: 'rgb(var(--text-primary))',
+                    }),
+                    placeholder: (base) => ({
+                      ...base,
+                      color: 'rgb(var(--text-secondary))',
+                    }),
+                    singleValue: (base) => ({
+                      ...base,
+                      color: 'rgb(var(--text-primary))',
                     }),
                   }}
                 />
@@ -1065,7 +1170,7 @@ export default function GerenciarChamados() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
               {/* Assunto */}
               <div className="min-w-0">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{ color: `rgb(var(--text-primary))` }}>
                   Assunto
                 </label>
                 <input
@@ -1073,13 +1178,13 @@ export default function GerenciarChamados() {
                   value={assunto}
                   onChange={(e) => setAssunto(e.target.value)}
                   placeholder="Digite o assunto"
-                  className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded  focus:ring-1 focus:ring-blue-500 text-sm text-gray-900 focus:outline-none "
+                  className="w-full min-w-0 px-3 py-2 border rounded text-sm focus:outline-none transition-all"
                 />
               </div>
 
               {/* nome user */}
               <div className="min-w-0">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{ color: `rgb(var(--text-primary))` }}>
                   Nome usuário
                 </label>
                 <input
@@ -1087,24 +1192,30 @@ export default function GerenciarChamados() {
                   value={nomeUsuario}
                   onChange={(e) => setNomeUsuario(e.target.value)}
                   placeholder="Digite o nome"
-                  className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded  focus:ring-1 focus:ring-blue-500 text-sm text-gray-900 focus:outline-none"
+                  className="w-full min-w-0 px-3 py-2 border rounded text-sm focus:outline-none transition-all"
                 />
               </div>
 
               {/* prioridade - botões visuais */}
               <div className="min-w-0">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm  mb-1" style={{ color: `rgb(var(--text-primary))` }}>
                   Nível de prioridade
                 </label>
-                <div className="grid grid-cols-5 h-10 rounded-lg overflow-hidden border border-gray-300">
+                <div className="grid grid-cols-5 h-10 rounded-lg overflow-hidden" style={{
+                  borderWidth: '1px',
+                  borderColor: `rgb(var(--cor-borda-primaria))`
+                }}>
                   {/* botao TODOS */}
                   <button
                     type="button"
                     onClick={() => setPrioridadeId('')}
                     className="flex items-center justify-center text-xs font-medium transition-all min-w-0"
                     style={{
-                      backgroundColor: prioridadeId === '' ? '#3F3F3F' : '#DFDFDF',
-                      color: prioridadeId === '' ? 'white' : '#3F3F3F',
+                      backgroundColor: prioridadeId === '' ? (theme === 'dark' ? '#555555' : '#1F2937') : `rgb(var(--bg-hover))`,
+                      color: prioridadeId === '' ? 'white' : `rgb(var(--text-primary))`,
+                    
+                      border: 'none',
+                      outline: 'none'
                     }}
                   >
                     <span className="truncate px-1">TODOS</span>
@@ -1117,8 +1228,11 @@ export default function GerenciarChamados() {
                       onClick={() => setPrioridadeId(String(prioridade.id))}
                       className="flex items-center justify-center text-xs font-medium transition-all min-w-0"
                       style={{
-                        backgroundColor: prioridadeId === String(prioridade.id) ? prioridade.cor : '#DFDFDF',
-                        color: prioridadeId === String(prioridade.id) ? '#1F1F1F' : '#3F3F3F',
+                        backgroundColor: prioridadeId === String(prioridade.id) ? prioridade.cor : `rgb(var(--bg-hover))`,
+                        color: prioridadeId === String(prioridade.id) ? '#FFFFFF' : `rgb(var(--text-primary))`,
+              
+                        border: 'none',
+                        outline: 'none'
                       }}
                     >
                       <span className="truncate px-1">{prioridade.nome}</span>
@@ -1131,14 +1245,13 @@ export default function GerenciarChamados() {
               <div className="flex items-end gap-6 mt-4">
                 {/* Responsável */}
                 <div className="flex-none"> {/* flex-none impede que ele cresça ou encolha além do necessário */}
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium mb-2" style={{ color: `rgb(var(--text-primary))` }}>
                     Responsável
                   </label>
                   <select
                     value={nomeResponsavel}
                     onChange={(e) => setNomeResponsavel(e.target.value)}
-                    // Removido o w-80 para o select não ser forçado, mas você pode manter se quiser um tamanho fixo específico
-                    className="w-64 px-3 py-2 border border-gray-300 rounded bg-white focus:ring-1 focus:ring-blue-500 text-sm text-gray-900 focus:outline-none"
+                    className="w-64 px-3 py-2 border rounded text-sm focus:outline-none transition-all"
                   >
                     <option value="">Todos os responsáveis</option>
                     {usuariosAdmin
@@ -1153,23 +1266,23 @@ export default function GerenciarChamados() {
 
                 {/* Ocultar concluídos */}
                 <div className="flex items-center gap-3 mb-2.5"> {/* items-center coloca na mesma linha e mb-2.5 alinha com o select */}
-                  <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
+                  <label className="text-sm font-medium whitespace-nowrap" style={{ color: `rgb(var(--text-primary))` }}>
                     Ocultar concluídos
                   </label>
                   <button
                     type="button"
                     onClick={() => setOcultarConcluidos(!ocultarConcluidos)}
-                    className={`
-                      relative w-10 h-5 rounded-full transition-colors duration-100 shrink-0
-                      ${ocultarConcluidos ? "bg-blue-600" : "bg-gray-300"}
-                    `}
+                    className="relative w-10 h-5 rounded-full transition-colors duration-100 shrink-0"
+                    style={{
+                      backgroundColor: ocultarConcluidos ? "#0066CC" : `rgb(var(--bg-hover))`
+                    }}
                   >
                     <span
-                      className={`
-                        absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow
-                        transform transition-transform duration-100
-                        ${ocultarConcluidos ? "translate-x-5" : ""}
-                      `}
+                      className="absolute top-0.5 left-0.5 w-4 h-4 rounded-full shadow transform transition-transform duration-100"
+                      style={{
+                        backgroundColor: `rgb(var(--bg-primary))`,
+                        transform: ocultarConcluidos ? "translateX(20px)" : "translateX(0)"
+                      }}
                     />
                   </button>
                 </div>
@@ -1179,14 +1292,23 @@ export default function GerenciarChamados() {
             <div className="flex gap-3 mt-6 justify-end flex-nowrap overflow-x-auto whitespace-nowrap pb-2">
               <button
                 onClick={limparFiltros}
-                className="px-6 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors font-medium text-sm"
+                className="px-6 py-2 rounded transition-all font-medium text-sm hover:shadow-md active:scale-95"
+                style={{
+                  backgroundColor: `rgb(var(--bg-hover))`,
+                  color: `rgb(var(--text-primary))`
+                }}
               >
                 Limpar Filtros
               </button>
               <button
                 onClick={() => pesquisarChamados(1)}
                 disabled={loading}
-                className="px-6 py-2 bg-[#002B57]  text-white rounded hover:bg-[#315377] transition-colors font-medium text-sm disabled:bg-[#002B57]"
+                className="px-6 py-2 text-white rounded font-medium text-sm transition-all hover:shadow-md active:scale-95"
+                style={{
+                  backgroundColor: loading ? '#0066CC' : 'rgb(var(--cor-botao-primario))',
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  opacity: loading ? 0.6 : 1
+                }}
               >
                 {loading ? 'Pesquisando...' : 'Pesquisar'}
               </button>
@@ -1197,80 +1319,76 @@ export default function GerenciarChamados() {
 
           {/* pequena setinha que oculta os filtros no modo tabela */}
           {viewMode === 'table' && (
-       <div className="flex justify-center bg-white border-b border-gray-200 hover:scale-105 transition-transform duration-300">
+       <div className="flex justify-center" style={{
+          backgroundColor: `rgb(var(--bg-elevated))`,
+          borderBottomColor: `rgb(var(--border-secondary))`,
+          borderBottomWidth: '0px'
+        }}>
           <button
             type="button"
             onClick={() => setFiltrosVisiveis(!filtrosVisiveis)}
-            className="flex items-center text-gray-400 hover:text-gray-600 transition-colors space-x-1"
-            title={filtrosVisiveis ? "Ocultar filtros" : "Mostrar filtros"}
-          >
-            <span className="text-gray-400 select-none">.............</span>
+            className="flex items-center transition-colors space-x-1 py-2" style={{ color: `rgb(var(--text-tertiary))` }}>
+            <span className="select-none">.............</span>
 
             <HiOutlineChevronDown
               className={`w-4 h-4 transition-transform duration-300 ${filtrosVisiveis ? 'rotate-180' : ''}`}
             />
 
-            <span className="text-gray-400 select-none">.............</span>
+            <span className="select-none">.............</span>
           </button>
         </div>
           )}
 
           {/* acao em multiplos registros - Visível apenas no modo tabela */}
           {chamados.length > 0 && viewMode === 'table' && (
-            <div className="px-3 py-2 bg-gray-50 border-b border-gray-300 flex gap-3 items-center flex-nowrap overflow-x-auto whitespace-nowrap">
+            <div className="px-3 py-2 border-b flex gap-3 items-center flex-nowrap overflow-x-auto whitespace-nowrap" style={{
+              backgroundColor: `rgb(var(--bg-secondary))`,
+              borderBottomColor: `rgb(var(--border-secondary))`
+            }}>
               <button
                 onClick={marcarComoResolvido}
                 disabled={chamadosSelecionados.length === 0}
-                className="
-                  px-5 py-2 rounded border border-[#1A4877]
-                  bg-[#1a4877] text-white
-                  hover:bg-[#1A4877] transition-colors font-medium text-sm
-
-                  disabled:bg-transparent
-                  disabled:text-[#001933]
-                  disabled:border-[#001933]
-                  disabled:cursor-not-allowed
-                  disabled:hover:bg-transparent
-                  "
+                className="action-button px-5 py-2 rounded transition-all font-medium text-sm hover:shadow-md active:scale-95"
+                style={{
+                  backgroundColor: chamadosSelecionados.length === 0 ? `rgb(var(--bg-disabled))` : `rgb(var(--cor-botao-primario))`,
+                  color: chamadosSelecionados.length === 0 ? `rgb(var(--text-disabled))` : 'white',
+                  borderWidth: '0px',
+                  cursor: chamadosSelecionados.length === 0 ? 'not-allowed' : 'pointer',
+                  opacity: chamadosSelecionados.length === 0 ? 0.5 : 1
+                }}
               >
                 Marcar como resolvido
               </button>
               <button
                 onClick={editarMultiplos}
                 disabled={chamadosSelecionados.length === 0}
-                className="
-                  px-5 py-2 rounded border border-[#1A4877]
-                  bg-[#1a4877] text-white
-                  hover:bg-[#1A4877] transition-colors font-medium text-sm
-
-                  disabled:bg-transparent
-                  disabled:text-[#001933]
-                  disabled:border-[#001933]
-                  disabled:cursor-not-allowed
-                  disabled:hover:bg-transparent
-                  "
-                                >
+                className="action-button px-5 py-2 rounded transition-all font-medium text-sm hover:shadow-md active:scale-95"
+                style={{
+                  backgroundColor: chamadosSelecionados.length === 0 ? `rgb(var(--bg-disabled))` : `rgb(var(--cor-botao-primario))`,
+                  color: chamadosSelecionados.length === 0 ? `rgb(var(--text-disabled))` : 'white',
+                  borderWidth: '0px',
+                  cursor: chamadosSelecionados.length === 0 ? 'not-allowed' : 'pointer',
+                  opacity: chamadosSelecionados.length === 0 ? 0.5 : 1
+                }}
+              >
                 Editar Múltiplos
               </button>
               <button
                 onClick={atribuirAMim}
                 disabled={chamadosSelecionados.length === 0}
-                className="
-                  px-5 py-2 rounded border border-[#1A4877]
-                  bg-[#1a4877] text-white
-                  hover:bg-[#1A4877] transition-colors font-medium text-sm
-
-                  disabled:bg-transparent
-                  disabled:text-[#001933]
-                  disabled:border-[#001933]
-                  disabled:cursor-not-allowed
-                  disabled:hover:bg-transparent
-                  "       
-                         >
+                className="action-button px-5 py-2 rounded transition-all font-medium text-sm hover:shadow-md active:scale-95"
+                style={{
+                  backgroundColor: chamadosSelecionados.length === 0 ? `rgb(var(--bg-disabled))` : `rgb(var(--cor-botao-primario))`,
+                  color: chamadosSelecionados.length === 0 ? `rgb(var(--text-disabled))` : 'white',
+                  borderWidth: '0px',
+                  cursor: chamadosSelecionados.length === 0 ? 'not-allowed' : 'pointer',
+                  opacity: chamadosSelecionados.length === 0 ? 0.5 : 1
+                }}
+              >
                 Atribuir a mim
               </button>
               {chamadosSelecionados.length > 0 && (
-                <span className="text-sm text-gray-600 flex items-center ml-2">
+                <span className="text-sm flex items-center ml-2" style={{ color: `rgb(var(--text-secondary))` }}>
                   {chamadosSelecionados.length} selecionado(s)
                 </span>
               )}
@@ -1280,7 +1398,7 @@ export default function GerenciarChamados() {
           {/* Visualização Principal - Tabela ou Kanban */}
           <div>
             {loading ? (
-              <div className="p-8 text-center text-gray-500">
+              <div className="p-8 text-center" style={{ color: `rgb(var(--text-secondary))` }}>
                 Carregando chamados...
               </div>
             ) : viewMode === 'kanban' ? (
@@ -1305,7 +1423,10 @@ export default function GerenciarChamados() {
             ) : (
               /* Visualização Tabela Original */
               chamados.length === 0 ? (
-                <div className="p-8 text-center text-gray-500">
+                <div className="p-8 text-center" style={{  
+                  color: `rgb(var(--text-secondary))`,
+                  backgroundColor: `rgb(var(--bg-elevated))`
+                }}>
                   Nenhum chamado encontrado. Use os filtros para pesquisar.
                 </div>
               ) : (
@@ -1316,8 +1437,17 @@ export default function GerenciarChamados() {
                 >
               <>
                 {/* filtro de abas no topo da tabela */}
-                <div className="px-3 py-3 flex gap-4 bg-white border-b border-gray-300 items-center justify-between">
-                 <div className="flex overflow-hidden rounded-lg bg-[#E0E0E0]/40 shadow-sm w-max">
+                <div className="px-3 py-3 flex gap-4 items-center justify-between" style={{
+                  backgroundColor: `rgb(var(--bg-elevated))`,
+                  borderBottomColor: `rgb(var(--border-secondary))`,
+                  borderBottomWidth: '1px'
+                }}>
+                 <div className="flex overflow-hidden rounded-lg shadow-sm w-max" style={{
+
+                  borderColor: `rgb(var(--cor-borda-primaria))`,
+                  borderWidth: '1px',
+                   backgroundColor: `rgb(var(--bg-secondary))`
+                 }}>
                   {(['todos', 'meus', 'outros'] as const).map((aba) => {
                     const labels = {
                       todos: 'Todos',
@@ -1331,13 +1461,16 @@ export default function GerenciarChamados() {
                         onClick={() => setAbaFiltro(aba)}
                         className={`
                           px-4 py-1 text-[13px] font-medium transition-all duration-200
-                          ${abaFiltro === aba
-                          ? 'bg-[#B0B0B0] text-white shadow-inner' // ativo
-                          : 'text-gray-800 hover:bg-white/5' // inativo
-                          }
                           ${aba === 'todos' ? 'rounded-l-lg' : ''} 
                           ${aba === 'outros' ? 'rounded-r-lg' : ''} 
                         `}
+                        style={abaFiltro === aba ? {
+                          backgroundColor: `rgb(var(--bg-cinzaescuro))`,
+                          color: 'white',
+                          boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.1)'
+                        } : {
+                          color: `rgb(var(--text-primary))`
+                        }}
                       >
                         {labels[aba]}
                       </button>
@@ -1349,19 +1482,23 @@ export default function GerenciarChamados() {
 
                 <div className="overflow-x-auto hidden md:block">
                   <table className="w-full">
-                    <thead className="bg-gray-100  border-gray-300">
+                    <thead style={{
+                      backgroundColor: `rgb(var(--bg-secondary))`,
+                      borderBottomColor: `rgb(var(--border-secondary))`,
+                      borderBottomWidth: '1px'
+                    }}>
                       <tr>
                         <th className="px-4 py-3 text-left">
                           <input
                             type="checkbox"
                             checked={todosChecados}
                             onChange={handleCheckAll}
-                            className="w-5 h-5 cursor-pointer rounded appearance-none border-2 border-gray-300 checked:bg-blue-600 checked:border-blue-600 relative
-                            before:content-['✓'] before:absolute before:inset-0 before:flex before:items-center before:justify-center before:text-white before:text-sm before:font-bold before:opacity-0 checked:before:opacity-100"
+                            className="theme-checkbox"
                           />
                         </th>
                         <th 
-                          className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none min-w-20"
+                          className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none min-w-20"
+                          style={{ color: `rgb(var(--text-primary))` }}
                           onClick={() => handleOrdenar('numeroChamado')}
                         >
                           <div className="flex items-center gap-1">
@@ -1372,7 +1509,10 @@ export default function GerenciarChamados() {
                           </div>
                         </th>
                         <th 
-                          className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none min-w-20"
+                          className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none min-w-20"
+                          style={{ color: `rgb(var(--text-primary))` }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = `rgb(var(--bg-hover))`)} 
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                           onClick={() => handleOrdenar('prioridade')}
                         >
                           <div className="flex items-center gap-1">
@@ -1383,7 +1523,10 @@ export default function GerenciarChamados() {
                           </div>
                         </th>
                         <th 
-                          className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none min-w-50"
+                          className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none min-w-50"
+                          style={{ color: `rgb(var(--text-primary))` }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = `rgb(var(--bg-hover))`)} 
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                           onClick={() => handleOrdenar('resumo')}
                         >
                           <div className="flex items-center gap-1">
@@ -1394,7 +1537,10 @@ export default function GerenciarChamados() {
                           </div>
                         </th>
                         <th 
-                          className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none min-w-40"
+                          className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none min-w-40"
+                          style={{ color: `rgb(var(--text-primary))` }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = `rgb(var(--bg-hover))`)} 
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                           onClick={() => handleOrdenar('usuario')}
                         >
                           <div className="flex items-center gap-1">
@@ -1405,7 +1551,10 @@ export default function GerenciarChamados() {
                           </div>
                         </th>
                         <th 
-                          className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none min-w-50"
+                          className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none min-w-50"
+                          style={{ color: `rgb(var(--text-primary))` }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = `rgb(var(--bg-hover))`)} 
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                           onClick={() => handleOrdenar('departamento')}
                         >
                           <div className="flex items-center gap-1">
@@ -1416,7 +1565,10 @@ export default function GerenciarChamados() {
                           </div>
                         </th>
                         <th 
-                          className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none min-w-38"
+                          className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none min-w-38"
+                          style={{ color: `rgb(var(--text-primary))` }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = `rgb(var(--bg-hover))`)} 
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                           onClick={() => handleOrdenar('topico')}
                         >
                           <div className="flex items-center gap-1">
@@ -1427,7 +1579,10 @@ export default function GerenciarChamados() {
                           </div>
                         </th>
                         <th 
-                          className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none min-w-30"
+                          className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none min-w-30"
+                          style={{ color: `rgb(var(--text-primary))` }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = `rgb(var(--bg-hover))`)} 
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                           onClick={() => handleOrdenar('status')}
                         >
                           <div className="flex items-center gap-1">
@@ -1438,7 +1593,10 @@ export default function GerenciarChamados() {
                           </div>
                         </th>
                         <th 
-                          className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none min-w-25"
+                          className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none min-w-25"
+                          style={{ color: `rgb(var(--text-primary))` }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = `rgb(var(--bg-hover))`)} 
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                           onClick={() => handleOrdenar('dataAbertura')}
                         >
                           <div className="flex items-center gap-1">
@@ -1448,7 +1606,11 @@ export default function GerenciarChamados() {
                             )}
                           </div>
                         </th>
-                        <th                         className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none min-w-25"
+                        <th
+                          className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none min-w-25"
+                          style={{ color: `rgb(var(--text-primary))` }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = `rgb(var(--bg-hover))`)} 
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                           onClick={() => handleOrdenar('dataFechamento')}
                         >
                           <div className="flex items-center gap-1">
@@ -1459,7 +1621,10 @@ export default function GerenciarChamados() {
                           </div>
                         </th>
                         <th 
-                          className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none min-w-50"
+                          className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none min-w-50"
+                          style={{ color: `rgb(var(--text-primary))` }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = `rgb(var(--bg-hover))`)} 
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                           onClick={() => handleOrdenar('responsavel')}
                         >
                           <div className="flex items-center gap-1">
@@ -1492,21 +1657,25 @@ export default function GerenciarChamados() {
                               router.push(`/chamado/${chamado.id}`);
                             }, 240); // aguarda animação slideOutLeft (220ms)
                           }}
-                          className={`border-b border-gray-200 hover:bg-blue-50 transition-colors cursor-pointer ${
-                            index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-                          } ${linhaAnimando === chamado.id ? 'slideOutLeft' : ''}`}
+                          className={`transition-colors cursor-pointer ${linhaAnimando === chamado.id ? 'slideOutLeft' : ''}`}
+                          style={{
+                            backgroundColor: index % 2 === 0 ? `rgb(var(--bg-primary))` : `rgb(var(--bg-secondary))`,
+                            borderBottomColor: `rgb(var(--border-secondary))`,
+                            borderBottomWidth: '1px'
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = `rgb(var(--bg-hover))`)}
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = index % 2 === 0 ? `rgb(var(--bg-primary))` : `rgb(var(--bg-secondary))`)}
                         >
                           <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                             <input
                               type="checkbox"
                               checked={chamadosSelecionados.includes(chamado.id)}
                               onChange={() => handleCheckChamado(chamado.id)}
-                              className="w-5 h-5 cursor-pointer rounded appearance-none border-2 border-gray-300 checked:bg-blue-600 checked:border-blue-600 relative
-                              before:content-['✓'] before:absolute before:inset-0 before:flex before:items-center before:justify-center before:text-white before:text-sm before:font-bold before:opacity-0 checked:before:opacity-100"
+                              className="theme-checkbox"
                             />
                           </td>
                           {/* Código chamado */}
-                          <td className="px-4 py-3 text-sm text-gray-900 font-medium whitespace-nowrap">
+                          <td className="px-4 py-3 text-sm font-medium whitespace-nowrap" style={{ color: `rgb(var(--text-primary))` }}>
                             {chamado.numeroChamado || chamado.id}
                           </td>
                           {/* Prioridade */}
@@ -1516,65 +1685,53 @@ export default function GerenciarChamados() {
                                 className="w-3 h-3 rounded-full"
                                 style={{ backgroundColor: chamado.tipoPrioridade?.cor || '#gray' }}
                               ></div>
-                              <span className="text-sm text-gray-900">
+                              <span className="text-sm" style={{ color: `rgb(var(--text-primary))` }}>
                                 {chamado.tipoPrioridade?.nome || '-'}
                               </span>
                             </div>
                           </td>
                           {/* Assunto/Resumo */}
-                          <td className="px-4 py-3 text-sm text-gray-900 max-w-50 truncate overflow-hidden text-ellipsis" title={chamado.resumoChamado}>
+                          <td className="px-4 py-3 text-sm max-w-50 truncate overflow-hidden text-ellipsis" style={{ color: `rgb(var(--text-primary))` }} title={chamado.resumoChamado}>
                             {chamado.resumoChamado}
                           </td>
                           {/* Usuário */}
-                          <td className="px-4 py-3 text-sm text-gray-900 max-w-30 truncate overflow-hidden text-ellipsis" title={chamado.usuario?.name}>
+                          <td className="px-4 py-3 text-sm max-w-30 truncate overflow-hidden text-ellipsis" style={{ color: `rgb(var(--text-primary))` }} title={chamado.usuario?.name}>
                             {chamado.usuario?.name || '-'}
                           </td>
                           {/* Departamento */}
-                          <td className="px-4 py-3 text-sm text-gray-900 max-w-30 truncate overflow-hidden text-ellipsis" title={chamado.departamento?.nome || chamado.departamento?.name}>
+                          <td className="px-4 py-3 text-sm max-w-30 truncate overflow-hidden text-ellipsis" style={{ color: `rgb(var(--text-primary))` }} title={chamado.departamento?.nome || chamado.departamento?.name}>
                             {chamado.departamento?.nome || chamado.departamento?.name || '-'}
                           </td>
                           {/* Tópico */}
-                          <td className="px-4 py-3 text-sm text-gray-900 max-w-38 truncate overflow-hidden text-ellipsis" title={chamado.topicoAjuda?.nome}>
+                          <td className="px-4 py-3 text-sm max-w-38 truncate overflow-hidden text-ellipsis" style={{ color: `rgb(var(--text-primary))` }} title={chamado.topicoAjuda?.nome}>
                             {chamado.topicoAjuda?.nome || '-'}
                           </td>
                           {/* Status */}
                           <td className="px-1 py-1 text-center whitespace-nowrap">
                             <span
-                              className={`px-2 py-1 rounded-full text-xs border ${
-                                chamado.status.id === 1
-                                ? 'bg-yellow-100 text-yellow-700 border-yellow-500'
-                                : chamado.status.id === 2
-                                ? 'bg-blue-100 text-blue-600 border-blue-500'
-                                : chamado.status.id === 3
-                                 ? 'bg-green-100 text-green-800 border-green-700'
-                                : chamado.status.id === 5
-                                ? 'bg-purple-100 text-purple-700 border-purple-500'
-                                : chamado.status.id === 4
-                                 ? 'bg-gray-100 text-red-800 border-red-700'
-                                 : chamado.status.id === 6
-                                  ? 'bg-gray-100 text-gray-800 border-gray-700'
-                                  : chamado.status.id === 7
-                                   ? 'bg-orange-100 text-orange-800 border-orange-700'
-                                : 'bg-red-100 text-red-800 border-red-800'
-                                  
-                                  
-                              }`}
+                              className="px-2 py-1 rounded-full text-xs border font-medium"
+                              style={{
+                                backgroundColor: `rgb(var(--status-${chamado.status.id}-bg))`,
+                                color: `rgb(var(--status-${chamado.status.id}-texto))`,
+                                borderColor: `rgb(var(--status-${chamado.status.id}-borda))`,
+                                borderWidth: '1.5px'
+                              }}
                             >
                               {chamado.status?.nome || 'Desconhecido'}
                             </span>
                           </td>
                           {/* Data Abertura */}
-                          <td className="px-1 py-3 text-sm text-gray-600 whitespace-nowrap">
+                          <td className="px-1 py-3 text-sm whitespace-nowrap" style={{ color: `rgb(var(--text-secondary))` }}>
                             {formatarData(chamado.dataAbertura)}
                           </td>
                           {/* Data Fechamento */}
-                          <td className="px-1 py-3 text-sm text-gray-600 whitespace-nowrap">
+                          <td className="px-1 py-3 text-sm whitespace-nowrap" style={{ color: `rgb(var(--text-secondary))` }}>
                             {formatarData(chamado.dataFechamento)}
                           </td>
                           {/* Responsável */}
-                          <td className="px-4 py-3 text-sm text-gray-900 max-w-30 truncate overflow-hidden text-ellipsis" title={chamado.userResponsavel?.name}>
+                          <td className="px-4 py-3 text-sm max-w-30 truncate overflow-hidden text-ellipsis" style={{ color: `rgb(var(--text-primary))` }} title={chamado.userResponsavel?.name}>
                             {chamado.userResponsavel?.name || (
-                              <span className="text-gray-400 italic">Não atribuído</span>
+                              <span className="italic" style={{ color: `rgb(var(--text-secondary))` }}>Não atribuído</span>
                             )}
                           </td>
                         </tr>))}
@@ -1604,17 +1761,22 @@ export default function GerenciarChamados() {
                           router.push(`/chamado/${chamado.id}`);
                         }, 240);
                       }}
-                      className={`bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-all cursor-pointer ${
+                      className={`rounded-lg p-4 shadow-sm hover:shadow-md transition-all cursor-pointer ${
                         linhaAnimando === chamado.id ? 'slideOutLeft' : ''
                       }`}
+                      style={{
+                        backgroundColor: `rgb(var(--bg-elevated))`,
+                        borderColor: `rgb(var(--border-secondary))`,
+                        borderWidth: '1px'
+                      }}
                     >
                       {/* header: Assunto e Checkbox */}
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1">
-                          <h3 className="font-semibold text-gray-900 text-base mb-1 line-clamp-2">
+                          <h3 className="font-semibold text-base mb-1 line-clamp-2" style={{ color: `rgb(var(--text-primary))` }}>
                             {chamado.resumoChamado}
                           </h3>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs" style={{ color: `rgb(var(--text-secondary))` }}>
                             #{chamado.numeroChamado || chamado.id}
                           </p>
                         </div>
@@ -1623,8 +1785,7 @@ export default function GerenciarChamados() {
                             type="checkbox"
                             checked={chamadosSelecionados.includes(chamado.id)}
                             onChange={() => handleCheckChamado(chamado.id)}
-                            className="w-5 h-5 cursor-pointer rounded appearance-none border-2 border-gray-300 checked:bg-blue-600 checked:border-blue-600 relative
-                            before:content-['✓'] before:absolute before:inset-0 before:flex before:items-center before:justify-center before:text-white before:text-sm before:font-bold before:opacity-0 checked:before:opacity-100"
+                            className="theme-checkbox"
                           />
                         </div>
                       </div>
@@ -1632,55 +1793,52 @@ export default function GerenciarChamados() {
                       {/* info: topico e Departamento */}
                       <div className="space-y-2 mb-3">
                         <div className="flex items-start">
-                          <span className="text-xs text-gray-500 w-24 shrink-0">Tópico:</span>
-                          <span className="text-xs text-gray-900 font-medium">{chamado.topicoAjuda?.nome || '-'}</span>
+                          <span className="text-xs w-24 shrink-0" style={{ color: `rgb(var(--text-secondary))` }}>Tópico:</span>
+                          <span className="text-xs font-medium" style={{ color: `rgb(var(--text-primary))` }}>{chamado.topicoAjuda?.nome || '-'}</span>
                         </div>
                         <div className="flex items-start">
-                          <span className="text-xs text-gray-500 w-24 shrink-0">Departamento:</span>
-                          <span className="text-xs text-gray-900 font-medium">{chamado.departamento?.nome || chamado.departamento?.name || '-'}</span>
+                          <span className="text-xs w-24 shrink-0" style={{ color: `rgb(var(--text-secondary))` }}>Departamento:</span>
+                          <span className="text-xs font-medium" style={{ color: `rgb(var(--text-primary))` }}>{chamado.departamento?.nome || chamado.departamento?.name || '-'}</span>
                         </div>
                         <div className="flex items-start">
-                          <span className="text-xs text-gray-500 w-24 shrink-0">Usuário:</span>
-                          <span className="text-xs text-gray-900 font-medium">{chamado.usuario?.name || '-'}</span>
+                          <span className="text-xs w-24 shrink-0" style={{ color: `rgb(var(--text-secondary))` }}>Usuário:</span>
+                          <span className="text-xs font-medium" style={{ color: `rgb(var(--text-primary))` }}>{chamado.usuario?.name || '-'}</span>
                         </div>
                       </div>
 
                       {/* badges: prioridade e Status */}
                       <div className="flex items-center gap-2 mb-3 flex-wrap">
-                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-50 border border-gray-200">
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border" style={{
+                          backgroundColor: `rgb(var(--bg-secondary))`,
+                          borderColor: `rgb(var(--border-secondary))`
+                        }}>
                           <div
                             className="w-2.5 h-2.5 rounded-full"
                             style={{ backgroundColor: chamado.tipoPrioridade?.cor || '#gray' }}
                           ></div>
-                          <span className="text-xs font-medium text-gray-700">
+                          <span className="text-xs font-medium" style={{ color: `rgb(var(--text-primary))` }}>
                             {chamado.tipoPrioridade?.nome || '-'}
                           </span>
                         </div>
                         <span
-                          className={`px-3 py-1.5 rounded-full text-xs font-medium border ${
-                            chamado.status.id === 1
-                            ? 'bg-yellow-100 text-yellow-700 border-yellow-500'
-                            : chamado.status.id === 2
-                            ? 'bg-blue-100 text-blue-600 border-blue-500'
-                            : chamado.status.id === 3
-                             ? 'bg-green-100 text-green-800 border-green-700'
-                            : chamado.status.id === 5
-                            ? 'bg-purple-100 text-purple-700 border-purple-500'
-                            : chamado.status.id === 4
-                             ? 'bg-gray-100 text-red-800 border-red-700'
-                             : chamado.status.id === 6
-                              ? 'bg-gray-100 text-gray-800 border-gray-700'
-                              : chamado.status.id === 7
-                               ? 'bg-orange-100 text-orange-800 border-orange-700'
-                            : 'bg-red-100 text-red-800 border-red-800'
-                          }`}
+                          className="px-3 py-1.5 rounded-full text-xs font-medium border"
+                          style={{
+                            backgroundColor: `rgb(var(--status-${chamado.status.id}-bg))`,
+                            color: `rgb(var(--status-${chamado.status.id}-texto))`,
+                            borderColor: `rgb(var(--status-${chamado.status.id}-borda))`,
+                            borderWidth: '1.5px'
+                          }}
                         >
                           {chamado.status?.nome || 'Desconhecido'}
                         </span>
                       </div>
 
                       {/* footer data de Abertura */}
-                      <div className="flex items-center justify-between text-xs text-gray-500 pt-2 border-t border-gray-100">
+                      <div className="flex items-center justify-between text-xs pt-2" style={{
+                        color: `rgb(var(--text-secondary))`,
+                        borderTopColor: `rgb(var(--border-secondary))`,
+                        borderTopWidth: '1px'
+                      }}>
                         <span>{formatarData(chamado.dataAbertura)}</span>
                         {chamado.dataFechamento && (
                           <span>Fechado: {formatarData(chamado.dataFechamento)}</span>
@@ -1697,11 +1855,14 @@ export default function GerenciarChamados() {
 
           {/* Controles de Paginação - Apenas no modo tabela */}
           {chamados.length > 0 && viewMode === 'table' && (
-            <div className="px-6 py-4 bg-gray-100/50 border-t border-gray-300">
+            <div className="px-6 py-4 border-t" style={{
+              backgroundColor: `rgb(var(--bg-secondary))`,
+              borderTopColor: `rgb(var(--border-secondary))`
+            }}>
               {/* Seletor de registros por página */}
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <label className="text-sm font-medium text-gray-700">
+                  <label className="text-sm font-medium" style={{ color: `rgb(var(--text-primary))` }}>
                     Registros por página:
                   </label>
                   <select
@@ -1710,7 +1871,12 @@ export default function GerenciarChamados() {
                       setPageSize(parseInt(e.target.value));
                       setPaginaAtual(1);
                     }}
-                    className="px-3 py-2 border border-gray-300 rounded  focus:ring-1 focus:ring-blue-500 text-sm text-gray-900"
+                    className="px-3 py-2 border rounded focus:ring-1 focus:ring-blue-500 text-sm"
+                    style={{
+                      borderColor: `rgb(var(--border-secondary))`,
+                      backgroundColor: `rgb(var(--bg-primary))`,
+                      color: `rgb(var(--text-primary))`
+                    }}
                   >
                     <option value="10">10</option>
                     <option value="20">20</option>
@@ -1719,7 +1885,7 @@ export default function GerenciarChamados() {
                     <option value="50">50</option>
                   </select>
                 </div>
-                <div className="text-sm text-gray-600">
+                <div className="text-sm" style={{ color: `rgb(var(--text-secondary))` }}>
                   Mostrando {(paginaAtual - 1) * pageSize + 1} a {Math.min(paginaAtual * pageSize, totalChamados)} de {totalChamados} chamado(s)
                 </div>
               </div>
@@ -1729,7 +1895,13 @@ export default function GerenciarChamados() {
                 <button
                   onClick={() => pesquisarChamados(paginaAtual - 1)}
                   disabled={paginaAtual === 1 || loading}
-                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition-colors font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-4 py-2 rounded transition-colors font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{
+                    backgroundColor: `rgb(var(--bg-hover))`,
+                    color: `rgb(var(--text-primary))`
+                  }}
+                  onMouseEnter={(e) => !((e.target as HTMLButtonElement).disabled) && (e.currentTarget.style.backgroundColor = `rgb(var(--bg-active))`)}
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = `rgb(var(--bg-hover))`)}
                 >
                   ← Anterior
                 </button>
@@ -1738,11 +1910,14 @@ export default function GerenciarChamados() {
                     <button
                       key={page}
                       onClick={() => pesquisarChamados(page)}
-                      className={`px-3 py-2 rounded font-medium text-sm transition-colors ${
-                        paginaAtual === page
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                      }`}
+                      className="px-3 py-2 rounded font-medium text-sm transition-colors"
+                      style={paginaAtual === page ? {
+                        backgroundColor: '#0066CC',
+                        color: 'white'
+                      } : {
+                        backgroundColor: `rgb(var(--bg-secondary))`,
+                        color: `rgb(var(--text-primary))`
+                      }}
                     >
                       {page}
                     </button>
@@ -1751,7 +1926,13 @@ export default function GerenciarChamados() {
                 <button
                   onClick={() => pesquisarChamados(paginaAtual + 1)}
                   disabled={paginaAtual === totalPaginas || loading}
-                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition-colors font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-4 py-2 rounded transition-colors font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{
+                    backgroundColor: `rgb(var(--bg-hover))`,
+                    color: `rgb(var(--text-primary))`
+                  }}
+                  onMouseEnter={(e) => !((e.target as HTMLButtonElement).disabled) && (e.currentTarget.style.backgroundColor = `rgb(var(--bg-active))`)}
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = `rgb(var(--bg-hover))`)}
                 >
                   Próximo →
                 </button>
@@ -1773,7 +1954,9 @@ export default function GerenciarChamados() {
       {/* Modal de Edição Múltipla */}
       {modalEdicaoAberto && (
         <div className="fixed inset-0 bg-black/60  flex items-center justify-center z-50 p-4 ">
-          <div className="bg-white shadow-2xl w-full max-w-3xl transform transition-all rounded-md">
+          <div className="shadow-2xl w-full max-w-3xl transform transition-all rounded-md" style={{
+            backgroundColor: `rgb(var(--bg-primary))`
+          }}>
             {/* header */}
             <div className="bg-linear-to-r from-[#001933] to-[#1A4877] px-6 py-4 rounded-md">
               <div className="flex justify-between items-center">
@@ -1804,13 +1987,18 @@ export default function GerenciarChamados() {
     
     {/* Prioridade */}
     <div className="space-y-2">
-      <label className="block text-xs font-bold uppercase tracking-wider text-gray-500">
+      <label className="block text-xs font-bold uppercase tracking-wider" style={{ color: `rgb(var(--text-secondary))` }}>
         Prioridade
       </label>
       <select
         value={novaPrioridadeId}
         onChange={(e) => setNovaPrioridadeId(e.target.value)}
-        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 text-sm text-gray-900 bg-white transition-all"
+        className="w-full px-3 py-2 border rounded-md focus:ring-1 text-sm transition-all"
+        style={{
+          borderColor: `rgb(var(--border-secondary))`,
+          color: `rgb(var(--text-primary))`,
+          backgroundColor: `rgb(var(--bg-secondary))`
+        }}
       >
         <option value="">Manter atual</option>
         {[...prioridades].sort((a, b) => a.id - b.id).map((prioridade) => (
@@ -1823,13 +2011,18 @@ export default function GerenciarChamados() {
 
     {/* departamento */}
     <div className="space-y-2">
-      <label className="block text-xs font-bold uppercase tracking-wider text-gray-500">
+      <label className="block text-xs font-bold uppercase tracking-wider" style={{ color: `rgb(var(--text-secondary))` }}>
         Departamento
       </label>
       <select
         value={novoDepartamentoId}
         onChange={(e) => setNovoDepartamentoId(e.target.value)}
-        className="w-full px-3 py-2 border border-gray-300 rounded-md  text-sm text-gray-900 bg-white transition-all"
+        className="w-full px-3 py-2 border rounded-md text-sm transition-all"
+        style={{
+          borderColor: `rgb(var(--border-secondary))`,
+          color: `rgb(var(--text-primary))`,
+          backgroundColor: `rgb(var(--bg-secondary))`
+        }}
       >
         <option value="">Manter atual</option>
         {[...departamentos].filter(dept => dept.ativo).sort((a, b) => a.id - b.id).map((dept) => (
@@ -1842,13 +2035,18 @@ export default function GerenciarChamados() {
 
     {/* Status */}
     <div className="space-y-2">
-      <label className="block text-xs font-bold uppercase tracking-wider text-gray-500">
+      <label className="block text-xs font-bold uppercase tracking-wider" style={{ color: `rgb(var(--text-secondary))` }}>
         Status
       </label>
       <select
         value={novoStatusId}
         onChange={(e) => setNovoStatusId(e.target.value)}
-        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 text-sm text-gray-900 bg-white transition-all"
+        className="w-full px-3 py-2 border rounded-md focus:ring-1 text-sm transition-all"
+        style={{
+          borderColor: `rgb(var(--border-secondary))`,
+          color: `rgb(var(--text-primary))`,
+          backgroundColor: `rgb(var(--bg-secondary))`
+        }}
       >
         <option value="">Manter atual</option>
         {[...statusList].sort((a, b) => a.id - b.id).map((status) => (
@@ -1861,13 +2059,18 @@ export default function GerenciarChamados() {
 
     {/* topico */}
     <div className="space-y-2">
-      <label className="block text-xs font-bold uppercase tracking-wider text-gray-500">
+      <label className="block text-xs font-bold uppercase tracking-wider" style={{ color: `rgb(var(--text-secondary))` }}>
         Tópico de ajuda
       </label>
       <select
         value={novoTopicoAjudaId}
         onChange={(e) => setNovoTopicoAjudaId(e.target.value)}
-        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 text-sm text-gray-900 bg-white transition-all"
+        className="w-full px-3 py-2 border rounded-md focus:ring-1 text-sm transition-all"
+        style={{
+          borderColor: `rgb(var(--border-secondary))`,
+          color: `rgb(var(--text-primary))`,
+          backgroundColor: `rgb(var(--bg-secondary))`
+        }}
       >
         <option value="">Manter atual</option>
         {[...topicosAjuda].filter(topico => topico.ativo).sort((a, b) => a.id - b.id).map((topico) => (
@@ -1879,18 +2082,27 @@ export default function GerenciarChamados() {
     </div>
   </div>
 
-  <div className="mb-8 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+  <div className="mb-8 p-4 rounded-lg" style={{
+    backgroundColor: `rgb(var(--bg-secondary))`,
+    borderColor: `rgb(var(--border-secondary))`,
+    borderWidth: '1px'
+  }}>
     <div className="flex items-center gap-2 mb-3">
       <svg className="w-4 h-4 text-[#1A00FF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
       </svg>
-      <h4 className="text-sm font-semibold text-gray-800">Redirecionar Chamado</h4>
+      <h4 className="text-sm font-semibold" style={{ color: `rgb(var(--text-primary))` }}>Redirecionar Chamado</h4>
     </div>
     
     <select
       value={novoResponsavelId}
       onChange={(e) => setNovoResponsavelId(e.target.value)}
-      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500 text-sm bg-white"
+      className="w-full px-3 py-2 border rounded-md focus:ring-1 focus:ring-blue-500 text-sm"
+      style={{
+        borderColor: `rgb(var(--border-secondary))`,
+        color: `rgb(var(--text-primary))`,
+        backgroundColor: `rgb(var(--bg-primary))`
+      }}
     >
       <option value="">Não alterar responsável</option>
       {usuariosAdmin.length === 0 && (
@@ -1902,17 +2114,28 @@ export default function GerenciarChamados() {
         </option>
       ))}
     </select>
-    <p className="mt-2 text-[14px] text-gray-500 italic">
+    <p className="mt-2 text-[14px] italic" style={{ color: `rgb(var(--text-secondary))` }}>
       * Apenas chamados sob sua responsabilidade podem ser redirecionados.
     </p>
   </div>
 
   {/* Botões */}
-  <div className="flex gap-3 justify-end pt-6 border-t border-gray-100">
+  <div className="flex gap-3 justify-end pt-6" style={{
+    borderTopColor: `rgb(var(--border-secondary))`,
+    borderTopWidth: '1px'
+  }}>
     <button
       onClick={fecharModalEdicao}
       disabled={submittingEdicao}
-      className="px-6 py-2 bg-transparent border border-gray-400 text-gray-700 rounded-lg hover:bg-gray-200 hover:text-gray-900 transition-all duration-200 transform hover:scale-105 font-medium disabled:border-gray-300 disabled:text-gray-400 disabled:bg-transparent disabled:cursor-not-allowed"
+      className="px-6 py-2 rounded-lg transition-all duration-200 transform hover:scale-105 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+      style={{
+        backgroundColor: 'transparent',
+        borderWidth: '1px',
+        borderColor: `rgb(var(--border-secondary))`,
+        color: `rgb(var(--text-primary))`
+      }}
+      onMouseEnter={(e) => !((e.target as HTMLButtonElement).disabled) && (e.currentTarget.style.backgroundColor = `rgb(var(--bg-hover))`)}
+      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
     >
       Cancelar
     </button>

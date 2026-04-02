@@ -150,12 +150,12 @@ select {
 
 :root {
   /* backgrounds */
-  --bg-primary: 244 244 244; /* #F4F4F4 - Fundo principal */
-  --bg-fundoneutro: 244 244 244; /* #DFDFDF */
+  --bg-primary: 237 237 237; /* #EDEDED - Fundo principal more cinzento */
+  --bg-fundoneutro: 237 237 237; /* #EDEDED */
 
   --bg-graficos: 255 255 255; /* #FFFFFF */
-  --bg-tertiary: 241 245 249; /* #F1F5F9 */
-  --bg-hover: 226 232 240; /* #E2E8F0 */
+  --bg-tertiary: 245 246 249; /* #F5F6F9 */
+  --bg-hover: 224 224 224; /* #E0E0E0 - mais cinzento */
   --bg-elevated: 255 255 255; /* #FFFFFF */
   --bg-admin-header: 0 0 0; /* #000000 - for dark overlays */
 
@@ -166,12 +166,12 @@ select {
   --text-inverse: 255 255 255; /* #FFFFFF */
 
   /* border & dividers */
-  --border-primary: 219 224 230; /* #DBE0E6 */
-  --border-secondary: 229 231 235; /* #E5E7EB */
-  --border-light: 243 244 246; /* #F3F4F6 */
+  --border-primary: 209 213 219; /* #D1D5DB - mais escuro */
+  --border-secondary: 209 213 219; /* #D1D5DB - gray-300 mais escuro */
+  --border-light: 229 231 235; /* #E5E7EB */
 
   /* brand colors */
-  --brand-primary: 26 104 207; /* #1A68CF */
+  --brand-primary: 0 43 87; /* #1A68CF */
   --brand-dark: 0 47 97; /* #002F61 */
   --brand-light: 219 234 254; /* #DBEAFE */
 
@@ -191,7 +191,7 @@ select {
   --data-special: 147 51 234; /* #9333EA - Purple */
 
   /* Header e Navegação */
-  --cor-header-fundo: 26 104 207; /* #1A68CF - Azul marca */
+  --cor-header-fundo: 0 43 87; /* #1A68CF - Azul marca */
   --cor-header-texto: 255 255 255; /* #FFFFFF - Branco */
   --cor-botao-pesquisar: 0 47 97; /* #002F61 - Azul escuro */
   
@@ -203,6 +203,35 @@ select {
   --cor-card-pendentes: 245 158 11; /* #F59E0B - Âmbar/Laranja */
   --cor-card-pendente-usuario: 147 51 234; /* #9333EA - Roxo */
   --cor-card-texto: 255 255 255; /* #FFFFFF - Branco */
+
+  /* Status da Tabela */
+  --status-1-bg: 254 243 199; /* #FEF3C7 - Amarelo claro */
+  --status-1-texto: 180 83 9; /* #B45309 - Amarelo escuro */
+  --status-1-borda: 217 119 6; /* #D97706 - Âmbar */
+  
+  --status-2-bg: 219 234 254; /* #DBEAFE - Azul claro */
+  --status-2-texto: 30 58 138; /* #1E3A8A - Azul escuro */
+  --status-2-borda: 59 130 246; /* #3B82F6 - Azul */
+  
+  --status-3-bg: 220 252 231; /* #DCFCE7 - Verde claro */
+  --status-3-texto: 20 83 45; /* #14532D - Verde escuro */
+  --status-3-borda: 74 222 128; /* #4ADE80 - Verde */
+  
+  --status-4-bg: 254 226 226; /* #FEE2E2 - Vermelho claro */
+  --status-4-texto: 127 29 29; /* #7F1D1D - Vermelho escuro */
+  --status-4-borda: 239 68 68; /* #EF4444 - Vermelho */
+  
+  --status-5-bg: 243 232 255; /* #F3E8FF - Roxo claro */
+  --status-5-texto: 88 28 135; /* #581C87 - Roxo escuro */
+  --status-5-borda: 168 85 247; /* #A855F7 - Roxo */
+  
+  --status-6-bg: 243 244 246; /* #F3F4F6 - Cinza claro */
+  --status-6-texto: 55 65 81; /* #374151 - Cinza escuro */
+  --status-6-borda: 107 114 128; /* #6B7280 - Cinza */
+  
+  --status-7-bg: 254 237 210; /* #FEEDD2 - Laranja claro */
+  --status-7-texto: 124 45 18; /* #7C2D12 - Laranja escuro */
+  --status-7-borda: 251 146 60; /* #FB923C - Laranja */
 
   /* Card Total Geral */
   --cor-card-total-inicio: 55 65 81; /* #374151 - Cinza grafite claro */
@@ -230,15 +259,39 @@ select {
   --cor-tooltip-fundo: 17 24 39; /* #111827 - Preto com cinza */
   --cor-tooltip-texto: 255 255 255; /* #FFFFFF - Branco */
   --cor-tooltip-borda: 43 44 45; /* #374151 - Cinza */
+
+  /* Filtros e Controles */
+  --bg-filtros: 255 255 255; /* #F0F1F5 - Fundo dos filtros */
+  --bg-secondary: 255 255 255; /* #FFFFFF - Fundo dos selects bem claro para sem cinza */
+  --cor-borda-primaria: 224 224 224; 
+  --cor-botao-ativo: 25 25 25;
+  --cor-botao-primario: 0 43 87; /* #1A68CF - Azul para botões primários */
+  --bg-disabled: 217 219 226; /* #D9DDE2 - Desabilitado */
+  --text-disabled: 156 163 175; /* #9CA3AF - Texto desabilitado */
+
+  /* Checkbox - Tema Claro */
+  --checkbox-border: 107 114 128; /* #6B7280 - Borda cinza média */
+  --checkbox-bg: 255 255 255; /* #FFFFFF - Fundo branco */
+  --checkbox-checked-bg: 0 43 87; /* #1A68CF - Azul marca quando checado */
+  --checkbox-checked-border: 0 43 87; /* #1A68CF - Azul marca border */
+
+  /* Input/DatePicker - Tema Claro */
+  --input-bg: 255 255 255; /* #FFFFFF - Branco */
+  --input-border: 209 213 219; /* #D1D5DB - Gray-300 */
+  --input-focus-ring: 0 43 87; /* #1A68CF - Azul marca focus */
+
+  /*cor do toggle de tabela/quadro*/
+  --bg-cinzaescuro: 126 126 126; /* #FFFFFF - Branco */
+  
 }
 
 /* DARK THEME */
 html.dark {
   --bg-primary: 27 27 27; /* #000000 - Preto puro */
-  --bg-secondary: 31 41 55; /* #1F2937 */
+  --bg-secondary: 38 38 38; /* #1F2937 */
   --bg-tertiary: 37 47 63; /* #252F3F */
   --bg-hover: 55 65 81; /* #374151 */
-  --bg-elevated: 55 65 81; /* #374151 */
+  --bg-elevated: 38 38 38; /* #374151 */
 
   --text-primary: 243 244 246; /* #F3F4F6 */
   --text-secondary: 209 213 219; /* #D1D5DB */
@@ -246,7 +299,7 @@ html.dark {
   --text-inverse: 17 24 39; /* #111827 */
 
   --border-primary: 75 85 99; /* #4B5563 */
-  --border-secondary: 55 65 81; /* #374151 */
+  --border-secondary: 38 38 38; /* #374151 */
   --border-light: 37 47 63; /* #252F3F */
 
   --brand-primary: 96 165 250; /* #60A5FA */
@@ -271,7 +324,7 @@ html.dark {
 
   
   /* Header e Navegação */
-  --cor-header-fundo: 26 104 207; /* #1A68CF - Azul marca (mantém) */
+  --cor-header-fundo: 0 43 87; /* #1A68CF - Azul marca (mantém) */
   --cor-header-texto: 255 255 255; /* #FFFFFF - Branco */
   --cor-botao-pesquisar: 0 47 97; /* #002F61 - Azul escuro (mantém) */
   
@@ -283,6 +336,35 @@ html.dark {
   --cor-card-pendentes: 245 158 11; /* #F59E0B - Âmbar/Laranja (mantém) */
   --cor-card-pendente-usuario: 147 51 234; /* #9333EA - Roxo (mantém) */
   --cor-card-texto: 255 255 255; /* #FFFFFF - Branco */
+
+  /* Status da Tabela - TEMA DARK ( mais saturada) */
+  --status-1-bg: 120 53 15; /* #783515 - Amarelo fundo escuro saturado */
+  --status-1-texto: 254 215 170; /* #FED7AA - Amarelo texto claro */
+  --status-1-borda: 251 146 60; /* #FB923C - Laranja saturado */
+  
+  --status-2-bg: 15 40 90; /* #0F285A - Azul fundo escuro saturado */
+  --status-2-texto: 147 197 253; /* #93C5FD - Azul texto claro */
+  --status-2-borda: 59 130 246; /* #3B82F6 - Azul saturado */
+  
+  --status-3-bg: 20 83 45; /* #14532D - Verde fundo escuro saturado */
+  --status-3-texto: 134 239 172; /* #86EFAC - Verde texto claro */
+  --status-3-borda: 74 222 128; /* #4ADE80 - Verde saturado */
+  
+  --status-4-bg: 127 29 29; /* #7F1D1D - Vermelho fundo escuro saturado */
+  --status-4-texto: 254 205 211; /* #FECDD3 - Vermelho texto claro */
+  --status-4-borda: 248 113 113; /* #F87171 - Vermelho saturado */
+  
+  --status-5-bg: 88 28 135; /* #581C87 - Roxo fundo escuro saturado */
+  --status-5-texto: 217 70 239; /* #D946EF - Roxo texto claro */
+  --status-5-borda: 192 132 250; /* #C084FA - Roxo saturado */
+  
+  --status-6-bg: 55 65 81; /* #374151 - Cinza fundo escuro */
+  --status-6-texto: 229 231 235; /* #E5E7EB - Cinza texto claro */
+  --status-6-borda: 156 163 175; /* #9CA3AF - Cinza saturado */
+  
+  --status-7-bg: 124 45 18; /* #7C2D12 - Laranja fundo escuro saturado */
+  --status-7-texto: 254 237 210; /* #FEEDD2 - Laranja texto claro */
+  --status-7-borda: 251 146 60; /* #FB923C - Laranja saturado */
 
   /* Card Total Geral */
   --cor-card-total-inicio: 37 47 63; /* #252F3F - Cinza escuro tema dark */
@@ -310,6 +392,26 @@ html.dark {
   --cor-tooltip-fundo: 17 24 39; /* #FFFFFF - Branco (invertido) */
   --cor-tooltip-texto: 255  255 255; /* #111827 - Texto escuro (invertido) */
   --cor-tooltip-borda: 229 231 235; /* #E5E7EB - Cinza claro (invertido) */
+
+  /* Filtros e Controles */
+  --bg-filtros: 23 23 23; /* #252F3F - Fundo dos filtros mais escuro tema dark */
+  --bg-secondary: 23 23 23; /* #2D2D2D - Secundário dark mais contrastivo */
+  --cor-borda-primaria: 127 144 161; 
+  --cor-botao-ativo: 96 165 250; /* #60A5FA - Azul claro para botões ativos dark */
+  --cor-botao-primario: 0 43 87; /* #1A68CF - Azul para botões primários dark*/
+  --bg-disabled: 55 65 81; /* #374151 - Desabilitado dark */
+  --text-disabled: 107 114 128; /* #6B7280 - Texto desabilitado dark */
+
+  /* Checkbox - Tema Escuro */
+  --checkbox-border: 96 165 250; /* #60A5FA - Azul brilhante (mais contraste) */
+  --checkbox-bg: 31 41 55; /* #1F2937 - Fundo cinza escuro */
+  --checkbox-checked-bg: 59 130 246; /* #3B82F6 - Azul mais saturado quando checado */
+  --checkbox-checked-border: 129 140 248; /* #818CF8 - Azul luminoso para borda */
+
+  /* Input/DatePicker - Tema Escuro */
+  --input-bg: 23 23 23; /* #1F2937 - Fundo cinza escuro */
+  --input-border: 145 145 145; /* #60A5FA - Azul brilhante para melhor contraste */
+  --input-focus-ring: 129 140 248; /* #818CF8 - Azul luminoso focus */
 }
 
 html {
@@ -326,6 +428,98 @@ body {
 .font-segoe {
   font-family: "Segoe UI", Helvetica, Arial, sans-serif, "Work Sans", "MonteCarlo", sans-serif;
 }
+
+
+   /* CHECKBOX CUSTOMIZADO - TEMA CLARO E ESCURO*/
+input[type="checkbox"].theme-checkbox {
+  width: 1.25rem;
+  height: 1.25rem;
+  cursor: pointer;
+  border-radius: 0.375rem;
+  border: 1px solid rgb(var(--checkbox-border));
+  background-color: rgb(var(--checkbox-bg));
+  appearance: none;
+  position: relative;
+  accent-color: rgb(var(--checkbox-checked-bg));
+}
+
+input[type="checkbox"].theme-checkbox:checked {
+  background-color: rgb(var(--checkbox-checked-bg));
+  border-color: rgb(var(--checkbox-checked-border));
+}
+
+input[type="checkbox"].theme-checkbox:checked::after {
+  content: '✓';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 0.875rem;
+  font-weight: bold;
+  pointer-events: none;
+}
+
+/*  INPUTS E DATEPICKERS - TEMA ADAPTÁVEL */
+input[type="text"],
+input[type="date"],
+input[type="email"],
+input[type="number"],
+input[type="password"],
+select,
+.react-datepicker__input {
+  background-color: rgb(var(--input-bg)) !important;
+  border-color: rgb(var(--input-border)) !important;
+  color: rgb(var(--text-primary)) !important;
+  transition: all 0.2s ease-in-out;
+}
+
+input[type="text"]:focus,
+input[type="date"]:focus,
+input[type="email"]:focus,
+input[type="number"]:focus,
+input[type="password"]:focus,
+select:focus,
+.react-datepicker__input:focus {
+  outline: none;
+  border-color: rgb(var(--input-focus-ring)) !important;
+  box-shadow: 0 0 0 3px rgba(var(--input-focus-ring), 0.1);
+}
+
+input[type="text"]:hover,
+input[type="date"]:hover,
+input[type="email"]:hover,
+input[type="number"]:hover,
+input[type="password"]:hover,
+select:hover,
+.react-datepicker__input:hover {
+  border-color: rgb(var(--input-focus-ring));
+}
+
+.action-button {
+  transition: all 0.2s ease-in-out;
+}
+
+/* Tema claro: sem borda */
+.action-button:not(html.dark) {
+  border: none !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.action-button:hover:not(html.dark) {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Tema escuro: mesmo estilo que o claro */
+html.dark .action-button {
+  border: none !important;
+}
+
+html.dark .action-button:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
 /* animacoes para modais - otimizadas para performance */
 @keyframes fadeIn {
   from {
