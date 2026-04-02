@@ -144,15 +144,183 @@ select {
   -ms-overflow-style: none !important;
 }
 
+/* ============================================================================
+   TEMA CLARO - VARIÁVEIS CSS CENTRALIZADAS COM PADRÃO RGB
+   ============================================================================ */
+
 :root {
-  --background: #DFDFDF;
-  --foreground: #171717;
+  /* backgrounds */
+  --bg-primary: 244 244 244; /* #F4F4F4 - Fundo principal */
+  --bg-fundoneutro: 244 244 244; /* #DFDFDF */
+
+  --bg-graficos: 255 255 255; /* #FFFFFF */
+  --bg-tertiary: 241 245 249; /* #F1F5F9 */
+  --bg-hover: 226 232 240; /* #E2E8F0 */
+  --bg-elevated: 255 255 255; /* #FFFFFF */
+  --bg-admin-header: 0 0 0; /* #000000 - for dark overlays */
+
+  /* text colors */
+  --text-primary: 23 23 23; /* #171717 */
+  --text-secondary: 107 114 128; /* #6B7280 */
+  --text-tertiary: 156 163 175; /* #9CA3AF */
+  --text-inverse: 255 255 255; /* #FFFFFF */
+
+  /* border & dividers */
+  --border-primary: 219 224 230; /* #DBE0E6 */
+  --border-secondary: 229 231 235; /* #E5E7EB */
+  --border-light: 243 244 246; /* #F3F4F6 */
+
+  /* brand colors */
+  --brand-primary: 26 104 207; /* #1A68CF */
+  --brand-dark: 0 47 97; /* #002F61 */
+  --brand-light: 219 234 254; /* #DBEAFE */
+
+  /* specialty - used in dashboard */
+  --chart-bg: 248 250 252; /* #F8FAFC */
+  --chart-hover: 226 232 240; /* #E2E8F0 */
+  --card-bg: 255 255 255; /* #FFFFFF */
+  --overlay-bg: 55 65 81; /* #373B51 - for dark overlays */
+  --admin-header-bg: 0 0 0; /* #000000 - for dark overlays */
+
+  /* DATA COLORS  */
+  --data-success: 46 204 113; /* #2ECC71 - Green */
+  --data-error: 231 76 60; /* #E74C3C - Red */
+  --data-warning: 245 158 11; /* #F59E0B - Orange */
+  --data-info: 59 130 246; /* #3B82F6 - Blue */
+  --data-finalized: 30 41 59; /* #1E293B - Dark slate */
+  --data-special: 147 51 234; /* #9333EA - Purple */
+
+  /* Header e Navegação */
+  --cor-header-fundo: 26 104 207; /* #1A68CF - Azul marca */
+  --cor-header-texto: 255 255 255; /* #FFFFFF - Branco */
+  --cor-botao-pesquisar: 0 47 97; /* #002F61 - Azul escuro */
+  
+  /* Cards de Status */
+  --cor-card-abertos: 46 204 113; /* #2ECC71 - Verde */
+  --cor-card-atrasados: 231 76 60; /* #E74C3C - Vermelho */
+  --cor-card-em-andamento: 59 130 246; /* #3B82F6 - Azul */
+  --cor-card-finalizados: 45 53 70; /* #2D3646 - Cinza escuro */
+  --cor-card-pendentes: 245 158 11; /* #F59E0B - Âmbar/Laranja */
+  --cor-card-pendente-usuario: 147 51 234; /* #9333EA - Roxo */
+  --cor-card-texto: 255 255 255; /* #FFFFFF - Branco */
+
+  /* Card Total Geral */
+  --cor-card-total-inicio: 55 65 81; /* #374151 - Cinza grafite claro */
+  --cor-card-total-fim: 30 41 59; /* #1E293B - Cinza grafite escuro */
+  
+  /* Graficos - Container */
+  --cor-grafico-fundo: 248 250 252; /* #F8FAFC - Cinza muito claro */
+  --cor-grafico-borda: 229 231 235; /* #E5E7EB - Cinza bordas */
+  --cor-grafico-titulo: 31 41 55; /* #1F2937 - Cinzento para títulos */
+  --cor-grafico-subtitulo: 107 114 128; /* #6B7280 - Cinzento secundário */
+  
+  /* Graficos - Elementos */
+  --cor-grid: 229 231 235; /* #E5E7EB - Linha do grid */
+  --cor-eixo: 107 114 128; /* #6B7280 - Eixo X/Y */
+  --cor-linha-interno: 59 130 246; /* #3B82F6 - Azul */
+  --cor-linha-externo: 245 158 11; /* #F59E0B - Laranja */
+  --cor-barra-topicos: 77 29 149; /* #4D1D95 - Roxo */
+  --cor-barra-topicos-label: 255 255 255; /* #FFFFFF - Branco para contraste */
+  --cor-barra-usuarios: 59 130 246; /* #3B82F6 - Azul */
+  --cor-barra-usuarios-label: 255 255 255; /* #FFFFFF - Branco para contraste */
+  --cor-cursor-hover: 226 232 240; /* #E2E8F0 - Cinza claro para hover */
+  --cor-label-valor: 255 255 255; /* #FFFFFF - Branco para labels premium */
+  
+  /* Graficos - Tooltip */
+  --cor-tooltip-fundo: 17 24 39; /* #111827 - Preto com cinza */
+  --cor-tooltip-texto: 255 255 255; /* #FFFFFF - Branco */
+  --cor-tooltip-borda: 43 44 45; /* #374151 - Cinza */
+}
+
+/* DARK THEME */
+html.dark {
+  --bg-primary: 27 27 27; /* #000000 - Preto puro */
+  --bg-secondary: 31 41 55; /* #1F2937 */
+  --bg-tertiary: 37 47 63; /* #252F3F */
+  --bg-hover: 55 65 81; /* #374151 */
+  --bg-elevated: 55 65 81; /* #374151 */
+
+  --text-primary: 243 244 246; /* #F3F4F6 */
+  --text-secondary: 209 213 219; /* #D1D5DB */
+  --text-tertiary: 156 163 175; /* #9CA3AF */
+  --text-inverse: 17 24 39; /* #111827 */
+
+  --border-primary: 75 85 99; /* #4B5563 */
+  --border-secondary: 55 65 81; /* #374151 */
+  --border-light: 37 47 63; /* #252F3F */
+
+  --brand-primary: 96 165 250; /* #60A5FA */
+  --brand-dark: 147 197 253; /* #93C5FD */
+  --brand-light: 30 58 138; /* #1E3A8A */
+
+  --chart-bg: 31 41 55; /* #1F2937 */
+  --chart-hover: 55 65 81; /* #374151 */
+  --card-bg: 37 47 63; /* #252F3F */
+  --overlay-bg: 0 0 0; /* #000000 */
+
+  /* CORES DOS CARDS DO DASHBOARD */
+  --data-success: 46 204 113; /* #2ECC71 - Green */
+  --data-error: 231 76 60; /* #E74C3C - Red */
+  --data-warning: 245 158 11; /* #F59E0B - Orange */
+  --data-info: 59 130 246; /* #3B82F6 - Blue */
+  --data-finalized: 30 41 59; /* #1E293B - Dark slate */
+  --data-special: 147 51 234; /* #9333EA - Purple */
+
+  /* ========================================================================= */
+  /* CORES DO DASHBOARD - TEMA DAARK */
+
+  
+  /* Header e Navegação */
+  --cor-header-fundo: 26 104 207; /* #1A68CF - Azul marca (mantém) */
+  --cor-header-texto: 255 255 255; /* #FFFFFF - Branco */
+  --cor-botao-pesquisar: 0 47 97; /* #002F61 - Azul escuro (mantém) */
+  
+  /* Cards de Status */
+  --cor-card-abertos: 46 204 113; /* #2ECC71 - Verde (mantém) */
+  --cor-card-atrasados: 231 76 60; /* #E74C3C - Vermelho (mantém) */
+  --cor-card-em-andamento: 59 130 246; /* #3B82F6 - Azul (mantém) */
+  --cor-card-finalizados: 45 53 70; /* #2D3646 - Cinza escuro (mantém) */
+  --cor-card-pendentes: 245 158 11; /* #F59E0B - Âmbar/Laranja (mantém) */
+  --cor-card-pendente-usuario: 147 51 234; /* #9333EA - Roxo (mantém) */
+  --cor-card-texto: 255 255 255; /* #FFFFFF - Branco */
+
+  /* Card Total Geral */
+  --cor-card-total-inicio: 37 47 63; /* #252F3F - Cinza escuro tema dark */
+  --cor-card-total-fim: 17 24 39; /* #111827 - Preto com cinza */
+  
+  /* Gráficos - Container */
+  --cor-grafico-fundo: 31 41 55; /* #1F2937 - Cinza escuro */
+  --cor-grafico-borda: 55 65 81; /* #374151 - Cinza bordas escuro */
+  --cor-grafico-titulo: 243 244 246; /* #F3F4F6 - Cinzento claro para títulos */
+  --cor-grafico-subtitulo: 209 213 219; /* #D1D5DB - Cinzento secundário claro */
+  
+  /* Gráficos - Elementos */
+  --cor-grid: 55 65 81; /* #374151 - Linha do grid escuda */
+  --cor-eixo: 209 213 219; /* #D1D5DB - Eixo X/Y claro */
+  --cor-linha-interno: 59 130 246; /* #3B82F6 - Azul (mantém) */
+  --cor-linha-externo: 245 158 11; /* #F59E0B - Laranja (mantém) */
+  --cor-barra-topicos: 77 29 149; /* #4D1D95 - Roxo (mantém) */
+  --cor-barra-topicos-label: 255 255 255; /* #FFFFFF - Branco para contraste */
+  --cor-barra-usuarios: 59 130 246; /* #3B82F6 - Azul (mantém) */
+  --cor-barra-usuarios-label: 255 255 255; /* #FFFFFF - Branco para contraste */
+  --cor-cursor-hover: 55 65 81; /* #374151 - Cinza escuro para hover */
+  --cor-label-valor: 243 244 246; /* #F3F4F6 - Cinza claro para labels */
+  
+  /* Gráficos - Tooltip */
+  --cor-tooltip-fundo: 17 24 39; /* #FFFFFF - Branco (invertido) */
+  --cor-tooltip-texto: 255  255 255; /* #111827 - Texto escuro (invertido) */
+  --cor-tooltip-borda: 229 231 235; /* #E5E7EB - Cinza claro (invertido) */
+}
+
+html {
+  color-scheme: light dark;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background-color: rgb(var(--bg-primary));
+  color: rgb(var(--text-primary));
   font-family: Arial, Helvetica, sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .font-segoe {
