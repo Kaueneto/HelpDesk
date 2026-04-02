@@ -69,22 +69,38 @@ interface TicketCardProps {
 
 // mapeamento de cores para prioridades
 const priorityColors: { [key: string]: string } = {
-  'baixo': 'bg-green-100 text-green-800 border-green-500',
-  'medio': 'bg-blue-100 text-blue-600 border-blue-500',
-  'alto': 'bg-yellow-100 text-yellow-700 border-yellow-500',
-  'crítica': 'bg-red-100 text-red-800 border-red-500',
-  'urgente': 'bg-red-100 text-red-800 border-red-700',
+  'baixo': '--status-3-bg',      // Verde
+  'medio': '--status-2-bg',      // Azul
+  'alto': '--status-1-bg',       // Amarelo
+  'crítica': '--status-4-bg',    // Vermelho
+  'urgente': '--status-4-bg',    // Vermelho
 };
 
-// mapeamento de cores para status
-const statusColors: { [key: number]: string } = {
-  1: 'bg-yellow-100 text-yellow-700 border-yellow-500',      // ABERTO
-  2: 'bg-blue-100 text-blue-600 border-blue-500',            // EM ATENDIMENTO
-  3: 'bg-green-100 text-green-800 border-green-700',         // ENCERRADO
-  4: 'bg-gray-100 text-red-800 border-red-700',              // CANCELADO
-  5: 'bg-purple-100 text-purple-700 border-purple-500',      // AGUARDANDO
-  6: 'bg-gray-100 text-gray-800 border-gray-700',            // OUTRO CASO HOUVER MAIS NA FRENTE
-  7: 'bg-orange-100 text-orange-800 border-orange-700',      // OUTRO CASO HOUVER MAIS NA FRENTE
+const priorityTextColors: { [key: string]: string } = {
+  'baixo': '--status-3-texto',
+  'medio': '--status-2-texto',
+  'alto': '--status-1-texto',
+  'crítica': '--status-4-texto',
+  'urgente': '--status-4-texto',
+};
+
+const priorityBorderColors: { [key: string]: string } = {
+  'baixo': '--status-3-borda',
+  'medio': '--status-2-borda',
+  'alto': '--status-1-borda',
+  'crítica': '--status-4-borda',
+  'urgente': '--status-4-borda',
+};
+
+// mapeamento de cores para status (usando IDs e variáveis CSS)
+const statusColorVars: { [key: number]: { bg: string; text: string; border: string } } = {
+  1: { bg: '--status-1-bg', text: '--status-1-texto', border: '--status-1-borda' },      // ABERTO
+  2: { bg: '--status-2-bg', text: '--status-2-texto', border: '--status-2-borda' },      // EM ATENDIMENTO
+  3: { bg: '--status-3-bg', text: '--status-3-texto', border: '--status-3-borda' },      // ENCERRADO
+  4: { bg: '--status-4-bg', text: '--status-4-texto', border: '--status-4-borda' },      // CANCELADO
+  5: { bg: '--status-5-bg', text: '--status-5-texto', border: '--status-5-borda' },      // AGUARDANDO
+  6: { bg: '--status-6-bg', text: '--status-6-texto', border: '--status-6-borda' },      // OUTRO
+  7: { bg: '--status-7-bg', text: '--status-7-texto', border: '--status-7-borda' },      // OUTRO
 };
 
 const TicketCard = memo(({ chamado, onClick, isDragging = false, onSelect, isSelected = false }: TicketCardProps) => {
@@ -143,11 +159,14 @@ const TicketCard = memo(({ chamado, onClick, isDragging = false, onSelect, isSel
 
   const getPriorityColor = (prioridadeNome: string) => {
     const normalizedName = prioridadeNome.toLowerCase();
-    return priorityColors[normalizedName] || 'bg-gray-100 text-gray-800 border-gray-500';
+    const bgVar = priorityColors[normalizedName] || '--status-6-bg';
+    const textVar = priorityTextColors[normalizedName] || '--status-6-texto';
+    const borderVar = priorityBorderColors[normalizedName] || '--status-6-borda';
+    return { bgVar, textVar, borderVar };
   };
 
   const getStatusColor = (statusId: number) => {
-    return statusColors[statusId] || 'bg-red-100 text-red-800 border-red-800';
+    return statusColorVars[statusId] || { bg: '--status-6-bg', text: '--status-6-texto', border: '--status-6-borda' };
   };
 
   const handleCardClick = (e: React.MouseEvent) => {
@@ -175,7 +194,6 @@ const TicketCard = memo(({ chamado, onClick, isDragging = false, onSelect, isSel
   return (
     <motion.div
       ref={setNodeRef}
-      style={style}
       {...attributes}
       {...listeners}
       layout
@@ -194,19 +212,20 @@ const TicketCard = memo(({ chamado, onClick, isDragging = false, onSelect, isSel
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       className={`
-        bg-[#fdfdfd] rounded-lg shadow-sm border transition-all duration-100 ease-out
+        rounded-lg shadow-sm border transition-all duration-100 ease-out
         relative overflow-hidden group
-        ${isSelected
-          ? 'border-blue-500 shadow-md bg-blue-50'
-          : 'border-gray-200 hover:shadow-md hover:border-blue-300'
-        }
-        ${sortableIsDragging || isDragging
-          ? 'shadow-lg border-blue-500 bg-blue-50 opacity-50 scale-105 cursor-grabbing'
-          : 'cursor-pointer hover:bg-blue-50/30'
-        }
-        ${showMoveAnimation ? 'shadow-lg shadow-green-400 border-green-400' : ''}
         select-none
       `}
+      style={{
+        ...style,
+        backgroundColor: `rgb(var(--kanban-card-bg))`,
+        borderColor: isSelected ? '#3b82f6' : `rgb(var(--kanban-card-border))`,
+        borderWidth: '1px',
+        cursor: sortableIsDragging || isDragging ? 'grabbing' : 'pointer',
+        boxShadow: sortableIsDragging || isDragging ? '0 10px 15px -3px rgba(59, 130, 246, 0.4)' : isSelected ? '0 0 0 2px #3b82f6' : '0 1px 2px rgba(0, 0, 0, 0.1)',
+        opacity: sortableIsDragging ? 0.5 : 1,
+        transform: (sortableIsDragging || isDragging) ? 'scale(1.05)' : 'scale(1)',
+      }}
       onClick={handleCardClick}
     >
       {/* efeito de glow quando move */}
@@ -217,13 +236,14 @@ const TicketCard = memo(({ chamado, onClick, isDragging = false, onSelect, isSel
             animate={{ opacity: 0, scale: 1.1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.8 }}
-            className="absolute inset-0 border-2 border-green-400 rounded-lg pointer-events-none"
+            className="absolute inset-0 border-2 rounded-lg pointer-events-none"
+            style={{ borderColor: '#22c55e' }}
           />
         )}
       </AnimatePresence>
       {/* visual indicator pra drag */}
       {sortableIsDragging && (
-        <div className="absolute inset-0 bg-blue-400 opacity-10"></div>
+        <div className="absolute inset-0 opacity-10" style={{ backgroundColor: '#3b82f6' }}></div>
       )}
 
       <div className="p-3">
@@ -242,11 +262,12 @@ const TicketCard = memo(({ chamado, onClick, isDragging = false, onSelect, isSel
         >
           <div className={`
             w-5 h-5 rounded-lg border flex items-center justify-center cursor-pointer transition-all
-            ${isSelected 
-              ? 'bg-blue-500 border-blue-500' 
-              : 'border-gray-300 hover:border-blue-400'
-            }
-          `}>
+          `}
+          style={{
+            backgroundColor: isSelected ? '#3b82f6' : 'transparent',
+            borderColor: isSelected ? '#3b82f6' : `rgb(var(--kanban-card-border))`
+          }}
+          >
             {isSelected && (
               <FiCheck className="w-3 h-3 text-white" strokeWidth={3} />
             )}
@@ -255,10 +276,12 @@ const TicketCard = memo(({ chamado, onClick, isDragging = false, onSelect, isSel
 
           {/* conteudo principal */}
           <div className="flex-1 min-w-0">
-            <h3 className="font-segoe text-base font-semibold text-gray-800 line-clamp-2 leading-tight">
+            <h3 className="font-segoe text-base font-semibold line-clamp-2 leading-tight"
+              style={{ color: `rgb(var(--kanban-text-primary))` }}
+            >
               {chamado.resumoChamado}
             </h3>
-            <p className="text-xs text-gray-500 mt-0.5">
+            <p className="text-xs mt-0.5" style={{ color: `rgb(var(--kanban-text-secondary))` }}>
               #{chamado.numeroChamado || chamado.id}
             </p>
           </div>
@@ -270,38 +293,60 @@ const TicketCard = memo(({ chamado, onClick, isDragging = false, onSelect, isSel
         <div className="space-y-1.5">
           {/* prioridade */}
           <div>
-            <span className={`
-              inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border 
-              ${getPriorityColor(chamado.tipoPrioridade.nome)}
-            `}>
-              {chamado.tipoPrioridade.nome}
-            </span>
+            {(() => {
+              const { bgVar, textVar, borderVar } = getPriorityColor(chamado.tipoPrioridade.nome);
+              return (
+                <span className={`
+                  inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border 
+                `}
+                style={{
+                  backgroundColor: `rgb(var(${bgVar}))`,
+                  color: `rgb(var(${textVar}))`,
+                  borderColor: `rgb(var(${borderVar}))`
+                }}
+                >
+                  {chamado.tipoPrioridade.nome}
+                </span>
+              );
+            })()}
           </div>
 
           {/* topico */}
-          <div className={`${workSans.className} flex items-center text-sm text-gray-600 gap-1.5`}>
-            <FiFileText className="w-3 h-3 text-gray-400 shrink-0" />
+          <div className={`${workSans.className} flex items-center text-sm gap-1.5`}
+            style={{ color: `rgb(var(--kanban-text-secondary))` }}
+          >
+            <FiFileText className="w-3 h-3 shrink-0" />
             <span className="truncate">{chamado.topicoAjuda.nome}</span>
           </div>
 
           {/* status */}
           <div>
-            <span className={`
-              inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border 
-              ${getStatusColor(chamado.status.id)}
-            `}>
-              {chamado.status.nome}
-            </span>
+            {(() => {
+              const { bg, text, border } = getStatusColor(chamado.status.id);
+              return (
+                <span className={`
+                  inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border 
+                `}
+                style={{
+                  backgroundColor: `rgb(var(${bg}))`,
+                  color: `rgb(var(${text}))`,
+                  borderColor: `rgb(var(${border}))`
+                }}
+                >
+                  {chamado.status.nome}
+                </span>
+              );
+            })()}
           </div>
 
           {/* datas */}
           <div className="space-y-1">
-            <div className="flex items-center text-xs text-gray-500 gap-1">
+            <div className="flex items-center text-xs gap-1" style={{ color: `rgb(var(--kanban-text-secondary))` }}>
               <FiEdit  className="w-3 h-3" />
               <span>{formatDate(chamado.dataAbertura)}</span>
             </div>
             {chamado.dataFechamento && (
-              <div className="flex items-center text-xs text-gray-500 gap-1">
+              <div className="flex items-center text-xs gap-1" style={{ color: `rgb(var(--kanban-text-secondary))` }}>
                 <FiCheck className="w-3 h-3" />
                 <span>{formatDate(chamado.dataFechamento)}</span>
               </div>

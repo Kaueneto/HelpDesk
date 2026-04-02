@@ -191,7 +191,7 @@ select {
   --data-special: 147 51 234; /* #9333EA - Purple */
 
   /* Header e Navegação */
-  --cor-header-fundo: 0 43 87; /* #1A68CF - Azul marca */
+  --cor-header-fundo: 26 104 207; /* #1A68CF - Azul marca */
   --cor-header-texto: 255 255 255; /* #FFFFFF - Branco */
   --cor-botao-pesquisar: 0 47 97; /* #002F61 - Azul escuro */
   
@@ -283,6 +283,16 @@ select {
   /*cor do toggle de tabela/quadro*/
   --bg-cinzaescuro: 126 126 126; /* #FFFFFF - Branco */
   
+  /* KANBAN - Tema Claro */
+  --kanban-column-bg: 252 252 252; /* #FCFCFC - Branco quase puro para fundo da coluna */
+  --kanban-column-border: 226 232 240; /* #E2E8F0 - Cinza muito suave para borda */
+  --kanban-card-bg: 255 255 255; /* #FFFFFF - Branco puro para cards */
+  --kanban-card-border: 229 231 235; /* #E5E7EB - Cinza suave para borda do card */
+  --kanban-card-hover: 248 250 252; /* #F8FAFC - Cinza super claro no hover */
+  --kanban-text-primary: 31 41 55; /* #1F2937 - Texto escuro */
+  --kanban-text-secondary: 107 114 128; /* #6B7280 - Texto secundário cinza */
+
+
 }
 
 /* DARK THEME */
@@ -324,7 +334,7 @@ html.dark {
 
   
   /* Header e Navegação */
-  --cor-header-fundo: 0 43 87; /* #1A68CF - Azul marca (mantém) */
+  --cor-header-fundo: 26 104 207; /* #1A68CF - Azul marca */
   --cor-header-texto: 255 255 255; /* #FFFFFF - Branco */
   --cor-botao-pesquisar: 0 47 97; /* #002F61 - Azul escuro (mantém) */
   
@@ -412,6 +422,15 @@ html.dark {
   --input-bg: 23 23 23; /* #1F2937 - Fundo cinza escuro */
   --input-border: 145 145 145; /* #60A5FA - Azul brilhante para melhor contraste */
   --input-focus-ring: 129 140 248; /* #818CF8 - Azul luminoso focus */
+
+  /* KANBAN - Tema Escuro */
+  --kanban-column-bg: 26 26 26; /* #1A1A1A - Preto puro para fundo da coluna */
+  --kanban-column-border: 55 65 81; /* #374151 - Cinza escuro para borda */
+  --kanban-card-bg: 45 45 45; /* #2D2D2D - Cinza escuro para cards */
+  --kanban-card-border: 75 85 99; /* #4B5563 - Cinza médio para borda do card */
+  --kanban-card-hover: 65 65 65; /* #414141 - Cinza mais claro no hover */
+  --kanban-text-primary: 243 244 246; /* #F3F4F6 - Texto claro */
+  --kanban-text-secondary: 209 213 219; /* #D1D5DB - Texto secundário */
 }
 
 html {

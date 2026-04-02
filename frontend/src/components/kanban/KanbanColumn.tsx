@@ -115,16 +115,23 @@ const KanbanColumn = memo(({
       {isCollapsed ? (
         /* cxoluna recolhida - vertical */
         <div
-          className={`flex flex-col items-center justify-start p-2 bg-gray-50 rounded-lg border border-gray-200 transition-all duration-200 cursor-pointer hover:bg-gray-100 ${
-            isOver ? 'bg-blue-50 border-blue-400' : ''
+          className={`flex flex-col items-center justify-start p-2 rounded-lg border transition-all duration-200 cursor-pointer ${
+            isOver ? 'shadow-lg' : ''
           }`}
-          style={{ borderLeftColor: color, borderLeftWidth: '3px' }}
+          style={{
+            backgroundColor: `rgb(var(--kanban-column-bg))`,
+            borderColor: color,
+            borderLeftColor: color,
+            borderLeftWidth: '3px',
+            borderWidth: '1px'
+          }}
           onClick={() => setIsCollapsed(false)}
         >
           {/* icone para expandir */}
           <button
-            className="text-gray-500 hover:text-gray-700 transition-colors mb-2"
+            className="transition-colors mb-2"
             title="Expandir coluna"
+            style={{ color: `rgb(var(--kanban-text-secondary))` }}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -132,19 +139,21 @@ const KanbanColumn = memo(({
           </button>
 
           {/* contador de tickets */}
-          <span className={`text-xs font-medium px-2 py-1 rounded-full mb-2 ${
-            isOver
-              ? 'bg-blue-200 text-blue-700'
-              : 'bg-gray-200 text-gray-500'
-          }`}>
+          <span className={`text-xs font-medium px-2 py-1 rounded-full mb-2 transition-all`}
+            style={{
+              backgroundColor: isOver ? '#3b82f6' : 'rgb(var(--kanban-column-border))',
+              color: isOver ? '#FFFFFF' : `rgb(var(--kanban-text-secondary))`
+            }}
+          >
             {tickets.length}
           </span>
 
           {/* titulo vertical */}
           <div className={`${workSans.className} flex-1 flex items-center justify-center`}>
             <h3
-              className={` text-sm font-semibold text-gray-900 whitespace-nowrap`}
+              className={`text-sm font-semibold whitespace-nowrap`}
               style={{
+                color: `rgb(var(--kanban-text-primary))`,
                 writingMode: 'vertical-rl',
                 textOrientation: 'mixed'
               }}
@@ -164,17 +173,23 @@ const KanbanColumn = memo(({
         <>
           {/* header da Coluna */}
           <div
-            className={`flex items-center justify-between p-4 bg-gray-50 rounded-t-lg border border-gray-200 transition-all duration-200 ${
-              isOver ? 'bg-blue-50 border-blue-400' : ''
-            }`}
-            style={{ borderTopColor: color, borderTopWidth: '3px' }}
+            className={`flex items-center justify-between p-4 rounded-t-lg border transition-all duration-200`}
+            style={{
+              backgroundColor: `rgb(var(--kanban-column-bg))`,
+              borderColor: `rgb(var(--kanban-column-border))`,
+              borderTopColor: color,
+              borderTopWidth: '3px',
+              borderWidth: '1px'
+            }}
           >
             <div className="flex items-center space-x-2">
               <div
                 className="w-3 h-3 rounded-full"
                 style={{ backgroundColor: color }}
               />
-              <h3 className={`${workSans.className} text-sm font-semibold text-gray-900 truncate`}>
+              <h3 className={`${workSans.className} text-sm font-semibold truncate`}
+                style={{ color: `rgb(var(--kanban-text-primary))` }}
+              >
                 {title}
               </h3>
             </div>
@@ -182,7 +197,8 @@ const KanbanColumn = memo(({
               {/* botao de recolher */}
               <button
                 onClick={() => setIsCollapsed(true)}
-                className="text-gray-400 hover:text-gray-600 transition-colors p-1"
+                className="transition-colors p-1"
+                style={{ color: `rgb(var(--kanban-text-secondary))` }}
                 title="Recolher coluna"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -191,11 +207,12 @@ const KanbanColumn = memo(({
               </button>
 
               {/* contador */}
-              <span className={`text-xs font-medium px-2 py-1 rounded-full transition-all ${
-                isOver
-                  ? 'bg-blue-200 text-blue-700'
-                  : 'bg-gray-200 text-gray-500'
-              }`}>
+              <span className={`text-xs font-medium px-2 py-1 rounded-full transition-all`}
+                style={{
+                  backgroundColor: isOver ? '#3b82f6' : 'rgb(var(--kanban-column-border))',
+                  color: isOver ? '#FFFFFF' : `rgb(var(--kanban-text-secondary))`
+                }}
+              >
                 {tickets.length}
               </span>
             </div>
@@ -205,13 +222,13 @@ const KanbanColumn = memo(({
           <div
             ref={setNodeRef}
             className={`
-              flex-1 min-h-32 p-2 bg-white rounded-b-lg border border-t-0 border-gray-200
+              flex-1 min-h-32 p-2 rounded-b-lg border border-t-0
               transition-all duration-150
-              ${isOver
-                ? 'bg-blue-50 border-blue-400 shadow-md ring-2 ring-blue-300 ring-opacity-50'
-                : 'hover:bg-gray-50'
-              }
             `}
+            style={{
+              backgroundColor: isOver ? 'rgb(59, 130, 246, 0.1)' : `rgb(var(--kanban-column-bg))`,
+              borderColor: isOver ? '#3b82f6' : `rgb(var(--kanban-column-border))`
+            }}
           >
             {/* indicador de drop */}
             {isOver && (
@@ -219,9 +236,13 @@ const KanbanColumn = memo(({
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="mb-2 p-2 border-2 border-dashed border-blue-400 bg-blue-100/50 rounded-lg"
+                className="mb-2 p-2 border-2 border-dashed rounded-lg"
+                style={{
+                  borderColor: '#3b82f6',
+                  backgroundColor: 'rgba(59, 130, 246, 0.1)'
+                }}
               >
-                <p className="text-xs text-blue-600 font-medium text-center">
+                <p className="text-xs font-medium text-center" style={{ color: '#3b82f6' }}>
                   ↓ Solte o card aqui
                 </p>
               </motion.div>
@@ -259,7 +280,7 @@ const KanbanColumn = memo(({
                     transition={{ delay: 0.2 }}
                     className="text-center py-8"
                   >
-                    <div className="text-gray-300 text-sm">
+                    <div style={{ color: `rgb(var(--kanban-text-secondary))` }} className="text-sm">
                       Arraste cards aqui
                     </div>
                   </motion.div>
