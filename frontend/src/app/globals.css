@@ -317,7 +317,8 @@ html.dark {
   --text-inverse: 17 24 39; /* #111827 */
 
   --border-primary: 107 114 128; /* #6B7280 - Mais claro para melhor contraste */
-  --border-secondary: 75 85 99; /* #4B5563 */
+  --border-secondary: 52 59 67; /* cinza chumbo */
+  --border-gray: 185 183 186; /* cinza médio */
   --border-light: 55 65 81; /* #374151 */
 
   --brand-primary: 0 43 87; /* #60A5FA */

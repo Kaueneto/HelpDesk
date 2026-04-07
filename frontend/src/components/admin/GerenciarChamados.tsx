@@ -8,7 +8,6 @@ import api from '@/services/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
 import ModalNovoChamado from '@/app/admin/Modal/ModalNovoChamado';
 import ModalEditarChamadoAdmin from '@/app/admin/Modal/ModalEditarChamadoAdmin';
 import { motion, AnimatePresence } from 'framer-motion';
