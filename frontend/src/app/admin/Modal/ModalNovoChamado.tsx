@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import api from '@/services/api';
 import { useAuth } from '@/contexts/AuthContext';
 import CustomSelect from '@/components/admin/CustomSelect';
+import { MdAttachFile } from 'react-icons/md';
 
 interface TopicosAjuda {
   id: number;
@@ -319,7 +320,7 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
   const prioridadesOrdenadas = [...prioridades].sort((a, b) => a.ordem - b.ordem);
 
   const buttonGhostClass =
-    'text-sm px-6 py-2 bg-transparent border border-gray-400 text-gray-700 rounded-lg hover:bg-gray-200 hover:text-gray-900 transition-all duration-200 transform hover:scale-105 font-medium disabled:border-gray-300 disabled:text-gray-400 disabled:bg-transparent disabled:cursor-not-allowed';
+    'text-sm px-6 py-2 bg-transparent border border-brand-primary text-brand-primary rounded-lg hover:bg-brand-primary/10 hover:shadow-md active:bg-brand-primary/20 transition-all duration-200 transform hover:scale-105 font-medium disabled:border-secondary disabled:text-secondary disabled:bg-transparent disabled:cursor-not-allowed';
 
 
     const responsavelOptions = usuarios.map((u) => ({
@@ -343,11 +344,11 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 flex items-start sm:items-center justify-center z-50 px-3 sm:px-4 py-4 sm:py-6"
+      className="fixed inset-0 modal-overlay flex items-start sm:items-center justify-center z-50 px-3 sm:px-4 py-4 sm:py-6"
       onClick={(e) => e.target === e.currentTarget && handleCancel()}
     >
       <div
-        className="bg-white rounded-3xl w-full max-w-4xl max-h-[90vh] shadow-2xl flex flex-col"
+        className="modal-container rounded-3xl w-full max-w-4xl max-h-[90vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         <form
@@ -371,14 +372,14 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
                 onKeyDown={handleAssuntoKeyDown}
                 required
                 maxLength={200}
-                className="w-full bg-transparent text-2xl md:text-3xl leading-tight font-semibold text-black placeholder:text-gray-400 outline-none"
+                className="w-full bg-transparent text-2xl md:text-3xl leading-tight font-semibold text-primary placeholder:text-secondary outline-none"
                 placeholder="Assunto/resumo"
               />
             </div>
 
             <button
               onClick={handleCancel}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
+              className="text-secondary hover:text-primary transition-colors"
               type="button"
               tabIndex={-1}
               aria-label="Fechar modal"
@@ -400,7 +401,7 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
               onChange={(e) => setDescricao(e.target.value)}
               required
               rows={3}
-              className="w-full bg-transparent text-lg md:text-xl text-gray-800 placeholder:text-gray-400 outline-none resize-none overflow-y-auto max-h-48 pr-2"
+              className="w-full bg-transparent text-lg md:text-xl text-primary placeholder:text-secondary outline-none resize-none overflow-y-auto max-h-48 pr-2"
               placeholder="Descrição"
             />
           </div>
@@ -408,19 +409,18 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
           <div className="mt-5 grid grid-cols-1 xl:grid-cols-[1fr_140px] gap-5 md:gap-6 items-start">
             <div className="space-y-2.5">
               <div className="grid grid-cols-1 md:grid-cols-[160px_1fr] items-center gap-2.5">
-                <label htmlFor="responsavel" className="text-base md:text-lg leading-none text-gray-600">
+                <label htmlFor="responsavel" className="text-base md:text-lg leading-none text-secondary">
                   Responsável
                 </label>
-              <CustomSelect
-                value={responsavelId}
-                onChange={setResponsavelId}
-                options={responsavelOptions}
-                placeholder="Selecione..."
-              />
+                <CustomSelect
+                  value={responsavelId}
+                  onChange={setResponsavelId}
+                  options={responsavelOptions}
+                  placeholder="Selecione..."
+                />
               </div>
-
               <div className="grid grid-cols-1 md:grid-cols-[160px_1fr] items-center gap-2.5">
-                <label htmlFor="topico" className="text-base md:text-lg leading-none text-gray-600">
+                <label htmlFor="topico" className="text-base md:text-lg leading-none text-secondary">
                   Tópico
                 </label>
                 <CustomSelect
@@ -435,7 +435,7 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-[160px_1fr] items-center gap-2.5">
-                 <label htmlFor="departamento" className="text-base md:text-lg leading-none text-gray-600">
+                 <label htmlFor="departamento" className="text-base md:text-lg leading-none text-secondary">
                     Departamento
                 </label>
                 <CustomSelect
@@ -460,8 +460,8 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
                     onClick={() => setPrioridadeId(prioridade.id)}
                     className="w-full h-9 rounded-lg text-sm font-mono transition-all duration-150 hover:brightness-90 shadow-sm"
                     style={{
-                      backgroundColor: isActive ? prioridade.cor : '#e7e7e7',
-                      color: isActive ? '#ffffff' : '#464646',
+                      backgroundColor: isActive ? prioridade.cor : 'rgb(var(--bg-hover))',
+                      color: isActive ? '#ffffff' : 'rgb(var(--text-secondary))',
                     }}
                   >
                     {prioridade.nome}
@@ -472,32 +472,29 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
           </div>
 
           {/* Área de anexos */}
-          <div className={`mt-5 transition-colors rounded-xl ${isDragging ? 'ring-2 ring-blue-400 bg-blue-50/40' : ''}`}>
+          <div className={`mt-5 transition-colors rounded-xl ${isDragging ? 'ring-1 ring-brand-primary bg-brand-primary/5' : ''}`}>
             <div className="flex flex-wrap items-center gap-3">
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={submitting}
-                className="inline-flex items-center gap-2 px-4 py-1.5 border border-gray-300 rounded-lg text-sm text-gray-500 bg-white hover:bg-blue-50 hover:text-gray-700 hover:border-blue-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-2 px-5 py-2 border select-border rounded-lg text-sm font-medium text-primary bg-primary/5 hover:bg-primary/15 hover:shadow-md active:bg-primary/25 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                    d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                </svg>
-                   Arquivos
+                <MdAttachFile className="h-4 w-4" />
+                Arquivos
               </button>
 
               {selectedFiles.map((file, index) => (
                 <div
                   key={`${file.name}-${file.lastModified}-${index}`}
-                  className="flex items-center gap-1.5 px-2.5 py-1 bg-white border border-gray-300 rounded-full"
+                  className="flex items-center gap-1.5 px-2.5 py-1 bg-elevated border border-primary rounded-full"
                 >
-                   <span className="text-xs text-gray-700 max-w-40 truncate">{file.name}</span>
-                    <span className="text-xs text-gray-400 shrink-0">{(file.size / 1024).toFixed(0)} KB</span>
+                   <span className="text-xs text-primary max-w-40 truncate">{file.name}</span>
+                    <span className="text-xs text-secondary shrink-0">{(file.size / 1024).toFixed(0)} KB</span>
                    <button
                     type="button"
                     onClick={() => removeFile(index)}
-                    className="text-gray-400 hover:text-red-500 transition-colors"
+                    className="text-secondary hover:text-error transition-colors"
                     aria-label={`Remover ${file.name}`}
                   >
                     <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -521,7 +518,7 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
           </div>
 
           {errorMessage && (
-            <div className="mt-4 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
+            <div className="mt-4 bg-error/10 border border-error text-error px-4 py-3 rounded-lg text-sm">
               {errorMessage}
             </div>
           )}
@@ -547,13 +544,14 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
               </button>
             </div>
 
-            <button
-              type="submit"
-              disabled={submitting || isLoadingData}
-              className="px-6 py-2 bg-[#001960] text-white rounded-lg hover:bg-[#001960]/80 transition-all transform hover:scale-105 font-medium disabled:bg-blue-400 disabled:cursor-not-allowed disabled:transform-none"
-            >
-              {isLoadingData ? 'Carregando...' : submitting ? 'Abrindo chamado...' : 'Criar'}
-            </button>
+          <button
+            type="submit"
+            disabled={submitting || isLoadingData}
+            style={{ backgroundColor: 'rgb(var(--btn-criar))' }}
+            className="px-8 py-2.5 text-white rounded-lg hover:brightness-90 active:brightness-75 transition-all transform hover:scale-105 font-semibold disabled:bg-secondary disabled:cursor-not-allowed disabled:transform-none shadow-lg hover:shadow-xl"
+          >
+            {isLoadingData ? 'Carregando...' : submitting ? 'Abrindo chamado...' : 'Criar'}
+          </button>
           </div>
         </form>
       </div>

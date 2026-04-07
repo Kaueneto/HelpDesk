@@ -44,7 +44,7 @@ router.post(
 
       const chamado = await chamadoRepository.findOne({
         where: { id: chamadoId },
-        relations: ["usuario", "status", "topicoAjuda"],
+        relations: ["usuario", "status", "topicoAjuda", "userFechamento", "userResponsavel"],
       });
       if (!chamado) return res.status(404).json({ error: 'Chamado não encontrado.' });
       const usuario = chamado.usuario;
@@ -57,6 +57,21 @@ router.post(
         const novoStatus = await statusRepository.findOne({ where: { id: statusId } });
         if (novoStatus) {
           chamado.status = novoStatus;
+          
+          // LOGICA DE ATUALIZAÇÃO DE CAMPOS CONFORME O STATUS
+          // STATUS 3 = ENCERRADO
+          if (statusId === 3) {
+            chamado.dataFechamento = new Date();
+            chamado.userFechamento = { id: usuarioId } as Users;
+          }
+          // STATUS 5 = REABERTO
+          else if (statusId === 5) {
+            chamado.dataFechamento = null;
+            chamado.userFechamento = null;
+            chamado.userResponsavel = { id: usuarioId } as Users;
+            chamado.dataAtribuicao = new Date();
+          }
+          
           await chamadoRepository.save(chamado);
           statusNovo = novoStatus;
           alterouStatus = true;
@@ -122,7 +137,25 @@ router.post(
           cco,
           incluirTopico: !!incluirTopico,
         });
-        return res.status(200).json({ message: 'Email enviado com sucesso.' });
+
+        // recarregar chamado com todas as relações para retornar os dados atualizados
+        const chamadoAtualizado = await chamadoRepository.findOne({
+          where: { id: chamadoId },
+          relations: [
+            "usuario",
+            "userResponsavel",
+            "userFechamento",
+            "tipoPrioridade",
+            "departamento",
+            "topicoAjuda",
+            "status",
+          ],
+        });
+
+        return res.status(200).json({ 
+          message: 'Email enviado com sucesso.',
+          chamado: chamadoAtualizado 
+        });
 
       } catch (error: any) {
         console.error(error);

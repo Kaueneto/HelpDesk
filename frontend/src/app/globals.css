@@ -1,3 +1,5 @@
+@import "tailwindcss"; 
+
 .arrowIcon {
   width: 20px;
   height: 20px;
@@ -150,7 +152,7 @@ select {
 
 :root {
   /* backgrounds */
-  --bg-primary: 237 237 237; /* #EDEDED - Fundo principal more cinzento */
+  --bg-primary: 242 242 242; /* #EDEDED - fundo principal mais cinzento */
   --bg-fundoneutro: 237 237 237; /* #EDEDED */
 
   --bg-graficos: 255 255 255; /* #FFFFFF */
@@ -166,8 +168,8 @@ select {
   --text-inverse: 255 255 255; /* #FFFFFF */
 
   /* border & dividers */
-  --border-primary: 209 213 219; /* #D1D5DB - mais escuro */
-  --border-secondary: 209 213 219; /* #D1D5DB - gray-300 mais escuro */
+  --border-primary: 156 163 175; /* #9CA3AF - cinzam medio pra um melhor contraste */
+  --border-secondary: 209 213 219; /* #D1D5DB - gray-300 mais claro */
   --border-light: 229 231 235; /* #E5E7EB */
 
   /* brand colors */
@@ -278,7 +280,7 @@ select {
   /* Input/DatePicker - Tema Claro */
   --input-bg: 255 255 255; /* #FFFFFF - Branco */
   --input-border: 209 213 219; /* #D1D5DB - Gray-300 */
-  --input-focus-ring: 0 43 87; /* #1A68CF - Azul marca focus */
+  --input-focus-ring: 0 43 87; 
 
   /*cor do toggle de tabela/quadro*/
   --bg-cinzaescuro: 126 126 126; /* #FFFFFF - Branco */
@@ -292,27 +294,33 @@ select {
   --kanban-text-primary: 31 41 55; /* #1F2937 - Texto escuro */
   --kanban-text-secondary: 107 114 128; /* #6B7280 - Texto secundário cinza */
 
-
+  --select-border: 209 213 219; /* #D1D5DB - cinza claro */
+  --select-item-selected-bg: 219 234 254; /* #DBEAFE - Azul claro para item selecionado */
+  --select-item-selected-color: 30 58 138; /* #1E3A8A - Azul escuro para texto */
 }
 
 /* DARK THEME */
 html.dark {
+
+  --select-border: 75 85 99; /* #4B5563 - cinza médio escuro */
+
+
   --bg-primary: 27 27 27; /* #000000 - Preto puro */
   --bg-secondary: 38 38 38; /* #1F2937 */
   --bg-tertiary: 37 47 63; /* #252F3F */
   --bg-hover: 55 65 81; /* #374151 */
-  --bg-elevated: 38 38 38; /* #374151 */
+  --bg-elevated: 23 23 23; /* #374151 */
 
   --text-primary: 243 244 246; /* #F3F4F6 */
-  --text-secondary: 209 213 219; /* #D1D5DB */
+  --text-secondary: 166 166 166; 
   --text-tertiary: 156 163 175; /* #9CA3AF */
   --text-inverse: 17 24 39; /* #111827 */
 
-  --border-primary: 75 85 99; /* #4B5563 */
-  --border-secondary: 38 38 38; /* #374151 */
-  --border-light: 37 47 63; /* #252F3F */
+  --border-primary: 107 114 128; /* #6B7280 - Mais claro para melhor contraste */
+  --border-secondary: 75 85 99; /* #4B5563 */
+  --border-light: 55 65 81; /* #374151 */
 
-  --brand-primary: 96 165 250; /* #60A5FA */
+  --brand-primary: 0 43 87; /* #60A5FA */
   --brand-dark: 147 197 253; /* #93C5FD */
   --brand-light: 30 58 138; /* #1E3A8A */
 
@@ -348,10 +356,9 @@ html.dark {
   --cor-card-texto: 255 255 255; /* #FFFFFF - Branco */
 
   /* Status da Tabela - TEMA DARK ( mais saturada) */
-  --status-1-bg: 120 53 15; /* #783515 - Amarelo fundo escuro saturado */
-  --status-1-texto: 254 215 170; /* #FED7AA - Amarelo texto claro */
-  --status-1-borda: 251 146 60; /* #FB923C - Laranja saturado */
-  
+  --status-1-bg: 151 138 10; 
+  --status-1-texto: 255 255 255; 
+  --status-1-borda: 175 165 55;
   --status-2-bg: 15 40 90; /* #0F285A - Azul fundo escuro saturado */
   --status-2-texto: 147 197 253; /* #93C5FD - Azul texto claro */
   --status-2-borda: 59 130 246; /* #3B82F6 - Azul saturado */
@@ -400,27 +407,27 @@ html.dark {
   
   /* Gráficos - Tooltip */
   --cor-tooltip-fundo: 17 24 39; /* #FFFFFF - Branco (invertido) */
-  --cor-tooltip-texto: 255  255 255; /* #111827 - Texto escuro (invertido) */
+  --cor-tooltip-texto: 255 255 255; /* #111827 - Texto escuro (invertido) */
   --cor-tooltip-borda: 229 231 235; /* #E5E7EB - Cinza claro (invertido) */
 
   /* Filtros e Controles */
   --bg-filtros: 23 23 23; /* #252F3F - Fundo dos filtros mais escuro tema dark */
   --bg-secondary: 23 23 23; /* #2D2D2D - Secundário dark mais contrastivo */
   --cor-borda-primaria: 127 144 161; 
-  --cor-botao-ativo: 96 165 250; /* #60A5FA - Azul claro para botões ativos dark */
+  --cor-botao-ativo: 0 43 87; /* #60A5FA - Azul claro para botões ativos dark */
   --cor-botao-primario: 0 43 87; /* #1A68CF - Azul para botões primários dark*/
   --bg-disabled: 55 65 81; /* #374151 - Desabilitado dark */
   --text-disabled: 107 114 128; /* #6B7280 - Texto desabilitado dark */
 
   /* Checkbox - Tema Escuro */
-  --checkbox-border: 96 165 250; /* #60A5FA - Azul brilhante (mais contraste) */
+  --checkbox-border: 0 43 87; /* #60A5FA - Azul brilhante (mais contraste) */
   --checkbox-bg: 31 41 55; /* #1F2937 - Fundo cinza escuro */
   --checkbox-checked-bg: 59 130 246; /* #3B82F6 - Azul mais saturado quando checado */
   --checkbox-checked-border: 129 140 248; /* #818CF8 - Azul luminoso para borda */
 
   /* Input/DatePicker - Tema Escuro */
   --input-bg: 23 23 23; /* #1F2937 - Fundo cinza escuro */
-  --input-border: 145 145 145; /* #60A5FA - Azul brilhante para melhor contraste */
+  --input-border: 107 114 128; /* #6B7280 - Cinza mais claro para visibilidade */
   --input-focus-ring: 129 140 248; /* #818CF8 - Azul luminoso focus */
 
   /* KANBAN - Tema Escuro */
@@ -431,6 +438,12 @@ html.dark {
   --kanban-card-hover: 65 65 65; /* #414141 - Cinza mais claro no hover */
   --kanban-text-primary: 243 244 246; /* #F3F4F6 - Texto claro */
   --kanban-text-secondary: 209 213 219; /* #D1D5DB - Texto secundário */
+
+  /*botao criar chamado*/
+  --btn-criar: 0 43 87;
+
+  --select-item-selected-bg: 15 40 90; /* #0F285A - Azul fundo escuro saturado */
+  --select-item-selected-color: 147 197 253; /* #93C5FD - Azul texto claro */
 }
 
 html {
@@ -578,30 +591,61 @@ html.dark .action-button:hover {
   transform-origin: top center;
 }
 
-/* Scrollbar customizada */
+/* scrollbaer customizada - Tema Adaptável */
 .custom-scrollbar::-webkit-scrollbar {
   width: 8px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: rgb(var(--bg-secondary));
   border-radius: 10px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: rgb(var(--border-primary));
+  border-radius: 10px;
+} 
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--border-secondary));
+}
+
+/* scrollbar customizada */
+.custom-scrollbar {
+  scrollbar-color: rgb(var(--border-primary)) rgb(var(--bg-secondary));
+  scrollbar-width: thin;
+}
+
+/* scrollbar GLOBAAL para todos os elementos com overflow 
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: rgb(var(--bg-secondary));
   border-radius: 10px;
 }
 
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+*::-webkit-scrollbar-thumb {
+  background: rgb(var(--border-primary));
+  border-radius: 10px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--border-secondary));
+}
+
+/* Scrollbar GLOBAL  */
+* {
+  scrollbar-color: rgb(var(--border-primary)) rgb(var(--bg-secondary));
+  scrollbar-width: thin;
 }
 
 
 @media (max-width: 768px) {
   .action-buttons-scroll {
     scrollbar-width: thin; /* Firefox */
-    scrollbar-color: #cbd5e1 transparent;
+    scrollbar-color: rgb(var(--border-primary)) transparent;
   }
 
   .action-buttons-scroll::-webkit-scrollbar {
@@ -613,12 +657,12 @@ html.dark .action-button:hover {
   }
 
   .action-buttons-scroll::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
+    background: rgb(var(--border-primary));
     border-radius: 2px;
   }
 
   .action-buttons-scroll::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8;
+    background: rgb(var(--border-secondary));
   }
 }
 
@@ -733,4 +777,67 @@ html.dark .action-button:hover {
 
 .spinnerSoft {
   animation: spinSoft 1s linear infinite;
+}
+
+/* Modal Overlay - Adaptável ao tema */
+.modal-overlay {
+  background-color: rgba(0, 0, 0, 0.45);
+}
+
+html.dark .modal-overlay {
+  background-color: rgba(0, 0, 0, 0.65);
+}
+
+/* Modal Container - Fundo do modal */
+.modal-container {
+  background-color: rgb(var(--bg-elevated));
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+}
+
+html.dark .modal-container {
+  background-color: rgb(var(--bg-elevated));
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
+}
+
+/* CustomSelect Button com borda temática */
+.custom-select-button {
+  border-color: rgb(var(--border-primary)) !important;
+}
+
+.custom-select-button:hover {
+  border-color: rgb(var(--border-primary)) !important;
+}
+
+.custom-select-button:focus {
+  border-color: rgb(var(--input-focus-ring)) !important;
+}
+
+/* Dropdown Styles - Custom Select */
+.custom-select-dropdown {
+  background-color: rgb(var(--bg-elevated)) !important;
+  border-color: rgb(var(--border-primary)) !important;
+}
+
+.custom-select-dropdown input {
+  background-color: rgb(var(--bg-secondary)) !important;
+  color: rgb(var(--text-primary)) !important;
+  border-color: rgb(var(--border-secondary)) !important;
+}
+
+.custom-select-dropdown .max-h-60 {
+  background-color: rgb(var(--bg-elevated)) !important;
+}
+
+.custom-select-dropdown-item {
+  color: rgb(var(--text-primary)) !important;
+}
+
+.custom-select-dropdown-item.highlighted {
+  background-color: rgb(var(--select-item-selected-bg) / 0.3) !important;
+  color: rgb(var(--select-item-selected-color)) !important;
+}
+
+.custom-select-dropdown-item.selected {
+  background-color: rgb(var(--select-item-selected-bg)) !important;
+  color: rgb(var(--select-item-selected-color)) !important;
 }

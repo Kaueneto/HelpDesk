@@ -58,12 +58,12 @@ function EmailBadgeInput({ label, emails, setEmails, disabled }: { label: string
 
   return (
     <div className="mb-4">
-      <label className="block text-sm font-medium text-gray-700 mb-2">{label}</label>
-      <div className="flex flex-wrap items-center gap-2 border border-gray-300 rounded-lg px-2 py-1 bg-white min-h-11">
+      <label className="block text-sm font-medium text-primary mb-2">{label}</label>
+      <div className="flex flex-wrap items-center gap-2 border border-primary rounded-lg px-2 py-1 bg-elevated min-h-11">
         {emails.map((email, idx) => (
-          <span key={email} className="flex items-center bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium mr-1 mb-1">
+          <span key={email} className="flex items-center bg-brand-primary/20 text-brand-primary px-2 py-1 rounded-full text-xs font-medium mr-1 mb-1">
             {email}
-            <button type="button" className="ml-1 text-blue-500 hover:text-red-500 focus:outline-none" onClick={() => removeEmail(idx)} disabled={disabled}>&times;</button>
+            <button type="button" className="ml-1 text-brand-primary hover:text-error focus:outline-none" onClick={() => removeEmail(idx)} disabled={disabled}>&times;</button>
           </span>
         ))}
         <input
@@ -74,7 +74,7 @@ function EmailBadgeInput({ label, emails, setEmails, disabled }: { label: string
           onKeyDown={handleKeyDown}
           onBlur={handleBlur}
           disabled={disabled}
-          className="flex-1 min-w-30 px-2 py-1 border-none focus:ring-0 text-gray-900 bg-transparent outline-none"
+          className="flex-1 min-w-30 px-2 py-1 border-none focus:ring-0 text-primary bg-transparent outline-none"
           placeholder="Digite e pressione Enter"
         />
       </div>
@@ -184,24 +184,16 @@ const ModalEnviarAttPorEmail: React.FC<ModalEnviarAttPorEmailProps> = ({
 
   // funcao para retornar classes de cor para cada status
   function getStatusColorClass(id?: number, badge = false): string {
-    // badge: se true, retorna classes para o span, senão para o select
+    // usa classes CSS temáticas definidas em globals.css
     switch (id) {
-      case 1: // aberto
-        return badge ? 'bg-blue-100 text-blue-700 border border-blue-200' : 'bg-blue-50 text-blue-700 border-blue-200';
-      case 2: // em análise
-        return badge ? 'bg-yellow-100 text-yellow-800 border border-yellow-300' : 'bg-yellow-50 text-yellow-800 border-yellow-300';
-      case 3: // concluído
-        return badge ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-green-50 text-green-700 border-green-200';
-      case 4: // atrasado
-        return badge ? 'bg-red-100 text-red-700 border border-red-200' : 'bg-red-50 text-red-700 border-red-200';
-      case 5: // reaberto
-        return badge ? 'bg-purple-100 text-purple-700 border border-purple-200' : 'bg-purple-50 text-purple-700 border-purple-200';
-      case 6: // pendente usuário
-        return badge ? 'bg-orange-100 text-orange-700 border border-orange-200' : 'bg-orange-50 text-orange-700 border-orange-200';
-      case 7: // pendente terceiros
-        return badge ? 'bg-pink-100 text-pink-700 border border-pink-200' : 'bg-pink-50 text-pink-700 border-pink-200';
-      default:
-        return badge ? 'bg-gray-100 text-gray-700 border border-gray-200' : 'bg-gray-50 text-gray-700 border-gray-200';
+      case 1: return 'status-badge-1';
+      case 2: return 'status-badge-2';
+      case 3: return 'status-badge-3';
+      case 4: return 'status-badge-4';
+      case 5: return 'status-badge-5';
+      case 6: return 'status-badge-6';
+      case 7: return 'status-badge-7';
+      default: return 'bg-secondary text-primary border border-primary';
     }
   }
 
@@ -276,9 +268,9 @@ const ModalEnviarAttPorEmail: React.FC<ModalEnviarAttPorEmailProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-8 modalLightEnter border border-gray-200">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6 font-segoe flex items-center gap-2">
+    <div className="fixed inset-0 z-50 flex items-center justify-center modal-overlay px-4">
+      <div className="modal-container rounded-2xl w-full max-w-2xl p-8 modalLightEnter border border-primary">
+        <h2 className="text-2xl font-bold text-primary mb-6 font-segoe flex items-center gap-2">
           Atualização de chamado por email
         </h2>
 
@@ -287,7 +279,7 @@ const ModalEnviarAttPorEmail: React.FC<ModalEnviarAttPorEmailProps> = ({
           <button
             type="button"
             onClick={() => setCcAtivo((v) => !v)}
-            className={`px-3 py-2 border rounded-lg font-medium text-xs transition-all duration-150 flex items-center gap-1 ${ccAtivo ? 'bg-blue-100 border-blue-500 text-blue-700' : 'border-gray-300 text-gray-600 hover:bg-gray-100 hover:border-blue-400'}`}
+            className={`px-3 py-2 border rounded-lg font-medium text-xs transition-all duration-150 flex items-center gap-1 ${ccAtivo ? 'bg-brand-primary/20 border-brand-primary text-brand-primary' : 'border-primary text-secondary hover:bg-primary/10 hover:border-brand-primary'}`}
             disabled={loading}
             title="Adicionar cópia (CC)"
           >
@@ -296,7 +288,7 @@ const ModalEnviarAttPorEmail: React.FC<ModalEnviarAttPorEmailProps> = ({
           <button
             type="button"
             onClick={() => setCcoAtivo((v) => !v)}
-            className={`px-3 py-2 border rounded-lg font-medium text-xs transition-all duration-150 flex items-center gap-1 ${ccoAtivo ? 'bg-blue-100 border-blue-500 text-blue-700' : 'border-gray-300 text-gray-600 hover:bg-gray-100 hover:border-blue-400'}`}
+            className={`px-3 py-2 border rounded-lg font-medium text-xs transition-all duration-150 flex items-center gap-1 ${ccoAtivo ? 'bg-brand-primary/20 border-brand-primary text-brand-primary' : 'border-primary text-secondary hover:bg-primary/10 hover:border-brand-primary'}`}
             disabled={loading}
             title="Adicionar cópia oculta (CCO)"
           >
@@ -320,7 +312,7 @@ const ModalEnviarAttPorEmail: React.FC<ModalEnviarAttPorEmailProps> = ({
             onChange={(e) => setMensagem(e.target.value)}
             rows={5}
             disabled={loading}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 resize-none disabled:bg-gray-100 disabled:cursor-not-allowed transition-all"
+            className="w-full px-3 py-2 border border-primary rounded-lg focus:outline-none focus:ring-1 focus:ring-brand-primary text-primary bg-elevated resize-none disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             placeholder="Digite a mensagem ou atualização do chamado..."
           />
           <label className="flex items-center gap-2 mt-2 select-none">
@@ -329,19 +321,19 @@ const ModalEnviarAttPorEmail: React.FC<ModalEnviarAttPorEmailProps> = ({
               checked={incluirTopico}
               onChange={() => setIncluirTopico((v) => !v)}
               disabled={loading}
-              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              className="rounded border-primary text-brand-primary focus:ring-brand-primary"
             />
-            <span className="text-xs text-gray-700">Incluir no email o tópico do chamado</span>
+            <span className="text-xs text-primary">Incluir no email o tópico do chamado</span>
           </label>
         </div>
 
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Alterar status</label>
+          <label className="block text-sm font-medium text-primary mb-2">Alterar status</label>
           <select
             value={statusSelecionado || ''}
             onChange={(e) => setStatusSelecionado(e.target.value ? Number(e.target.value) : undefined)}
             disabled={loading}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 disabled:bg-gray-100 disabled:cursor-not-allowed transition-all"
+            className="w-full px-3 py-2 border border-primary rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary text-primary bg-elevated disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
             <option value="">Selecione um status (opcional)</option>
             {statuses.map((status) => (
@@ -364,14 +356,14 @@ const ModalEnviarAttPorEmail: React.FC<ModalEnviarAttPorEmailProps> = ({
           <button
             onClick={onClose}
             disabled={loading}
-            className="px-4 py-2 border border-gray-400 text-gray-600 rounded-lg hover:bg-gray-100 transition-all font-medium text-sm whitespace-nowrap shadow-sm"
+            className="px-4 py-2 border border-brand-primary text-brand-primary rounded-lg hover:bg-brand-primary/10 hover:shadow-md transition-all font-medium text-sm whitespace-nowrap"
           >
             Cancelar
           </button>
           <button
             onClick={handleConfirm}
             disabled={loading}
-            className="px-6 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 min-w-28 justify-center shadow-md"
+            className="px-6 py-2.5 text-sm font-semibold text-white bg-brand-primary rounded-lg hover:bg-brand-primary/90 active:bg-brand-primary/80 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 min-w-28 justify-center shadow-lg hover:shadow-xl"
           >
             {loading ? (
               <>

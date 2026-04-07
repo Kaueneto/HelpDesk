@@ -113,22 +113,23 @@ export default function CustomSelect({
         type="button"
         onClick={() => setOpen((prev) => !prev)}
         className="
+          custom-select-button
           w-full px-3 py-2.5
-          hover:bg-gray-100
-          border border-gray-200
+          hover:bg-primary/10
+          border border-primary
           rounded-xl
           text-sm
           flex items-center justify-between
           transition-all duration-200
-          focus:outline-none focus:ring-2 focus:ring-blue-500/30
+          focus:outline-none focus:ring-2 focus:ring-brand-primary/30
         "
       >
-        <span className={selected ? "text-gray-800" : "text-gray-400"}>
+        <span className={selected ? "text-primary" : "text-secondary"}>
           {selected ? selected.label : placeholder}
         </span>
 
         <svg
-          className={`w-4 h-4 text-gray-500 transition-transform ${open ? "rotate-180" : ""}`}
+          className={`w-4 h-4 text-secondary transition-transform ${open ? "rotate-180" : ""}`}
           fill="none"
           stroke="currentColor"
           strokeWidth={2}
@@ -148,17 +149,10 @@ export default function CustomSelect({
             width: `${dropdownPos.width}px`,
             zIndex: 9999,
           }}
-          className="
-            bg-white
-            border border-gray-200
-            rounded-xl
-            shadow-xl
-            overflow-hidden
-            animate-in fade-in zoom-in-95
-          "
+          className="custom-select-dropdown rounded-xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95"
         >
           {/* opcao de busca na lista */}
-          <div className="p-2 border-b border-gray-200">
+          <div className="p-2 border-b border-primary">
             <input
               ref={searchInputRef}
               autoFocus
@@ -170,6 +164,8 @@ export default function CustomSelect({
                 w-full px-2 py-1.5
                 text-sm
                 bg-transparent
+                text-primary
+                placeholder:text-secondary
                 outline-none
               "
             />
@@ -191,30 +187,24 @@ export default function CustomSelect({
                       setSearch("");
                     }}
                     onMouseEnter={() => setHighlightedIndex(index)}
-                    className={`
-                      px-3 py-2.5 text-sm cursor-pointer
-                      flex items-center justify-between
-                      transition-all
-                      ${
-                        isHighlighted
-                          ? "bg-blue-100 text-blue-600"
-                          : isSelected
-                          ? "bg-blue-50 text-blue-600 font-medium"
-                          : "text-gray-700"
-                      }
-                      ${!isHighlighted && "hover:bg-gray-100"}
-                    `}
+                    className={`custom-select-dropdown-item px-3 py-2.5 text-sm cursor-pointer flex items-center justify-between transition-all ${
+                      isHighlighted
+                        ? "custom-select-dropdown-item highlighted"
+                        : isSelected
+                        ? "custom-select-dropdown-item selected font-medium"
+                        : ""
+                    }`}
                   >
                     {opt.label}
 
                     {isSelected && (
-                      <span className="text-blue-500">✔</span>
+                      <span className="text-brand-primary">✔</span>
                     )}
                   </div>
                 );
               })
             ) : (
-              <div className="px-3 py-2 text-sm text-gray-400">
+              <div className="px-3 py-2 text-sm text-secondary">
                 Nenhum resultado
               </div>
             )}

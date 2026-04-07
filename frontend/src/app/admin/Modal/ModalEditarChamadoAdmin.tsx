@@ -237,21 +237,21 @@ export default function ModalEditarChamadoAdmin({
   const prioridadesOrdenadas = [...prioridades].sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0));
 
   const buttonGhostClass =
-    'px-6 py-2 bg-transparent border border-gray-400 text-gray-700 rounded-lg hover:bg-gray-200 hover:text-gray-900 transition-all duration-200 transform hover:scale-105 font-medium disabled:border-gray-300 disabled:text-gray-400 disabled:bg-transparent disabled:cursor-not-allowed';
+    'px-6 py-2 bg-transparent border border-primary text-primary rounded-lg hover:bg-primary/10 hover:shadow-md active:bg-primary/20 transition-all duration-200 transform hover:scale-105 font-medium disabled:border-secondary disabled:text-secondary disabled:bg-transparent disabled:cursor-not-allowed';
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 flex items-start sm:items-center justify-center z-50 px-3 sm:px-4 py-4 sm:py-6"
+      className="fixed inset-0 modal-overlay flex items-start sm:items-center justify-center z-50 px-3 sm:px-4 py-4 sm:py-6"
       onClick={handleClose}
     >
       <div
-        className="bg-[#f4f4f4] rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl"
+        className="modal-container rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {loading ? (
           <div className="p-12 text-center">
-            <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600" />
-            <p className="mt-4 text-gray-500 text-sm">Carregando dados...</p>
+            <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2" style={{ borderBottomColor: `rgb(var(--btn-criar))` }} />
+            <p className="mt-4 text-sm" style={{ color: 'rgb(var(--text-secondary))' }}>Carregando dados...</p>
           </div>
         ) : (
             <div
@@ -263,21 +263,22 @@ export default function ModalEditarChamadoAdmin({
             {/* Título + número + fechar */}
             <div className="flex justify-between items-start gap-3">
               <div className="w-full">
-                <p className="text-xs font-medium text-gray-400 mb-1 uppercase tracking-wide">
+                <p className="text-xs font-medium mb-1 uppercase tracking-wide" style={{ color: 'rgb(var(--text-secondary))' }}>
                   Chamado #{numeroChamado || chamadoId}
                 </p>
                 <input
                   type="text"
                   value={resumoChamado}
                   onChange={(e) => setResumoChamado(e.target.value)}
-                  className="w-full bg-transparent text-2xl md:text-3xl leading-tight font-semibold text-black placeholder:text-gray-400 outline-none"
+                  className="w-full bg-transparent text-2xl md:text-3xl leading-tight font-semibold text-primary placeholder:text-secondary outline-none"
                   placeholder="Assunto do chamado"
                   disabled={submitting}
                 />
               </div>
               <button
                 onClick={handleClose}
-                className="text-gray-400 hover:text-gray-600 transition-colors shrink-0"
+                className="hover:text-primary transition-colors shrink-0"
+                style={{ color: 'rgb(var(--text-secondary))' }}
                 type="button"
                 tabIndex={-1}
                 aria-label="Fechar modal"
@@ -294,7 +295,8 @@ export default function ModalEditarChamadoAdmin({
                 value={descricaoChamado}
                 onChange={(e) => setDescricaoChamado(e.target.value)}
                 rows={3}
-                className="w-full bg-transparent text-lg md:text-xl text-gray-800 placeholder:text-gray-400 outline-none resize-none overflow-y-auto max-h-48 pr-2"
+                className="w-full bg-transparent text-lg md:text-xl outline-none resize-none overflow-y-auto max-h-48 pr-2"
+                style={{ color: 'rgb(var(--text-secondary))' }}
                 placeholder="Descrição do problema"
                 disabled={submitting}
               />
@@ -304,7 +306,7 @@ export default function ModalEditarChamadoAdmin({
             <div className="mt-5 grid grid-cols-1 xl:grid-cols-[1fr_140px] gap-5 md:gap-6 items-start">
               <div className="space-y-2.5">
                 <div className="grid grid-cols-1 md:grid-cols-[160px_1fr] items-center gap-2.5">
-                  <label className="text-base md:text-lg leading-none text-gray-600">
+                  <label className="text-base md:text-lg leading-none text-primary">
                     Ramal
                   </label>
                   <input
@@ -312,19 +314,19 @@ export default function ModalEditarChamadoAdmin({
                     value={ramal}
                     onChange={(e) => setRamal(e.target.value)}
                     placeholder="(opcional)"
-                    className="h-10 px-3 border border-gray-400 rounded-lg bg-[#f4f4f4] text-gray-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    className="h-10 px-3 border border-primary bg-elevated text-primary focus:outline-none focus:ring-1 focus:ring-brand-primary rounded-lg"
                     disabled={submitting}
                   />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-[160px_1fr] items-center gap-2.5">
-                  <label className="text-base md:text-lg leading-none text-gray-600">
-                    Departamento <span className="text-red-400">*</span>
+                  <label className="text-base md:text-lg leading-none text-primary">
+                    Departamento <span className="text-red-500">*</span>
                   </label>
                   <select
                     value={departamentoId}
                     onChange={(e) => setDepartamentoId(Number(e.target.value))}
-                    className="h-10 px-3 border border-gray-400 rounded-lg bg-[#f4f4f4] text-gray-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    className="h-10 px-3 border border-primary bg-elevated text-primary focus:outline-none focus:ring-1 focus:ring-brand-primary rounded-lg"
                     disabled={submitting}
                   >
                     <option value={0}>Selecione</option>
@@ -335,13 +337,13 @@ export default function ModalEditarChamadoAdmin({
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-[160px_1fr] items-center gap-2.5">
-                  <label className="text-base md:text-lg leading-none text-gray-600">
-                    Tópico <span className="text-red-400">*</span>
+                  <label className="text-base md:text-lg leading-none text-primary">
+                    Tópico <span className="text-red-500">*</span>
                   </label>
                   <select
                     value={topicoAjudaId}
                     onChange={(e) => setTopicoAjudaId(Number(e.target.value))}
-                    className="h-10 px-3 border border-gray-400 rounded-lg bg-[#f4f4f4] text-gray-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    className="h-10 px-3 border border-primary bg-elevated text-primary focus:outline-none focus:ring-1 focus:ring-brand-primary rounded-lg"
                     disabled={submitting}
                   >
                     <option value={0}>Selecione</option>
@@ -376,25 +378,26 @@ export default function ModalEditarChamadoAdmin({
             </div>
 
             {/* Área de anexos */}
-            <div className={`mt-5 rounded-xl transition-colors ${isDragging ? 'ring-2 ring-blue-400 bg-blue-50/40' : ''}`}>
+            <div className={`mt-5 rounded-xl transition-colors ${isDragging ? 'ring-2 ring-brand-primary bg-brand-primary/5' : ''}`}>
               {/* Anexos existentes como pills */}
               {anexosExistentes.length > 0 && (
                 <div className="flex flex-wrap gap-2 mb-3">
                   {anexosExistentes.map(anexo => (
                     <div
                       key={anexo.id}
-                      className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 border border-blue-200 rounded-full"
+                      className="flex items-center gap-1.5 px-2.5 py-1 bg-elevated border border-primary rounded-full"
                     >
-                      <svg className="h-3.5 w-3.5 text-blue-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="h-3.5 w-3.5 text-primary shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                           d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                       </svg>
-                      <span className="text-xs text-gray-700 max-w-[160px] truncate">{anexo.filename}</span>
+                      <span className="text-xs text-primary max-w-[160px] truncate">{anexo.filename}</span>
                       <button
                         type="button"
                         onClick={() => handleRemoverAnexoExistente(anexo.id)}
                         disabled={submitting}
-                        className="text-gray-400 hover:text-red-500 transition-colors disabled:opacity-50"
+                        className="hover:text-error transition-colors disabled:opacity-50"
+                        style={{ color: 'rgb(var(--text-secondary))' }}
                         aria-label={`Remover ${anexo.filename}`}
                       >
                         <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -412,7 +415,7 @@ export default function ModalEditarChamadoAdmin({
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={submitting}
-                  className="inline-flex items-center gap-2 px-4 py-1.5 border border-gray-300 rounded-lg text-sm text-gray-500 bg-white hover:bg-gray-50 hover:text-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="inline-flex items-center gap-2 px-4 py-1.5 border border-primary rounded-lg text-sm text-primary bg-primary/5 hover:bg-primary/15 hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -424,14 +427,15 @@ export default function ModalEditarChamadoAdmin({
                 {novosAnexos.map((file, index) => (
                   <div
                     key={index}
-                    className="flex items-center gap-1.5 px-2.5 py-1 bg-white border border-gray-300 rounded-full"
+                    className="flex items-center gap-1.5 px-2.5 py-1 bg-elevated border border-primary rounded-full"
                   >
-                    <span className="text-xs text-gray-700 max-w-[160px] truncate">{file.name}</span>
-                    <span className="text-xs text-gray-400 shrink-0">{(file.size / 1024).toFixed(0)} KB</span>
+                    <span className="text-xs text-primary max-w-[160px] truncate">{file.name}</span>
+                    <span className="text-xs shrink-0" style={{ color: 'rgb(var(--text-secondary))' }}>{(file.size / 1024).toFixed(0)} KB</span>
                     <button
                       type="button"
                       onClick={() => removeNovoAnexo(index)}
-                      className="text-gray-400 hover:text-red-500 transition-colors"
+                      className="hover:text-error transition-colors"
+                      style={{ color: 'rgb(var(--text-secondary))' }}
                       aria-label={`Remover ${file.name}`}
                     >
                       <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -466,7 +470,8 @@ export default function ModalEditarChamadoAdmin({
               <button
                 onClick={handleSubmit}
                 disabled={submitting || loading}
-                className="px-6 py-2 bg-[#001960] text-white rounded-lg hover:bg-[#001960]/80 transition-all transform hover:scale-105 font-medium disabled:bg-blue-400 disabled:cursor-not-allowed disabled:transform-none"
+                style={{ backgroundColor: 'rgb(var(--btn-criar))' }}
+                className="px-6 py-2 text-white rounded-lg hover:brightness-90 active:brightness-75 transition-all transform hover:scale-105 font-semibold disabled:bg-secondary disabled:cursor-not-allowed disabled:transform-none"
               >
                 {submitting ? 'Salvando...' : 'Confirmar'}
               </button>
