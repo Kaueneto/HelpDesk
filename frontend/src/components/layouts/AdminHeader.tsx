@@ -10,7 +10,7 @@ interface AdminHeaderProps {}
 
 export default function AdminHeader({}: AdminHeaderProps) {
   const { user, logout } = useAuth();
-  const { theme, setTheme } = useTheme();
+  const { mode, setTheme } = useTheme();
   const router = useRouter();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [themeSubmenuOpen, setThemeSubmenuOpen] = useState(false);
@@ -129,7 +129,7 @@ export default function AdminHeader({}: AdminHeaderProps) {
                     onMouseLeave={(e) => !themeSubmenuOpen && (e.currentTarget.style.backgroundColor = 'transparent')}
                   >
                     <div className="w-5 h-5 flex items-center justify-center">
-                      {theme === 'dark' ? <FiMoon className="w-5 h-5" /> : <FiSun className="w-5 h-5" />}
+                      {mode === 'dark' ? <FiMoon className="w-5 h-5" /> : <FiSun className="w-5 h-5" />}
                     </div>
                     <span className="flex-1 text-left font-medium text-sm">Tema</span>
                     <FiChevronDown className={`w-4 h-4 transition-transform duration-200 ${themeSubmenuOpen ? 'rotate-180' : ''}`} />
@@ -144,19 +144,19 @@ export default function AdminHeader({}: AdminHeaderProps) {
                         }}
                         className="w-full px-3 py-2 rounded-lg flex items-center gap-3 transition-all duration-200 text-sm"
                         style={{
-                          color: theme === 'light' ? `rgb(var(--brand-primary))` : `rgb(var(--text-secondary))`,
-                          backgroundColor: theme === 'light' ? `rgba(var(--brand-primary), 0.1)` : 'transparent'
+                          color: mode === 'light' ? `rgb(var(--brand-primary))` : `rgb(var(--text-secondary))`,
+                          backgroundColor: mode === 'light' ? `rgba(var(--brand-primary), 0.1)` : 'transparent'
                         }}
                         onMouseEnter={(e) => {
-                          if (theme !== 'light') e.currentTarget.style.backgroundColor = `rgb(var(--bg-hover))`;
+                          if (mode !== 'light') e.currentTarget.style.backgroundColor = `rgb(var(--bg-hover))`;
                         }}
                         onMouseLeave={(e) => {
-                          if (theme !== 'light') e.currentTarget.style.backgroundColor = 'transparent';
+                          if (mode !== 'light') e.currentTarget.style.backgroundColor = 'transparent';
                         }}
                       >
                         <FiSun className="w-4 h-4" />
                         <span>Claro</span>
-                        {theme === 'light' && <div className="ml-auto w-2 h-2 rounded-full" style={{ backgroundColor: `rgb(var(--brand-primary))` }}></div>}
+                        {mode === 'light' && <div className="ml-auto w-2 h-2 rounded-full" style={{ backgroundColor: `rgb(var(--brand-primary))` }}></div>}
                       </button>
 
                       <button
@@ -166,19 +166,19 @@ export default function AdminHeader({}: AdminHeaderProps) {
                         }}
                         className="w-full px-3 py-2 rounded-lg flex items-center gap-3 transition-all duration-200 text-sm mt-1"
                         style={{
-                          color: theme === 'dark' ? `rgb(var(--brand-primary))` : `rgb(var(--text-secondary))`,
-                          backgroundColor: theme === 'dark' ? `rgba(var(--brand-primary), 0.1)` : 'transparent'
+                          color: mode === 'dark' ? `rgb(var(--brand-primary))` : `rgb(var(--text-secondary))`,
+                          backgroundColor: mode === 'dark' ? `rgba(var(--brand-primary), 0.1)` : 'transparent'
                         }}
                         onMouseEnter={(e) => {
-                          if (theme !== 'dark') e.currentTarget.style.backgroundColor = `rgb(var(--bg-hover))`;
+                          if (mode !== 'dark') e.currentTarget.style.backgroundColor = `rgb(var(--bg-hover))`;
                         }}
                         onMouseLeave={(e) => {
-                          if (theme !== 'dark') e.currentTarget.style.backgroundColor = 'transparent';
+                          if (mode !== 'dark') e.currentTarget.style.backgroundColor = 'transparent';
                         }}
                       >
                         <FiMoon className="w-4 h-4" />
                         <span>Escuro</span>
-                        {theme === 'dark' && <div className="ml-auto w-2 h-2 rounded-full" style={{ backgroundColor: `rgb(var(--brand-primary))` }}></div>}
+                        {mode === 'dark' && <div className="ml-auto w-2 h-2 rounded-full" style={{ backgroundColor: `rgb(var(--brand-primary))` }}></div>}
                       </button>
                     </div>
                   )}

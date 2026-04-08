@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import api from '@/services/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import CustomSelect from '@/components/admin/CustomSelect';
 import { MdAttachFile } from 'react-icons/md';
 
@@ -44,6 +45,7 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
   const MAX_FILES = 5;
   const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
   const { user } = useAuth();
+  const { theme } = useTheme();
   const assuntoRef = useRef<HTMLInputElement>(null);
   const descricaoRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -319,10 +321,6 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
   const usuariosOrdenados = [...usuarios].sort((a, b) => a.name.localeCompare(b.name));
   const prioridadesOrdenadas = [...prioridades].sort((a, b) => a.ordem - b.ordem);
 
-  const buttonGhostClass =
-    'text-sm px-6 py-2 bg-transparent border border-brand-primary text-brand-primary rounded-lg hover:bg-brand-primary/10 hover:shadow-md active:bg-brand-primary/20 transition-all duration-200 transform hover:scale-105 font-medium disabled:border-secondary disabled:text-secondary disabled:bg-transparent disabled:cursor-not-allowed';
-
-
     const responsavelOptions = usuarios.map((u) => ({
       id: u.id,
       label: u.name,
@@ -346,10 +344,16 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
     <div
       className="fixed inset-0 modal-overlay flex items-start sm:items-center justify-center z-50 px-3 sm:px-4 py-4 sm:py-6"
       onClick={(e) => e.target === e.currentTarget && handleCancel()}
+      style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
     >
       <div
         className="modal-container rounded-3xl w-full max-w-4xl max-h-[90vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
+        style={{
+          backgroundColor: theme.background.modal,
+          color: theme.text.primary,
+          boxShadow: '0 10px 40px rgba(0, 0, 0, 0.2)',
+        }}
       >
         <form
           onSubmit={handleSubmit}
@@ -372,17 +376,22 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
                 onKeyDown={handleAssuntoKeyDown}
                 required
                 maxLength={200}
-                className="w-full bg-transparent text-2xl md:text-3xl leading-tight font-semibold text-primary placeholder:text-secondary outline-none"
+                className="w-full text-2xl md:text-3xl leading-tight font-semibold outline-none"
                 placeholder="Assunto/resumo"
+                style={{
+                  backgroundColor: 'transparent',
+                  color: theme.text.primary,
+                }}
               />
             </div>
 
             <button
               onClick={handleCancel}
-              className="text-secondary hover:text-primary transition-colors"
+              className="transition-colors hover:opacity-70"
               type="button"
               tabIndex={-1}
               aria-label="Fechar modal"
+              style={{ color: theme.text.secondary }}
             >
               <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
@@ -401,15 +410,19 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
               onChange={(e) => setDescricao(e.target.value)}
               required
               rows={3}
-              className="w-full bg-transparent text-lg md:text-xl text-primary placeholder:text-secondary outline-none resize-none overflow-y-auto max-h-48 pr-2"
+              className="w-full text-lg md:text-xl outline-none resize-none overflow-y-auto max-h-48 pr-2"
               placeholder="Descrição"
+              style={{
+                backgroundColor: 'transparent',
+                color: theme.text.primary,
+              }}
             />
           </div>
 
           <div className="mt-5 grid grid-cols-1 xl:grid-cols-[1fr_140px] gap-5 md:gap-6 items-start">
             <div className="space-y-2.5">
               <div className="grid grid-cols-1 md:grid-cols-[160px_1fr] items-center gap-2.5">
-                <label htmlFor="responsavel" className="text-base md:text-lg leading-none text-secondary">
+                <label htmlFor="responsavel" className="text-base md:text-lg leading-none" style={{ color: theme.text.secondary }}>
                   Responsável
                 </label>
                 <CustomSelect
@@ -420,7 +433,7 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
                 />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-[160px_1fr] items-center gap-2.5">
-                <label htmlFor="topico" className="text-base md:text-lg leading-none text-secondary">
+                <label htmlFor="topico" className="text-base md:text-lg leading-none" style={{ color: theme.text.secondary }}>
                   Tópico
                 </label>
                 <CustomSelect
@@ -435,7 +448,7 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-[160px_1fr] items-center gap-2.5">
-                 <label htmlFor="departamento" className="text-base md:text-lg leading-none text-secondary">
+                 <label htmlFor="departamento" className="text-base md:text-lg leading-none" style={{ color: theme.text.secondary }}>
                     Departamento
                 </label>
                 <CustomSelect
@@ -453,15 +466,43 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
           <div className="flex flex-col gap-2 pl-6 xl:pl-5 pt-0 -mt-1 items-end">
               {prioridadesOrdenadas.map((prioridade) => {
                 const isActive = prioridadeId === prioridade.id;
+                
+                // Mapear nomes de prioridade a cores do tema
+                const getPriorityColors = () => {
+                  const normalizedName = prioridade.nome.toLowerCase();
+                  switch (normalizedName) {
+                    case 'baixa':
+                    case 'baixo':
+                      return isActive ? theme.priority.baixa : { bg: theme.priority.baixa.bg, text: theme.text.secondary };
+                    case 'média':
+                    case 'media':
+                    case 'médio':
+                    case 'medio':
+                      return isActive ? theme.priority.media : { bg: theme.priority.media.bg, text: theme.text.secondary };
+                    case 'alta':
+                    case 'alto':
+                      return isActive ? theme.priority.alta : { bg: theme.priority.alta.bg, text: theme.text.secondary };
+                    case 'crítica':
+                    case 'critica':
+                      return isActive ? theme.priority.critica : { bg: theme.priority.critica.bg, text: theme.text.secondary };
+                    case 'urgente':
+                      return isActive ? theme.priority.urgente : { bg: theme.priority.urgente.bg, text: theme.text.secondary };
+                    default:
+                      return isActive ? theme.priority.media : { bg: theme.priority.media.bg, text: theme.text.secondary };
+                  }
+                };
+                
+                const colors = getPriorityColors();
+                
                 return (
                   <button
                     key={prioridade.id}
                     type="button"
                     onClick={() => setPrioridadeId(prioridade.id)}
-                    className="w-full h-9 rounded-lg text-sm font-mono transition-all duration-150 hover:brightness-90 shadow-sm"
+                    className="w-full h-9 rounded-lg text-sm font-mono transition-all duration-150 shadow-sm"
                     style={{
-                      backgroundColor: isActive ? prioridade.cor : 'rgb(var(--bg-hover))',
-                      color: isActive ? '#ffffff' : 'rgb(var(--text-secondary))',
+                      backgroundColor: isActive ? (colors as any).border : colors.bg,
+                      color: isActive ? '#ffffff' : colors.text,
                     }}
                   >
                     {prioridade.nome}
@@ -472,13 +513,23 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
           </div>
 
           {/* Área de anexos */}
-          <div className={`mt-5 transition-colors rounded-xl ${isDragging ? 'ring-1 ring-brand-primary bg-brand-primary/5' : ''}`}>
+          <div className={`mt-5 transition-colors rounded-xl`}
+            style={{
+              backgroundColor: isDragging ? `${theme.brand.primary}1a` : 'transparent',
+              border: isDragging ? `1px solid ${theme.brand.primary}` : '',
+            }}
+          >
             <div className="flex flex-wrap items-center gap-3">
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={submitting}
-                className="inline-flex items-center gap-2 px-5 py-2 border select-border rounded-lg text-sm font-medium text-primary bg-primary/5 hover:bg-primary/15 hover:shadow-md active:bg-primary/25 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed border"
+                style={{
+                  backgroundColor: `${theme.brand.primary}15`,
+                  color: theme.brand.primary,
+                  borderColor: theme.brand.primary,
+                }}
               >
                 <MdAttachFile className="h-4 w-4" />
                 Arquivos
@@ -487,15 +538,20 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
               {selectedFiles.map((file, index) => (
                 <div
                   key={`${file.name}-${file.lastModified}-${index}`}
-                  className="flex items-center gap-1.5 px-2.5 py-1 bg-elevated border border-primary rounded-full"
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border"
+                  style={{
+                    backgroundColor: `${theme.brand.primary}15`,
+                    borderColor: theme.brand.primary,
+                  }}
                 >
-                   <span className="text-xs text-primary max-w-40 truncate">{file.name}</span>
-                    <span className="text-xs text-secondary shrink-0">{(file.size / 1024).toFixed(0)} KB</span>
+                   <span className="text-xs max-w-40 truncate" style={{ color: theme.brand.primary }}>{file.name}</span>
+                    <span className="text-xs shrink-0" style={{ color: theme.text.secondary }}>{(file.size / 1024).toFixed(0)} KB</span>
                    <button
                     type="button"
                     onClick={() => removeFile(index)}
-                    className="text-secondary hover:text-error transition-colors"
+                    className="transition-colors"
                     aria-label={`Remover ${file.name}`}
+                    style={{ color: theme.indicators.erro }}
                   >
                     <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -518,7 +574,13 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
           </div>
 
           {errorMessage && (
-            <div className="mt-4 bg-error/10 border border-error text-error px-4 py-3 rounded-lg text-sm">
+            <div className="mt-4 px-4 py-3 rounded-lg text-sm border"
+              style={{
+                backgroundColor: `${theme.indicators.erro}15`,
+                borderColor: theme.indicators.erro,
+                color: theme.indicators.erro,
+              }}
+            >
               {errorMessage}
             </div>
           )}
@@ -530,7 +592,12 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
                 type="button"
                 onClick={handleCancel}
                 disabled={submitting}
-                className={buttonGhostClass}
+                className="px-6 py-2 rounded-lg text-sm font-medium transition-all duration-200 transform hover:scale-105 border disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{
+                  backgroundColor: 'transparent',
+                  color: theme.brand.primary,
+                  borderColor: theme.brand.primary,
+                }}
               >
                  Cancelar
               </button>
@@ -538,7 +605,12 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
                 type="button"
                 onClick={limparCampos}
                 disabled={submitting}
-                className={buttonGhostClass}
+                className="px-6 py-2 rounded-lg text-sm font-medium transition-all duration-200 transform hover:scale-105 border disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{
+                  backgroundColor: 'transparent',
+                  color: theme.brand.primary,
+                  borderColor: theme.brand.primary,
+                }}
               >
                 Limpar Campos
               </button>
@@ -547,8 +619,10 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
           <button
             type="submit"
             disabled={submitting || isLoadingData}
-            style={{ backgroundColor: 'rgb(var(--btn-criar))' }}
-            className="px-8 py-2.5 text-white rounded-lg hover:brightness-90 active:brightness-75 transition-all transform hover:scale-105 font-semibold disabled:bg-secondary disabled:cursor-not-allowed disabled:transform-none shadow-lg hover:shadow-xl"
+            className="px-8 py-2.5 text-white rounded-lg transition-all transform hover:scale-105 font-semibold disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-lg"
+            style={{
+              backgroundColor: theme.brand.primary,
+            }}
           >
             {isLoadingData ? 'Carregando...' : submitting ? 'Abrindo chamado...' : 'Criar'}
           </button>

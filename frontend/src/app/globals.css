@@ -124,6 +124,7 @@ input[type="number"]::-webkit-inner-spin-button {
 
 input[type="number"] {
   -moz-appearance: textfield !important;
+  appearance: textfield !important;
 }
 
 /* remove scrollbar indicators dos select components */
@@ -235,55 +236,21 @@ select {
   --status-7-texto: 124 45 18; /* #7C2D12 - Laranja escuro */
   --status-7-borda: 251 146 60; /* #FB923C - Laranja */
 
-  /* Card Total Geral */
-  --cor-card-total-inicio: 55 65 81; /* #374151 - Cinza grafite claro */
-  --cor-card-total-fim: 30 41 59; /* #1E293B - Cinza grafite escuro */
-  
-  /* Graficos - Container */
-  --cor-grafico-fundo: 248 250 252; /* #F8FAFC - Cinza muito claro */
-  --cor-grafico-borda: 229 231 235; /* #E5E7EB - Cinza bordas */
-  --cor-grafico-titulo: 31 41 55; /* #1F2937 - Cinzento para títulos */
-  --cor-grafico-subtitulo: 107 114 128; /* #6B7280 - Cinzento secundário */
-  
-  /* Graficos - Elementos */
-  --cor-grid: 229 231 235; /* #E5E7EB - Linha do grid */
-  --cor-eixo: 107 114 128; /* #6B7280 - Eixo X/Y */
-  --cor-linha-interno: 59 130 246; /* #3B82F6 - Azul */
-  --cor-linha-externo: 245 158 11; /* #F59E0B - Laranja */
-  --cor-barra-topicos: 77 29 149; /* #4D1D95 - Roxo */
-  --cor-barra-topicos-label: 255 255 255; /* #FFFFFF - Branco para contraste */
-  --cor-barra-usuarios: 59 130 246; /* #3B82F6 - Azul */
-  --cor-barra-usuarios-label: 255 255 255; /* #FFFFFF - Branco para contraste */
-  --cor-cursor-hover: 226 232 240; /* #E2E8F0 - Cinza claro para hover */
-  --cor-label-valor: 255 255 255; /* #FFFFFF - Branco para labels premium */
-  
-  /* Graficos - Tooltip */
-  --cor-tooltip-fundo: 17 24 39; /* #111827 - Preto com cinza */
-  --cor-tooltip-texto: 255 255 255; /* #FFFFFF - Branco */
-  --cor-tooltip-borda: 43 44 45; /* #374151 - Cinza */
-
   /* Filtros e Controles */
-  --bg-filtros: 255 255 255; /* #F0F1F5 - Fundo dos filtros */
   --bg-secondary: 255 255 255; /* #FFFFFF - Fundo dos selects bem claro para sem cinza */
-  --cor-borda-primaria: 224 224 224; 
-  --cor-botao-ativo: 25 25 25;
-  --cor-botao-primario: 0 43 87; /* #1A68CF - Azul para botões primários */
   --bg-disabled: 217 219 226; /* #D9DDE2 - Desabilitado */
   --text-disabled: 156 163 175; /* #9CA3AF - Texto desabilitado */
 
   /* Checkbox - Tema Claro */
-  --checkbox-border: 107 114 128; /* #6B7280 - Borda cinza média */
+  --checkbox-border: 59 130 246; /* #3B82F6 - Azul mais escuro para contraste */
   --checkbox-bg: 255 255 255; /* #FFFFFF - Fundo branco */
-  --checkbox-checked-bg: 0 43 87; /* #1A68CF - Azul marca quando checado */
-  --checkbox-checked-border: 0 43 87; /* #1A68CF - Azul marca border */
+  --checkbox-checked-bg: 30 58 138; /* #1E3A8A - Azul mais escuro quando checado */
+  --checkbox-checked-border: 30 58 138; /* #1E3A8A - Azul mais escuro border */
 
   /* Input/DatePicker - Tema Claro */
-  --input-bg: 255 255 255; /* #FFFFFF - Branco */
-  --input-border: 209 213 219; /* #D1D5DB - Gray-300 */
-  --input-focus-ring: 0 43 87; 
-
-  /*cor do toggle de tabela/quadro*/
-  --bg-cinzaescuro: 126 126 126; /* #FFFFFF - Branco */
+  --input-bg: 248 250 252; /* #F8FAFC - Fundo levemente cinzento para contraste */
+  --input-border: 203 213 225; /* #CBD5E1 - Borda um pouco mais escura */
+  --input-focus-ring: 30 58 138; 
   
   /* KANBAN - Tema Claro */
   --kanban-column-bg: 252 252 252; /* #FCFCFC - Branco quase puro para fundo da coluna */
@@ -330,32 +297,6 @@ html.dark {
   --card-bg: 37 47 63; /* #252F3F */
   --overlay-bg: 0 0 0; /* #000000 */
 
-  /* CORES DOS CARDS DO DASHBOARD */
-  --data-success: 46 204 113; /* #2ECC71 - Green */
-  --data-error: 231 76 60; /* #E74C3C - Red */
-  --data-warning: 245 158 11; /* #F59E0B - Orange */
-  --data-info: 59 130 246; /* #3B82F6 - Blue */
-  --data-finalized: 30 41 59; /* #1E293B - Dark slate */
-  --data-special: 147 51 234; /* #9333EA - Purple */
-
-  /* ========================================================================= */
-  /* CORES DO DASHBOARD - TEMA DAARK */
-
-  
-  /* Header e Navegação */
-  --cor-header-fundo: 26 104 207; /* #1A68CF - Azul marca */
-  --cor-header-texto: 255 255 255; /* #FFFFFF - Branco */
-  --cor-botao-pesquisar: 0 47 97; /* #002F61 - Azul escuro (mantém) */
-  
-  /* Cards de Status */
-  --cor-card-abertos: 46 204 113; /* #2ECC71 - Verde (mantém) */
-  --cor-card-atrasados: 231 76 60; /* #E74C3C - Vermelho (mantém) */
-  --cor-card-em-andamento: 59 130 246; /* #3B82F6 - Azul (mantém) */
-  --cor-card-finalizados: 45 53 70; /* #2D3646 - Cinza escuro (mantém) */
-  --cor-card-pendentes: 245 158 11; /* #F59E0B - Âmbar/Laranja (mantém) */
-  --cor-card-pendente-usuario: 147 51 234; /* #9333EA - Roxo (mantém) */
-  --cor-card-texto: 255 255 255; /* #FFFFFF - Branco */
-
   /* Status da Tabela - TEMA DARK ( mais saturada) */
   --status-1-bg: 151 138 10; 
   --status-1-texto: 255 255 255; 
@@ -387,49 +328,17 @@ html.dark {
   /* Card Total Geral */
   --cor-card-total-inicio: 37 47 63; /* #252F3F - Cinza escuro tema dark */
   --cor-card-total-fim: 17 24 39; /* #111827 - Preto com cinza */
-  
-  /* Gráficos - Container */
-  --cor-grafico-fundo: 31 41 55; /* #1F2937 - Cinza escuro */
-  --cor-grafico-borda: 55 65 81; /* #374151 - Cinza bordas escuro */
-  --cor-grafico-titulo: 243 244 246; /* #F3F4F6 - Cinzento claro para títulos */
-  --cor-grafico-subtitulo: 209 213 219; /* #D1D5DB - Cinzento secundário claro */
-  
-  /* Gráficos - Elementos */
-  --cor-grid: 55 65 81; /* #374151 - Linha do grid escuda */
-  --cor-eixo: 209 213 219; /* #D1D5DB - Eixo X/Y claro */
-  --cor-linha-interno: 59 130 246; /* #3B82F6 - Azul (mantém) */
-  --cor-linha-externo: 245 158 11; /* #F59E0B - Laranja (mantém) */
-  --cor-barra-topicos: 77 29 149; /* #4D1D95 - Roxo (mantém) */
-  --cor-barra-topicos-label: 255 255 255; /* #FFFFFF - Branco para contraste */
-  --cor-barra-usuarios: 59 130 246; /* #3B82F6 - Azul (mantém) */
-  --cor-barra-usuarios-label: 255 255 255; /* #FFFFFF - Branco para contraste */
-  --cor-cursor-hover: 55 65 81; /* #374151 - Cinza escuro para hover */
-  --cor-label-valor: 243 244 246; /* #F3F4F6 - Cinza claro para labels */
-  
-  /* Gráficos - Tooltip */
-  --cor-tooltip-fundo: 17 24 39; /* #FFFFFF - Branco (invertido) */
-  --cor-tooltip-texto: 255 255 255; /* #111827 - Texto escuro (invertido) */
-  --cor-tooltip-borda: 229 231 235; /* #E5E7EB - Cinza claro (invertido) */
-
-  /* Filtros e Controles */
-  --bg-filtros: 23 23 23; /* #252F3F - Fundo dos filtros mais escuro tema dark */
-  --bg-secondary: 23 23 23; /* #2D2D2D - Secundário dark mais contrastivo */
-  --cor-borda-primaria: 127 144 161; 
-  --cor-botao-ativo: 0 43 87; /* #60A5FA - Azul claro para botões ativos dark */
-  --cor-botao-primario: 0 43 87; /* #1A68CF - Azul para botões primários dark*/
-  --bg-disabled: 55 65 81; /* #374151 - Desabilitado dark */
-  --text-disabled: 107 114 128; /* #6B7280 - Texto desabilitado dark */
 
   /* Checkbox - Tema Escuro */
-  --checkbox-border: 0 43 87; /* #60A5FA - Azul brilhante (mais contraste) */
+  --checkbox-border: 96 165 250; /* #60A5FA - Azul brilhante para máximo contraste */
   --checkbox-bg: 31 41 55; /* #1F2937 - Fundo cinza escuro */
-  --checkbox-checked-bg: 59 130 246; /* #3B82F6 - Azul mais saturado quando checado */
-  --checkbox-checked-border: 129 140 248; /* #818CF8 - Azul luminoso para borda */
+  --checkbox-checked-bg: 96 165 250; /* #60A5FA - Azul luminoso quando checado */
+  --checkbox-checked-border: 96 165 250; /* #60A5FA - Azul luminoso para borda */
 
   /* Input/DatePicker - Tema Escuro */
-  --input-bg: 23 23 23; /* #1F2937 - Fundo cinza escuro */
-  --input-border: 107 114 128; /* #6B7280 - Cinza mais claro para visibilidade */
-  --input-focus-ring: 129 140 248; /* #818CF8 - Azul luminoso focus */
+  --input-bg: 30 41 59; /* #1E293B - Fundo cinza escuro mais claro para diferenciação */
+  --input-border: 100 116 139; /* #647185 - Cinza mais claro para visibilidade */
+  --input-focus-ring: 96 165 250; /* #60A5FA - Azul luminoso focus */
 
   /* KANBAN - Tema Escuro */
   --kanban-column-bg: 26 26 26; /* #1A1A1A - Preto puro para fundo da coluna */
@@ -439,9 +348,6 @@ html.dark {
   --kanban-card-hover: 65 65 65; /* #414141 - Cinza mais claro no hover */
   --kanban-text-primary: 243 244 246; /* #F3F4F6 - Texto claro */
   --kanban-text-secondary: 209 213 219; /* #D1D5DB - Texto secundário */
-
-  /*botao criar chamado*/
-  --btn-criar: 0 43 87;
 
   --select-item-selected-bg: 15 40 90; /* #0F285A - Azul fundo escuro saturado */
   --select-item-selected-color: 147 197 253; /* #93C5FD - Azul texto claro */

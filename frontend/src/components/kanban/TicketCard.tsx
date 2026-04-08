@@ -8,6 +8,7 @@ import { FiFileText, FiCheck, FiEdit } from 'react-icons/fi';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Work_Sans } from "next/font/google";
+import { useTheme } from '@/contexts/ThemeContext';
 
 const workSans = Work_Sans({
   subsets: ["latin"],
@@ -67,44 +68,8 @@ interface TicketCardProps {
   isSelected?: boolean;
 }
 
-// mapeamento de cores para prioridades
-const priorityColors: { [key: string]: string } = {
-  'baixo': '--status-3-bg',      // Verde
-  'medio': '--status-2-bg',      // Azul
-  'alto': '--status-1-bg',       // Amarelo
-  'crítica': '--status-4-bg',    // Vermelho
-  'urgente': '--status-4-bg',    // Vermelho
-};
-
-const priorityTextColors: { [key: string]: string } = {
-  'baixo': '--status-3-texto',
-  'medio': '--status-2-texto',
-  'alto': '--status-1-texto',
-  'crítica': '--status-4-texto',
-  'urgente': '--status-4-texto',
-};
-
-const priorityBorderColors: { [key: string]: string } = {
-  'baixo': '--status-3-borda',
-  'medio': '--status-2-borda',
-  'alto': '--status-1-borda',
-  'crítica': '--status-4-borda',
-  'urgente': '--status-4-borda',
-};
-
-// mapeamento de cores para status (usando IDs e variáveis CSS)
-const statusColorVars: { [key: number]: { bg: string; text: string; border: string } } = {
-  1: { bg: '--status-1-bg', text: '--status-1-texto', border: '--status-1-borda' },      // ABERTO
-  2: { bg: '--status-2-bg', text: '--status-2-texto', border: '--status-2-borda' },      // EM ATENDIMENTO
-  3: { bg: '--status-3-bg', text: '--status-3-texto', border: '--status-3-borda' },      // ENCERRADO
-  4: { bg: '--status-4-bg', text: '--status-4-texto', border: '--status-4-borda' },      // CANCELADO
-  5: { bg: '--status-5-bg', text: '--status-5-texto', border: '--status-5-borda' },      // AGUARDANDO
-  6: { bg: '--status-6-bg', text: '--status-6-texto', border: '--status-6-borda' },      // OUTRO
-  7: { bg: '--status-7-bg', text: '--status-7-texto', border: '--status-7-borda' },      // OUTRO
-};
-
 const TicketCard = memo(({ chamado, onClick, isDragging = false, onSelect, isSelected = false }: TicketCardProps) => {
- 
+  const { theme } = useTheme();
   const [isHovered, setIsHovered] = useState(false);
   const [showMoveAnimation, setShowMoveAnimation] = useState(false);
   const [prevPositions, setPrevPositions] = useState(JSON.stringify(chamado.kanbanPositions));
@@ -159,14 +124,40 @@ const TicketCard = memo(({ chamado, onClick, isDragging = false, onSelect, isSel
 
   const getPriorityColor = (prioridadeNome: string) => {
     const normalizedName = prioridadeNome.toLowerCase();
-    const bgVar = priorityColors[normalizedName] || '--status-6-bg';
-    const textVar = priorityTextColors[normalizedName] || '--status-6-texto';
-    const borderVar = priorityBorderColors[normalizedName] || '--status-6-borda';
-    return { bgVar, textVar, borderVar };
+    
+    switch (normalizedName) {
+      case 'baixa':
+      case 'baixo':
+        return theme.priority.baixa;
+      case 'média':
+      case 'media':
+      case 'médio':
+      case 'medio':
+        return theme.priority.media;
+      case 'alta':
+      case 'alto':
+        return theme.priority.alta;
+      case 'crítica':
+      case 'critica':
+        return theme.priority.critica;
+      case 'urgente':
+        return theme.priority.urgente;
+      default:
+        return theme.priority.media;
+    }
   };
 
   const getStatusColor = (statusId: number) => {
-    return statusColorVars[statusId] || { bg: '--status-6-bg', text: '--status-6-texto', border: '--status-6-borda' };
+    switch (statusId) {
+      case 1: return theme.status.aberto;           // ABERTO
+      case 2: return theme.status.emAtendimento;    // EM ATENDIMENTO
+      case 3: return theme.status.encerrado;        // ENCERRADO
+      case 4: return theme.status.cancelado;        // CANCELADO
+      case 5: return theme.status.aguardando;       // AGUARDANDO
+      case 6: return theme.status.pendenteUsuario;  // PENDENTE_USUARIO
+      case 7: return theme.status.pendente;         // PENDENTE
+      default: return theme.status.aberto;
+    }
   };
 
   const handleCardClick = (e: React.MouseEvent) => {
@@ -218,11 +209,11 @@ const TicketCard = memo(({ chamado, onClick, isDragging = false, onSelect, isSel
       `}
       style={{
         ...style,
-        backgroundColor: `rgb(var(--kanban-card-bg))`,
-        borderColor: isSelected ? '#3b82f6' : `rgb(var(--kanban-card-border))`,
+        backgroundColor: theme.background.card,
+        borderColor: isSelected ? theme.brand.primary : theme.border.secondary,
         borderWidth: '1px',
         cursor: sortableIsDragging || isDragging ? 'grabbing' : 'pointer',
-        boxShadow: sortableIsDragging || isDragging ? '0 10px 15px -3px rgba(59, 130, 246, 0.4)' : isSelected ? '0 0 0 2px #3b82f6' : '0 1px 2px rgba(0, 0, 0, 0.1)',
+        boxShadow: sortableIsDragging || isDragging ? `0 10px 15px -3px ${theme.brand.primary}66` : isSelected ? `0 0 0 2px ${theme.brand.primary}` : '0 1px 2px rgba(0, 0, 0, 0.1)',
         opacity: sortableIsDragging ? 0.5 : 1,
         transform: (sortableIsDragging || isDragging) ? 'scale(1.05)' : 'scale(1)',
       }}
@@ -237,13 +228,13 @@ const TicketCard = memo(({ chamado, onClick, isDragging = false, onSelect, isSel
             exit={{ opacity: 0 }}
             transition={{ duration: 0.8 }}
             className="absolute inset-0 border-2 rounded-lg pointer-events-none"
-            style={{ borderColor: '#22c55e' }}
+            style={{ borderColor: theme.indicators.sucesso }}
           />
         )}
       </AnimatePresence>
       {/* visual indicator pra drag */}
       {sortableIsDragging && (
-        <div className="absolute inset-0 opacity-10" style={{ backgroundColor: '#3b82f6' }}></div>
+        <div className="absolute inset-0 opacity-10" style={{ backgroundColor: theme.brand.primary }}></div>
       )}
 
       <div className="p-3">
@@ -261,15 +252,18 @@ const TicketCard = memo(({ chamado, onClick, isDragging = false, onSelect, isSel
           onClick={handleCheckboxClick}
         >
           <div className={`
-            w-5 h-5 rounded-lg border flex items-center justify-center cursor-pointer transition-all
+            w-5 h-5 rounded-lg border-2 flex items-center justify-center cursor-pointer transition-all
           `}
           style={{
-            backgroundColor: isSelected ? '#3b82f6' : 'transparent',
-            borderColor: isSelected ? '#3b82f6' : `rgb(var(--kanban-card-border))`
+            backgroundColor: isSelected ? theme.brand.primary : theme.background.hover,
+            borderColor: isSelected ? theme.brand.primary : theme.brand.primary,
+            opacity: isSelected ? 1 : 0.7
           }}
           >
-            {isSelected && (
+            {isSelected ? (
               <FiCheck className="w-3 h-3 text-white" strokeWidth={3} />
+            ) : (
+              <div className="w-1.5 h-1.5 rounded-sm" style={{ backgroundColor: theme.text.tertiary }}></div>
             )}
           </div>
         </motion.div>
@@ -277,11 +271,11 @@ const TicketCard = memo(({ chamado, onClick, isDragging = false, onSelect, isSel
           {/* conteudo principal */}
           <div className="flex-1 min-w-0">
             <h3 className="font-segoe text-base font-semibold line-clamp-2 leading-tight"
-              style={{ color: `rgb(var(--kanban-text-primary))` }}
+              style={{ color: theme.text.primary }}
             >
               {chamado.resumoChamado}
             </h3>
-            <p className="text-xs mt-0.5" style={{ color: `rgb(var(--kanban-text-secondary))` }}>
+            <p className="text-xs mt-0.5" style={{ color: theme.text.secondary }}>
               #{chamado.numeroChamado || chamado.id}
             </p>
           </div>
@@ -294,15 +288,15 @@ const TicketCard = memo(({ chamado, onClick, isDragging = false, onSelect, isSel
           {/* prioridade */}
           <div>
             {(() => {
-              const { bgVar, textVar, borderVar } = getPriorityColor(chamado.tipoPrioridade.nome);
+              const colors = getPriorityColor(chamado.tipoPrioridade.nome);
               return (
                 <span className={`
                   inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border 
                 `}
                 style={{
-                  backgroundColor: `rgb(var(${bgVar}))`,
-                  color: `rgb(var(${textVar}))`,
-                  borderColor: `rgb(var(${borderVar}))`
+                  backgroundColor: colors.bg,
+                  color: colors.text,
+                  borderColor: colors.border
                 }}
                 >
                   {chamado.tipoPrioridade.nome}
@@ -313,7 +307,7 @@ const TicketCard = memo(({ chamado, onClick, isDragging = false, onSelect, isSel
 
           {/* topico */}
           <div className={`${workSans.className} flex items-center text-sm gap-1.5`}
-            style={{ color: `rgb(var(--kanban-text-secondary))` }}
+            style={{ color: theme.text.secondary }}
           >
             <FiFileText className="w-3 h-3 shrink-0" />
             <span className="truncate">{chamado.topicoAjuda.nome}</span>
@@ -322,15 +316,15 @@ const TicketCard = memo(({ chamado, onClick, isDragging = false, onSelect, isSel
           {/* status */}
           <div>
             {(() => {
-              const { bg, text, border } = getStatusColor(chamado.status.id);
+              const colors = getStatusColor(chamado.status.id);
               return (
                 <span className={`
                   inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border 
                 `}
                 style={{
-                  backgroundColor: `rgb(var(${bg}))`,
-                  color: `rgb(var(${text}))`,
-                  borderColor: `rgb(var(${border}))`
+                  backgroundColor: colors.bg,
+                  color: colors.text,
+                  borderColor: colors.border
                 }}
                 >
                   {chamado.status.nome}
@@ -341,12 +335,12 @@ const TicketCard = memo(({ chamado, onClick, isDragging = false, onSelect, isSel
 
           {/* datas */}
           <div className="space-y-1">
-            <div className="flex items-center text-xs gap-1" style={{ color: `rgb(var(--kanban-text-secondary))` }}>
+            <div className="flex items-center text-xs gap-1" style={{ color: theme.text.secondary }}>
               <FiEdit  className="w-3 h-3" />
               <span>{formatDate(chamado.dataAbertura)}</span>
             </div>
             {chamado.dataFechamento && (
-              <div className="flex items-center text-xs gap-1" style={{ color: `rgb(var(--kanban-text-secondary))` }}>
+              <div className="flex items-center text-xs gap-1" style={{ color: theme.text.secondary }}>
                 <FiCheck className="w-3 h-3" />
                 <span>{formatDate(chamado.dataFechamento)}</span>
               </div>
@@ -361,34 +355,3 @@ const TicketCard = memo(({ chamado, onClick, isDragging = false, onSelect, isSel
 TicketCard.displayName = 'TicketCard';
 
 export default TicketCard;
-
-// add estilos globais para animação de movimento
-if (typeof document !== 'undefined') {
-  const style = document.createElement('style');
-  style.textContent = `
-    @keyframes moveGlow {
-      0% {
-        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7),
-         0 1px 3px 0 rgba(0, 0, 0, 0.1);
-      }
-      50% {
-        box-shadow: 0 0 0 8px rgba(34, 197, 94, 0.3),
-          0 10px 15px -3px rgba(0, 0, 0, 0.2);
-      }
-      100% {
-        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0),
-         0 1px 3px 0 rgba(0, 0, 0, 0.1);
-      }
-    }
-
-    @keyframes movePulse {
-      0%, 100% {
-        transform: scale(1);
-      }
-      50% {
-        transform: scale(1.02);
-      }
-    }
-  `;
-  document.head.appendChild(style);
-}

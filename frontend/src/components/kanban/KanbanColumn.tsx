@@ -4,6 +4,7 @@ import { memo, useState } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { motion } from 'framer-motion';
+import { useTheme } from '@/contexts/ThemeContext';
 import TicketCard from './TicketCard';
 import { Work_Sans } from "next/font/google";
 
@@ -87,6 +88,7 @@ const KanbanColumn = memo(({
   selectedTickets = new Set(),
   onTicketSelect
 }: KanbanColumnProps) => {
+  const { theme } = useTheme();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   const {
@@ -119,7 +121,7 @@ const KanbanColumn = memo(({
             isOver ? 'shadow-lg' : ''
           }`}
           style={{
-            backgroundColor: `rgb(var(--kanban-column-bg))`,
+            backgroundColor: theme.kanban.columnBg,
             borderColor: color,
             borderLeftColor: color,
             borderLeftWidth: '3px',
@@ -131,7 +133,7 @@ const KanbanColumn = memo(({
           <button
             className="transition-colors mb-2"
             title="Expandir coluna"
-            style={{ color: `rgb(var(--kanban-text-secondary))` }}
+            style={{ color: theme.kanban.textSecondary }}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -141,8 +143,8 @@ const KanbanColumn = memo(({
           {/* contador de tickets */}
           <span className={`text-xs font-medium px-2 py-1 rounded-full mb-2 transition-all`}
             style={{
-              backgroundColor: isOver ? '#3b82f6' : 'rgb(var(--kanban-column-border))',
-              color: isOver ? '#FFFFFF' : `rgb(var(--kanban-text-secondary))`
+              backgroundColor: isOver ? theme.brand.primary : theme.kanban.columnBorder,
+              color: isOver ? '#FFFFFF' : theme.kanban.textSecondary
             }}
           >
             {tickets.length}
@@ -153,7 +155,7 @@ const KanbanColumn = memo(({
             <h3
               className={`text-sm font-semibold whitespace-nowrap`}
               style={{
-                color: `rgb(var(--kanban-text-primary))`,
+                color: theme.kanban.textPrimary,
                 writingMode: 'vertical-rl',
                 textOrientation: 'mixed'
               }}
@@ -175,8 +177,8 @@ const KanbanColumn = memo(({
           <div
             className={`flex items-center justify-between p-4 rounded-t-lg border transition-all duration-200`}
             style={{
-              backgroundColor: `rgb(var(--kanban-column-bg))`,
-              borderColor: `rgb(var(--kanban-column-border))`,
+              backgroundColor: theme.kanban.columnBg,
+              borderColor: theme.kanban.columnBorder,
               borderTopColor: color,
               borderTopWidth: '3px',
               borderWidth: '1px'
@@ -188,7 +190,7 @@ const KanbanColumn = memo(({
                 style={{ backgroundColor: color }}
               />
               <h3 className={`${workSans.className} text-sm font-semibold truncate`}
-                style={{ color: `rgb(var(--kanban-text-primary))` }}
+                style={{ color: theme.kanban.textPrimary }}
               >
                 {title}
               </h3>
@@ -198,7 +200,7 @@ const KanbanColumn = memo(({
               <button
                 onClick={() => setIsCollapsed(true)}
                 className="transition-colors p-1"
-                style={{ color: `rgb(var(--kanban-text-secondary))` }}
+                style={{ color: theme.kanban.textSecondary }}
                 title="Recolher coluna"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -209,8 +211,8 @@ const KanbanColumn = memo(({
               {/* contador */}
               <span className={`text-xs font-medium px-2 py-1 rounded-full transition-all`}
                 style={{
-                  backgroundColor: isOver ? '#3b82f6' : 'rgb(var(--kanban-column-border))',
-                  color: isOver ? '#FFFFFF' : `rgb(var(--kanban-text-secondary))`
+                  backgroundColor: isOver ? theme.brand.primary : theme.kanban.columnBorder,
+                  color: isOver ? '#FFFFFF' : theme.kanban.textSecondary
                 }}
               >
                 {tickets.length}
@@ -226,8 +228,8 @@ const KanbanColumn = memo(({
               transition-all duration-150
             `}
             style={{
-              backgroundColor: isOver ? 'rgb(59, 130, 246, 0.1)' : `rgb(var(--kanban-column-bg))`,
-              borderColor: isOver ? '#3b82f6' : `rgb(var(--kanban-column-border))`
+              backgroundColor: isOver ? `${theme.brand.primary}19` : theme.kanban.columnBg,
+              borderColor: isOver ? theme.brand.primary : theme.kanban.columnBorder
             }}
           >
             {/* indicador de drop */}
@@ -238,11 +240,11 @@ const KanbanColumn = memo(({
                 exit={{ opacity: 0, scale: 0.95 }}
                 className="mb-2 p-2 border-2 border-dashed rounded-lg"
                 style={{
-                  borderColor: '#3b82f6',
-                  backgroundColor: 'rgba(59, 130, 246, 0.1)'
+                  borderColor: theme.brand.primary,
+                  backgroundColor: `${theme.brand.primary}1a`
                 }}
               >
-                <p className="text-xs font-medium text-center" style={{ color: '#3b82f6' }}>
+                <p className="text-xs font-medium text-center" style={{ color: theme.brand.primary }}>
                   ↓ Solte o card aqui
                 </p>
               </motion.div>
@@ -280,7 +282,7 @@ const KanbanColumn = memo(({
                     transition={{ delay: 0.2 }}
                     className="text-center py-8"
                   >
-                    <div style={{ color: `rgb(var(--kanban-text-secondary))` }} className="text-sm">
+                    <div style={{ color: theme.kanban.textSecondary }} className="text-sm">
                       Arraste cards aqui
                     </div>
                   </motion.div>

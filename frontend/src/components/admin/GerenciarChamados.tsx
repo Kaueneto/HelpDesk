@@ -155,7 +155,108 @@ export default function GerenciarChamados() {
     return saved !== null ? saved === 'true' : true;
   });
 
+  // Helper function for React Select component styles
+  const getSelectStyles = () => {
+    return {
+      control: (base: any) => ({
+        ...base,
+        minHeight: '38px',
+        overflowX: "auto",
+        whiteSpace: "nowrap",
+        fontSize: '14px',
+        borderColor: theme.border.secondary,
+        backgroundColor: theme.background.surface,
+        '&:hover': { borderColor: theme.brand.primary, backgroundColor: theme.background.surface },
+        boxShadow: 'none',
+        padding: '2px 4px',
+        color: theme.text.primary,
+      }),
+      menu: (base: any) => ({
+        ...base,
+        backgroundColor: theme.background.surface,
+        borderColor: theme.border.secondary,
+        border: `1px solid ${theme.border.secondary}`,
+      }),
+      menuList: (base: any) => ({
+        ...base,
+        backgroundColor: theme.background.surface,
+        color: theme.text.primary,
+      }),
+      option: (base: any, state: any) => ({
+        ...base,
+        fontSize: '14px',
+        backgroundColor: state.isSelected ? theme.brand.primary : (state.isFocused ? theme.background.hover : theme.background.surface),
+        color: state.isSelected ? 'white' : theme.text.primary,
+        cursor: 'pointer',
+        '&:hover': {
+          backgroundColor: theme.background.hover,
+          color: theme.text.primary
+        }
+      }),
+      multiValue: (base: any) => ({
+        ...base,
+        backgroundColor: theme.brand.primary,
+        margin: '2px 2px',
+        padding: '0 4px',
+        minWidth: 0,
+      }),
+      multiValueLabel: (base: any) => ({
+        ...base,
+        color: 'white',
+        fontSize: '11px',
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+      }),
+      multiValueRemove: (base: any) => ({
+        ...base,
+        color: 'white',
+        '&:hover': {
+          backgroundColor: theme.brand.primary,
+          color: 'white',
+        },
+      }),
+      valueContainer: (base: any) => ({
+        ...base,
+        padding: '2px 4px',
+        maxHeight: '34px',
+        overflowY: 'auto',
+      }),
+      input: (base: any) => ({
+        ...base,
+        color: theme.text.primary,
+      }),
+      placeholder: (base: any) => ({
+        ...base,
+        color: theme.text.secondary,
+      }),
+      singleValue: (base: any) => ({
+        ...base,
+        color: theme.text.primary,
+      }),
+    };
+  };
 
+  const getStatusColor = (statusId: number) => {
+    switch (statusId) {
+      case 1: // ABERTO
+        return { bg: theme.status.aberto.bg, text: theme.status.aberto.text, border: theme.status.aberto.border };
+      case 2: // EM ATENDIMENTO
+        return { bg: theme.status.emAtendimento.bg, text: theme.status.emAtendimento.text, border: theme.status.emAtendimento.border };
+      case 3: // ENCERRADO
+        return { bg: theme.status.encerrado.bg, text: theme.status.encerrado.text, border: theme.status.encerrado.border };
+      case 4: // CANCELADO
+        return { bg: theme.status.cancelado.bg, text: theme.status.cancelado.text, border: theme.status.cancelado.border };
+      case 5: // AGUARDANDO
+        return { bg: theme.status.aguardando.bg, text: theme.status.aguardando.text, border: theme.status.aguardando.border };
+      case 6: // PENDENTE USUARIO
+        return { bg: theme.status.pendenteUsuario.bg, text: theme.status.pendenteUsuario.text, border: theme.status.pendenteUsuario.border };
+      case 7: // PENDENTE
+        return { bg: theme.status.pendente.bg, text: theme.status.pendente.text, border: theme.status.pendente.border };
+      default:
+        return { bg: theme.background.card, text: theme.text.primary, border: theme.border.secondary };
+    }
+  };
 
   useEffect(() => {
     // só carregar dados se estiver autenticado
@@ -709,14 +810,14 @@ export default function GerenciarChamados() {
   };
 
   return (
-    <div className={pageSliding ? 'slideOutLeft' : ''} style={{ backgroundColor: `rgb(var(--bg-primary))` }}>
-      <div className="px-6 py-3" style={{ backgroundColor: `rgb(var(--cor-header-fundo))` }}>
+    <div className={pageSliding ? 'slideOutLeft' : ''} style={{ backgroundColor: theme.background.pagina }}>
+      <div className="px-6 py-3" style={{ backgroundColor: theme.brand.primary }}>
         <h2 className="text-white text-2xl font-semibold">Painel de Chamados</h2>
       </div>
 
-      <div className="px-2 min-h-screen" style={{ backgroundColor: `rgb(var(--bg-primary))` }}>
+      <div className="px-2 min-h-screen" style={{ backgroundColor: theme.background.pagina }}>
           
-        <div className="p-2 flex gap-3 justify-between items-center" style={{ backgroundColor: `rgb(var(--bg-primary))` }}>
+        <div className="p-2 flex gap-3 justify-between items-center" style={{ backgroundColor: theme.background.pagina }}>
           {/* Botões de ação existentes */}
           <div className="flex gap-3">
             <button
@@ -740,7 +841,7 @@ export default function GerenciarChamados() {
             </button>
           </div>
   {/* container com togglezinho de selecao pra escolher modo de viusalizacao */}
-      <div className="flex overflow-hidden rounded-lg shadow-sm" style={{ backgroundColor: `rgba(var(--bg-hover), 0.4)` }}>
+      <div className="flex overflow-hidden rounded-lg shadow-sm" style={{ backgroundColor: `${theme.background.hover}40` }}>
         {(['table', 'kanban'] as const).map((mode) => (
           <button
             key={mode}
@@ -749,10 +850,10 @@ export default function GerenciarChamados() {
               px-4 py-1 text-[13px] font-medium transition-all duration-200 rounded-none 
             `}
             style={viewMode === mode ? {
-              backgroundColor: `rgb(var(--bg-cinzaescuro))`,
-              color: 'white'
+              backgroundColor: theme.dashboard.btquadrokanban.bg,
+              color: theme.dashboard.btquadrokanban.text
             } : {
-              color: `rgb(var(--text-primary))`
+              color: theme.text.primary
             }}
           >
             {mode === 'table' ? 'Tabela' : 'Quadro'}
@@ -762,8 +863,8 @@ export default function GerenciarChamados() {
    </div>
 
         <div className="rounded-lg shadow-lg overflow-hidden" style={{
-          backgroundColor: `rgb(var(--bg-elevated))`,
-          borderColor: `rgb(var(--border-secondary))`,
+          backgroundColor: theme.background.modal,
+          borderColor: theme.border.secondary,
           borderWidth: '1px'
         }}>
 
@@ -777,15 +878,15 @@ export default function GerenciarChamados() {
             >
               {/* area de Filtros */}
           <div className="p-6" style={{
-            borderColor: `rgb(var(--cor-borda-primaria))`,
-            backgroundColor: `rgb(var(--bg-filtros))`,
+            borderColor: theme.border.primary,
+            backgroundColor: theme.background.surface,
             borderBottomWidth: '2px',
             borderBottomStyle: 'solid'
           }}>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 ">
               {/* Período de abertura */}
               <div className="min-w-0">
-                <label className="block text-sm font-medium mb-1" style={{ color: `rgb(var(--text-primary))` }}>
+                <label className="block text-sm font-medium mb-1" style={{ color: theme.text.primary }}>
                   Período de abertura
                 </label>
                 <DatePicker
@@ -806,7 +907,7 @@ export default function GerenciarChamados() {
 
               {/* periodo de fechamento */}
               <div className="min-w-0">
-                <label className="block text-sm font-medium mb-1" style={{ color: `rgb(var(--text-primary))` }}>
+                <label className="block text-sm font-medium mb-1" style={{ color: theme.text.primary }}>
                   Período de Conclusão
                 </label>
                 <DatePicker
@@ -826,7 +927,7 @@ export default function GerenciarChamados() {
               </div>
 
               <div className="min-w-0">
-                <label className="block text-sm font-medium mb-1" style={{ color: `rgb(var(--text-primary))` }}>
+                <label className="block text-sm font-medium mb-1" style={{ color: theme.text.primary }}>
                   Departamento
                 </label>
                 <Select
@@ -857,88 +958,12 @@ export default function GerenciarChamados() {
                   placeholder="Selecione..."
                   noOptionsMessage={() => "Nenhuma opção disponível"}
                   className="text-sm"
-                  styles={{
-                    control: (base) => ({
-                       ...base,
-                      minHeight: '38px',
-                      overflowX: "auto",
-                      whiteSpace: "nowrap",
-                      fontSize: '14px',
-                      borderColor: 'rgb(var(--border-secondary))',
-                      backgroundColor: 'rgb(var(--bg-secondary))',
-                      '&:hover': { borderColor: '#3b82f6', backgroundColor: 'rgb(var(--bg-secondary))' },
-                      boxShadow: 'none',
-                      padding: '2px 4px',
-                      color: 'rgb(var(--text-primary))',
-                    }),
-                    menu: (base) => ({
-                      ...base,
-                      backgroundColor: 'rgb(var(--bg-secondary))',
-                      borderColor: 'rgb(var(--border-secondary))',
-                      border: '1px solid rgb(var(--border-secondary))',
-                    }),
-                    menuList: (base) => ({
-                      ...base,
-                      backgroundColor: 'rgb(var(--bg-secondary))',
-                      color: 'rgb(var(--text-primary))',
-                    }),
-                    option: (base, state) => ({
-                      ...base,
-                      fontSize: '14px',
-                      backgroundColor: state.isSelected ? '#0066CC' : (state.isFocused ? 'rgb(var(--bg-hover))' : 'rgb(var(--bg-secondary))'),
-                      color: state.isSelected ? 'white' : 'rgb(var(--text-primary))',
-                      cursor: 'pointer',
-                      '&:hover': {                   backgroundColor: 'rgb(var(--bg-hover))',
-                        color: 'rgb(var(--text-primary))'
-                      }
-                    }),
-                    multiValue: (base) => ({
-                      ...base,
-                      backgroundColor: '#0066CC',
-                      margin: '2px 2px',
-                      padding: '0 4px',
-                      minWidth: 0,
-                    }),
-                    multiValueLabel: (base) => ({
-                      ...base,
-                      color: 'white',
-                      fontSize: '11px',
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                    }),
-                    multiValueRemove: (base) => ({
-                      ...base,
-                      color: 'white',
-                      '&:hover': {
-                        backgroundColor: '#004399',
-                        color: 'white',
-                      },
-                    }),
-                    valueContainer: (base) => ({
-                      ...base,
-                      padding: '2px 4px',
-                      maxHeight: '34px',
-                      overflowY: 'auto',
-                    }),
-                    input: (base) => ({
-                      ...base,
-                      color: 'rgb(var(--text-primary))',
-                    }),
-                    placeholder: (base) => ({
-                      ...base,
-                      color: 'rgb(var(--text-secondary))',
-                    }),
-                    singleValue: (base) => ({
-                      ...base,
-                      color: 'rgb(var(--text-primary))',
-                    }),
-                  }}
+                  styles={getSelectStyles()}
                 />
               </div>
 
               <div className="min-w-0">
-                <label className="block text-sm font-medium mb-1" style={{ color: `rgb(var(--text-primary))` }}>
+                <label className="block text-sm font-medium mb-1" style={{ color: theme.text.primary }}>
                   Tópico de ajuda
                 </label>
                 <Select
@@ -969,90 +994,13 @@ export default function GerenciarChamados() {
                   placeholder="Selecione..."
                   noOptionsMessage={() => "Nenhuma opção disponível"}
                   className="text-base"
-                  styles={{
-                    control: (base) => ({
-                      ...base,
-                      minHeight: '38px',
-                      overflowX: "auto",
-                      whiteSpace: "nowrap",
-                      fontSize: '14px',
-                      borderColor: 'rgb(var(--border-secondary))',
-                      backgroundColor: 'rgb(var(--bg-secondary))',
-                      '&:hover': { borderColor: '#3b82f6', backgroundColor: 'rgb(var(--bg-secondary))' },
-                      boxShadow: 'none',
-                      padding: '2px 4px',
-                      color: 'rgb(var(--text-primary))',
-                    }),
-                    menu: (base) => ({
-                      ...base,
-                      backgroundColor: 'rgb(var(--bg-secondary))',
-                      borderColor: 'rgb(var(--border-secondary))',
-                      border: '1px solid rgb(var(--border-secondary))',
-                    }),
-                    menuList: (base) => ({
-                      ...base,
-                      backgroundColor: 'rgb(var(--bg-secondary))',
-                      color: 'rgb(var(--text-primary))',
-                    }),
-                    option: (base, state) => ({
-                      ...base,
-                      fontSize: '14px',
-                      backgroundColor: state.isSelected ? '#0066CC' : (state.isFocused ? 'rgb(var(--bg-hover))' : 'rgb(var(--bg-secondary))'),
-                      color: state.isSelected ? 'white' : 'rgb(var(--text-primary))',
-                      cursor: 'pointer',
-                      '&:hover': {
-                        backgroundColor: 'rgb(var(--bg-hover))',
-                        color: 'rgb(var(--text-primary))'
-                      }
-                    }),
-                    multiValue: (base) => ({
-                      ...base,
-                      backgroundColor: '#0066CC',
-                      margin: '2px 2px',
-                      padding: '0 4px',
-                      minWidth: 0,
-                    }),
-                    multiValueLabel: (base) => ({
-                      ...base,
-                      color: 'white',
-                      fontSize: '11px',
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                    }),
-                    multiValueRemove: (base) => ({
-                      ...base,
-                      color: 'white',
-                      '&:hover': {
-                        backgroundColor: '#004399',
-                        color: 'white',
-                      },
-                    }),
-                    valueContainer: (base) => ({
-                      ...base,
-                      padding: '2px 4px',
-                      maxHeight: '34px',
-                      overflowY: 'auto',
-                    }),
-                    input: (base) => ({
-                      ...base,
-                      color: 'rgb(var(--text-primary))',
-                    }),
-                    placeholder: (base) => ({
-                      ...base,
-                      color: 'rgb(var(--text-secondary))',
-                    }),
-                    singleValue: (base) => ({
-                      ...base,
-                      color: 'rgb(var(--text-primary))',
-                    }),
-                  }}
+                  styles={getSelectStyles()}
                 />
               </div>
 
 
               <div className="min-w-0">
-                <label className="block text-sm font-medium mb-1" style={{ color: `rgb(var(--text-primary))` }}>
+                <label className="block text-sm font-medium mb-1" style={{ color: theme.text.primary }}>
                   Status
                 </label>
                 <Select
@@ -1083,84 +1031,7 @@ export default function GerenciarChamados() {
                   placeholder="Selecione..."
                   noOptionsMessage={() => "Nenhuma opção disponível"}
                   className="text-sm"
-                  styles={{
-                    control: (base) => ({
-                      ...base,
-                      minHeight: '38px',
-                      overflowX: "auto",
-                      whiteSpace: "nowrap",
-                      fontSize: '14px',
-                      borderColor: 'rgb(var(--border-secondary))',
-                      backgroundColor: 'rgb(var(--bg-secondary))',
-                      '&:hover': { borderColor: '#3b82f6', backgroundColor: 'rgb(var(--bg-secondary))' },
-                      boxShadow: 'none',
-                      padding: '2px 4px',
-                      color: 'rgb(var(--text-primary))',
-                    }),
-                    menu: (base) => ({
-                      ...base,
-                      backgroundColor: 'rgb(var(--bg-secondary))',
-                      borderColor: 'rgb(var(--border-secondary))',
-                      border: '1px solid rgb(var(--border-secondary))',
-                    }),
-                    menuList: (base) => ({
-                      ...base,
-                      backgroundColor: 'rgb(var(--bg-secondary))',
-                      color: 'rgb(var(--text-primary))',
-                    }),
-                    option: (base, state) => ({
-                      ...base,
-                      fontSize: '14px',
-                      backgroundColor: state.isSelected ? '#0066CC' : (state.isFocused ? 'rgb(var(--bg-hover))' : 'rgb(var(--bg-secondary))'),
-                      color: state.isSelected ? 'white' : 'rgb(var(--text-primary))',
-                      cursor: 'pointer',
-                      '&:hover': {
-                        backgroundColor: 'rgb(var(--bg-hover))',
-                        color: 'rgb(var(--text-primary))'
-                      }
-                    }),
-                    multiValue: (base) => ({
-                      ...base,
-                      backgroundColor: '#0066CC',
-                      margin: '2px 2px',
-                      padding: '0 4px',
-                      minWidth: 0,
-                    }),
-                    multiValueLabel: (base) => ({
-                      ...base,
-                      color: 'white',
-                      fontSize: '11px',
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                    }),
-                    multiValueRemove: (base) => ({
-                      ...base,
-                      color: 'white',
-                      '&:hover': {
-                        backgroundColor: '#004399',
-                        color: 'white',
-                      },
-                    }),
-                    valueContainer: (base) => ({
-                      ...base,
-                      padding: '2px 4px',
-                      maxHeight: '34px',
-                      overflowY: 'auto',
-                    }),
-                    input: (base) => ({
-                      ...base,
-                      color: 'rgb(var(--text-primary))',
-                    }),
-                    placeholder: (base) => ({
-                      ...base,
-                      color: 'rgb(var(--text-secondary))',
-                    }),
-                    singleValue: (base) => ({
-                      ...base,
-                      color: 'rgb(var(--text-primary))',
-                    }),
-                  }}
+                  styles={getSelectStyles()}
                 />
               </div>
             </div>
@@ -1169,7 +1040,7 @@ export default function GerenciarChamados() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
               {/* Assunto */}
               <div className="min-w-0">
-                <label className="block text-sm font-medium mb-1" style={{ color: `rgb(var(--text-primary))` }}>
+                <label className="block text-sm font-medium mb-1" style={{ color: theme.text.primary }}>
                   Assunto
                 </label>
                 <input
@@ -1178,12 +1049,17 @@ export default function GerenciarChamados() {
                   onChange={(e) => setAssunto(e.target.value)}
                   placeholder="Digite o assunto"
                   className="w-full min-w-0 px-3 py-2 border rounded text-sm focus:outline-none transition-all"
+                  style={{
+                    backgroundColor: theme.background.surface,
+                    borderColor: theme.border.secondary,
+                    color: theme.text.primary
+                  }}
                 />
               </div>
 
               {/* nome user */}
               <div className="min-w-0">
-                <label className="block text-sm font-medium mb-1" style={{ color: `rgb(var(--text-primary))` }}>
+                <label className="block text-sm font-medium mb-1" style={{ color: theme.text.primary }}>
                   Nome usuário
                 </label>
                 <input
@@ -1192,17 +1068,22 @@ export default function GerenciarChamados() {
                   onChange={(e) => setNomeUsuario(e.target.value)}
                   placeholder="Digite o nome"
                   className="w-full min-w-0 px-3 py-2 border rounded text-sm focus:outline-none transition-all"
+                  style={{
+                    backgroundColor: theme.background.surface,
+                    borderColor: theme.border.secondary,
+                    color: theme.text.primary
+                  }}
                 />
               </div>
 
               {/* prioridade - botões visuais */}
               <div className="min-w-0">
-                <label className="block text-sm  mb-1" style={{ color: `rgb(var(--text-primary))` }}>
+                <label className="block text-sm  mb-1" style={{ color: theme.text.primary }}>
                   Nível de prioridade
                 </label>
                 <div className="grid grid-cols-5 h-10 rounded-lg overflow-hidden" style={{
                   borderWidth: '1px',
-                  borderColor: `rgb(var(--cor-borda-primaria))`
+                  borderColor: theme.border.primary
                 }}>
                   {/* botao TODOS */}
                   <button
@@ -1210,8 +1091,8 @@ export default function GerenciarChamados() {
                     onClick={() => setPrioridadeId('')}
                     className="flex items-center justify-center text-xs font-medium transition-all min-w-0"
                     style={{
-                      backgroundColor: prioridadeId === '' ? (theme === 'dark' ? '#555555' : '#1F2937') : `rgb(var(--bg-hover))`,
-                      color: prioridadeId === '' ? 'white' : `rgb(var(--text-primary))`,
+                      backgroundColor: prioridadeId === '' ? theme.brand.primary : theme.background.hover,
+                      color: prioridadeId === '' ? 'white' : theme.text.primary,
                     
                       border: 'none',
                       outline: 'none'
@@ -1227,8 +1108,8 @@ export default function GerenciarChamados() {
                       onClick={() => setPrioridadeId(String(prioridade.id))}
                       className="flex items-center justify-center text-xs font-medium transition-all min-w-0"
                       style={{
-                        backgroundColor: prioridadeId === String(prioridade.id) ? prioridade.cor : `rgb(var(--bg-hover))`,
-                        color: prioridadeId === String(prioridade.id) ? '#FFFFFF' : `rgb(var(--text-primary))`,
+                        backgroundColor: prioridadeId === String(prioridade.id) ? prioridade.cor : theme.background.hover,
+                        color: prioridadeId === String(prioridade.id) ? '#FFFFFF' : theme.text.primary,
               
                         border: 'none',
                         outline: 'none'
@@ -1244,13 +1125,18 @@ export default function GerenciarChamados() {
               <div className="flex items-end gap-6 mt-4">
                 {/* Responsável */}
                 <div className="flex-none"> {/* flex-none impede que ele cresça ou encolha além do necessário */}
-                  <label className="block text-sm font-medium mb-2" style={{ color: `rgb(var(--text-primary))` }}>
+                  <label className="block text-sm font-medium mb-2" style={{ color: theme.text.primary }}>
                     Responsável
                   </label>
                   <select
                     value={nomeResponsavel}
                     onChange={(e) => setNomeResponsavel(e.target.value)}
                     className="w-64 px-3 py-2 border rounded text-sm focus:outline-none transition-all"
+                    style={{
+                      backgroundColor: theme.background.surface,
+                      borderColor: theme.border.secondary,
+                      color: theme.text.primary
+                    }}
                   >
                     <option value="">Todos os responsáveis</option>
                     {usuariosAdmin
@@ -1265,7 +1151,7 @@ export default function GerenciarChamados() {
 
                 {/* Ocultar concluídos */}
                 <div className="flex items-center gap-3 mb-2.5"> {/* items-center coloca na mesma linha e mb-2.5 alinha com o select */}
-                  <label className="text-sm font-medium whitespace-nowrap" style={{ color: `rgb(var(--text-primary))` }}>
+                  <label className="text-sm font-medium whitespace-nowrap" style={{ color: theme.text.primary }}>
                     Ocultar concluídos
                   </label>
                   <button
@@ -1273,13 +1159,13 @@ export default function GerenciarChamados() {
                     onClick={() => setOcultarConcluidos(!ocultarConcluidos)}
                     className="relative w-10 h-5 rounded-full transition-colors duration-100 shrink-0"
                     style={{
-                      backgroundColor: ocultarConcluidos ? "#0066CC" : `rgb(var(--bg-hover))`
+                      backgroundColor: ocultarConcluidos ? theme.brand.primary : theme.background.hover
                     }}
                   >
                     <span
                       className="absolute top-0.5 left-0.5 w-4 h-4 rounded-full shadow transform transition-transform duration-100"
                       style={{
-                        backgroundColor: `rgb(var(--bg-primary))`,
+                        backgroundColor: theme.background.pagina,
                         transform: ocultarConcluidos ? "translateX(20px)" : "translateX(0)"
                       }}
                     />
@@ -1293,8 +1179,8 @@ export default function GerenciarChamados() {
                 onClick={limparFiltros}
                 className="px-6 py-2 rounded transition-all font-medium text-sm hover:shadow-md active:scale-95"
                 style={{
-                  backgroundColor: `rgb(var(--bg-hover))`,
-                  color: `rgb(var(--text-primary))`
+                  backgroundColor: theme.background.hover,
+                  color: theme.text.primary
                 }}
               >
                 Limpar Filtros
@@ -1304,7 +1190,7 @@ export default function GerenciarChamados() {
                 disabled={loading}
                 className="px-6 py-2 text-white rounded font-medium text-sm transition-all hover:shadow-md active:scale-95"
                 style={{
-                  backgroundColor: loading ? '#0066CC' : 'rgb(var(--cor-botao-primario))',
+                  backgroundColor: loading ? theme.buttonsExclusivos.btLight : theme.buttonsExclusivos.btDark,
                   cursor: loading ? 'not-allowed' : 'pointer',
                   opacity: loading ? 0.6 : 1
                 }}
@@ -1319,14 +1205,14 @@ export default function GerenciarChamados() {
           {/* pequena setinha que oculta os filtros no modo tabela */}
           {viewMode === 'table' && (
        <div className="flex justify-center" style={{
-          backgroundColor: `rgb(var(--bg-elevated))`,
-          borderBottomColor: `rgb(var(--border-secondary))`,
+          backgroundColor: theme.background.modal,
+          borderBottomColor: theme.border.secondary,
           borderBottomWidth: '0px'
         }}>
           <button
             type="button"
             onClick={() => setFiltrosVisiveis(!filtrosVisiveis)}
-            className="flex items-center transition-colors space-x-1 py-2" style={{ color: `rgb(var(--text-tertiary))` }}>
+            className="flex items-center transition-colors space-x-1 py-2" style={{ color: theme.text.tertiary }}>
             <span className="select-none">.............</span>
 
             <HiOutlineChevronDown
@@ -1341,16 +1227,16 @@ export default function GerenciarChamados() {
           {/* acao em multiplos registros - Visível apenas no modo tabela */}
           {chamados.length > 0 && viewMode === 'table' && (
             <div className="px-3 py-2 border-b flex gap-3 items-center flex-nowrap overflow-x-auto whitespace-nowrap" style={{
-              backgroundColor: `rgb(var(--bg-secondary))`,
-              borderBottomColor: `rgb(var(--border-secondary))`
+              backgroundColor: theme.background.surface,
+              borderBottomColor: theme.border.secondary
             }}>
               <button
                 onClick={marcarComoResolvido}
                 disabled={chamadosSelecionados.length === 0}
                 className="action-button px-5 py-2 rounded transition-all font-medium text-sm hover:shadow-md active:scale-95"
                 style={{
-                  backgroundColor: chamadosSelecionados.length === 0 ? `rgb(var(--bg-disabled))` : `rgb(var(--cor-botao-primario))`,
-                  color: chamadosSelecionados.length === 0 ? `rgb(var(--text-disabled))` : 'white',
+                  backgroundColor: chamadosSelecionados.length === 0 ? theme.background.hover : theme.buttonsExclusivos.btDark,
+                  color: chamadosSelecionados.length === 0 ? theme.text.tertiary : 'white',
                   borderWidth: '0px',
                   cursor: chamadosSelecionados.length === 0 ? 'not-allowed' : 'pointer',
                   opacity: chamadosSelecionados.length === 0 ? 0.5 : 1
@@ -1363,8 +1249,8 @@ export default function GerenciarChamados() {
                 disabled={chamadosSelecionados.length === 0}
                 className="action-button px-5 py-2 rounded transition-all font-medium text-sm hover:shadow-md active:scale-95"
                 style={{
-                  backgroundColor: chamadosSelecionados.length === 0 ? `rgb(var(--bg-disabled))` : `rgb(var(--cor-botao-primario))`,
-                  color: chamadosSelecionados.length === 0 ? `rgb(var(--text-disabled))` : 'white',
+                  backgroundColor: chamadosSelecionados.length === 0 ? theme.background.hover : theme.buttonsExclusivos.btDark,
+                  color: chamadosSelecionados.length === 0 ? theme.text.tertiary : 'white',
                   borderWidth: '0px',
                   cursor: chamadosSelecionados.length === 0 ? 'not-allowed' : 'pointer',
                   opacity: chamadosSelecionados.length === 0 ? 0.5 : 1
@@ -1377,8 +1263,8 @@ export default function GerenciarChamados() {
                 disabled={chamadosSelecionados.length === 0}
                 className="action-button px-5 py-2 rounded transition-all font-medium text-sm hover:shadow-md active:scale-95"
                 style={{
-                  backgroundColor: chamadosSelecionados.length === 0 ? `rgb(var(--bg-disabled))` : `rgb(var(--cor-botao-primario))`,
-                  color: chamadosSelecionados.length === 0 ? `rgb(var(--text-disabled))` : 'white',
+                  backgroundColor: chamadosSelecionados.length === 0 ? theme.background.hover : theme.buttonsExclusivos.btDark,
+                  color: chamadosSelecionados.length === 0 ? theme.text.tertiary : 'white',
                   borderWidth: '0px',
                   cursor: chamadosSelecionados.length === 0 ? 'not-allowed' : 'pointer',
                   opacity: chamadosSelecionados.length === 0 ? 0.5 : 1
@@ -1387,7 +1273,7 @@ export default function GerenciarChamados() {
                 Atribuir a mim
               </button>
               {chamadosSelecionados.length > 0 && (
-                <span className="text-sm flex items-center ml-2" style={{ color: `rgb(var(--text-secondary))` }}>
+                <span className="text-sm flex items-center ml-2" style={{ color: theme.text.secondary }}>
                   {chamadosSelecionados.length} selecionado(s)
                 </span>
               )}
@@ -1397,7 +1283,7 @@ export default function GerenciarChamados() {
           {/* Visualização Principal - Tabela ou Kanban */}
           <div>
             {loading ? (
-              <div className="p-8 text-center" style={{ color: `rgb(var(--text-secondary))` }}>
+              <div className="p-8 text-center" style={{ color: theme.text.secondary }}>
                 Carregando chamados...
               </div>
             ) : viewMode === 'kanban' ? (
@@ -1423,8 +1309,8 @@ export default function GerenciarChamados() {
               /* Visualização Tabela Original */
               chamados.length === 0 ? (
                 <div className="p-8 text-center" style={{  
-                  color: `rgb(var(--text-secondary))`,
-                  backgroundColor: `rgb(var(--bg-elevated))`
+                  color: theme.text.secondary,
+                  backgroundColor: theme.background.modal
                 }}>
                   Nenhum chamado encontrado. Use os filtros para pesquisar.
                 </div>
@@ -1437,15 +1323,15 @@ export default function GerenciarChamados() {
               <>
                 {/* filtro de abas no topo da tabela */}
                 <div className="px-3 py-3 flex gap-4 items-center justify-between" style={{
-                  backgroundColor: `rgb(var(--bg-elevated))`,
-                  borderBottomColor: `rgb(var(--border-secondary))`,
+                  backgroundColor: theme.background.modal,
+                  borderBottomColor: theme.border.secondary,
                   borderBottomWidth: '1px'
                 }}>
                  <div className="flex overflow-hidden rounded-lg shadow-sm w-max" style={{
 
-                  borderColor: `rgb(var(--cor-borda-primaria))`,
+                  borderColor: theme.border.primary,
                   borderWidth: '1px',
-                   backgroundColor: `rgb(var(--bg-secondary))`
+                   backgroundColor: theme.background.surface
                  }}>
                   {(['todos', 'meus', 'outros'] as const).map((aba) => {
                     const labels = {
@@ -1464,11 +1350,11 @@ export default function GerenciarChamados() {
                           ${aba === 'outros' ? 'rounded-r-lg' : ''} 
                         `}
                         style={abaFiltro === aba ? {
-                          backgroundColor: `rgb(var(--bg-cinzaescuro))`,
-                          color: 'white',
+                          backgroundColor: theme.dashboard.btquadrokanban.bg,
+                          color: theme.dashboard.btquadrokanban.text,
                           boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.1)'
                         } : {
-                          color: `rgb(var(--text-primary))`
+                          color: theme.text.primary
                         }}
                       >
                         {labels[aba]}
@@ -1482,8 +1368,8 @@ export default function GerenciarChamados() {
                 <div className="overflow-x-auto hidden md:block">
                   <table className="w-full">
                     <thead style={{
-                      backgroundColor: `rgb(var(--bg-secondary))`,
-                      borderBottomColor: `rgb(var(--border-secondary))`,
+                      backgroundColor: theme.background.surface,
+                      borderBottomColor: theme.border.secondary,
                       borderBottomWidth: '1px'
                     }}>
                       <tr>
@@ -1497,7 +1383,7 @@ export default function GerenciarChamados() {
                         </th>
                         <th 
                           className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none min-w-20"
-                          style={{ color: `rgb(var(--text-primary))` }}
+                          style={{ color: theme.text.primary }}
                           onClick={() => handleOrdenar('numeroChamado')}
                         >
                           <div className="flex items-center gap-1">
@@ -1509,8 +1395,8 @@ export default function GerenciarChamados() {
                         </th>
                         <th 
                           className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none min-w-20"
-                          style={{ color: `rgb(var(--text-primary))` }}
-                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = `rgb(var(--bg-hover))`)} 
+                          style={{ color: theme.text.primary }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = theme.background.hover)} 
                           onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                           onClick={() => handleOrdenar('prioridade')}
                         >
@@ -1523,8 +1409,8 @@ export default function GerenciarChamados() {
                         </th>
                         <th 
                           className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none min-w-50"
-                          style={{ color: `rgb(var(--text-primary))` }}
-                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = `rgb(var(--bg-hover))`)} 
+                          style={{ color: theme.text.primary }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = theme.background.hover)} 
                           onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                           onClick={() => handleOrdenar('resumo')}
                         >
@@ -1537,8 +1423,8 @@ export default function GerenciarChamados() {
                         </th>
                         <th 
                           className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none min-w-40"
-                          style={{ color: `rgb(var(--text-primary))` }}
-                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = `rgb(var(--bg-hover))`)} 
+                          style={{ color: theme.text.primary }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = theme.background.hover)} 
                           onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                           onClick={() => handleOrdenar('usuario')}
                         >
@@ -1551,8 +1437,8 @@ export default function GerenciarChamados() {
                         </th>
                         <th 
                           className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none min-w-50"
-                          style={{ color: `rgb(var(--text-primary))` }}
-                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = `rgb(var(--bg-hover))`)} 
+                          style={{ color: theme.text.primary }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = theme.background.hover)} 
                           onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                           onClick={() => handleOrdenar('departamento')}
                         >
@@ -1565,8 +1451,8 @@ export default function GerenciarChamados() {
                         </th>
                         <th 
                           className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none min-w-38"
-                          style={{ color: `rgb(var(--text-primary))` }}
-                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = `rgb(var(--bg-hover))`)} 
+                          style={{ color: theme.text.primary }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = theme.background.hover)} 
                           onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                           onClick={() => handleOrdenar('topico')}
                         >
@@ -1579,8 +1465,8 @@ export default function GerenciarChamados() {
                         </th>
                         <th 
                           className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none min-w-30"
-                          style={{ color: `rgb(var(--text-primary))` }}
-                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = `rgb(var(--bg-hover))`)} 
+                          style={{ color: theme.text.primary }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = theme.background.hover)} 
                           onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                           onClick={() => handleOrdenar('status')}
                         >
@@ -1593,8 +1479,8 @@ export default function GerenciarChamados() {
                         </th>
                         <th 
                           className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none min-w-25"
-                          style={{ color: `rgb(var(--text-primary))` }}
-                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = `rgb(var(--bg-hover))`)} 
+                          style={{ color: theme.text.primary }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = theme.background.hover)} 
                           onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                           onClick={() => handleOrdenar('dataAbertura')}
                         >
@@ -1607,8 +1493,8 @@ export default function GerenciarChamados() {
                         </th>
                         <th
                           className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none min-w-25"
-                          style={{ color: `rgb(var(--text-primary))` }}
-                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = `rgb(var(--bg-hover))`)} 
+                          style={{ color: theme.text.primary }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = theme.background.hover)} 
                           onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                           onClick={() => handleOrdenar('dataFechamento')}
                         >
@@ -1621,8 +1507,8 @@ export default function GerenciarChamados() {
                         </th>
                         <th 
                           className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none min-w-50"
-                          style={{ color: `rgb(var(--text-primary))` }}
-                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = `rgb(var(--bg-hover))`)} 
+                          style={{ color: theme.text.primary }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = theme.background.hover)} 
                           onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                           onClick={() => handleOrdenar('responsavel')}
                         >
@@ -1658,12 +1544,12 @@ export default function GerenciarChamados() {
                           }}
                           className={`transition-colors cursor-pointer ${linhaAnimando === chamado.id ? 'slideOutLeft' : ''}`}
                           style={{
-                            backgroundColor: index % 2 === 0 ? `rgb(var(--bg-primary))` : `rgb(var(--bg-secondary))`,
-                            borderBottomColor: `rgb(var(--border-secondary))`,
+                            backgroundColor: index % 2 === 0 ? theme.background.pagina : theme.background.surface,
+                            borderBottomColor: theme.border.secondary,
                             borderBottomWidth: '1px'
                           }}
-                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = `rgb(var(--bg-hover))`)}
-                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = index % 2 === 0 ? `rgb(var(--bg-primary))` : `rgb(var(--bg-secondary))`)}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = theme.background.hover)}
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = index % 2 === 0 ? theme.background.pagina : theme.background.surface)}
                         >
                           <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                             <input
@@ -1674,7 +1560,7 @@ export default function GerenciarChamados() {
                             />
                           </td>
                           {/* Código chamado */}
-                          <td className="px-4 py-3 text-sm font-medium whitespace-nowrap" style={{ color: `rgb(var(--text-primary))` }}>
+                          <td className="px-4 py-3 text-sm font-medium whitespace-nowrap" style={{ color: theme.text.primary }}>
                             {chamado.numeroChamado || chamado.id}
                           </td>
                           {/* Prioridade */}
@@ -1710,9 +1596,9 @@ export default function GerenciarChamados() {
                             <span
                               className="px-2 py-1 rounded-full text-xs border font-medium"
                               style={{
-                                backgroundColor: `rgb(var(--status-${chamado.status.id}-bg))`,
-                                color: `rgb(var(--status-${chamado.status.id}-texto))`,
-                                borderColor: `rgb(var(--status-${chamado.status.id}-borda))`,
+                                backgroundColor: getStatusColor(chamado.status.id).bg,
+                                color: getStatusColor(chamado.status.id).text,
+                                borderColor: getStatusColor(chamado.status.id).border,
                                 borderWidth: '1.5px'
                               }}
                             >
@@ -1720,17 +1606,17 @@ export default function GerenciarChamados() {
                             </span>
                           </td>
                           {/* Data Abertura */}
-                          <td className="px-1 py-3 text-sm whitespace-nowrap" style={{ color: `rgb(var(--text-secondary))` }}>
+                          <td className="px-1 py-3 text-sm whitespace-nowrap" style={{ color: theme.text.secondary }}>
                             {formatarData(chamado.dataAbertura)}
                           </td>
                           {/* Data Fechamento */}
-                          <td className="px-1 py-3 text-sm whitespace-nowrap" style={{ color: `rgb(var(--text-secondary))` }}>
+                          <td className="px-1 py-3 text-sm whitespace-nowrap" style={{ color: theme.text.secondary }}>
                             {formatarData(chamado.dataFechamento)}
                           </td>
                           {/* Responsável */}
-                          <td className="px-4 py-3 text-sm max-w-30 truncate overflow-hidden text-ellipsis" style={{ color: `rgb(var(--text-primary))` }} title={chamado.userResponsavel?.name}>
+                          <td className="px-4 py-3 text-sm max-w-30 truncate overflow-hidden text-ellipsis" style={{ color: theme.text.primary }} title={chamado.userResponsavel?.name}>
                             {chamado.userResponsavel?.name || (
-                              <span className="italic" style={{ color: `rgb(var(--text-secondary))` }}>Não atribuído</span>
+                              <span className="italic" style={{ color: theme.text.secondary }}>Não atribuído</span>
                             )}
                           </td>
                         </tr>))}
@@ -1764,18 +1650,18 @@ export default function GerenciarChamados() {
                         linhaAnimando === chamado.id ? 'slideOutLeft' : ''
                       }`}
                       style={{
-                        backgroundColor: `rgb(var(--bg-elevated))`,
-                        borderColor: `rgb(var(--border-secondary))`,
+                        backgroundColor: theme.background.card,
+                        borderColor: theme.border.secondary,
                         borderWidth: '1px'
                       }}
                     >
                       {/* header: Assunto e Checkbox */}
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1">
-                          <h3 className="font-semibold text-base mb-1 line-clamp-2" style={{ color: `rgb(var(--text-primary))` }}>
+                          <h3 className="font-semibold text-base mb-1 line-clamp-2" style={{ color: theme.text.primary }}>
                             {chamado.resumoChamado}
                           </h3>
-                          <p className="text-xs" style={{ color: `rgb(var(--text-secondary))` }}>
+                          <p className="text-xs" style={{ color: theme.text.secondary }}>
                             #{chamado.numeroChamado || chamado.id}
                           </p>
                         </div>
@@ -1792,39 +1678,39 @@ export default function GerenciarChamados() {
                       {/* info: topico e Departamento */}
                       <div className="space-y-2 mb-3">
                         <div className="flex items-start">
-                          <span className="text-xs w-24 shrink-0" style={{ color: `rgb(var(--text-secondary))` }}>Tópico:</span>
-                          <span className="text-xs font-medium" style={{ color: `rgb(var(--text-primary))` }}>{chamado.topicoAjuda?.nome || '-'}</span>
+                          <span className="text-xs w-24 shrink-0" style={{ color: theme.text.secondary }}>Tópico:</span>
+                          <span className="text-xs font-medium" style={{ color: theme.text.primary }}>{chamado.topicoAjuda?.nome || '-'}</span>
                         </div>
                         <div className="flex items-start">
-                          <span className="text-xs w-24 shrink-0" style={{ color: `rgb(var(--text-secondary))` }}>Departamento:</span>
-                          <span className="text-xs font-medium" style={{ color: `rgb(var(--text-primary))` }}>{chamado.departamento?.nome || chamado.departamento?.name || '-'}</span>
+                          <span className="text-xs w-24 shrink-0" style={{ color: theme.text.secondary }}>Departamento:</span>
+                          <span className="text-xs font-medium" style={{ color: theme.text.primary }}>{chamado.departamento?.nome || chamado.departamento?.name || '-'}</span>
                         </div>
                         <div className="flex items-start">
-                          <span className="text-xs w-24 shrink-0" style={{ color: `rgb(var(--text-secondary))` }}>Usuário:</span>
-                          <span className="text-xs font-medium" style={{ color: `rgb(var(--text-primary))` }}>{chamado.usuario?.name || '-'}</span>
+                          <span className="text-xs w-24 shrink-0" style={{ color: theme.text.secondary }}>Usuário:</span>
+                          <span className="text-xs font-medium" style={{ color: theme.text.primary }}>{chamado.usuario?.name || '-'}</span>
                         </div>
                       </div>
 
                       {/* badges: prioridade e Status */}
                       <div className="flex items-center gap-2 mb-3 flex-wrap">
                         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border" style={{
-                          backgroundColor: `rgb(var(--bg-secondary))`,
-                          borderColor: `rgb(var(--border-secondary))`
+                          backgroundColor: theme.background.surface,
+                          borderColor: theme.border.secondary
                         }}>
                           <div
                             className="w-2.5 h-2.5 rounded-full"
                             style={{ backgroundColor: chamado.tipoPrioridade?.cor || '#gray' }}
                           ></div>
-                          <span className="text-xs font-medium" style={{ color: `rgb(var(--text-primary))` }}>
+                          <span className="text-xs font-medium" style={{ color: theme.text.primary }}>
                             {chamado.tipoPrioridade?.nome || '-'}
                           </span>
                         </div>
                         <span
                           className="px-3 py-1.5 rounded-full text-xs font-medium border"
                           style={{
-                            backgroundColor: `rgb(var(--status-${chamado.status.id}-bg))`,
-                            color: `rgb(var(--status-${chamado.status.id}-texto))`,
-                            borderColor: `rgb(var(--status-${chamado.status.id}-borda))`,
+                            backgroundColor: getStatusColor(chamado.status.id).bg,
+                            color: getStatusColor(chamado.status.id).text,
+                            borderColor: getStatusColor(chamado.status.id).border,
                             borderWidth: '1.5px'
                           }}
                         >
@@ -1834,8 +1720,8 @@ export default function GerenciarChamados() {
 
                       {/* footer data de Abertura */}
                       <div className="flex items-center justify-between text-xs pt-2" style={{
-                        color: `rgb(var(--text-secondary))`,
-                        borderTopColor: `rgb(var(--border-secondary))`,
+                        color: theme.text.secondary,
+                        borderTopColor: theme.border.secondary,
                         borderTopWidth: '1px'
                       }}>
                         <span>{formatarData(chamado.dataAbertura)}</span>
@@ -1855,13 +1741,13 @@ export default function GerenciarChamados() {
           {/* Controles de Paginação - Apenas no modo tabela */}
           {chamados.length > 0 && viewMode === 'table' && (
             <div className="px-6 py-4 border-t" style={{
-              backgroundColor: `rgb(var(--bg-secondary))`,
-              borderTopColor: `rgb(var(--border-secondary))`
+              backgroundColor: theme.background.surface,
+              borderTopColor: theme.border.secondary
             }}>
               {/* Seletor de registros por página */}
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <label className="text-sm font-medium" style={{ color: `rgb(var(--text-primary))` }}>
+                  <label className="text-sm font-medium" style={{ color: theme.text.primary }}>
                     Registros por página:
                   </label>
                   <select
@@ -1872,9 +1758,9 @@ export default function GerenciarChamados() {
                     }}
                     className="px-3 py-2 border rounded focus:ring-1 focus:ring-blue-500 text-sm"
                     style={{
-                      borderColor: `rgb(var(--border-secondary))`,
-                      backgroundColor: `rgb(var(--bg-primary))`,
-                      color: `rgb(var(--text-primary))`
+                      borderColor: theme.border.secondary,
+                      backgroundColor: theme.background.pagina,
+                      color: theme.text.primary
                     }}
                   >
                     <option value="10">10</option>
@@ -1884,7 +1770,7 @@ export default function GerenciarChamados() {
                     <option value="50">50</option>
                   </select>
                 </div>
-                <div className="text-sm" style={{ color: `rgb(var(--text-secondary))` }}>
+                <div className="text-sm" style={{ color: theme.text.secondary }}>
                   Mostrando {(paginaAtual - 1) * pageSize + 1} a {Math.min(paginaAtual * pageSize, totalChamados)} de {totalChamados} chamado(s)
                 </div>
               </div>
@@ -1896,11 +1782,11 @@ export default function GerenciarChamados() {
                   disabled={paginaAtual === 1 || loading}
                   className="px-4 py-2 rounded transition-colors font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{
-                    backgroundColor: `rgb(var(--bg-hover))`,
-                    color: `rgb(var(--text-primary))`
+                    backgroundColor: theme.background.hover,
+                    color: theme.text.primary
                   }}
-                  onMouseEnter={(e) => !((e.target as HTMLButtonElement).disabled) && (e.currentTarget.style.backgroundColor = `rgb(var(--bg-active))`)}
-                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = `rgb(var(--bg-hover))`)}
+                  onMouseEnter={(e) => !((e.target as HTMLButtonElement).disabled) && (e.currentTarget.style.backgroundColor = theme.background.card)}
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = theme.background.hover)}
                 >
                   ← Anterior
                 </button>
@@ -1911,11 +1797,11 @@ export default function GerenciarChamados() {
                       onClick={() => pesquisarChamados(page)}
                       className="px-3 py-2 rounded font-medium text-sm transition-colors"
                       style={paginaAtual === page ? {
-                        backgroundColor: '#0066CC',
+                        backgroundColor: theme.brand.primary,
                         color: 'white'
                       } : {
-                        backgroundColor: `rgb(var(--bg-secondary))`,
-                        color: `rgb(var(--text-primary))`
+                        backgroundColor: theme.background.surface,
+                        color: theme.text.primary
                       }}
                     >
                       {page}
@@ -1927,11 +1813,11 @@ export default function GerenciarChamados() {
                   disabled={paginaAtual === totalPaginas || loading}
                   className="px-4 py-2 rounded transition-colors font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{
-                    backgroundColor: `rgb(var(--bg-hover))`,
-                    color: `rgb(var(--text-primary))`
+                    backgroundColor: theme.background.hover,
+                    color: theme.text.primary
                   }}
-                  onMouseEnter={(e) => !((e.target as HTMLButtonElement).disabled) && (e.currentTarget.style.backgroundColor = `rgb(var(--bg-active))`)}
-                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = `rgb(var(--bg-hover))`)}
+                  onMouseEnter={(e) => !((e.target as HTMLButtonElement).disabled) && (e.currentTarget.style.backgroundColor = theme.background.card)}
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = theme.background.hover)}
                 >
                   Próximo →
                 </button>
@@ -1954,7 +1840,7 @@ export default function GerenciarChamados() {
       {modalEdicaoAberto && (
         <div className="fixed inset-0 bg-black/60  flex items-center justify-center z-50 p-4 ">
           <div className="shadow-2xl w-full max-w-3xl transform transition-all rounded-md" style={{
-            backgroundColor: `rgb(var(--bg-primary))`
+            backgroundColor: theme.background.pagina
           }}>
             {/* header */}
             <div className="bg-linear-to-r from-[#001933] to-[#1A4877] px-6 py-4 rounded-md">
@@ -2113,14 +1999,14 @@ export default function GerenciarChamados() {
         </option>
       ))}
     </select>
-    <p className="mt-2 text-[14px] italic" style={{ color: `rgb(var(--text-secondary))` }}>
+    <p className="mt-2 text-[14px] italic" style={{ color: theme.text.secondary }}>
       * Apenas chamados sob sua responsabilidade podem ser redirecionados.
     </p>
   </div>
 
   {/* Botões */}
   <div className="flex gap-3 justify-end pt-6" style={{
-    borderTopColor: `rgb(var(--border-secondary))`,
+    borderTopColor: theme.border.secondary,
     borderTopWidth: '1px'
   }}>
     <button
@@ -2130,10 +2016,10 @@ export default function GerenciarChamados() {
       style={{
         backgroundColor: 'transparent',
         borderWidth: '1px',
-        borderColor: `rgb(var(--border-secondary))`,
-        color: `rgb(var(--text-primary))`
+        borderColor: theme.border.secondary,
+        color: theme.text.primary
       }}
-      onMouseEnter={(e) => !((e.target as HTMLButtonElement).disabled) && (e.currentTarget.style.backgroundColor = `rgb(var(--bg-hover))`)}
+      onMouseEnter={(e) => !((e.target as HTMLButtonElement).disabled) && (e.currentTarget.style.backgroundColor = theme.background.hover)}
       onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
     >
       Cancelar

@@ -15,6 +15,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import Select from 'react-select';
 import toast from 'react-hot-toast';
+import { useTheme } from '@/contexts/ThemeContext';
 import KanbanColumn from './KanbanColumn';
 import TicketCard from './TicketCard';
 import api from '@/services/api';
@@ -95,49 +96,6 @@ const groupByOptions: GroupByOption[] = [
   { value: 'topico', label: 'Tópico' },
 ];
 
-// Cores para diferentes grupos - mapeado por ID de status
-const getStatusColor = (statusId: number): string => {
-  switch (statusId) {
-    case 1: return '#FBBF24'; // ABERTO - yellow-400
-    case 2: return '#60A5FA'; // EM ATENDIMENTO - blue-400
-    case 3: return '#34D399'; // ENCERRADO - green-400
-    case 4: return '#EF5350'; // CANCELADO - red-400
-    case 5: return '#A78BFA'; // AGUARDANDO - purple-400
-    case 6: return '#9CA3AF'; // OUTRO - gray-400
-    case 7: return '#FB923C'; // OUTRO - orange-400
-    default: return '#6B7280';
-  }
-};
-
-const groupColors = {
-  status: {
-    1: '#FBBF24',
-    2: '#60A5FA',
-    3: '#34D399',
-    4: '#EF5350',
-    5: '#A78BFA',
-    6: '#9CA3AF',
-    7: '#FB923C',
-    default: '#6B7280'
-  },
-  prioridade: {
-    'baixo': '#10B981',
-    'medio': '#578AFF',
-    'alto': '#FFDF24',
-    'urgente': '#FF0000',
-    default: '#6B7280'
-  },
-  responsavel: {
-    default: '#3B82F6'
-  },
-  departamento: {
-    default: '#001680'
-  },
-  topico: {
-    default: '#F97316'
-  }
-};
-
 const KanbanView = ({
   tickets,
   onTicketClick,
@@ -148,12 +106,52 @@ const KanbanView = ({
   usuarios = [],
   topicosAjuda = []
 }: KanbanViewProps) => {
+  const { theme } = useTheme();
   const [groupBy, setGroupBy] = useState<string>(() => {
     return localStorage.getItem('kanbanGroupBy') || 'status';
   });
 
   const [activeTicket, setActiveTicket] = useState<Chamado | null>(null);
   const [selectedTickets, setSelectedTickets] = useState<Set<number>>(new Set());
+
+  // Helper para obter cor baseado em statusId
+  const getStatusColor = (statusId: number): string => {
+    switch (statusId) {
+      case 1: return theme.status.aberto.border;
+      case 2: return theme.status.emAtendimento.border;
+      case 3: return theme.status.encerrado.border;
+      case 4: return theme.status.cancelado.border;
+      case 5: return theme.status.aguardando.border;
+      case 6: return theme.status.pendenteUsuario.border;
+      case 7: return theme.status.pendente.border;
+      default: return theme.border.primary;
+    }
+  };
+
+  // Helper para obter cor de prioridade
+  const getPriorityColor = (prioridadeName: string): string => {
+    const normalized = prioridadeName.toLowerCase();
+    switch (normalized) {
+      case 'baixa':
+      case 'baixo':
+        return theme.priority.baixa.border;
+      case 'média':
+      case 'media':
+      case 'médio':
+      case 'medio':
+        return theme.priority.media.border;
+      case 'alta':
+      case 'alto':
+        return theme.priority.alta.border;
+      case 'crítica':
+      case 'critica':
+        return theme.priority.critica.border;
+      case 'urgente':
+        return theme.priority.urgente.border;
+      default:
+        return theme.brand.secondary;
+    }
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -191,7 +189,7 @@ const KanbanView = ({
         sortedStatus.forEach(status => {
           const key = status.id.toString();
           groups[key] = [];
-          const color = (groupColors.status as any)[status.id] || groupColors.status.default;
+          const color = getStatusColor(status.id);
           columns.push({
             id: key,
             title: status.nome,
@@ -207,7 +205,7 @@ const KanbanView = ({
           columns.push({
             id: key,
             title: prioridade.nome,
-            color: (groupColors.prioridade as any)[prioridade.nome.toLowerCase()] || groupColors.prioridade.default
+            color: getPriorityColor(prioridade.nome)
           });
         });
         break;
@@ -225,7 +223,7 @@ const KanbanView = ({
         columns.push({
           id: 'sem-responsavel',
           title: 'Sem responsável',
-          color: '#9CA3AF'
+          color: theme.text.tertiary
         });
 
         Array.from(responsaveis).forEach(resp => {
@@ -234,7 +232,7 @@ const KanbanView = ({
           columns.push({
             id: id,
             title: name,
-            color: groupColors.responsavel.default
+            color: theme.brand.primary
           });
         });
         break;
@@ -246,7 +244,7 @@ const KanbanView = ({
           columns.push({
             id: key,
             title: dept.name || dept.nome,
-            color: groupColors.departamento.default
+            color: theme.brand.primary
           });
         });
         break;
@@ -258,7 +256,7 @@ const KanbanView = ({
           columns.push({
             id: key,
             title: topico.nome,
-            color: groupColors.topico.default
+            color: theme.indicators.info
           });
         });
         break;
@@ -336,7 +334,7 @@ const KanbanView = ({
     });
 
     return { groups, columns };
-  }, [tickets, groupBy, statusList, prioridades, departamentos, topicosAjuda, somenteAbertos]);
+  }, [tickets, groupBy, statusList, prioridades, departamentos, topicosAjuda, somenteAbertos, theme]);
 
   const handleGroupByChange = useCallback((option: GroupByOption | null) => {
     if (!option) return;

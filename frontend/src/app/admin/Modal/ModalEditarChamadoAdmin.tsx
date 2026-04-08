@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import api from '@/services/api';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface Anexo {
   id: number;
@@ -41,6 +42,7 @@ export default function ModalEditarChamadoAdmin({
   onSuccess,
   chamadoId,
 }: ModalEditarChamadoAdminProps) {
+  const { theme } = useTheme();
   const [resumoChamado, setResumoChamado] = useState('');
   const [descricaoChamado, setDescricaoChamado] = useState('');
   const [ramal, setRamal] = useState('');
@@ -236,22 +238,24 @@ export default function ModalEditarChamadoAdmin({
 
   const prioridadesOrdenadas = [...prioridades].sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0));
 
-  const buttonGhostClass =
-    'px-6 py-2 bg-transparent border border-primary text-primary rounded-lg hover:bg-primary/10 hover:shadow-md active:bg-primary/20 transition-all duration-200 transform hover:scale-105 font-medium disabled:border-secondary disabled:text-secondary disabled:bg-transparent disabled:cursor-not-allowed';
-
   return (
     <div
       className="fixed inset-0 modal-overlay flex items-start sm:items-center justify-center z-50 px-3 sm:px-4 py-4 sm:py-6"
       onClick={handleClose}
+      style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
     >
       <div
         className="modal-container rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl"
         onClick={(e) => e.stopPropagation()}
+        style={{
+          backgroundColor: theme.background.modal,
+          color: theme.text.primary,
+        }}
       >
         {loading ? (
           <div className="p-12 text-center">
-            <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2" style={{ borderBottomColor: `rgb(var(--btn-criar))` }} />
-            <p className="mt-4 text-sm" style={{ color: 'rgb(var(--text-secondary))' }}>Carregando dados...</p>
+            <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2" style={{ borderBottomColor: theme.brand.primary }} />
+            <p className="mt-4 text-sm" style={{ color: theme.text.secondary }}>Carregando dados...</p>
           </div>
         ) : (
             <div
@@ -263,22 +267,25 @@ export default function ModalEditarChamadoAdmin({
             {/* Título + número + fechar */}
             <div className="flex justify-between items-start gap-3">
               <div className="w-full">
-                <p className="text-xs font-medium mb-1 uppercase tracking-wide" style={{ color: 'rgb(var(--text-secondary))' }}>
+                <p className="text-xs font-medium mb-1 uppercase tracking-wide" style={{ color: theme.text.secondary }}>
                   Chamado #{numeroChamado || chamadoId}
                 </p>
                 <input
                   type="text"
                   value={resumoChamado}
                   onChange={(e) => setResumoChamado(e.target.value)}
-                  className="w-full bg-transparent text-2xl md:text-3xl leading-tight font-semibold text-primary placeholder:text-secondary outline-none"
+                  className="w-full bg-transparent text-2xl md:text-3xl leading-tight font-semibold outline-none"
                   placeholder="Assunto do chamado"
                   disabled={submitting}
+                  style={{
+                    color: theme.text.primary,
+                  }}
                 />
               </div>
               <button
                 onClick={handleClose}
-                className="hover:text-primary transition-colors shrink-0"
-                style={{ color: 'rgb(var(--text-secondary))' }}
+                className="hover:opacity-70 transition-colors shrink-0"
+                style={{ color: theme.text.secondary }}
                 type="button"
                 tabIndex={-1}
                 aria-label="Fechar modal"
@@ -296,7 +303,7 @@ export default function ModalEditarChamadoAdmin({
                 onChange={(e) => setDescricaoChamado(e.target.value)}
                 rows={3}
                 className="w-full bg-transparent text-lg md:text-xl outline-none resize-none overflow-y-auto max-h-48 pr-2"
-                style={{ color: 'rgb(var(--text-secondary))' }}
+                style={{ color: theme.text.secondary }}
                 placeholder="Descrição do problema"
                 disabled={submitting}
               />
@@ -306,7 +313,7 @@ export default function ModalEditarChamadoAdmin({
             <div className="mt-5 grid grid-cols-1 xl:grid-cols-[1fr_140px] gap-5 md:gap-6 items-start">
               <div className="space-y-2.5">
                 <div className="grid grid-cols-1 md:grid-cols-[160px_1fr] items-center gap-2.5">
-                  <label className="text-base md:text-lg leading-none text-primary">
+                  <label className="text-base md:text-lg leading-none" style={{ color: theme.text.primary }}>
                     Ramal
                   </label>
                   <input
@@ -314,19 +321,29 @@ export default function ModalEditarChamadoAdmin({
                     value={ramal}
                     onChange={(e) => setRamal(e.target.value)}
                     placeholder="(opcional)"
-                    className="h-10 px-3 border border-primary bg-elevated text-primary focus:outline-none focus:ring-1 focus:ring-brand-primary rounded-lg"
+                    className="h-10 px-3 border rounded-lg focus:outline-none focus:ring-1 transition-all"
+                    style={{
+                      backgroundColor: theme.background.surface,
+                      borderColor: theme.border.primary,
+                      color: theme.text.primary,
+                    }}
                     disabled={submitting}
                   />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-[160px_1fr] items-center gap-2.5">
-                  <label className="text-base md:text-lg leading-none text-primary">
-                    Departamento <span className="text-red-500">*</span>
+                  <label className="text-base md:text-lg leading-none" style={{ color: theme.text.primary }}>
+                    Departamento <span style={{ color: theme.indicators.erro }}>*</span>
                   </label>
                   <select
                     value={departamentoId}
                     onChange={(e) => setDepartamentoId(Number(e.target.value))}
-                    className="h-10 px-3 border border-primary bg-elevated text-primary focus:outline-none focus:ring-1 focus:ring-brand-primary rounded-lg"
+                    className="h-10 px-3 border rounded-lg focus:outline-none focus:ring-1 transition-all"
+                    style={{
+                      backgroundColor: theme.background.surface,
+                      borderColor: theme.border.primary,
+                      color: theme.text.primary,
+                    }}
                     disabled={submitting}
                   >
                     <option value={0}>Selecione</option>
@@ -337,13 +354,18 @@ export default function ModalEditarChamadoAdmin({
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-[160px_1fr] items-center gap-2.5">
-                  <label className="text-base md:text-lg leading-none text-primary">
-                    Tópico <span className="text-red-500">*</span>
+                  <label className="text-base md:text-lg leading-none" style={{ color: theme.text.primary }}>
+                    Tópico <span style={{ color: theme.indicators.erro }}>*</span>
                   </label>
                   <select
                     value={topicoAjudaId}
                     onChange={(e) => setTopicoAjudaId(Number(e.target.value))}
-                    className="h-10 px-3 border border-primary bg-elevated text-primary focus:outline-none focus:ring-1 focus:ring-brand-primary rounded-lg"
+                    className="h-10 px-3 border rounded-lg focus:outline-none focus:ring-1 transition-all"
+                    style={{
+                      backgroundColor: theme.background.surface,
+                      borderColor: theme.border.primary,
+                      color: theme.text.primary,
+                    }}
                     disabled={submitting}
                   >
                     <option value={0}>Selecione</option>
@@ -358,16 +380,44 @@ export default function ModalEditarChamadoAdmin({
               <div className="flex flex-col gap-2 pl-4 xl:pl-2 pt-1">
                 {prioridadesOrdenadas.map(prioridade => {
                   const isActive = prioridadeId === prioridade.id;
+                  
+                  // Mapear nomes de prioridade a cores do tema
+                  const getPriorityColors = () => {
+                    const normalizedName = prioridade.nome.toLowerCase();
+                    switch (normalizedName) {
+                      case 'baixa':
+                      case 'baixo':
+                        return isActive ? theme.priority.baixa : { bg: '#f0f0f0', text: '#666' };
+                      case 'média':
+                      case 'media':
+                      case 'médio':
+                      case 'medio':
+                        return isActive ? theme.priority.media : { bg: '#f0f0f0', text: '#666' };
+                      case 'alta':
+                      case 'alto':
+                        return isActive ? theme.priority.alta : { bg: '#f0f0f0', text: '#666' };
+                      case 'crítica':
+                      case 'critica':
+                        return isActive ? theme.priority.critica : { bg: '#f0f0f0', text: '#666' };
+                      case 'urgente':
+                        return isActive ? theme.priority.urgente : { bg: '#f0f0f0', text: '#666' };
+                      default:
+                        return isActive ? theme.priority.media : { bg: '#f0f0f0', text: '#666' };
+                    }
+                  };
+                  
+                  const colors = getPriorityColors();
+                  
                   return (
                     <button
                       key={prioridade.id}
                       type="button"
                       onClick={() => setPrioridadeId(prioridade.id)}
                       disabled={submitting}
-                      className="w-full h-9 rounded-lg text-sm font-semibold tracking-wide transition-all duration-150 hover:brightness-90 shadow-sm disabled:opacity-60"
+                      className="w-full h-9 rounded-lg text-sm font-semibold tracking-wide transition-all duration-150 shadow-sm disabled:opacity-60"
                       style={{
-                        backgroundColor: isActive ? prioridade.cor : '#c8c8c8',
-                        color: isActive ? '#ffffff' : '#5a5a5a',
+                        backgroundColor: isActive ? (colors as any).border : colors.bg,
+                        color: isActive ? '#ffffff' : colors.text,
                       }}
                     >
                       {prioridade.nome}
@@ -378,26 +428,35 @@ export default function ModalEditarChamadoAdmin({
             </div>
 
             {/* Área de anexos */}
-            <div className={`mt-5 rounded-xl transition-colors ${isDragging ? 'ring-2 ring-brand-primary bg-brand-primary/5' : ''}`}>
+            <div className={`mt-5 rounded-xl transition-colors`}
+              style={{
+                backgroundColor: isDragging ? `${theme.brand.primary}1a` : 'transparent',
+                border: isDragging ? `1px solid ${theme.brand.primary}` : '',
+              }}
+            >
               {/* Anexos existentes como pills */}
               {anexosExistentes.length > 0 && (
                 <div className="flex flex-wrap gap-2 mb-3">
                   {anexosExistentes.map(anexo => (
                     <div
                       key={anexo.id}
-                      className="flex items-center gap-1.5 px-2.5 py-1 bg-elevated border border-primary rounded-full"
+                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border"
+                      style={{
+                        backgroundColor: `${theme.brand.primary}15`,
+                        borderColor: theme.brand.primary,
+                      }}
                     >
-                      <svg className="h-3.5 w-3.5 text-primary shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: theme.brand.primary }}>
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                           d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                       </svg>
-                      <span className="text-xs text-primary max-w-[160px] truncate">{anexo.filename}</span>
+                      <span className="text-xs max-w-40 truncate" style={{ color: theme.brand.primary }}>{anexo.filename}</span>
                       <button
                         type="button"
                         onClick={() => handleRemoverAnexoExistente(anexo.id)}
                         disabled={submitting}
-                        className="hover:text-error transition-colors disabled:opacity-50"
-                        style={{ color: 'rgb(var(--text-secondary))' }}
+                        className="transition-colors disabled:opacity-50"
+                        style={{ color: theme.text.secondary }}
                         aria-label={`Remover ${anexo.filename}`}
                       >
                         <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -415,7 +474,12 @@ export default function ModalEditarChamadoAdmin({
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={submitting}
-                  className="inline-flex items-center gap-2 px-4 py-1.5 border border-primary rounded-lg text-sm text-primary bg-primary/5 hover:bg-primary/15 hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="inline-flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed border"
+                  style={{
+                    backgroundColor: `${theme.brand.primary}15`,
+                    color: theme.brand.primary,
+                    borderColor: theme.brand.primary,
+                  }}
                 >
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -427,15 +491,19 @@ export default function ModalEditarChamadoAdmin({
                 {novosAnexos.map((file, index) => (
                   <div
                     key={index}
-                    className="flex items-center gap-1.5 px-2.5 py-1 bg-elevated border border-primary rounded-full"
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border"
+                    style={{
+                      backgroundColor: `${theme.brand.primary}15`,
+                      borderColor: theme.brand.primary,
+                    }}
                   >
-                    <span className="text-xs text-primary max-w-[160px] truncate">{file.name}</span>
-                    <span className="text-xs shrink-0" style={{ color: 'rgb(var(--text-secondary))' }}>{(file.size / 1024).toFixed(0)} KB</span>
+                    <span className="text-xs max-w-40 truncate" style={{ color: theme.brand.primary }}>{file.name}</span>
+                    <span className="text-xs shrink-0" style={{ color: theme.text.secondary }}>{(file.size / 1024).toFixed(0)} KB</span>
                     <button
                       type="button"
                       onClick={() => removeNovoAnexo(index)}
-                      className="hover:text-error transition-colors"
-                      style={{ color: 'rgb(var(--text-secondary))' }}
+                      className="transition-colors"
+                      style={{ color: theme.text.secondary }}
                       aria-label={`Remover ${file.name}`}
                     >
                       <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -463,15 +531,20 @@ export default function ModalEditarChamadoAdmin({
               <button
                 onClick={handleClose}
                 disabled={submitting}
-                className={buttonGhostClass}
+                className="px-6 py-2 rounded-lg text-sm font-medium transition-all duration-200 transform hover:scale-105 border disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{
+                  backgroundColor: 'transparent',
+                  color: theme.brand.primary,
+                  borderColor: theme.brand.primary,
+                }}
               >
                 Cancelar
               </button>
               <button
                 onClick={handleSubmit}
                 disabled={submitting || loading}
-                style={{ backgroundColor: 'rgb(var(--btn-criar))' }}
-                className="px-6 py-2 text-white rounded-lg hover:brightness-90 active:brightness-75 transition-all transform hover:scale-105 font-semibold disabled:bg-secondary disabled:cursor-not-allowed disabled:transform-none"
+                style={{ backgroundColor: theme.brand.primary }}
+                className="px-6 py-2 text-white rounded-lg transition-all transform hover:scale-105 font-semibold disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
               >
                 {submitting ? 'Salvando...' : 'Confirmar'}
               </button>

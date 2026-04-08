@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTheme } from '@/contexts/ThemeContext';
 import DatePicker from 'react-datepicker';
 
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, LabelList } from 'recharts';
@@ -16,6 +17,7 @@ const STATUS_PENDENTE = 7;
 const STATUS_PENDENTE_USUARIO = 6;
 
 export default function Dashboard() {
+  const { theme } = useTheme();
   const [dataInicio, setDataInicio] = useState<Date | null>(
     new Date(new Date().getFullYear(), new Date().getMonth(), 1)
   );
@@ -246,8 +248,8 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="pb-10 min-h-screen" style={{ backgroundColor: `rgb(var(--bg-primary))` }}>
-      <div className="px-4 md:px-6 py-4" style={{ backgroundColor: `rgb(var(--cor-header-fundo))` }}>
+    <div className="pb-10 min-h-screen" style={{ backgroundColor: theme.background.pagina }}>
+      <div className="px-4 md:px-6 py-4" style={{ backgroundColor: theme.brand.subHeader }}>
         <h2 className="text-white text-xl md:text-2xl font-semibold">Dashboard</h2>
       </div>
 
@@ -271,7 +273,7 @@ export default function Dashboard() {
             onClick={carregarDados}
             disabled={loading}
             className="px-6 py-2 text-white rounded disabled:opacity-50 w-full sm:w-auto"
-            style={{ backgroundColor: `rgb(var(--cor-botao-pesquisar))` }}
+            style={{ backgroundColor: theme.brand.primary }}
           >
             {loading ? 'Pesquisando...' : 'Pesquisar'}
           </button>
@@ -282,12 +284,12 @@ export default function Dashboard() {
   {/* esquerda */}
   <div className="lg:col-span-3 grid grid-cols-2 md:grid-cols-3 gap-4">
 
-    <Card titulo="ABERTOS" valor={chamadosAbertos} cor="--cor-card-abertos" />
-    <Card titulo="ATRASADOS" valor={chamadosAtrasados} cor="--cor-card-atrasados" />
-    <Card titulo="EM ANDAMENTO" valor={chamadosEmAndamento} cor="--cor-card-em-andamento" />
-    <Card titulo="FINALIZADOS" valor={chamadosFinalizados} cor="--cor-card-finalizados" />
-    <Card titulo="PENDENTES TERCEIROS" valor={chamadosPendentes} cor="--cor-card-pendentes" />
-    <Card titulo="PENDENTE USUARIO" valor={chamadosPendentesUsuario} cor="--cor-card-pendente-usuario" />
+    <Card titulo="ABERTOS" valor={chamadosAbertos} cor={theme.dashboard.abertos.bg} />
+    <Card titulo="ATRASADOS" valor={chamadosAtrasados} cor={theme.dashboard.atrasado.bg} />
+    <Card titulo="EM ANDAMENTO" valor={chamadosEmAndamento} cor={theme.dashboard.emAndamento.bg} />
+    <Card titulo="FINALIZADOS" valor={chamadosFinalizados} cor={theme.dashboard.finalizado.bg} />
+    <Card titulo="PENDENTES TERCEIROS" valor={chamadosPendentes} cor={theme.dashboard.pendentesTerceiros.bg} />
+    <Card titulo="PENDENTE USUARIO" valor={chamadosPendentesUsuario} cor={theme.dashboard.pendenteUsuario.bg} />
 
   </div>
 
@@ -295,7 +297,7 @@ export default function Dashboard() {
   <div className="lg:col-span-1">
     <div className="h-full text-white rounded-2xl p-6 shadow-lg flex flex-col justify-between"
       style={{
-        background: `linear-gradient(135deg, rgb(var(--cor-card-total-inicio)), rgb(var(--cor-card-total-fim)))`
+        background: theme.dashboard.totalGeral.gradient
       }}
     >
       
@@ -318,31 +320,31 @@ export default function Dashboard() {
                
           {/* priority */}
           <div className="rounded-xl shadow-sm p-4 md:p-8" style={{
-            backgroundColor: `rgb(var(--cor-grafico-fundo))`,
-            borderColor: `rgb(var(--cor-grafico-borda))`,
+            backgroundColor: theme.background.surface,
+            borderColor: theme.border.secondary,
             borderWidth: '1px'
           }}>
-            <h3 className="font-bold mb-3 md:mb-4 font-segoe text-base md:text-lg" style={{ color: `rgb(var(--cor-grafico-titulo))` }}>Distribuição por Prioridade</h3>
+            <h3 className="font-bold mb-3 md:mb-4 font-segoe text-base md:text-lg" style={{ color: theme.text.primary }}>Distribuição por Prioridade</h3>
             
             <div className="mb-4 md:mb-6 flex flex-wrap gap-2 p-2 md:p-3 rounded-lg overflow-x-auto" style={{
-              backgroundColor: `rgb(var(--cor-grafico-fundo))`
+              backgroundColor: theme.background.surface
             }}>
               <label className="flex items-center gap-2 px-3 py-1 rounded-full cursor-pointer transition-colors" style={{
-                backgroundColor: `rgb(var(--cor-grafico-fundo))`,
-                borderColor: `rgb(var(--cor-grafico-borda))`,
+                backgroundColor: theme.background.surface,
+                borderColor: theme.border.secondary,
                 borderWidth: '1px'
               }}>
                 <input type="checkbox" checked={prioridadeSelecionadas.size === dadosPrioridade.length} onChange={toggleTodos} className="w-4 h-4 rounded" />
-                <span className="text-xs font-semibold" style={{ color: `rgb(var(--cor-grafico-subtitulo))` }}>Todos</span>
+                <span className="text-xs font-semibold" style={{ color: theme.text.secondary }}>Todos</span>
               </label>
               {dadosPrioridade.map((p) => (
                 <label key={p.name} className="flex items-center gap-2 px-3 py-1 rounded-full cursor-pointer" style={{
-                  backgroundColor: `rgb(var(--cor-grafico-fundo))`,
-                  borderColor: `rgb(var(--cor-grafico-borda))`,
+                  backgroundColor: theme.background.surface,
+                  borderColor: theme.border.secondary,
                   borderWidth: '1px'
                 }}>
                   <input type="checkbox" checked={prioridadeSelecionadas.has(p.name)} onChange={() => togglePrioridade(p.name)} className="w-4 h-4 rounded" style={{ accentColor: p.cor }} />
-                  <span className="text-xs" style={{ color: `rgb(var(--cor-grafico-subtitulo))` }}>{p.name}</span>
+                  <span className="text-xs" style={{ color: theme.text.secondary }}>{p.name}</span>
                 </label>
               ))}
             </div>
@@ -371,9 +373,9 @@ export default function Dashboard() {
 
               return (
                 <div className="p-3 rounded-lg shadow-lg" style={{
-                  backgroundColor: `rgb(var(--cor-tooltip-fundo))`,
-                  color: `rgb(var(--cor-tooltip-texto))`,
-                  borderColor: `rgb(var(--cor-tooltip-borda))`,
+                  backgroundColor: theme.background.card,
+                  color: theme.text.primary,
+                  borderColor: theme.border.secondary,
                   borderWidth: '1px'
                 }}>
                   <p className="font-semibold text-sm mb-1">
@@ -396,26 +398,26 @@ export default function Dashboard() {
 
           {/* grafico por departamento */}
           <div className="rounded-xl shadow-sm p-4 md:p-8" style={{
-            backgroundColor: `rgb(var(--cor-grafico-fundo))`,
-            borderColor: `rgb(var(--cor-grafico-borda))`,
+            backgroundColor: theme.background.surface,
+            borderColor: theme.border.secondary,
             borderWidth: '1px'
           }}>
-            <h3 className="font-bold mb-4 md:mb-6 text-base md:text-lg font-segoe" style={{ color: `rgb(var(--cor-grafico-titulo))` }}>Chamados por Departamento</h3>
+            <h3 className="font-bold mb-4 md:mb-6 text-base md:text-lg font-segoe" style={{ color: theme.text.primary }}>Chamados por Departamento</h3>
             <div className="space-y-3 md:space-y-5">
               {dadosDepartamento.map((d, i) => (
                 <div key={i}>
                   <div className="flex justify-between mb-1 gap-2">
-                    <span className="text-xs md:text-sm font-normal truncate" style={{ color: `rgb(var(--cor-grafico-subtitulo))` }}>{d.nome}</span>
-                    <span className="text-xs md:text-sm font-light whitespace-nowrap" style={{ color: `rgb(var(--cor-grafico-titulo))` }}>{d.valor} ({d.percentual}%)</span>
+                    <span className="text-xs md:text-sm font-normal truncate" style={{ color: theme.text.secondary }}>{d.nome}</span>
+                    <span className="text-xs md:text-sm font-light whitespace-nowrap" style={{ color: theme.text.primary }}>{d.valor} ({d.percentual}%)</span>
                   </div>
                   <div className="h-6 md:h-8 rounded-lg overflow-hidden" style={{
-                    backgroundColor: `rgb(var(--cor-grafico-fundo))`,
-                    borderColor: `rgb(var(--cor-grafico-borda))`,
+                    backgroundColor: theme.background.surface,
+                    borderColor: theme.border.secondary,
                     borderWidth: '1px'
                   }}>
                     <div className="h-full flex items-center justify-end pr-2 md:pr-4 transition-all duration-700" style={{
                       width: `${d.percentual}%`,
-                      backgroundColor: `rgb(var(--cor-header-fundo))`
+                      backgroundColor: theme.brand.primary
                     }}>
                      
                     </div>
@@ -428,30 +430,30 @@ export default function Dashboard() {
         
    {/* grafico de linhas Interno x Externo */}
 <div className="mt-6 md:mt-8 rounded-2xl shadow-md p-5 md:p-8 transition-all hover:shadow-lg" style={{
-  backgroundColor: `rgb(var(--cor-grafico-fundo))`,
-  borderColor: `rgb(var(--cor-grafico-borda))`,
+  backgroundColor: theme.background.surface,
+  borderColor: theme.border.secondary,
   borderWidth: '1px'
 }}>
   
   {/* Header */}
   <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
     <div>
-      <h3 className="text-lg md:text-xl font-bold font-segoe" style={{ color: `rgb(var(--cor-grafico-titulo))` }}>
+      <h3 className="text-lg md:text-xl font-bold font-segoe" style={{ color: theme.text.primary }}>
         Chamados Internos vs Externos
       </h3>
-      <p className="text-xs md:text-sm mt-1" style={{ color: `rgb(var(--cor-grafico-subtitulo))` }}>
+      <p className="text-xs md:text-sm mt-1" style={{ color: theme.text.secondary }}>
         Volume diário de chamados no período selecionado
       </p>
     </div>
 
     {/* Total destacado */}
     <div className="mt-3 md:mt-0 px-4 py-2 rounded-lg" style={{
-      backgroundColor: `rgb(var(--cor-grafico-fundo))`,
-      borderColor: `rgb(var(--cor-grafico-borda))`,
+      backgroundColor: theme.background.card,
+      borderColor: theme.border.secondary,
       borderWidth: '1px'
     }}>
-      <span className="text-xs" style={{ color: `rgb(var(--cor-grafico-subtitulo))` }}>Total</span>
-      <p className="text-sm font-semibold" style={{ color: `rgb(var(--cor-grafico-titulo))` }}>
+      <span className="text-xs" style={{ color: theme.text.secondary }}>Total</span>
+      <p className="text-sm font-semibold" style={{ color: theme.text.primary }}>
         {dadosInternoExterno.reduce((acc, d) => acc + d.Interno + d.Externo, 0)} chamados
       </p>
     </div>
@@ -463,7 +465,7 @@ export default function Dashboard() {
       data={dadosInternoExterno}
       margin={{ top: 10, right: 20, left: -10, bottom: 20 }}
     >
-      <CartesianGrid strokeDasharray="2 4" stroke={`rgb(var(--cor-grid))`} vertical={false} />
+      <CartesianGrid strokeDasharray="2 4" stroke={theme.border.light} vertical={false} />
 
           <XAxis
         dataKey="dia"
@@ -475,7 +477,7 @@ export default function Dashboard() {
           }
           return value;
         }}
-        tick={{ fontSize: 12, fill: `rgb(var(--cor-eixo))` }}
+        tick={{ fontSize: 12, fill: theme.text.secondary }}
         axisLine={false}
         tickLine={false}
         angle={-25}
@@ -484,7 +486,7 @@ export default function Dashboard() {
       />
 
       <YAxis
-        tick={{ fontSize: 12, fill: `rgb(var(--cor-eixo))` }}
+        tick={{ fontSize: 12, fill: theme.text.secondary }}
         axisLine={false}
         tickLine={false}
         allowDecimals={false}
@@ -500,13 +502,13 @@ export default function Dashboard() {
           return value;
         }}
         contentStyle={{
-          background: `rgb(var(--cor-tooltip-fundo))`,
-          border: `1px solid rgb(var(--cor-tooltip-borda))`,
+          background: theme.background.card,
+          border: `1px solid ${theme.border.secondary}`,
           borderRadius: "5px",
-          color: `rgb(var(--cor-tooltip-texto))`,
+          color: theme.text.primary,
           fontSize: "14px"
         }}
-        labelStyle={{ color: `rgb(var(--cor-eixo))` }}
+        labelStyle={{ color: theme.text.secondary }}
       />
       <Legend
         verticalAlign="top"
@@ -514,9 +516,9 @@ export default function Dashboard() {
         iconType="circle"
         formatter={(value) =>
           value === "Interno" ? (
-            <span className="font-medium" style={{ color: `rgb(var(--cor-linha-interno))` }}>Interno</span>
+            <span className="font-medium" style={{ color: theme.dashboard.grafInternoVsExternos.interno }}>Interno</span>
           ) : (
-            <span className="font-medium" style={{ color: `rgb(var(--cor-linha-externo))` }}>Externo</span>
+            <span className="font-medium" style={{ color: theme.dashboard.grafInternoVsExternos.externo }}>Externo</span>
           )
         }
       />
@@ -525,7 +527,7 @@ export default function Dashboard() {
       <Line
         type="monotone"
         dataKey="Interno"
-        stroke={`rgb(var(--cor-linha-interno))`}
+        stroke={theme.dashboard.grafInternoVsExternos.interno}
         strokeWidth={2.5}
         dot={false}
         activeDot={{ r: 6 }}
@@ -535,7 +537,7 @@ export default function Dashboard() {
       <Line
         type="monotone"
         dataKey="Externo"
-        stroke={`rgb(var(--cor-linha-externo))`}
+        stroke={theme.dashboard.grafInternoVsExternos.externo}
         strokeWidth={2.5}
         dot={false}
         activeDot={{ r: 6 }}
@@ -546,20 +548,20 @@ export default function Dashboard() {
 
         {/* grafico top5 */}
         <div className="mt-6 md:mt-8 rounded-xl shadow-sm p-4 md:p-8 overflow-x-auto" style={{
-          backgroundColor: `rgb(var(--cor-grafico-fundo))`,
-          borderColor: `rgb(var(--cor-grafico-borda))`,
+          backgroundColor: theme.background.surface,
+          borderColor: theme.border.secondary,
           borderWidth: '1px'
         }}>
-            <h3 className="text-base md:text-xl font-bold font-segoe mb-3 md:mb-6" style={{ color: `rgb(var(--cor-grafico-titulo))` }}>Top 5 Tópicos de Ajuda</h3>
-            <p className="text-xs md:text-sm mb-4" style={{ color: `rgb(var(--cor-grafico-subtitulo))` }}>Chamados abertos com mais frequencia + usuario mais ativo no tópico</p>
+            <h3 className="text-base md:text-xl font-bold font-segoe mb-3 md:mb-6" style={{ color: theme.text.primary }}>Top 5 Tópicos de Ajuda</h3>
+            <p className="text-xs md:text-sm mb-4" style={{ color: theme.text.secondary }}>Chamados abertos com mais frequencia + usuario mais ativo no tópico</p>
             <div className="min-w-125">
             <ResponsiveContainer width="100%" height={350}>
                 <BarChart data={dadosTopicos} margin={{ top: 40, bottom: 60 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={`rgb(var(--cor-grid))`} />
-                    <XAxis dataKey="nome" angle={-30} textAnchor="end" interval={0} tick={{fontSize: 11, fill: `rgb(var(--cor-eixo))`}} />
-                    <YAxis tick={{fontSize: 11, fill: `rgb(var(--cor-eixo))`}} />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme.border.light} />
+                    <XAxis dataKey="nome" angle={-30} textAnchor="end" interval={0} tick={{fontSize: 11, fill: theme.text.secondary}} />
+                    <YAxis tick={{fontSize: 11, fill: theme.text.secondary}} />
                     <Tooltip
-                        cursor={{ fill: `rgb(var(--cor-cursor-hover))`, opacity: 0.3 }}
+                        cursor={{ fill: theme.brand.primary, opacity: 0.3 }}
                         content={({ active, payload, label }) => {
                           if (active && payload && payload.length) {
                             const data = payload[0];
@@ -569,9 +571,9 @@ export default function Dashboard() {
 
                             return (
                               <div className="p-3 rounded-lg shadow-lg" style={{
-                                backgroundColor: `rgb(var(--cor-tooltip-fundo))`,
-                                color: `rgb(var(--cor-tooltip-texto))`,
-                                borderColor: `rgb(var(--cor-tooltip-borda))`,
+                                backgroundColor: theme.background.card,
+                                color: theme.text.primary,
+                                borderColor: theme.border.secondary,
                                 borderWidth: '1px'
                               }}>
                                 
@@ -596,13 +598,13 @@ export default function Dashboard() {
                           return null;
                         }}
                       />
-                    <Bar dataKey="valor" fill={`rgb(var(--cor-barra-topicos))`} radius={[10, 10, 0, 0]}>
+                    <Bar dataKey="valor" fill={theme.brand.primary} radius={[10, 10, 0, 0]}>
                         <LabelList 
                           dataKey="usuarioTop" 
                           position="top" 
                           offset={10} 
                           formatter={(label) => typeof label === 'string' ? label.split(' ')[0] : label}
-                          style={{fill: `rgb(var(--cor-barra-topicos-label))`, fontWeight: 'bold', fontSize: '11px'}} 
+                          style={{fill: theme.text.primary, fontWeight: 'bold', fontSize: '11px'}} 
                         />
                     </Bar>
                 </BarChart>
@@ -612,18 +614,18 @@ export default function Dashboard() {
 
        {/* graficos por usuario */}
 <div className="mt-6 md:mt-8 rounded-xl shadow-sm p-4 md:p-8 overflow-x-auto" style={{
-  backgroundColor: `rgb(var(--cor-grafico-fundo))`,
-  borderColor: `rgb(var(--cor-grafico-borda))`,
+  backgroundColor: theme.background.surface,
+  borderColor: theme.border.secondary,
   borderWidth: '1px'
 }}>
   <div className="mb-4 md:mb-6">
-    <h3 className="text-base md:text-xl font-bold" style={{ color: `rgb(var(--cor-grafico-titulo))` }}>Total de Chamados Abertos por Usuário</h3>
-    <p className="text-xs md:text-sm" style={{ color: `rgb(var(--cor-grafico-subtitulo))` }}>Quantidade total de chamados abertos por cada usuário no período selecionado</p>
+    <h3 className="text-base md:text-xl font-bold" style={{ color: theme.text.primary }}>Total de Chamados Abertos por Usuário</h3>
+    <p className="text-xs md:text-sm" style={{ color: theme.text.secondary }}>Quantidade total de chamados abertos por cada usuário no período selecionado</p>
   </div>
 
   {dadosUsuarios.length === 0 ? (
     <div className="flex flex-col items-center justify-center py-12">
-      <p className="italic text-sm" style={{ color: `rgb(var(--cor-grafico-subtitulo))` }}>Nenhum dado disponível no período selecionado</p>
+      <p className="italic text-sm" style={{ color: theme.text.secondary }}>Nenhum dado disponível no período selecionado</p>
     </div>
   ) : (
     <div className="min-w-125">
@@ -632,7 +634,7 @@ export default function Dashboard() {
         data={dadosUsuarios} 
         margin={{ top: 40, right: 20, left: 5, bottom: 100 }}
       >
-        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={`rgb(var(--cor-grid))`} />
+        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme.border.light} />
         
         <XAxis 
           dataKey="nome" 
@@ -640,41 +642,41 @@ export default function Dashboard() {
           textAnchor="end" 
           height={110}
           interval={0}
-          tick={{ fill: `rgb(var(--cor-eixo))`, fontSize: 12, fontWeight: 500 }} 
+          tick={{ fill: theme.text.secondary, fontSize: 12, fontWeight: 500 }} 
           tickLine={false}
-          axisLine={{ stroke: `rgb(var(--cor-grafico-borda))` }}
+          axisLine={{ stroke: theme.border.secondary }}
         />
         
         <YAxis 
-          tick={{ fill: `rgb(var(--cor-eixo))`, fontSize: 12 }} 
+          tick={{ fill: theme.text.secondary, fontSize: 12 }} 
           tickLine={false}
           axisLine={false}
           label={{ 
             value: 'Chamados', 
             angle: -90, 
             position: 'insideLeft', 
-            style: { fill: `rgb(var(--cor-eixo))`, fontSize: 12, fontWeight: 600 } 
+            style: { fill: theme.text.secondary, fontSize: 12, fontWeight: 600 } 
           }}
         />
       <Tooltip 
-          cursor={{ fill: `rgb(var(--cor-cursor-hover))`, opacity: 0.3 }}
+          cursor={{ fill: theme.brand.primary, opacity: 0.3 }}
           content={({ active, payload }) => {
             if (active && payload && payload.length) {
               const data = payload[0].payload;
               return (
                 <div className="border-none rounded-lg p-4" style={{
-                  backgroundColor: `rgb(var(--cor-tooltip-fundo))`,
-                  borderColor: `rgb(var(--cor-tooltip-borda))`,
+                  backgroundColor: theme.background.card,
+                  borderColor: theme.border.secondary,
                   borderWidth: '1px'
                 }}>
                   <h4 className="font-bold mb-2 pb-2" style={{
-                    color: `rgb(var(--cor-tooltip-texto))`,
-                    borderBottomColor: `rgb(var(--cor-tooltip-borda))`,
+                    color: theme.text.primary,
+                    borderBottomColor: theme.border.secondary,
                     borderBottomWidth: '1px'
                   }}>{data.nomeCompleto}</h4>
                   <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: `rgb(var(--cor-barra-usuarios))` }}></div>
-                    <p className="text-sm" style={{ color: `rgb(var(--cor-tooltip-texto))` }}>
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: theme.brand.primary }}></div>
+                    <p className="text-sm" style={{ color: theme.text.primary }}>
                       <strong>{data.valor}</strong> chamados
                     </p>
                   </div>
@@ -686,7 +688,7 @@ export default function Dashboard() {
         />
         <Bar 
           dataKey="valor" 
-          fill={`rgb(var(--cor-barra-usuarios))`}
+          fill={theme.brand.primary}
           radius={[6, 6, 0, 0]}
           maxBarSize={50}
         >
@@ -695,7 +697,7 @@ export default function Dashboard() {
             position="top"
             offset={12}
             style={{ 
-              fill: `rgb(var(--cor-barra-usuarios-label))`, 
+              fill: theme.brand.primary, 
               fontWeight: '700', 
               fontSize: '11px'
             }}
@@ -714,7 +716,7 @@ export default function Dashboard() {
 function Card({ titulo, valor, cor }: any) {
   return (
     <div className="text-white rounded-xl p-4 md:p-6 shadow-md transition-transform hover:scale-105" style={{
-      backgroundColor: `rgb(var(${cor}))`
+      backgroundColor: cor
     }}>
       <div className="text-2xl md:text-4xl font-bold">{valor}</div>
       <div className="text-xs md:text-sm font-medium opacity-80 uppercase tracking-wider mt-1">{titulo}</div>

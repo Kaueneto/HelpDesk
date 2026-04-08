@@ -1,62 +1,72 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { lightTheme } from '@/styles/theme.light';
+import { darkTheme } from '@/styles/theme.dark';
+import type { Theme as ThemeType } from '@/styles/theme.types';
 
-type Theme = 'light' | 'dark';
+type ThemeMode = 'light' | 'dark';
 
 interface ThemeContextType {
-  theme: Theme;
+  mode: ThemeMode;
+  theme: ThemeType;
   toggleTheme: () => void;
-  setTheme: (theme: Theme) => void;
+  setTheme: (mode: ThemeMode) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [theme, setThemeState] = useState<Theme>('light');
+  const [mode, setMode] = useState<ThemeMode>('light');
   const [isMounted, setIsMounted] = useState(false);
 
-  // carregar tema do localStorage na montagem
+  // Carregar tema do localStorage na montagem
   useEffect(() => {
     setIsMounted(true);
-    const storedTheme = localStorage.getItem('theme') as Theme | null;
+    const storedMode = localStorage.getItem('theme-mode') as ThemeMode | null;
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
 
-    const initialTheme = storedTheme || (prefersDark ? 'dark' : 'light');
-    setThemeState(initialTheme);
-    applyTheme(initialTheme);
+    const initialMode = storedMode || (prefersDark ? 'dark' : 'light');
+    setMode(initialMode);
+    applyTheme(initialMode);
   }, []);
 
-  const applyTheme = (newTheme: Theme) => {
+  const getThemeObject = (themeMode: ThemeMode): ThemeType => {
+    return themeMode === 'dark' ? darkTheme : lightTheme;
+  };
+
+  const applyTheme = (newMode: ThemeMode) => {
     const htmlElement = document.documentElement;
 
-    if (newTheme === 'dark') {
+    if (newMode === 'dark') {
       htmlElement.classList.add('dark');
     } else {
       htmlElement.classList.remove('dark');
     }
 
-    localStorage.setItem('theme', newTheme);
+    localStorage.setItem('theme-mode', newMode);
   };
 
   const toggleTheme = () => {
-    const newTheme = theme === 'light' ? 'dark' : 'light';
-    setThemeState(newTheme);
-    applyTheme(newTheme);
+    const newMode = mode === 'light' ? 'dark' : 'light';
+    setMode(newMode);
+    applyTheme(newMode);
   };
 
-  const setTheme = (newTheme: Theme) => {
-    setThemeState(newTheme);
-    applyTheme(newTheme);
+  const setTheme = (newMode: ThemeMode) => {
+    setMode(newMode);
+    applyTheme(newMode);
   };
 
-  // evitar hydration mismatch
+  // Evitar hydration mismatch
   if (!isMounted) {
     return <>{children}</>;
   }
 
+  const themeObject = getThemeObject(mode);
+
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme, setTheme }}>
+    <ThemeContext.Provider value={{ mode, theme: themeObject, toggleTheme, setTheme }}>
       {children}
     </ThemeContext.Provider>
   );
