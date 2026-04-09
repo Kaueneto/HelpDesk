@@ -3,6 +3,7 @@
 import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { FiEye, FiEyeOff } from "react-icons/fi";
 
 interface LoginProps {
@@ -19,6 +20,7 @@ export default function Login({ onCadastrarClick, onEsqueceuSenhaClick }: LoginP
   const [showPassword, setShowPassword] = useState(false);
 
   const { login } = useAuth();
+  const { theme, mode } = useTheme();
   const router = useRouter();
  
   const handleSubmit = async (e: FormEvent) => {
@@ -50,7 +52,8 @@ export default function Login({ onCadastrarClick, onEsqueceuSenhaClick }: LoginP
         <div className="space-y-1">
           <label
             htmlFor="login-email"
-            className="text-sm font-medium leading-none text-gray-700"
+            className="text-sm font-medium leading-none transition-colors duration-300"
+            style={{ color: theme.text.primary }}
           >
             E-mail
           </label>
@@ -60,7 +63,13 @@ export default function Login({ onCadastrarClick, onEsqueceuSenhaClick }: LoginP
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500  disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex h-10 w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-1 transition-colors duration-300 disabled:cursor-not-allowed disabled:opacity-50"
+            style={{
+              backgroundColor: theme.background.surface,
+              borderColor: theme.border.secondary,
+              color: theme.text.primary,
+              caretColor: theme.brand.primary
+            }}
             placeholder="seu@email.com"
             disabled={isLoading}
           />
@@ -69,7 +78,8 @@ export default function Login({ onCadastrarClick, onEsqueceuSenhaClick }: LoginP
         <div className="space-y-1">
           <label
             htmlFor="login-password"
-            className="text-sm font-medium leading-none text-gray-700"
+            className="text-sm font-medium leading-none transition-colors duration-300"
+            style={{ color: theme.text.primary }}
           >
             Senha
           </label>
@@ -81,14 +91,21 @@ export default function Login({ onCadastrarClick, onEsqueceuSenhaClick }: LoginP
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 pr-10 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500  disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex h-10 w-full rounded-md border px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-1 transition-colors duration-300 disabled:cursor-not-allowed disabled:opacity-50"
               placeholder="••••••••"
+              style={{
+                backgroundColor: theme.background.surface,
+                borderColor: theme.border.secondary,
+                color: theme.text.primary,
+                caretColor: theme.brand.primary
+              }}
               disabled={isLoading}
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+              className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors duration-300 hover:opacity-75"
+              style={{ color: theme.text.tertiary }}
             >
               {showPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
             </button>
@@ -97,7 +114,8 @@ export default function Login({ onCadastrarClick, onEsqueceuSenhaClick }: LoginP
             <button
               type="button"
               onClick={onEsqueceuSenhaClick}
-              className="text-sm text-[#001960] hover:text-blue-700 hover:underline"
+              className="text-sm hover:opacity-80 hover:underline transition-colors font-semibold"
+              style={{ color: theme.brand.primary }}
             >
               Esqueci minha senha
             </button>
@@ -113,17 +131,22 @@ export default function Login({ onCadastrarClick, onEsqueceuSenhaClick }: LoginP
         <button
           type="submit"
           disabled={isLoading}
-          className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-200 bg-[#001960] text-white shadow hover:bg-blue-700 hover:shadow-md hover:-translate-y-px focus:outline-none focus:ring-1 focus:ring-blue-500  disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2 w-full"
+          className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-200 shadow hover:shadow-md hover:-translate-y-px focus:outline-none focus:ring-1 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2 w-full"
+          style={{
+            backgroundColor: theme.buttonsExclusivos.btDark,
+            color: '#fff',
+          }}
         >
           {isLoading ? 'Entrando...' : 'Entrar'}
         </button>
 
-        <div className="text-center text-sm text-gray-600">
+        <div className="text-center text-sm transition-colors duration-300" style={{ color: theme.text.secondary }}>
           Novo por aqui?{' '}
           <button
             type="button"
             onClick={onCadastrarClick}
-            className="text-[#001960] hover:text-blue-700 hover:underline font-medium"
+            className="hover:opacity-80 hover:underline font-semibold transition-colors"
+            style={{ color: theme.brand.primary }}
           >
             Cadastre-se
           </button>

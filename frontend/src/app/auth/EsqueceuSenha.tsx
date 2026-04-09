@@ -2,6 +2,7 @@
 
 import { useState, FormEvent } from 'react';
 import api from '@/services/api';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface EsqueceuSenhaProps {
   onVoltarClick: () => void;
@@ -12,6 +13,7 @@ export default function EsqueceuSenha({ onVoltarClick }: EsqueceuSenhaProps) {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [emailEnviado, setEmailEnviado] = useState(false);
+  const { theme } = useTheme();
 
   const baseUrl = process.env.NEXT_PUBLIC_FRONTEND_URL;
 
@@ -47,14 +49,14 @@ export default function EsqueceuSenha({ onVoltarClick }: EsqueceuSenhaProps) {
     return (
       <div className="p-6 pt-8 space-y-6">
         <div className="text-center space-y-4">
-          <div className="text-5xl">✓</div>
-          <h2 className="text-xl font-bold text-gray-800">
+          <div className="text-5xl" style={{ color: theme.brand.primary }}>✓</div>
+          <h2 className="text-xl font-bold transition-colors" style={{ color: theme.text.primary }}>
             Verifique sua caixa de entrada :)
           </h2>
-          <p className="text-gray-700">
+          <p className="transition-colors" style={{ color: theme.text.secondary }}>
             Um link foi enviado para seu email:
           </p>
-          <p className="text-blue-600 font-medium text-lg">
+          <p className="font-medium text-lg transition-colors" style={{ color: theme.brand.primary }}>
             {email}
           </p>
         </div>
@@ -63,7 +65,8 @@ export default function EsqueceuSenha({ onVoltarClick }: EsqueceuSenhaProps) {
           <button
             type="button"
             onClick={onVoltarClick}
-            className="text-lg text-blue-600 hover:text-blue-700 hover:underline"
+            className="text-lg hover:opacity-80 hover:underline transition-colors font-semibold"
+            style={{ color: theme.brand.primary }}
           >
             Voltar a tela de Login
           </button>
@@ -73,12 +76,12 @@ export default function EsqueceuSenha({ onVoltarClick }: EsqueceuSenhaProps) {
   }
 
   return (
-    <div className="p-6 pt-11 space-y-7">
+    <div className="p-6 pt-11 space-y-7 transition-colors">
       <div className="space-y-0">
-        <h2 className="text-lg font-regular text-gray-900 ">
+        <h2 className="text-lg font-regular transition-colors" style={{ color: theme.text.primary }}>
           Digite o seu e-mail para que você
         </h2>
-        <h2 className="text-lg font-regular text-gray-900 ">
+        <h2 className="text-lg font-regular transition-colors" style={{ color: theme.text.primary }}>
           possa recuperar sua senha:
         </h2>
       </div>
@@ -87,7 +90,8 @@ export default function EsqueceuSenha({ onVoltarClick }: EsqueceuSenhaProps) {
         <div className="space-y-1">
           <label
             htmlFor="recover-email"
-            className="text-base font-medium leading-none text-gray-700"
+            className="text-base font-medium leading-none transition-colors"
+            style={{ color: theme.text.primary }}
           >
             E-mail
           </label>
@@ -97,7 +101,13 @@ export default function EsqueceuSenha({ onVoltarClick }: EsqueceuSenhaProps) {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="flex h-10 w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-4 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex h-10 w-full rounded-md border px-3 py-4 text-sm focus:outline-none focus:ring-1 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
+            style={{
+              backgroundColor: theme.background.surface,
+              borderColor: theme.border.secondary,
+              color: theme.text.primary,
+              caretColor: theme.brand.primary
+            }}
             placeholder="DigiteSeuEmail@email.com"
             disabled={isLoading}
           />
@@ -112,7 +122,11 @@ export default function EsqueceuSenha({ onVoltarClick }: EsqueceuSenhaProps) {
         <button
           type="submit"
           disabled={isLoading}
-          className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-base transition-all duration-200 bg-[#001960] text-white shadow hover:bg-blue-700 hover:shadow-md hover:-translate-y-px focus:outline-none focus:ring-1 focus:ring-blue-500 focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-6 w-full mt-5"
+          className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-base transition-all duration-200 shadow hover:shadow-md hover:-translate-y-px focus:outline-none focus:ring-1 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-6 w-full mt-5 font-medium"
+          style={{
+            backgroundColor: theme.buttonsExclusivos.btDark,
+            color: '#fff',
+          }}
         >
           {isLoading ? 'Enviando...' : 'Enviar Link de recuperação'}
         </button>
@@ -121,7 +135,8 @@ export default function EsqueceuSenha({ onVoltarClick }: EsqueceuSenhaProps) {
           <button
             type="button"
             onClick={onVoltarClick}
-            className="text-sm text-[#001960] hover:text-blue-700 hover:underline"
+            className="text-sm hover:opacity-80 hover:underline transition-colors font-semibold"
+            style={{ color: theme.brand.primary }}
           >
             Voltar a tela Inicial
           </button>

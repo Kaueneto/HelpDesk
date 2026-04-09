@@ -2,6 +2,7 @@
 
 import { useState, FormEvent } from 'react';
 import api from '@/services/api';
+import { useTheme } from '@/contexts/ThemeContext';
 import { validatePassword, getPasswordStrengthColor, getPasswordStrengthText } from '@/utils/passwordValidation';
 import { FiEye, FiEyeOff } from "react-icons/fi";
 interface CadastrarseProps {
@@ -18,6 +19,8 @@ export default function Cadastrarse({ onLoginClick, onSuccess }: CadastrarseProp
   const [cadastroLoading, setCadastroLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const { theme } = useTheme();
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -66,7 +69,8 @@ export default function Cadastrarse({ onLoginClick, onSuccess }: CadastrarseProp
         <div className="space-y-1">
           <label
             htmlFor="register-name"
-            className="text-sm font-medium leading-none text-gray-700"
+            className="text-sm font-medium leading-none transition-colors"
+            style={{ color: theme.text.primary }}
           >
             Nome 
           </label>
@@ -77,7 +81,13 @@ export default function Cadastrarse({ onLoginClick, onSuccess }: CadastrarseProp
             onChange={(e) => setCadastroName(e.target.value)}
             required
             minLength={3}
-            className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex h-10 w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-1 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
+            style={{
+              backgroundColor: theme.background.surface,
+              borderColor: theme.border.secondary,
+              color: theme.text.primary,
+              caretColor: theme.brand.primary
+            }}
             placeholder="Nome"
             disabled={cadastroLoading}
           />
@@ -86,7 +96,8 @@ export default function Cadastrarse({ onLoginClick, onSuccess }: CadastrarseProp
         <div className="space-y-1">
           <label
             htmlFor="register-email"
-            className="text-sm font-medium leading-none text-gray-700"
+            className="text-sm font-medium leading-none transition-colors"
+            style={{ color: theme.text.primary }}
           >
             E-mail
           </label>
@@ -96,7 +107,13 @@ export default function Cadastrarse({ onLoginClick, onSuccess }: CadastrarseProp
             value={cadastroEmail}
             onChange={(e) => setCadastroEmail(e.target.value)}
             required
-            className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500  disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex h-10 w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-1 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
+            style={{
+              backgroundColor: theme.background.surface,
+              borderColor: theme.border.secondary,
+              color: theme.text.primary,
+              caretColor: theme.brand.primary
+            }}
             placeholder="seuemail@email.com"
             disabled={cadastroLoading}
           />
@@ -105,7 +122,8 @@ export default function Cadastrarse({ onLoginClick, onSuccess }: CadastrarseProp
 <div className="space-y-1">
   <label
     htmlFor="register-password"
-    className="text-sm font-medium leading-none text-gray-700"
+    className="text-sm font-medium leading-none transition-colors"
+    style={{ color: theme.text.primary }}
   >
     Senha
   </label>
@@ -118,7 +136,12 @@ export default function Cadastrarse({ onLoginClick, onSuccess }: CadastrarseProp
       onChange={(e) => setCadastroPassword(e.target.value)}
       required
       minLength={6}
-      className={`flex h-10 w-full rounded-md border ${getPasswordStrengthColor(cadastroPassword)} bg-white px-3 py-2 pr-10 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50`}
+      className={`flex h-10 w-full rounded-md border ${getPasswordStrengthColor(cadastroPassword)} px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-1 disabled:cursor-not-allowed disabled:opacity-50 transition-colors`}
+      style={{
+        backgroundColor: theme.background.surface,
+        color: theme.text.primary,
+        caretColor: theme.brand.primary
+      }}
       placeholder="Digite uma Senha forte"
       disabled={cadastroLoading}
     />
@@ -126,7 +149,8 @@ export default function Cadastrarse({ onLoginClick, onSuccess }: CadastrarseProp
     <button
       type="button"
       onClick={() => setShowPassword(!showPassword)}
-      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+      className="absolute right-2 top-1/2 -translate-y-1/2 transition-colors hover:opacity-75"
+      style={{ color: theme.text.tertiary }}
     >
       {showPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
     </button>
@@ -150,7 +174,8 @@ export default function Cadastrarse({ onLoginClick, onSuccess }: CadastrarseProp
         <div className="space-y-1">
           <label
             htmlFor="register-confirm"
-            className="text-sm font-medium leading-none text-gray-700"
+            className="text-sm font-medium leading-none transition-colors"
+            style={{ color: theme.text.primary }}
           >
             Confirmar senha
           </label>
@@ -162,14 +187,21 @@ export default function Cadastrarse({ onLoginClick, onSuccess }: CadastrarseProp
             onChange={(e) => setCadastroConfirmPassword(e.target.value)}
             required
             minLength={6}
-            className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500  disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex h-10 w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-1 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
+            style={{
+              backgroundColor: theme.background.surface,
+              borderColor: theme.border.secondary,
+              color: theme.text.primary,
+              caretColor: theme.brand.primary
+            }}
             placeholder="Repita sua senha"
             disabled={cadastroLoading}
           />
           <button
             type="button"
             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+            className="absolute right-2 top-1/2 -translate-y-1/2 transition-colors hover:opacity-75"
+            style={{ color: theme.text.tertiary }}
           >
             {showConfirmPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
           </button>
@@ -184,17 +216,22 @@ export default function Cadastrarse({ onLoginClick, onSuccess }: CadastrarseProp
         <button
           type="submit"
           disabled={cadastroLoading}
-          className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-200 bg-[#001960] text-white shadow hover:bg-blue-700 hover:shadow-md hover:-translate-y-px focus:outline-none focus:ring-1 focus:ring-blue-500  disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2 w-full"
+          className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-200 shadow hover:shadow-md hover:-translate-y-px focus:outline-none focus:ring-1 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2 w-full"
+          style={{
+            backgroundColor: theme.buttonsExclusivos.btDark,
+            color: '#fff',
+          }}
         >
-          {cadastroLoading ? 'Ccadastrando...' : 'Cadastrar'}
+          {cadastroLoading ? 'Cadastrando...' : 'Cadastrar'}
         </button>
 
-        <div className="text-center text-sm text-gray-600">
+        <div className="text-center text-sm transition-colors" style={{ color: theme.text.secondary }}>
           Já tem uma conta?{' '}
           <button
             type="button"
             onClick={onLoginClick}
-            className="text-[#001960] hover:text-blue-700 hover:underline font-medium"
+            className="hover:opacity-80 hover:underline font-semibold transition-colors"
+            style={{ color: theme.brand.primary }}
           >
             Faça login
           </button>

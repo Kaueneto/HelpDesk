@@ -58,12 +58,16 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     applyTheme(newMode);
   };
 
-  // Evitar hydration mismatch
-  if (!isMounted) {
-    return <>{children}</>;
-  }
-
   const themeObject = getThemeObject(mode);
+
+  // Evitar hydration mismatch renderizando de forma invisível até carregar
+  if (!isMounted) {
+    return (
+      <ThemeContext.Provider value={{ mode, theme: themeObject, toggleTheme, setTheme }}>
+        <div style={{ visibility: 'hidden', display: 'none' }}>{children}</div>
+      </ThemeContext.Provider>
+    );
+  }
 
   return (
     <ThemeContext.Provider value={{ mode, theme: themeObject, toggleTheme, setTheme }}>
