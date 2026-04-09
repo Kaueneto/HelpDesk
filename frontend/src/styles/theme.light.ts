@@ -1,3 +1,4 @@
+import { bg } from 'date-fns/locale';
 import { Theme } from './theme.types';
 
 export const lightTheme: Theme = {
@@ -170,5 +171,73 @@ export const lightTheme: Theme = {
          text: '#FFFFFF',       // Texto branco para o botão
          border: '#313131',     // Borda azul para o botão
     }
+
+
+
+
+
+
+
+
+
+
+  },
+
+  detalhesChamado: {
+    label: '#1F2937',        // Cinza escuro para labels
+    labelActive: '#3B82F6',   // Azul para labels ativas
+    value: '#6B7280',        // Cinza médio para valores
+    border: '#E5E7EB',       // Cinza para bordas
+    bgBranco: '#FFFFFF',           // Branco para fundo
+    BalaoMsgInicial: '#F0FDF4', // Cinza muito claro para balão de mensagem do usuário
+    BalaoMsgusuario: '#F3F4F6', // Cinza muito claro para balão de mensagem do usuário
+    BalaoMsgSuporte: '#EFF6FF', // Índigo claro para balão de mensagem do suporte
+    txtNomeUsuarios: '#000000',
+    
+    //botoes
+    Marcarcomoresolvido:'#1BE600',  
+    ReabrirChamado: '#FE9A00',
+     redirecionar: '#155DFC',
+     AtribuirAmim: '#9400FF',
+     Editar: '#0028AA',
+     imprimir: '#686868',
+    
+
+  },
+
+  modalEnviarEmail: {
+    background: '#FFFFFF',
+    textPrimary: '#1F2937',
+    textSecondary: '#6B7280',
+    border: '#D1D5DB',
+    input: {
+      bg: '#F9FAFB',
+      border: '#E5E7EB',
+      text: '#1F2937',
+      placeholder: '#9CA3AF',
+    },
+    badge: {
+      bg: '#DBEAFE',
+      text: '#0C4A6E',
+      border: '#0EA5E9',
+    },
+    button: {
+      primary: {
+        bg: '#3B82F6',
+        text: '#FFFFFF',
+        hover: '#2563EB',
+      },
+      secondary: {
+        bg: '#FFFFFF',
+        text: '#3B82F6',
+        border: '#3B82F6',
+        hover: '#EFF6FF',
+      },
+    },
+    descricaoStatus: {
+      bg: '#EFF6FF',
+      text: '#0C4A6E',
+      border: '#DBEAFE',
+    },
   },
 };

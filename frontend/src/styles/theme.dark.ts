@@ -172,4 +172,63 @@ export const darkTheme: Theme = {
     }
     
   },
+
+    detalhesChamado: {
+    label: '#F1F5F9',        // Quase branco para labels (invertido)
+    labelActive: '#60A5FA',   // Azul claro para labels ativas (invertido)
+    value: '#CBD5E1',        // Cinza claro para valores (invertido)
+    border: '#475569',       // Cinza escuro para bordas (invertido)
+    bgBranco: '#1E293B',           // Cinza escuro para fundo (invertido de branco)
+    BalaoMsgInicial: '#064E3B', // Verde escuro para balão inicial (invertido)
+    BalaoMsgusuario: '#334155', // Cinza escuro para balão do usuário (invertido)
+    BalaoMsgSuporte: '#0C4A6E', // Azul escuro para balão do suporte (invertido)
+    txtNomeUsuarios: '#F1F5F9', // Quase branco para nomes (invertido de preto)
+    
+    // Botões mantêm as mesmas cores conforme solicitado
+    Marcarcomoresolvido:'#1BE600',  
+    ReabrirChamado: '#FE9A00',
+    redirecionar: '#155DFC',
+    AtribuirAmim: '#9400FF',
+    Editar: '#0028AA',
+    imprimir: '#686868',
+    
+
+  },
+
+  modalEnviarEmail: {
+    background: '#1E293B',
+    textPrimary: '#F1F5F9',
+    textSecondary: '#CBD5E1',
+    border: '#475569',
+    input: {
+      bg: '#0F172A',
+      border: '#334155',
+      text: '#F1F5F9',
+      placeholder: '#64748B',
+    },
+    badge: {
+      bg: '#0C4A6E',
+      text: '#BAE6FD',
+      border: '#38BDF8',
+    },
+    button: {
+      primary: {
+        bg: '#0084FF',
+        text: '#FFFFFF',
+        hover: '#0066CC',
+      },
+      secondary: {
+        bg: 'transparent',
+        text: '#0084FF',
+        border: '#0084FF',
+        hover: '#0084FF1A',
+      },
+    },
+    descricaoStatus: {
+      bg: '#0C4A6E',
+      text: '#BAE6FD',
+      border: '#38BDF8',
+    },
+  },
+
 };

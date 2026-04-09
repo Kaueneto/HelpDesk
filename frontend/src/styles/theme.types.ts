@@ -187,9 +187,63 @@ export type Theme = {
   // Dashboard - Cores específicas para o painel
   dashboard: DashboardColors;
 
+  detalhesChamado: {
+    label: string;
+    labelActive: string;
+    value: string;
+    border: string;
+    bgBranco: string;
+    BalaoMsgInicial: string;
+    BalaoMsgusuario: string;
+    BalaoMsgSuporte: string;
+    txtNomeUsuarios: string;
+    Marcarcomoresolvido: string;
+    ReabrirChamado: string;
+    redirecionar: string;
+    AtribuirAmim: string;
+    Editar: string;
+    imprimir: string;
+  };
+
   buttonsExclusivos: {
     btLight: string;
     btDark: string;
+  };
+
+  modalEnviarEmail: {
+    background: string;
+    textPrimary: string;
+    textSecondary: string;
+    border: string;
+    input: {
+      bg: string;
+      border: string;
+      text: string;
+      placeholder: string;
+    };
+    badge: {
+      bg: string;
+      text: string;
+      border: string;
+    };
+    button: {
+      primary: {
+        bg: string;
+        text: string;
+        hover: string;
+      };
+      secondary: {
+        bg: string;
+        text: string;
+        border: string;
+        hover: string;
+      };
+    };
+    descricaoStatus: {
+      bg: string;
+      text: string;
+      border: string;
+    };
   };
 
 };

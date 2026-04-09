@@ -13,6 +13,7 @@ import ModalImprimirChamado from '@/app/admin/Modal/ModalImprimirChamado';
 import ModalEnviarAttPorEmail from '@/app/admin/Modal/EnviarAttPorEmail';
 import { Toaster, toast } from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface Anexo {
   id: number;
@@ -104,6 +105,7 @@ interface DetalhesChamadoProps {
 export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { theme } = useTheme();
 
   const [chamado, setChamado] = useState<Chamado | null>(null);
   const [mensagens, setMensagens] = useState<Mensagem[]>([]);
@@ -946,8 +948,12 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
 
     return (
       <div
-        className={`bg-gray-100 ${animandoEntrada ? 'slideInRight' : ''} ${animandoSaida ? 'slideOutRight' : ''}`}
-        style={transformOrigin ? { transformOrigin } : undefined}
+        className={`${animandoEntrada ? 'slideInRight' : ''} ${animandoSaida ? 'slideOutRight' : ''}`}
+        style={{
+          backgroundColor: theme.background.pagina,
+          color: theme.text.primary,
+          transformOrigin
+        }}
       >
       <Toaster position="top-right" />
       {/* Header */}
@@ -955,7 +961,7 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
         <div className="flex items-center gap-3 md:gap-4">
           <button
             onClick={handleVoltar}
-             className="flex items-center justify-center w-8 h-15 rounded-2xl hover:bg-white/20 transition-colors duration-100 focus:outline-none  active:bg-gray-300/50 hover:scale-105 shrink-0"
+             className="flex items-center justify-center w-8 h-15 rounded-2xl hover:bg-white/20 transition-colors duration-100 focus:outline-none  active:bg-gray-300/50 hover:scale-103shrink-0"
 
           >
             <img 
@@ -974,30 +980,30 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
       </div>
 
       {/* Action Buttons */}
-      <div className="bg-white border-b border-gray-300 px-4 md:px-6 py-3">
+      <div className="border-b px-4 md:px-6 py-3" style={{ backgroundColor: theme.detalhesChamado.bgBranco, borderColor: theme.border.primary }}>
         <div className="flex gap-2 md:gap-3 overflow-x-auto action-buttons-scroll pb-1 md:pb-0 -mb-1 md:mb-0">
           <button
             onClick={() => setModalResolvidoAberto(true)}
             disabled={chamado.status.id === 3}
-            className="px-3 md:px-5 py-2 bg-transparent border border-green-600 text-green-600 rounded-lg hover:bg-green-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-xs md:text-sm whitespace-nowrap disabled:border-gray-300 disabled:text-gray-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-1 focus:ring-green-500/50 shrink-0"
+            className="px-3 md:px-5 py-2 bg-transparent border border-green-600 text-green-600 rounded-lg hover:bg-green-600 hover:text-white transition-all duration-200 transform hover:scale-104 font-medium text-xs md:text-sm whitespace-nowrap disabled:border-gray-300 disabled:text-gray-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-1 focus:ring-green-500/50 shrink-0"
           >
             Marcar como Resolvido
           </button>
           <button
             onClick={abrirModalRedirecionar}
             disabled={chamado.status.id === 3}
-            className="px-3 md:px-5 py-2 bg-transparent border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-xs md:text-sm whitespace-nowrap disabled:border-gray-300 disabled:text-gray-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-1 focus:ring-blue-500/50 shrink-0"
+            className="px-3 md:px-5 py-2 bg-transparent border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-all duration-200 transform hover:scale-104 font-medium text-xs md:text-sm whitespace-nowrap disabled:border-gray-300 disabled:text-gray-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-1 focus:ring-blue-500/50 shrink-0"
           >
             Redirecionar
           </button>
           <button
-            className="px-3 md:px-5 py-2 bg-transparent border border-gray-600 text-gray-600 rounded-lg hover:bg-gray-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-xs md:text-sm whitespace-nowrap active:scale-95 focus:outline-none focus:ring-1 focus:ring-gray-500/50 shrink-0"
+            className="px-3 md:px-5 py-2 bg-transparent border border-gray-600 text-gray-600 rounded-lg hover:bg-gray-600 hover:text-white transition-all duration-200 transform hover:scale-104  font-medium text-xs md:text-sm whitespace-nowrap active:scale-95 focus:outline-none focus:ring-1 focus:ring-gray-500/50 shrink-0"
           >
             Editar
           </button>
           <button
             onClick={() => setModalImprimirAberto(true)}
-            className="px-3 md:px-5 py-2 bg-transparent border border-gray-600 text-gray-600 rounded-lg hover:bg-gray-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-xs md:text-sm whitespace-nowrap active:scale-95 focus:outline-none focus:ring-1 focus:ring-gray-500/50 shrink-0"
+            className="px-3 md:px-5 py-2 bg-transparent border border-gray-600 text-gray-600 rounded-lg hover:bg-gray-600 hover:text-white transition-all duration-200 transform hover:scale-104 font-medium text-xs md:text-sm whitespace-nowrap active:scale-95 focus:outline-none focus:ring-1 focus:ring-gray-500/50 shrink-0"
           >
             Imprimir
           </button>
@@ -1005,14 +1011,14 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
 
              onClick={handleAssumirChamado}
             disabled={chamado.status.id === 3}
-            className="px-3 md:px-5 py-2 bg-transparent border border-purple-600 text-purple-600 rounded-lg hover:bg-purple-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-xs md:text-sm whitespace-nowrap disabled:border-gray-300 disabled:text-gray-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-1 focus:ring-purple-500/50 shrink-0"
+            className="px-3 md:px-5 py-2 bg-transparent border border-purple-600 text-purple-600 rounded-lg hover:bg-purple-600 hover:text-white transition-all duration-200 transform hover:scale-104 font-medium text-xs md:text-sm whitespace-nowrap disabled:border-gray-300 disabled:text-gray-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-1 focus:ring-purple-500/50 shrink-0"
           >
             Atribuir a mim
           </button>
           <button
             onClick={reabrirChamado}
             disabled={chamado.status.id !== 3}
-            className="px-3 md:px-5 py-2 bg-transparent border border-orange-600 text-orange-600 rounded-lg hover:bg-orange-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-xs md:text-sm whitespace-nowrap disabled:border-gray-300 disabled:text-gray-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-1 focus:ring-orange-500/50 shrink-0"
+            className="px-3 md:px-5 py-2 bg-transparent border border-orange-600 text-orange-600 rounded-lg hover:bg-orange-600 hover:text-white transition-all duration-200 transform hover:scale-104 font-medium text-xs md:text-sm whitespace-nowrap disabled:border-gray-300 disabled:text-gray-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-1 focus:ring-orange-500/50 shrink-0"
           >
             Reabrir Chamado
           </button>
@@ -1020,25 +1026,27 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
       </div>
 
       {/* Tabs */}
-      <div className="bg-white border-b border-gray-300">
+      <div className="border-b" style={{ backgroundColor: theme.detalhesChamado.bgBranco, borderColor: theme.border.primary }}>
         <div className="px-4 md:px-6 flex gap-1">
           <button
             onClick={() => setAbaAtiva('detalhes')}
-            className={`px-6 py-3 font-medium text-sm transition-all relative ${
-              abaAtiva === 'detalhes'
-                ? 'text-blue-600 border-b-2 border-blue-600'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
+            className="px-6 py-3 font-medium text-sm transition-all relative"
+            style={{
+              color: abaAtiva === 'detalhes' ? theme.detalhesChamado.redirecionar : theme.text.secondary,
+              borderBottomColor: abaAtiva === 'detalhes' ? theme.detalhesChamado.redirecionar : 'transparent',
+              borderBottomWidth: abaAtiva === 'detalhes' ? '2px' : '0px'
+            }}
           >
             Detalhes
           </button>
           <button
             onClick={() => setAbaAtiva('historico')}
-            className={`px-6 py-3 font-medium text-sm transition-all relative ${
-              abaAtiva === 'historico'
-                ? 'text-blue-600 border-b-2 border-blue-600'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
+            className="px-6 py-3 font-medium text-sm transition-all relative"
+            style={{
+              color: abaAtiva === 'historico' ? theme.detalhesChamado.redirecionar : theme.text.secondary,
+              borderBottomColor: abaAtiva === 'historico' ? theme.detalhesChamado.redirecionar : 'transparent',
+              borderBottomWidth: abaAtiva === 'historico' ? '2px' : '0px'
+            }}
           >
             Histórico
           </button>
@@ -1052,68 +1060,98 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
             {/* Left Column - Dados */}
             <div className="col-span-1 md:col-span-4 space-y-4 md:space-y-6">
               {/* Dados do Chamado */}
-              <div className="bg-white rounded-lg border border-gray-300 p-5">
-                <h3 className="font-segoe text-lg font-semibold text-gray-800 mb-4 pb-3 border-b border-gray-300">
+              <div className="rounded-lg p-5" style={{ backgroundColor: theme.detalhesChamado.bgBranco, borderColor: theme.border.primary, borderWidth: '1px' }}>
+                <h3 className="font-segoe text-lg font-semibold mb-4 pb-3" style={{ color: theme.text.primary, borderColor: theme.border.primary, borderBottomWidth: '1px' }}>
                   Dados do chamado
                 </h3>
                 <div className="space-y-3">
                   <div>
-                    <label className="text-sm font-medium text-gray-600">Status</label>
+                    <label className="text-sm font-medium" style={{ color: theme.text.tertiary }}>Status</label>
                     <div className="mt-1">
                       <span
-                        className={`inline-block px-3 py-1 rounded-full border text-sm font-medium ${
-                                chamado.status.id === 1
-                            ? 'bg-yellow-100 text-yellow-700 border-yellow-500'
-                            : chamado.status.id === 2
-                            ? 'bg-blue-100 text-blue-600 border-blue-500'
-                            : chamado.status.id === 3
-                             ? 'bg-green-100 text-green-800 border-green-700'
-                            : chamado.status.id === 5
-                            ? 'bg-purple-100 text-purple-700 border-purple-500'
-                            : chamado.status.id === 4
-                             ? 'bg-gray-100 text-red-800 border-red-700'
-                             : chamado.status.id === 6
-                              ? 'bg-gray-100 text-gray-800 border-gray-700'
-                              : chamado.status.id === 7
-                                ? 'bg-orange-100 text-orange-800 border-orange-700'
-                            : 'bg-red-100 text-red-800 border-red-700'
-                              
-                        }`}
+                        style={{
+                          display: 'inline-block',
+                          padding: '6px 12px',
+                          borderRadius: '9999px',
+                          border: '1px solid',
+                          fontSize: '14px',
+                          fontWeight: '500',
+                          ...(chamado.status.id === 1 && {
+                            backgroundColor: '#713F12',
+                            color: '#FEF08A',
+                            borderColor: '#FBBF24'
+                          })
+                          || (chamado.status.id === 2 && {
+                            backgroundColor: '#0C4A6E',
+                            color: '#BAE6FD',
+                            borderColor: '#38BDF8'
+                          })
+                          || (chamado.status.id === 3 && {
+                            backgroundColor: '#164E63',
+                            color: '#DCFCE7',
+                            borderColor: '#34D399'
+                          })
+                          || (chamado.status.id === 5 && {
+                            backgroundColor: '#4C1D95',
+                            color: '#E9D5FF',
+                            borderColor: '#D8B4FE'
+                          })
+                          || (chamado.status.id === 4 && {
+                            backgroundColor: '#7F1D1D',
+                            color: '#FEE2E2',
+                            borderColor: '#F87171'
+                          })
+                          || (chamado.status.id === 6 && {
+                            backgroundColor: '#312E81',
+                            color: '#E0E7FF',
+                            borderColor: '#A5B4FC'
+                          })
+                          || (chamado.status.id === 7 && {
+                            backgroundColor: '#7C2D12',
+                            color: '#FFEDD5',
+                            borderColor: '#FB923C'
+                          })
+                          || {
+                            backgroundColor: '#7F1D1D',
+                            color: '#FEE2E2',
+                            borderColor: '#F87171'
+                          }
+                        }}
                       >
                         {chamado.status.nome}
                       </span>
                     </div>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-600">Usuario responsável</label>
-                    <p className="text-gray-900 mt-1">
+                    <label className="text-sm font-medium" style={{ color: theme.text.tertiary }}>Usuario responsável</label>
+                    <p className="mt-1 font-medium" style={{ color: theme.detalhesChamado.redirecionar }}>
                       {chamado.userResponsavel?.name || 'Não atribuído'}
                       {chamado.userResponsavel?.id === usuarioLogadoId && (
-                        <span className="ml-2 text-blue-600 font-medium">(Você)</span>
+                        <span className="ml-2" style={{ color: theme.detalhesChamado.Marcarcomoresolvido }}> (Você)</span>
                       )}
                     </p>
                   </div>
                 <div>
-                <label className="text-sm font-medium text-gray-600">Departamento</label>
+                <label className="text-sm font-medium" style={{ color: theme.text.tertiary }}>Departamento</label>
                   <div className="mt-2 flex"> 
-                    <span className="px-4 py-1.5 bg-blue-50 text-blue-600 text-sm tracking-wider border border-blue-500 rounded-full">
+                    <span className="px-4 py-1.5 text-sm tracking-wider border rounded-full font-medium" style={{ backgroundColor: `${theme.detalhesChamado.redirecionar}20`, color: theme.detalhesChamado.redirecionar, borderColor: theme.detalhesChamado.redirecionar }}>
                       {chamado.departamento.name}
                     </span>
                   </div>
                 </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-600">Criado em</label>
-                    <p className="text-gray-900 mt-1">{formatarData(chamado.dataAbertura)}</p>
+                    <label className="text-sm font-medium" style={{ color: theme.text.tertiary }}>Criado em</label>
+                    <p className="mt-1 font-medium" style={{ color: theme.detalhesChamado.redirecionar }}>{formatarData(chamado.dataAbertura)}</p>
                   </div>
                  <div>
-                  <label className="text-sm font-medium text-gray-600">Prioridade</label>
+                  <label className="text-sm font-medium" style={{ color: theme.text.tertiary }}>Prioridade</label>
                   <div className="mt-2 flex">
                     <span 
                       className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold border"
                       style={{ 
-                        backgroundColor: `${chamado.tipoPrioridade.cor}15`, 
+                        backgroundColor: `${chamado.tipoPrioridade.cor}25`, 
                         color: chamado.tipoPrioridade.cor,
-                        borderColor: `${chamado.tipoPrioridade.cor}30` 
+                        borderColor: chamado.tipoPrioridade.cor
                       }}
                     >
                       <div
@@ -1127,66 +1165,66 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
                   </div>
                 </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-600">Tópico de ajuda</label>
-                    <p className="text-gray-900 mt-1">{chamado.topicoAjuda.nome}</p>
+                    <label className="text-sm font-medium" style={{ color: theme.text.tertiary }}>Tópico de ajuda</label>
+                    <p className="mt-1 font-medium" style={{ color: theme.detalhesChamado.redirecionar }}>{chamado.topicoAjuda.nome}</p>
                   </div>
                     <div>
-                    <label className="text-sm font-medium text-gray-600">Vezes Reaberto</label>
-                    <p className="text-gray-900 mt-1 whitespace-pre-wrap">{chamado.vezesreaberto}</p>
+                    <label className="text-sm font-medium" style={{ color: theme.text.tertiary }}>Vezes Reaberto</label>
+                    <p className="mt-1 whitespace-pre-wrap font-medium" style={{ color: theme.detalhesChamado.redirecionar }}>{chamado.vezesreaberto}</p>
                     </div>
                 </div>
                 
               </div>
 
                   {/* dados do Usuario */}
-                <div className="bg-white rounded-lg border border-gray-200 p-5 shadow-sm">
-                  <h3 className="font-segoe text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">
+                <div className="rounded-lg p-5 shadow-sm" style={{ backgroundColor: theme.detalhesChamado.bgBranco, borderColor: theme.border.primary, borderWidth: '1px' }}>
+                  <h3 className="font-segoe text-lg font-semibold mb-4 pb-2" style={{ color: theme.text.primary, borderColor: theme.border.primary, borderBottomWidth: '1px' }}>
                     Dados do usuário
                   </h3>
 
                   <div className="grid grid-cols-[90px_1fr] gap-y-2 text-sm">
 
-                    <span className="text-gray-500 font-medium">Nome</span>
-                    <span className="text-gray-900 font-medium">{chamado.usuario.name}</span>
+                    <span className="font-medium" style={{ color: theme.text.secondary }}>Nome</span>
+                    <span className="font-medium" style={{ color: theme.text.primary }}>{chamado.usuario.name}</span>
 
-                    <span className="text-gray-500 font-medium">E-mail</span>
-                    <span className="text-blue-600 hover:underline">
+                    <span className="font-medium" style={{ color: theme.text.secondary }}>E-mail</span>
+                    <span className="hover:underline" style={{ color: theme.detalhesChamado.redirecionar }}>
                       {chamado.usuario.email}
                     </span>
 
-                    <span className="text-gray-500 font-medium">Ramal</span>
-                    <span className="text-gray-900">{chamado.ramal}</span>
+                    <span className="font-medium" style={{ color: theme.text.secondary }}>Ramal</span>
+                    <span style={{ color: theme.text.primary }}>{chamado.ramal}</span>
 
                   </div>
                 </div>
 
               {/* Outros Dados */}
-              <div className="bg-white rounded-lg border border-gray-300 p-5">
-                <h3 className="font-segoe text-lg font-semibold text-gray-700 mb-4 pb-3 border-b border-gray-400">
+              <div className="rounded-lg p-5" style={{ backgroundColor: theme.detalhesChamado.bgBranco, borderColor: theme.border.primary, borderWidth: '1px' }}>
+                <h3 className="font-segoe text-lg font-semibold mb-4 pb-3" style={{ color: theme.text.primary, borderColor: theme.border.primary, borderBottomWidth: '1px' }}>
                   Outros Dados
                 </h3>
                 <div className="space-y-3">
                   <div>
-                    <label className="text-sm font-medium text-gray-600">Responsável pelo chamado</label>
-                    <p className="text-gray-900 mt-1">
+                    <label className="text-sm font-medium" style={{ color: theme.text.secondary }}>Responsável pelo chamado</label>
+                    <p className="mt-1" style={{ color: theme.text.primary }}>
                       {chamado.userResponsavel?.name || '-'}
                     </p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-600">Data atribuição</label>
-                    <p className="text-gray-900 mt-1">
+                    <label className="text-sm font-medium" style={{ color: theme.text.secondary }}>Data atribuição</label>
+                    <p className="mt-1" style={{ color: theme.text.primary }}>
                       {chamado.dataAtribuicao ? formatarData(chamado.dataAtribuicao) : '-'}
                     </p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-600">Data conclusão</label>
-                    <p className="text-gray-900 mt-1">
+                    <label className="text-sm font-medium" style={{ color: theme.text.secondary }}>Data conclusão</label>
+                    <p className="mt-1" style={{ color: theme.text.primary }}>
                       {chamado.dataFechamento ? formatarData(chamado.dataFechamento) : '-'}
                     </p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-600">Usuário que concluiu</label>
-                    <p className="text-gray-900 mt-1">
+                    <label className="text-sm font-medium" style={{ color: theme.text.secondary }}>Usuário que concluiu</label>
+                    <p className="mt-1" style={{ color: theme.text.primary }}>
                       {chamado.userFechamento?.name || '-'}
                     </p>
                   </div>
@@ -1196,9 +1234,9 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
 
             {/* Right Column - Mensagens */}
             <div className="col-span-1 md:col-span-8">
-              <div className="bg-white rounded-lg border border-gray-300">
+              <div className="rounded-lg" style={{ backgroundColor: theme.background.surface, borderColor: theme.border.primary, borderWidth: '1px' }}>
                 {/* Mensagem inicial do usuário */}
-                <div className="p-5 border-b border-gray-200 bg-green-50">
+                <div className="p-5" style={{ backgroundColor: theme.detalhesChamado.BalaoMsgInicial, borderColor: theme.border.primary, borderBottomWidth: '1px' }}>
                   <div className="flex items-start gap-3">
                     <div className="shrink-0 w-10 h-10 rounded-full bg-green-200 flex items-center justify-center">
                       <span className="text-green-700 font-semibold text-sm">
@@ -1207,15 +1245,15 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="font-semibold text-gray-900">{chamado.usuario.name}</span>
-                        <span className="text-base text-gray-500">{formatarData(chamado.dataAbertura)}</span>
+                        <span className="font-semibold" style={{ color: theme.detalhesChamado.txtNomeUsuarios }}>{chamado.usuario.name}</span>
+                        <span className="text-base" style={{ color: theme.text.secondary }}>{formatarData(chamado.dataAbertura)}</span>
                       </div>
-                      <div className="text-gray-700 whitespace-pre-wrap">{chamado.descricaoChamado}</div>
+                      <div className="whitespace-pre-wrap" style={{ color: theme.text.primary }}>{chamado.descricaoChamado}</div>
                       
                       {/* Anexos da descrição inicial */}
                       {chamado.anexos && chamado.anexos.length > 0 && (
-                        <div className="mt-3 pt-3 border-t border-green-200">
-                          <p className="text-base font-medium text-gray-600 mb-2">Anexos:</p>
+                        <div className="mt-3 pt-3" style={{ borderColor: theme.detalhesChamado.BalaoMsgInicial, borderTopWidth: '1px' }}>
+                          <p className="text-base font-medium mb-2" style={{ color: theme.text.secondary }}>Anexos:</p>
                           <div className="flex flex-wrap gap-2">
                             {chamado.anexos.map((anexo) => {
                               const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(anexo.filename);
@@ -1252,7 +1290,7 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
                 </div>
 
                 {/* Lista de Mensagens */}
-                <div className="p-5 space-y-4 max-h-125 overflow-y-auto">
+                <div className="p-5 space-y-4 max-h-125 overflow-y-auto" style={{ backgroundColor: theme.background.pagina }}>
                   {mensagens.map((msg) => {
                     const isUsuarioChamado = msg.usuario.id === chamado.usuario.id;
                     const enviadoPorEmail = msg.enviadoPorEmail === true;
@@ -1262,28 +1300,29 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
                         className={`flex ${isUsuarioChamado ? 'justify-start' : 'justify-end'}`}
                       >
                         <div
-                          className={`max-w-[70%] ${
-                            isUsuarioChamado ? 'bg-gray-100' : 'bg-blue-50'
-                          } rounded-lg p-4`}
+                          className="max-w-[70%] rounded-lg p-4"
+                          style={{
+                            backgroundColor: isUsuarioChamado ? theme.detalhesChamado.BalaoMsgusuario : theme.detalhesChamado.BalaoMsgSuporte
+                          }}
                         >
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="font-semibold text-gray-900 text-base">
+                            <span className="font-semibold text-base" style={{ color: theme.detalhesChamado.txtNomeUsuarios }}>
                               {msg.usuario.name}
                             </span>
-                            <span className="text-xs text-gray-500">{formatarData(msg.dataEnvio)}</span>
+                            <span className="text-xs" style={{ color: theme.text.secondary }}>{formatarData(msg.dataEnvio)}</span>
 
                             {enviadoPorEmail && (
                               <span
                                 title="Mensagem enviada por email"
                                 className="ml-1 align-middle cursor-pointer"
                               >
-                                <MdEmail className="inline text-blue-500" size={18} />
+                                <MdEmail className="inline" style={{ color: theme.detalhesChamado.redirecionar }} size={18} />
                               </span>
                             )}
                           </div>
                           {/* exibição de emails enviados na mensagem */}
                           {enviadoPorEmail && (
-                            <div className="mb-2 text-xs text-gray-600 space-y-0.5 border-b border-gray-300 pb-2">
+                            <div className="mb-2 text-xs space-y-0.5 pb-2" style={{ color: theme.text.secondary, borderColor: theme.border.primary, borderBottomWidth: '1px' }}>
                               <div><span className="font-semibold">Enviado para:</span> {msg.email_enviado}</div>
                               {msg.email_copia && (
                                 <div><span className="font-semibold">Cópia (CC):</span> {msg.email_copia}</div>
@@ -1293,7 +1332,7 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
                               )}
                             </div>
                           )}
-                          <p className="text-gray-700 text-base whitespace-pre-wrap">{msg.mensagem}</p>
+                          <p className="text-base whitespace-pre-wrap" style={{ color: theme.text.primary }}>{msg.mensagem}</p>
                           {/* Anexos da mensagem */}
                           {msg.anexos && msg.anexos.length > 0 && (
                             <div className="mt-3 space-y-1">
@@ -1306,21 +1345,26 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
                                     href={fileUrl}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="flex items-center gap-2 px-2 py-1.5 bg-white border border-gray-300 rounded hover:bg-blue-50 hover:border-blue-400 transition text-xs group"
+                                    className="flex items-center gap-2 px-2 py-1.5 rounded hover:transition text-xs group"
+                                    style={{
+                                      backgroundColor: theme.detalhesChamado.bgBranco,
+                                      borderColor: theme.border.primary,
+                                      borderWidth: '1px'
+                                    }}
                                   >
                                     {isImage ? (
-                                      <svg className="w-4 h-4 text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: theme.detalhesChamado.redirecionar }}>
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                       </svg>
                                     ) : (
-                                      <svg className="w-4 h-4 text-gray-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: theme.text.secondary }}>
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                       </svg>
                                     )}
-                                    <span className="text-gray-700 group-hover:text-blue-700 truncate flex-1">
+                                    <span className="truncate flex-1" style={{ color: theme.text.primary }}>
                                       {anexo.filename}
                                     </span>
-                                    <svg className="w-3 h-3 text-gray-400 group-hover:text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: theme.text.secondary }}>
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                                     </svg>
                                   </a>
@@ -1335,8 +1379,8 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
                 </div>
 
                 {/* Campo de Resposta */}
-                <div className="p-5 border-t border-gray-200">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                <div className="p-5" style={{ borderColor: theme.border.primary, borderTopWidth: '1px' }}>
+                  <label className="block text-sm font-medium mb-2" style={{ color: theme.text.primary }}>
                     Postar uma resposta
                   </label>
                   <textarea
@@ -1344,16 +1388,21 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
                     onChange={(e) => setNovaMensagem(e.target.value)}
                     placeholder="Digite sua mensagem..."
                     rows={4}
-                    className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 resize-none"
+                    className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-1 resize-none"
+                    style={{
+                      backgroundColor: theme.detalhesChamado.bgBranco,
+                      borderColor: theme.border.primary,
+                      color: theme.text.primary
+                    }}
                   />
                   
                   {/* Área de Upload de Arquivos */}
                   <div
-                    className={`mt-3 border-2 border-dashed rounded-lg p-4 text-center transition ${
-                      isDraggingResposta
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-300 bg-gray-50'
-                    }`}
+                    className="mt-3 border-2 border-dashed rounded-lg p-4 text-center transition"
+                    style={{
+                      borderColor: isDraggingResposta ? theme.detalhesChamado.redirecionar : theme.border.primary,
+                      backgroundColor: isDraggingResposta ? `${theme.detalhesChamado.BalaoMsgSuporte}40` : `${theme.background.surface}80`
+                    }}
                     onDragOver={handleDragOverResposta}
                     onDragLeave={handleDragLeaveResposta}
                     onDrop={handleDropResposta}
@@ -1368,13 +1417,14 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
                     />
                     <label
                       htmlFor="file-upload-resposta"
-                      className="cursor-pointer text-sm text-gray-600"
+                      className="cursor-pointer text-sm"
+                      style={{ color: theme.text.secondary }}
                     >
                       Arraste os arquivos aqui ou{' '}
-                      <span className="text-blue-600 hover:text-blue-700 font-medium">
+                      <span className="hover:opacity-80 font-medium" style={{ color: theme.detalhesChamado.redirecionar }}>
                         clique para selecionar
                       </span>
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs mt-1" style={{ color: theme.text.secondary }}>
                         Máximo 5 arquivos, 10MB cada
                       </p>
                     </label>
@@ -1383,15 +1433,16 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
                   {/* Lista de Arquivos Selecionados */}
                   {anexosResposta.length > 0 && (
                     <div className="mt-3 space-y-2">
-                      <p className="text-sm font-medium text-gray-700">
+                      <p className="text-sm font-medium" style={{ color: theme.text.primary }}>
                         Arquivos selecionados ({anexosResposta.length}/5):
                       </p>
                       {anexosResposta.map((file, index) => (
                         <div
                           key={index}
-                          className="flex items-center justify-between bg-gray-100 px-3 py-2 rounded"
+                          className="flex items-center justify-between px-3 py-2 rounded"
+                          style={{ backgroundColor: theme.detalhesChamado.bgBranco }}
                         >
-                          <span className="text-sm text-gray-700 truncate flex-1">
+                          <span className="text-sm truncate flex-1" style={{ color: theme.text.primary }}>
                             {file.name} ({(file.size / 1024).toFixed(1)} KB)
                           </span>
                           <button
@@ -1408,7 +1459,19 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
                 <div className="flex justify-between mt-3">
                  <button
                       onClick={abrirModalEmail}
-                      className="px-6 py-2 border border-[#001960] text-[#001960] rounded hover:bg-[#001960] hover:text-white focus:bg-[#001960] focus:text-white transition font-medium text-sm disabled:border-gray-400 disabled:text-gray-400 disabled:cursor-not-allowed">
+                      className="px-6 py-2 border rounded transition font-medium text-sm disabled:border-gray-400 disabled:text-gray-400 disabled:cursor-not-allowed"
+                      style={{
+                        borderColor: theme.detalhesChamado.redirecionar,
+                        color: theme.detalhesChamado.redirecionar
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.backgroundColor = theme.detalhesChamado.redirecionar;
+                        e.currentTarget.style.color = 'white';
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                        e.currentTarget.style.color = theme.detalhesChamado.redirecionar;
+                      }}>
                       {enviandoMensagem ? 'Enviando...' : 'Atualização por Email'}
                     </button>
   
@@ -1426,19 +1489,19 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
             </div>
           </div>
         ) : (
-          <div className="bg-white rounded-lg border border-gray-300 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-3 border-b border-gray-300 font-segoe">
+          <div className=" rounded-lg p-6" style={{ backgroundColor: theme.detalhesChamado.bgBranco, borderColor: theme.border.primary, borderWidth: '1px' }}>
+            <h3 className="text-lg font-semibold mb-4 pb-3 font-segoe" style={{ color: theme.text.primary, borderColor: theme.border.primary, borderBottomWidth: '1px' }}>
               Histórico do Chamado
             </h3>
             <div className="space-y-4">
               {historico.map((item) => (
-                <div key={item.id} className="flex gap-4 pb-4 border-b border-gray-200 last:border-0">
-                  <div className="shrink-0 w-2 h-2 rounded-full bg-blue-600 mt-2" />
+                <div key={item.id} className="flex gap-4 pb-4 last:border-0" style={{ borderColor: theme.border.primary, borderBottomWidth: '1px' }}>
+                  <div className="shrink-0 w-2 h-2 rounded-full mt-2" style={{ backgroundColor: theme.detalhesChamado.redirecionar }} />
                   <div className="flex-1">
-                    <p className="text-gray-900 font-medium">{item.acao}</p>
+                    <p className="font-medium" style={{ color: theme.text.primary }}>{item.acao}</p>
                     <div className="flex items-center gap-2 mt-1">
-                      <span className="text-sm text-gray-600">{item.usuario.name}</span>
-                      <span className="text-sm text-gray-500">• {formatarData(item.dataMov)}</span>
+                      <span className="text-sm" style={{ color: theme.text.secondary }}>{item.usuario.name}</span>
+                      <span className="text-sm" style={{ color: theme.text.secondary }}>• {formatarData(item.dataMov)}</span>
                     </div>
                   </div>
                 </div>
