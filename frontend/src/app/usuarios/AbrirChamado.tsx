@@ -226,7 +226,7 @@ export default function AbrirChamado({ userEmail, onSuccess, onCancel }: AbrirCh
       // redirecionar apos 3 segundos
       setTimeout(() => {
         onSuccess();
-      }, 3000);
+      }, 1000);
       
     } catch (error: any) {
       //esse erro so acontece agora se a criacao do chamado falhar
