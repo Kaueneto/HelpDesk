@@ -277,7 +277,7 @@ router.post(
       }
 
       // Buscar a mensagem e o chamado associado
-      const { ChamadoMensagens } = await import("../entities/ChamadoMensagens");
+      const { ChamadoMensagens } = await import("../entities/ChamadoMensagens.js");
       const mensagemRepository = AppDataSource.getRepository(ChamadoMensagens);
       const mensagem = await mensagemRepository.findOne({
         where: { id: mensagemId },
