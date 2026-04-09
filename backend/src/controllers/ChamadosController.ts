@@ -2010,14 +2010,60 @@ router.delete("/chamados/excluir-multiplos", verifyToken, async (req: Authentica
     }
 
     const chamadoRepository = AppDataSource.getRepository(Chamados);
-    const result = await chamadoRepository.delete({
-      id: In(chamadosIds)
+    const anexoRepository = AppDataSource.getRepository(ChamadoAnexos);
+    
+    // buscar todos os chamados com suas relações
+    const chamados = await chamadoRepository.find({
+      where: { id: In(chamadosIds) },
+      relations: ["anexos", "historico", "mensagens"]
     });
+
+    if (chamados.length === 0) {
+      return res.status(404).json({
+        error: true,
+        message: "Nenhum chamado encontrado com os IDs fornecidos"
+      });
+    }
+
+    // deletar arquivos do storage
+    const anexosParaDeletar: string[] = [];
+    const TodosAnexos: ChamadoAnexos[] = [];
+    
+    for (const chamado of chamados) {
+      if (chamado.anexos && chamado.anexos.length > 0) {
+        for (const anexo of chamado.anexos) {
+          if (anexo.url) {
+            anexosParaDeletar.push(anexo.url);
+          }
+          TodosAnexos.push(anexo);
+        }
+      }
+    }
+
+    // remover do storage
+    if (anexosParaDeletar.length > 0) {
+      const { error: deleteStorageError } = await supabase.storage
+        .from(SUPABASE_BUCKET)
+        .remove(anexosParaDeletar);
+
+      if (deleteStorageError) {
+        console.error("Erro ao deletar arquivos do Supabase:", deleteStorageError);
+        // continua mesmo com erro, pois queremos remover do banco
+      }
+    }
+
+    // deletar os anexos do banco ANTES de deletar os chamados
+    if (TodosAnexos.length > 0) {
+      await anexoRepository.remove(TodosAnexos);
+    }
+
+    // deletar os chamados (cascade irá deletar histórico e mensagens)
+    const result = await chamadoRepository.remove(chamados);
 
     return res.status(200).json({
       error: false,
-      message: `${result.affected || 0} chamado(s) deletado(s) com sucesso`,
-      deleted: result.affected || 0
+      message: `${result.length || 0} chamado(s) deletado(s) com sucesso`,
+      deleted: result.length || 0
     });
   } catch (error) {
     console.error("Erro ao deletar múltiplos chamados:", error);

@@ -15,6 +15,7 @@ import { Departamentos } from "./Departamentos";
 import { StatusChamado } from "./StatusChamado";
 import { ChamadoAnexos } from "./ChamadoAnexos";
 import { ChamadoHistorico } from "./ChamadoHistorico";
+import { ChamadoMensagens } from "./ChamadoMensagens";
 
 @Entity({ name: "chamados", schema: "public" })
 export class Chamados {
@@ -99,9 +100,12 @@ export class Chamados {
   @JoinColumn({ name: "id_user_finalizou" })
   userFechamento!: Users | null;
 
-  @OneToMany(() => ChamadoAnexos, anexo => anexo.chamado)
+  @OneToMany(() => ChamadoAnexos, anexo => anexo.chamado, { cascade: ['remove'] })
   anexos!: ChamadoAnexos[];
 
-  @OneToMany(() => ChamadoHistorico, historico => historico.chamado)
+  @OneToMany(() => ChamadoHistorico, historico => historico.chamado, { cascade: ['remove'] })
   historico!: ChamadoHistorico[];
+
+  @OneToMany(() => ChamadoMensagens, mensagem => mensagem.chamado, { cascade: ['remove'] })
+  mensagens!: ChamadoMensagens[];
 }
