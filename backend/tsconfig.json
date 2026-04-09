@@ -1,9 +1,9 @@
 {
   "compilerOptions": {
-    "ignoreDeprecations": "6.0",
     "rootDir": "./src",
     "outDir": "./dist",
-    "module": "CommonJS",
+    "module": "ES2020",
+    "moduleResolution": "bundler",
     "target": "ES2020",
     "strict": true,
     "esModuleInterop": true,
@@ -11,8 +11,7 @@
     "types": ["node"],
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "resolveJsonModule": true,
-    "moduleResolution": "node"
+    "resolveJsonModule": true
   },
   "include": ["src"]
 }
