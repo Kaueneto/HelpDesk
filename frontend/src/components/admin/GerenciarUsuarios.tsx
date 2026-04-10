@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTheme } from '@/contexts/ThemeContext';
 import api from '@/services/api';
 import DatePicker from 'react-datepicker';
 import { validatePassword, getPasswordStrengthColor, getPasswordStrengthText } from '@/utils/passwordValidation';
 import { useAuth } from '@/contexts/AuthContext';
+import ActionButton from './ActionButton';
 
 interface Usuario {
   id: number;
@@ -38,6 +40,7 @@ interface SituationUser {
 export default function GerenciarUsuarios() {
   const router = useRouter();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { theme } = useTheme();
   
   // Filtros
   const [dataCadastroInicio, setDataCadastroInicio] = useState<Date | null>(null);
@@ -500,70 +503,62 @@ export default function GerenciarUsuarios() {
 
   return (
     <>
-      <div className="bg-[#1A68CF] px-6 py-4">
-        <h2 className="text-gray-50 text-2xl font-semibold">Gerenciar Usuários</h2>
+      <div className="px-6 py-4" style={{ backgroundColor: theme.brand.subHeader }}>
+        <h2 className="text-white text-2xl font-semibold">Gerenciar Usuários</h2>
       </div>
 
-      <div className="p-2 bg-[#EDEDED]">
-        <div className="bg-white rounded-lg shadow-lg border border-gray-300 overflow-hidden">
+      <div className="p-2" style={{ backgroundColor: theme.background.surface }}>
+        <div className="rounded-lg shadow-lg overflow-hidden" style={{ backgroundColor: theme.background.card, border: `1px solid ${theme.border.primary}` }}>
           {/* Botões de ação acima dos filtros */}
-          <div className="px-6 py-3 bg-gray-50 border-b border-gray-300 flex gap-4">
-            <button
+          <div className="px-6 py-3 border-b flex gap-4" style={{ backgroundColor: theme.background.surface, borderColor: theme.border.primary }}>
+            <ActionButton
+              type="novo"
+              label="Novo"
               onClick={abrirModalCadastro}
-              className="px-4 py-0.5 bg-transparent border border-green-600 text-green-600 rounded-lg hover:bg-green-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm flex items-center gap-2 disabled:border-green-300 disabled:text-green-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-1 focus:ring-green-500/50"
-
-            >
-              <span className="text-lg font-bold">+</span>
-              Novo
-            </button>
-            <button
+            />
+            <ActionButton
+              type="resetarSenha"
+              label="Resetar Senha"
               onClick={resetarSenha}
               disabled={usuariosSelecionados.length === 0}
-              className="px-4 py-0.5 bg-transparent border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-blue-800 disabled:text-blue-800 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-1 focus:ring-blue-500/50"
-            >
-              Resetar Senha
-            </button>
-            <button
+            />
+            <ActionButton
+              type="editar"
+              label="Editar"
               onClick={abrirModalEdicao}
               disabled={usuariosSelecionados.length !== 1}
-              className="px-4 py-0.5 bg-transparent border border-purple-600 text-purple-600 rounded-lg hover:bg-purple-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-blue-800 disabled:text-blue-800 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-1 focus:ring-purple-500/50"
-            >
-              Editar
-            </button>
-            <button
+            />
+            <ActionButton
+              type="desativar"
+              label="Desativar"
               onClick={desativarUsuarios}
               disabled={usuariosSelecionados.length === 0}
-              className="px-4 py-0.5 bg-transparent border border-orange-600 text-orange-600 rounded-lg hover:bg-orange-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-blue-800 disabled:text-blue-800 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-1 focus:ring-orange-500/50"
-            >
-              Desativar
-            </button>
-            <button
+            />
+            <ActionButton
+              type="ativar"
+              label="Ativar"
               onClick={ativarUsuarios}
               disabled={usuariosSelecionados.length === 0}
-              className="px-4 py-0.5 bg-transparent border border-emerald-600 text-emerald-600 rounded-lg hover:bg-emerald-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-blue-800 disabled:text-blue-800 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-1 focus:ring-emerald-500/50"
-            >
-              Ativar
-            </button>
-            <button
+            />
+            <ActionButton
+              type="excluir"
+              label="Excluir"
               onClick={excluirUsuarios}
               disabled={usuariosSelecionados.length === 0}
-              className="px-4 py-0.5 bg-transparent border border-red-600 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-blue-800 disabled:text-blue-800 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-1 focus:ring-red-500/50"
-            >
-              Excluir
-            </button>
+            />
             {usuariosSelecionados.length > 0 && (
-              <span className="text-sm text-gray-600 flex items-center ml-2">
+              <span className="text-sm flex items-center ml-2" style={{ color: theme.text.secondary }}>
                 {usuariosSelecionados.length} selecionado(s)
               </span>
             )}
           </div>
 
           {/* Área de Filtros */}
-          <div className="p-6 border-b border-gray-300 bg-gray-100">
+          <div className="p-6 border-b" style={{ backgroundColor: theme.background.pagina, borderColor: theme.border.primary }}>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Período de cadastro */}
               <div className="min-w-0">
-                <label className="block text-base font-medium text-gray-700 mb-1">
+                <label className="block text-base font-medium mb-1" style={{ color: theme.text.primary }}>
                   Período de cadastro
                 </label>
                 <DatePicker
@@ -577,14 +572,19 @@ export default function GerenciarUsuarios() {
                   }}
                   dateFormat="dd/MM/yyyy"
                   placeholderText="Selecione o período"
-                  className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm text-gray-900"
+                  className="w-full min-w-0 px-3 py-2 border rounded focus:outline-none focus:ring-1 text-sm"
+                  style={{
+                    borderColor: theme.border.secondary,
+                    backgroundColor: theme.background.card,
+                    color: theme.text.primary,
+                  }}
                   isClearable={true}
                 />
               </div>
 
               {/* Nome */}
               <div className="min-w-0">
-                <label className="block text-base font-medium text-gray-700 mb-1">
+                <label className="block text-base font-medium mb-1" style={{ color: theme.text.primary }}>
                   Nome
                 </label>
                 <input
@@ -592,13 +592,18 @@ export default function GerenciarUsuarios() {
                   value={nome}
                   onChange={(e) => setNome(e.target.value)}
                   placeholder="Digite o nome"
-                  className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm text-gray-900"
+                  className="w-full min-w-0 px-3 py-2 border rounded focus:outline-none focus:ring-1 text-sm"
+                  style={{
+                    borderColor: theme.border.secondary,
+                    backgroundColor: theme.background.card,
+                    color: theme.text.primary,
+                  }}
                 />
               </div>
 
               {/* Email */}
               <div className="min-w-0">
-                <label className="block text-base font-medium text-gray-700 mb-1">
+                <label className="block text-base font-medium mb-1" style={{ color: theme.text.primary }}>
                   Email
                 </label>
                 <input
@@ -606,19 +611,29 @@ export default function GerenciarUsuarios() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Digite o email"
-                  className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm text-gray-900"
+                  className="w-full min-w-0 px-3 py-2 border rounded focus:outline-none focus:ring-1 text-sm"
+                  style={{
+                    borderColor: theme.border.secondary,
+                    backgroundColor: theme.background.card,
+                    color: theme.text.primary,
+                  }}
                 />
               </div>
 
               {/* Situação Usuário */}
               <div className="min-w-0">
-                <label className="block text-base font-medium text-gray-700 mb-1">
+                <label className="block text-base font-medium mb-1" style={{ color: theme.text.primary }}>
                   Situação Usuário
                 </label>
                 <select
                   value={situationUserId}
                   onChange={(e) => setSituationUserId(e.target.value)}
-                  className="w-full min-w-0 px-3 py-2 border border-gray-400 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm text-gray-900 bg-gray-50"
+                  className="w-full min-w-0 px-3 py-2 border rounded focus:outline-none focus:ring-1 text-sm"
+                  style={{
+                    borderColor: theme.border.secondary,
+                    backgroundColor: theme.background.card,
+                    color: theme.text.primary,
+                  }}
                 >
                   <option value="">Todas</option>
                   {situacoes.map(situacao => (
@@ -634,14 +649,22 @@ export default function GerenciarUsuarios() {
             <div className="flex gap-3 mt-6 justify-end">
               <button
                 onClick={limparFiltros}
-                className="px-6 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors font-medium text-sm"
+                className="px-6 py-2 rounded font-medium text-sm transition-colors"
+                style={{
+                  backgroundColor: theme.background.surface,
+                  color: theme.text.primary,
+                  border: `1px solid ${theme.border.secondary}`,
+                }}
               >
                 Limpar Filtros
               </button>
               <button
                 onClick={() => carregarUsuarios(1)}
                 disabled={loading}
-                className="px-6 py-2 bg-[#002B57] text-white rounded hover:bg-[#1A4877] transition-colors font-medium text-sm disabled:bg-[#345677]"
+                className="px-6 py-2 text-white rounded font-medium text-sm transition-colors disabled:opacity-50"
+                style={{
+                  backgroundColor: theme.brand.subHeader,
+                }}
               >
                 {loading ? 'Pesquisando...' : 'Pesquisar'}
               </button>
@@ -651,29 +674,35 @@ export default function GerenciarUsuarios() {
           {/* Tabela de resultados */}
           <div className="overflow-x-auto">
             {loading ? (
-              <div className="p-8 text-center text-gray-500">
+              <div className="p-8 text-center" style={{ color: theme.text.secondary }}>
                 Carregando usuários...
               </div>
             ) : usuarios.length === 0 ? (
-              <div className="p-8 text-center text-gray-500">
+              <div className="p-8 text-center" style={{ color: theme.text.secondary }}>
                 Nenhum usuário encontrado. Use os filtros para pesquisar.
               </div>
             ) : (
               <table className="w-full">
-                <thead className="bg-gray-100 border-b border-gray-300">
+                <thead className="border-b" style={{ backgroundColor: theme.background.surface, borderColor: theme.border.primary }}>
                   <tr>
                     <th className="px-4 py-3 text-left">
                       <input
                         type="checkbox"
                         checked={todosChecados}
                         onChange={handleCheckAll}
-                        className="w-5 h-5 cursor-pointer rounded appearance-none border-2 border-gray-300 checked:bg-blue-600 checked:border-blue-600 relative
+                        className="w-5 h-5 cursor-pointer rounded appearance-none border-2 checked:bg-blue-600 checked:border-blue-600 relative transition-colors
                         before:content-['✓'] before:absolute before:inset-0 before:flex before:items-center before:justify-center before:text-white before:text-sm before:font-bold before:opacity-0 checked:before:opacity-100"
+                        style={{
+                          borderColor: theme.mode === 'dark' ? '#4B5563' : '#888B95',
+                          backgroundColor: todosChecados ? '#2563EB' : theme.background.card,
+                          boxShadow: `0 0 0 1px ${theme.mode === 'dark' ? '#4B5563' : '#888B95'}`
+                        }}
                       />
                     </th>
                     <th 
-                      className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none"
+                      className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none"
                       onClick={() => handleOrdenar('id')}
+                      style={{ color: theme.text.primary, backgroundColor: theme.background.hover }}
                     >
                       <div className="flex items-center gap-1">
                         ID
@@ -683,8 +712,9 @@ export default function GerenciarUsuarios() {
                       </div>
                     </th>
                     <th 
-                      className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none"
+                      className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none"
                       onClick={() => handleOrdenar('name')}
+                      style={{ color: theme.text.primary, backgroundColor: theme.background.hover }}
                     >
                       <div className="flex items-center gap-1">
                         Nome
@@ -727,8 +757,9 @@ export default function GerenciarUsuarios() {
                       </div>
                     </th>
                     <th 
-                      className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none"
+                      className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none"
                       onClick={() => handleOrdenar('createdAt')}
+                      style={{ color: theme.text.primary, backgroundColor: theme.background.hover }}
                     >
                       <div className="flex items-center gap-1">
                         Criado em
@@ -738,8 +769,9 @@ export default function GerenciarUsuarios() {
                       </div>
                     </th>
                     <th 
-                      className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none"
+                      className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none"
                       onClick={() => handleOrdenar('updatedAt')}
+                      style={{ color: theme.text.primary, backgroundColor: theme.background.hover }}
                     >
                       <div className="flex items-center gap-1">
                         Atualizado em
@@ -748,13 +780,13 @@ export default function GerenciarUsuarios() {
                         )}
                       </div>
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                    <th className="px-4 py-3 text-left text-sm font-semibold" style={{ color: theme.text.primary }}>
                       Tentativas Login
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                    <th className="px-4 py-3 text-left text-sm font-semibold" style={{ color: theme.text.primary }}>
                       Data Inativação
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                    <th className="px-4 py-3 text-left text-sm font-semibold" style={{ color: theme.text.primary }}>
                       Motivo Inativação
                     </th>
                   </tr>
@@ -763,59 +795,66 @@ export default function GerenciarUsuarios() {
                   {usuariosOrdenados.map((usuario, index) => (
                     <tr
                       key={usuario.id}
-                      className={`border-b border-gray-200 hover:bg-blue-50 transition-colors ${
-                        index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-                      }`}
+                      className="border-b transition-colors"
+                      style={{
+                        borderColor: theme.border.secondary,
+                        backgroundColor: index % 2 === 0 ? theme.background.card : theme.background.surface,
+                      }}
                     >
                       <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                         <input
                           type="checkbox"
                           checked={usuariosSelecionados.includes(usuario.id)}
                           onChange={() => handleCheckUsuario(usuario.id)}
-                          className="w-5 h-5 cursor-pointer rounded appearance-none border-2 border-gray-300 checked:bg-blue-600 checked:border-blue-600 relative
+                          className="w-5 h-5 cursor-pointer rounded appearance-none border-2 checked:bg-blue-600 checked:border-blue-600 relative transition-colors
                           before:content-['✓'] before:absolute before:inset-0 before:flex before:items-center before:justify-center before:text-white before:text-sm before:font-bold before:opacity-0 checked:before:opacity-100"
+                          style={{
+                            borderColor: theme.mode === 'dark' ? '#4B5563' : '#888B95',
+                            backgroundColor: usuariosSelecionados.includes(usuario.id) ? '#2563EB' : theme.background.card,
+                            boxShadow: `0 0 0 1px ${theme.mode === 'dark' ? '#4B5563' : '#888B95'}`
+                          }}
                         />
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-900 font-medium">
+                      <td className="px-4 py-3 text-sm font-medium" style={{ color: theme.text.primary }}>
                         {usuario.id}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-900">
+                      <td className="px-4 py-3 text-sm" style={{ color: theme.text.primary }}>
                         {usuario.name}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-900">
+                      <td className="px-4 py-3 text-sm" style={{ color: theme.text.primary }}>
                         {usuario.email}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-900">
+                      <td className="px-4 py-3 text-sm" style={{ color: theme.text.primary }}>
                         {usuario.role?.nome || '-'}
                       </td>
                       <td className="px-4 py-3">
                         {usuario.situationUser ? (
                           <span
-                            className={`px-3 py-1 rounded-full text-xs font-medium ${
-                              usuario.situationUser.nomeSituacao.toLowerCase() === 'ativo'
-                                ? 'bg-green-100 text-green-800'
-                                : 'bg-red-100 text-red-800'
-                            }`}
+                            className="px-3 py-1 rounded-full text-xs font-medium"
+                            style={{
+                              backgroundColor: usuario.situationUser.nomeSituacao.toLowerCase() === 'ativo' ? '#DCFCE7' : '#FEE2E2',
+                              color: usuario.situationUser.nomeSituacao.toLowerCase() === 'ativo' ? '#15803D' : '#7F1D1D',
+                            }}
                           >
                             {usuario.situationUser.nomeSituacao}
                           </span>
                         ) : (
-                          <span className="text-sm text-gray-500">Sem situação</span>
+                          <span className="text-sm" style={{ color: theme.text.secondary }}>Sem situação</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-600">
+                      <td className="px-4 py-3 text-sm" style={{ color: theme.text.secondary }}>
                         {formatarData(usuario.createdAt)}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-600">
+                      <td className="px-4 py-3 text-sm" style={{ color: theme.text.secondary }}>
                         {formatarData(usuario.updatedAt)}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-600">
+                      <td className="px-4 py-3 text-sm" style={{ color: theme.text.secondary }}>
                         {usuario.tentativasLogin || 0}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-600">
+                      <td className="px-4 py-3 text-sm" style={{ color: theme.text.secondary }}>
                         {usuario.dataInativacao ? formatarData(usuario.dataInativacao) : '-'}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-600">
+                      <td className="px-4 py-3 text-sm" style={{ color: theme.text.secondary }}>
                         {usuario.motivoInativacao || '-'}
                       </td>
                     </tr>
@@ -827,15 +866,20 @@ export default function GerenciarUsuarios() {
 
           {/* Controles de Paginação */}
           {usuarios.length > 0 && (
-            <div className="px-6 py-4 bg-gray-100 border-t border-gray-300 flex items-center justify-between">
-              <div className="text-sm text-gray-600">
+            <div className="px-6 py-4 border-t flex items-center justify-between" style={{ backgroundColor: theme.background.surface, borderColor: theme.border.primary }}>
+              <div className="text-sm" style={{ color: theme.text.secondary }}>
                 Mostrando {(paginaAtual - 1) * pageSize + 1} a {Math.min(paginaAtual * pageSize, totalUsuarios)} de {totalUsuarios} usuário(s)
               </div>
               <div className="flex gap-2">
                 <button
                   onClick={() => carregarUsuarios(paginaAtual - 1)}
                   disabled={paginaAtual === 1 || loading}
-                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition-colors font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-4 py-2 rounded transition-colors font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{
+                    backgroundColor: theme.background.card,
+                    color: theme.text.primary,
+                    border: `1px solid ${theme.border.secondary}`,
+                  }}
                 >
                   ← Anterior
                 </button>
@@ -844,11 +888,12 @@ export default function GerenciarUsuarios() {
                     <button
                       key={page}
                       onClick={() => carregarUsuarios(page)}
-                      className={`px-3 py-2 rounded font-medium text-sm transition-colors ${
-                        paginaAtual === page
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                      }`}
+                      className="px-3 py-2 rounded font-medium text-sm transition-colors"
+                      style={{
+                        backgroundColor: paginaAtual === page ? theme.brand.subHeader : theme.background.card,
+                        color: paginaAtual === page ? 'white' : theme.text.primary,
+                        border: `1px solid ${theme.border.secondary}`,
+                      }}
                     >
                       {page}
                     </button>
@@ -857,7 +902,12 @@ export default function GerenciarUsuarios() {
                 <button
                   onClick={() => carregarUsuarios(paginaAtual + 1)}
                   disabled={paginaAtual === totalPaginas || loading}
-                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition-colors font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-4 py-2 rounded transition-colors font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{
+                    backgroundColor: theme.background.card,
+                    color: theme.text.primary,
+                    border: `1px solid ${theme.border.secondary}`,
+                  }}
                 >
                   Próximo →
                 </button>

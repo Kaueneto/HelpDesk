@@ -1,5 +1,46 @@
 @import "tailwindcss"; 
 
+/* Estilos de tema para html e body - Aplicados IMEDIATAMENTE */
+html {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: #FFFFFF;
+  color: #1F2937;
+}
+
+html.dark {
+  background-color: #0F172A;
+  color: #F1F5F9;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: #FFFFFF;
+  color: #1F2937;
+  transition: background-color 200ms ease-in-out, color 200ms ease-in-out;
+}
+
+html.dark body {
+  background-color: #0F172A;
+  color: #F1F5F9;
+  transition: background-color 200ms ease-in-out, color 200ms ease-in-out;
+}
+
+#__next {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
 .arrowIcon {
   width: 20px;
   height: 20px;
@@ -154,7 +195,7 @@ select {
 :root {
   /* backgrounds */
   --bg-primary: 242 242 242; /* #EDEDED - fundo principal mais cinzento */
-  --bg-fundoneutro: 237 237 237; /* #EDEDED */
+  --bg-fundoneutro: 237 237 237; /* #EDEDED - fundo neutro */
 
   --bg-graficos: 255 255 255; /* #FFFFFF */
   --bg-tertiary: 245 246 249; /* #F5F6F9 */
@@ -271,8 +312,9 @@ html.dark {
 
   --select-border: 75 85 99; /* #4B5563 - cinza médio escuro */
 
-
+  /* Backgrounds */
   --bg-primary: 27 27 27; /* #000000 - Preto puro */
+  --bg-fundoneutro: 27 27 27; /* #1B1B1B - Preto para tema escuro */
   --bg-secondary: 38 38 38; /* #1F2937 */
   --bg-tertiary: 37 47 63; /* #252F3F */
   --bg-hover: 55 65 81; /* #374151 */

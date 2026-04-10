@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import api from '@/services/api';
+import ActionButton from './ActionButton';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface Departamento {
   id: number;
@@ -11,6 +13,8 @@ interface Departamento {
 }
 
 export default function GerenciarDepartamentos() {
+  const { theme } = useTheme();
+  
   // Filtros
   const [nome, setNome] = useState('');
   const [status, setStatus] = useState<'todos' | 'ativo' | 'inativo'>('todos');
@@ -322,62 +326,56 @@ export default function GerenciarDepartamentos() {
 
   return (
     <>
-      <div className="bg-[#1A68CF] px-6 py-4">
+      <div className="px-6 py-4" style={{ backgroundColor: theme.brand.subHeader }}>
         <h2 className="text-white text-2xl font-semibold">Gerenciar Departamentos</h2>
       </div>
 
-      <div className="p-2 bg-[#EDEDED]">
-        <div className="bg-gray-100 rounded-lg shadow-lg border border-gray-300 overflow-hidden">
+      <div className="p-2" style={{ backgroundColor: theme.background.surface }}>
+        <div className="rounded-lg shadow-lg overflow-hidden" style={{ backgroundColor: theme.background.card, border: `1px solid ${theme.border.primary}` }}>
           {/* Botões de ação acima dos filtros */}
-          <div className="px-6 py-3 bg-gray-50 border-b border-gray-300 flex gap-4">
-            <button
+          <div className="px-6 py-3 border-b flex gap-4" style={{ backgroundColor: theme.background.surface, borderColor: theme.border.primary }}>
+            <ActionButton
+              type="novo"
+              label="Novo"
               onClick={abrirModalCadastro}
-              className="px-4 py-0.5 bg-transparent border border-green-600 text-green-600 rounded-lg hover:bg-green-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm flex items-center gap-2 disabled:border-green-300 disabled:text-green-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-1 focus:ring-green-500/50"
-            >
-              <span className="text-lg font-bold">+</span>
-              Novo
-            </button>
-            <button
+            />
+            <ActionButton
+              type="editar"
+              label="Editar"
               onClick={abrirModalEdicao}
               disabled={departamentosSelecionados.length !== 1}
-              className="px-4 py-0.5 bg-transparent border border-purple-600 text-purple-600 rounded-lg hover:bg-purple-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-blue-800 disabled:text-blue-800 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-1 focus:ring-purple-500/50"
-            >
-              Editar
-            </button>
-            <button
+            />
+            <ActionButton
+              type="excluir"
+              label="Excluir"
               onClick={excluirDepartamentos}
               disabled={departamentosSelecionados.length === 0}
-              className="px-4 py-0.5 bg-transparent border border-red-600 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-blue-800 disabled:text-blue-800 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-1 focus:ring-red-500/50"
-            >
-              Excluir
-            </button>
-            <button
+            />
+            <ActionButton
+              type="ativar"
+              label="Ativar Selecionados"
               onClick={ativarDepartamentosSelecionados}
               disabled={departamentosSelecionados.length === 0}
-              className="px-4 py-0.5 bg-transparent border border-green-600 text-green-600 rounded-lg hover:bg-green-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-blue-800 disabled:text-blue-800 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-1 focus:ring-green-500/50"
-            >
-              Ativar Selecionados
-            </button>
-            <button
+            />
+            <ActionButton
+              type="desativar"
+              label="Desativar Selecionados"
               onClick={desativarDepartamentosSelecionados}
               disabled={departamentosSelecionados.length === 0}
-              className="px-4 py-0.5 bg-transparent border border-orange-600 text-orange-600 rounded-lg hover:bg-orange-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm disabled:border-blue-800 disabled:text-blue-800 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-1 focus:ring-orange-500/50"
-            >
-              Desativar Selecionados
-            </button>
+            />
             {departamentosSelecionados.length > 0 && (
-              <span className="text-sm text-gray-600 flex items-center ml-2">
+              <span className="text-sm flex items-center ml-2" style={{ color: theme.text.secondary }}>
                 {departamentosSelecionados.length} selecionado(s)
               </span>
             )}
           </div>
 
           {/* Área de Filtros */}
-          <div className="p-6 border-b border-gray-300">
+          <div className="p-6 border-b" style={{ backgroundColor: theme.background.pagina, borderColor: theme.border.primary }}>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Nome */}
               <div className="min-w-0">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{ color: theme.text.primary }}>
                   Nome
                 </label>
                 <input
@@ -385,19 +383,29 @@ export default function GerenciarDepartamentos() {
                   value={nome}
                   onChange={(e) => setNome(e.target.value)}
                   placeholder="Digite o nome"
-                  className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm text-gray-900"
+                  className="w-full min-w-0 px-3 py-2 border rounded focus:outline-none focus:ring-1 text-sm"
+                  style={{
+                    borderColor: theme.border.secondary,
+                    backgroundColor: theme.background.card,
+                    color: theme.text.primary,
+                  }}
                 />
               </div>
 
               {/* Status */}
               <div className="min-w-0">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{ color: theme.text.primary }}>
                   Status
                 </label>
                 <select
                   value={status}
                   onChange={(e) => setStatus(e.target.value as 'todos' | 'ativo' | 'inativo')}
-                  className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm text-gray-900"
+                  className="w-full min-w-0 px-3 py-2 border rounded focus:outline-none focus:ring-1 text-sm"
+                  style={{
+                    borderColor: theme.border.secondary,
+                    backgroundColor: theme.background.card,
+                    color: theme.text.primary,
+                  }}
                 >
                   <option value="todos">Todos</option>
                   <option value="ativo">Ativo</option>
@@ -410,14 +418,22 @@ export default function GerenciarDepartamentos() {
             <div className="flex gap-3 mt-6 justify-end">
               <button
                 onClick={limparFiltros}
-                className="px-6 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors font-medium text-sm"
+                className="px-6 py-2 rounded font-medium text-sm transition-colors"
+                style={{
+                  backgroundColor: theme.background.surface,
+                  color: theme.text.primary,
+                  border: `1px solid ${theme.border.secondary}`,
+                }}
               >
                 Limpar Filtros
               </button>
               <button
                 onClick={carregarDepartamentos}
                 disabled={loading}
-                className="px-6 py-2 bg-[#001960] text-white rounded hover:bg-[#001960]/80 transition-colors font-medium text-sm disabled:bg-blue-400"
+                className="px-6 py-2 text-white rounded font-medium text-sm transition-colors disabled:opacity-50"
+                style={{
+                  backgroundColor: theme.brand.subHeader,
+                }}
               >
                 {loading ? 'Pesquisando...' : 'Pesquisar'}
               </button>
@@ -427,29 +443,35 @@ export default function GerenciarDepartamentos() {
           {/* Tabela de resultados */}
           <div className="overflow-x-auto">
             {loading ? (
-              <div className="p-8 text-center text-gray-500">
+              <div className="p-8 text-center" style={{ color: theme.text.secondary }}>
                 Carregando departamentos...
               </div>
             ) : departamentosFiltrados.length === 0 ? (
-              <div className="p-8 text-center text-gray-500">
+              <div className="p-8 text-center" style={{ color: theme.text.secondary }}>
                 Nenhum departamento encontrado. Use os filtros para pesquisar.
               </div>
             ) : (
               <table className="w-full">
-                <thead className="bg-gray-100 border-b border-gray-300">
+                <thead className="border-b" style={{ backgroundColor: theme.background.surface, borderColor: theme.border.primary }}>
                   <tr>
                     <th className="px-4 py-3 text-left">
                       <input
                         type="checkbox"
                         checked={todosChecados}
                         onChange={handleCheckAll}
-                        className="w-5 h-5 cursor-pointer rounded appearance-none border-2 border-gray-300 checked:bg-blue-600 checked:border-blue-600 relative
+                        className="w-5 h-5 cursor-pointer rounded appearance-none border-2 checked:bg-blue-600 checked:border-blue-600 relative transition-colors
                         before:content-['✓'] before:absolute before:inset-0 before:flex before:items-center before:justify-center before:text-white before:text-sm before:font-bold before:opacity-0 checked:before:opacity-100"
+                        style={{
+                          borderColor: theme.mode === 'dark' ? '#4B5563' : '#888B95',
+                          backgroundColor: todosChecados ? '#2563EB' : theme.background.card,
+                          boxShadow: `0 0 0 1px ${theme.mode === 'dark' ? '#4B5563' : '#888B95'}`
+                        }}
                       />
                     </th>
                     <th 
-                      className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none"
+                      className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none"
                       onClick={() => handleOrdenar('id')}
+                      style={{ color: theme.text.primary, backgroundColor: theme.background.hover }}
                     >
                       <div className="flex items-center gap-1">
                         ID
@@ -459,8 +481,9 @@ export default function GerenciarDepartamentos() {
                       </div>
                     </th>
                     <th 
-                      className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none"
+                      className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none"
                       onClick={() => handleOrdenar('codigo')}
+                      style={{ color: theme.text.primary, backgroundColor: theme.background.hover }}
                     >
                       <div className="flex items-center gap-1">
                         Código
@@ -470,8 +493,9 @@ export default function GerenciarDepartamentos() {
                       </div>
                     </th>
                     <th 
-                      className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none"
+                      className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none"
                       onClick={() => handleOrdenar('name')}
+                      style={{ color: theme.text.primary, backgroundColor: theme.background.hover }}
                     >
                       <div className="flex items-center gap-1">
                         Nome
@@ -481,8 +505,9 @@ export default function GerenciarDepartamentos() {
                       </div>
                     </th>
                     <th 
-                      className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none"
+                      className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none"
                       onClick={() => handleOrdenar('ativo')}
+                      style={{ color: theme.text.primary, backgroundColor: theme.background.hover }}
                     >
                       <div className="flex items-center gap-1">
                         Status
@@ -497,34 +522,40 @@ export default function GerenciarDepartamentos() {
                   {departamentosFiltrados.map((departamento, index) => (
                     <tr
                       key={departamento.id}
-                      className={`border-b border-gray-200 hover:bg-blue-50 transition-colors ${
-                        index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-                      }`}
+                      className="border-b transition-colors"
+                      style={{
+                        borderColor: theme.border.secondary,
+                        backgroundColor: index % 2 === 0 ? theme.background.card : theme.background.surface,
+                      }}
                     >
                       <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                         <input
                           type="checkbox"
                           checked={departamentosSelecionados.includes(departamento.id)}
                           onChange={() => handleCheckDepartamento(departamento.id)}
-                          className="w-5 h-5 cursor-pointer rounded appearance-none border-2 border-gray-300 checked:bg-blue-600 checked:border-blue-600 relative
+                          className="w-5 h-5 cursor-pointer rounded appearance-none border-2 checked:bg-blue-600 checked:border-blue-600 relative
                           before:content-['✓'] before:absolute before:inset-0 before:flex before:items-center before:justify-center before:text-white before:text-sm before:font-bold before:opacity-0 checked:before:opacity-100"
+                          style={{
+                            borderColor: theme.mode === 'dark' ? '#4B5563' : '#888B95',
+                            backgroundColor: departamentosSelecionados.includes(departamento.id) ? '#2563EB' : theme.background.card,
+                            boxShadow: `0 0 0 1px ${theme.mode === 'dark' ? '#4B5563' : '#888B95'}`
+                          }}
                         />
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-900 font-medium">
+                      <td className="px-4 py-3 text-sm font-medium" style={{ color: theme.text.primary }}>
                         {departamento.id}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-900 font-medium">
+                      <td className="px-4 py-3 text-sm font-medium" style={{ color: theme.text.primary }}>
                         {departamento.codigo}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-900">
+                      <td className="px-4 py-3 text-sm" style={{ color: theme.text.primary }}>
                         {departamento.name}
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          departamento.ativo 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-red-100 text-red-800'
-                        }`}>
+                        <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full" style={{
+                          backgroundColor: departamento.ativo ? '#DCFCE7' : '#FEE2E2',
+                          color: departamento.ativo ? '#15803D' : '#7F1D1D',
+                        }}>
                           {departamento.ativo ? 'Ativo' : 'Inativo'}
                         </span>
                       </td>
@@ -540,16 +571,17 @@ export default function GerenciarDepartamentos() {
       {/* Modal de Cadastro */}
       {modalCadastroAberto && (
         <div
-          className="fixed inset-0 bg-black/60 bg-opacity-30 flex items-center justify-center z-50 animate-fadeIn"
+          className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 animate-fadeIn"
           onClick={fecharModalCadastro}
         >
           <div
-            className="bg-white rounded-lg shadow-2xl w-full max-w-2xl mx-4 animate-slideUp"
+            className="rounded-lg shadow-2xl w-full max-w-2xl mx-4 animate-slideUp"
             onClick={(e) => e.stopPropagation()}
+            style={{ backgroundColor: theme.background.modal }}
           >
             {/* Cabeçalho */}
-            <div className="border-b border-gray-200 px-6 py-4">
-              <h3 className="text-xl font-semibold text-gray-800 text-left">
+            <div className="border-b px-6 py-4" style={{ borderColor: theme.border.primary }}>
+              <h3 className="text-xl font-semibold text-left" style={{ color: theme.text.primary }}>
                 Cadastrar Departamento
               </h3>
             </div>
@@ -561,7 +593,7 @@ export default function GerenciarDepartamentos() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* ´codigo */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium mb-2" style={{ color: theme.text.primary }}>
                         Código *
                       </label>
                       <input
@@ -569,14 +601,19 @@ export default function GerenciarDepartamentos() {
                         value={novoCodigo}
                         onChange={(e) => setNovoCodigo(e.target.value)}
                         placeholder="Digite o código"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900"
+                        className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-1 text-sm"
+                        style={{
+                          borderColor: theme.border.secondary,
+                          backgroundColor: theme.background.card,
+                          color: theme.text.primary,
+                        }}
                         disabled={submittingCadastro}
                       />
                     </div>
 
                     {/* nome */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium mb-2" style={{ color: theme.text.primary }}>
                         Nome *
                       </label>
                       <input
@@ -584,14 +621,19 @@ export default function GerenciarDepartamentos() {
                         value={novoNome}
                         onChange={(e) => setNovoNome(e.target.value)}
                         placeholder="Digite o nome do departamento"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900"
+                        className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-1 text-sm"
+                        style={{
+                          borderColor: theme.border.secondary,
+                          backgroundColor: theme.background.card,
+                          color: theme.text.primary,
+                        }}
                         disabled={submittingCadastro}
                       />
                     </div>
 
                     {/* ativo */}
                     <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium mb-2" style={{ color: theme.text.primary }}>
                         Status
                       </label>
                       <div className="flex items-center gap-4">
@@ -601,10 +643,11 @@ export default function GerenciarDepartamentos() {
                             name="novoAtivo"
                             checked={novoAtivo}
                             onChange={() => setNovoAtivo(true)}
-                            className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                            className="w-4 h-4"
+                            style={{ accentColor: theme.brand.primary }}
                             disabled={submittingCadastro}
                           />
-                          <span className="ml-2 text-sm text-gray-700">Ativo</span>
+                          <span className="ml-2 text-sm" style={{ color: theme.text.primary }}>Ativo</span>
                         </label>
                         <label className="flex items-center">
                           <input
@@ -612,20 +655,26 @@ export default function GerenciarDepartamentos() {
                             name="novoAtivo"
                             checked={!novoAtivo}
                             onChange={() => setNovoAtivo(false)}
-                            className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                            className="w-4 h-4"
+                            style={{ accentColor: theme.brand.primary }}
                             disabled={submittingCadastro}
                           />
-                          <span className="ml-2 text-sm text-gray-700">Inativo</span>
+                          <span className="ml-2 text-sm" style={{ color: theme.text.primary }}>Inativo</span>
                         </label>
                       </div>
                     </div>
                   </div>
 
                   {/* rodapé */}
-                  <div className="flex justify-end gap-4 mt-6 pt-4 border-t border-gray-200">
+                  <div className="flex justify-end gap-4 mt-6 pt-4 border-t" style={{ borderColor: theme.border.primary }}>
                     <button
                       onClick={fecharModalCadastro}
-                     className="px-6 py-2 bg-transparent border border-gray-400 text-gray-700 rounded-lg hover:bg-gray-200 hover:text-gray-900 transition-all duration-200 transform hover:scale-105 font-medium disabled:border-gray-300 disabled:text-gray-400 disabled:bg-transparent disabled:cursor-not-allowed"
+                      className="px-6 py-2 border rounded-lg transition-all duration-200 transform hover:scale-105 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{
+                        borderColor: theme.border.secondary,
+                        color: theme.text.primary,
+                        backgroundColor: theme.background.surface,
+                      }}
                       disabled={submittingCadastro}
                     >
                       Cancelar
@@ -633,7 +682,10 @@ export default function GerenciarDepartamentos() {
                     <button
                       onClick={cadastrarDepartamento}
                       disabled={submittingCadastro}
-                    className="px-6 py-2 bg-[#001960] text-white rounded-lg hover:bg-[#001960]/80 transition-all transform hover:scale-105 font-medium disabled:bg-blue-400 disabled:cursor-not-allowed disabled:transform-none"
+                      className="px-6 py-2 text-white rounded-lg transition-all transform hover:scale-105 font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                      style={{
+                        backgroundColor: theme.brand.subHeader,
+                      }}
                     >
                       {submittingCadastro ? 'Cadastrando...' : 'Cadastrar'}
                     </button>
@@ -662,7 +714,7 @@ export default function GerenciarDepartamentos() {
                     <h2 className="text-2xl font-bold text-green-600 mb-2 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
                       Cadastrado com sucesso!
                     </h2>
-                    <p className="text-lg text-gray-600 animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
+                    <p className="text-lg animate-fade-in-up" style={{ animationDelay: '0.3s', color: theme.text.secondary }}>
                       Departamento cadastrado com sucesso!
                     </p>
                   </div>
@@ -676,16 +728,17 @@ export default function GerenciarDepartamentos() {
       {/* Modal de Edição */}
       {modalEdicaoAberto && (
         <div
-          className="fixed inset-0 bg-black/60 bg-opacity-30 flex items-center justify-center z-50 animate-fadeIn"
+          className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 animate-fadeIn"
           onClick={fecharModalEdicao}
         >
           <div
-            className="bg-white rounded-lg shadow-2xl w-full max-w-2xl mx-4 animate-slideUp"
+            className="rounded-lg shadow-2xl w-full max-w-2xl mx-4 animate-slideUp"
             onClick={(e) => e.stopPropagation()}
+            style={{ backgroundColor: theme.background.modal }}
           >
             {/* Cabeçalho */}
-            <div className="border-b border-gray-200 px-6 py-4">
-              <h3 className="text-xl font-semibold text-gray-800 text-center">
+            <div className="border-b px-6 py-4" style={{ borderColor: theme.border.primary }}>
+              <h3 className="text-xl font-semibold text-center" style={{ color: theme.text.primary }}>
                 Editar Departamento
               </h3>
             </div>
@@ -697,7 +750,7 @@ export default function GerenciarDepartamentos() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* código */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium mb-2" style={{ color: theme.text.primary }}>
                         Código *
                       </label>
                       <input
@@ -705,14 +758,19 @@ export default function GerenciarDepartamentos() {
                         value={editandoCodigo}
                         onChange={(e) => setEditandoCodigo(e.target.value)}
                         placeholder="Digite o código"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900"
+                        className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-1 text-sm"
+                        style={{
+                          borderColor: theme.border.secondary,
+                          backgroundColor: theme.background.card,
+                          color: theme.text.primary,
+                        }}
                         disabled={submittingEdicao}
                       />
                     </div>
 
                     {/* nome */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium mb-2" style={{ color: theme.text.primary }}>
                         Nome *
                       </label>
                       <input
@@ -720,14 +778,19 @@ export default function GerenciarDepartamentos() {
                         value={editandoNome}
                         onChange={(e) => setEditandoNome(e.target.value)}
                         placeholder="Digite o nome do departamento"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900"
+                        className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-1 text-sm"
+                        style={{
+                          borderColor: theme.border.secondary,
+                          backgroundColor: theme.background.card,
+                          color: theme.text.primary,
+                        }}
                         disabled={submittingEdicao}
                       />
                     </div>
 
                     {/* ativo */}
                     <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium mb-2" style={{ color: theme.text.primary }}>
                         Status
                       </label>
                       <div className="flex items-center gap-4">
@@ -737,10 +800,11 @@ export default function GerenciarDepartamentos() {
                             name="editandoAtivo"
                             checked={editandoAtivo}
                             onChange={() => setEditandoAtivo(true)}
-                            className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                            className="w-4 h-4"
+                            style={{ accentColor: theme.brand.primary }}
                             disabled={submittingEdicao}
                           />
-                          <span className="ml-2 text-sm text-gray-700">Ativo</span>
+                          <span className="ml-2 text-sm" style={{ color: theme.text.primary }}>Ativo</span>
                         </label>
                         <label className="flex items-center">
                           <input
@@ -748,20 +812,26 @@ export default function GerenciarDepartamentos() {
                             name="editandoAtivo"
                             checked={!editandoAtivo}
                             onChange={() => setEditandoAtivo(false)}
-                            className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                            className="w-4 h-4"
+                            style={{ accentColor: theme.brand.primary }}
                             disabled={submittingEdicao}
                           />
-                          <span className="ml-2 text-sm text-gray-700">Inativo</span>
+                          <span className="ml-2 text-sm" style={{ color: theme.text.primary }}>Inativo</span>
                         </label>
                       </div>
                     </div>
                   </div>
 
                   {/* rodapé */}
-                  <div className="flex justify-end gap-4 mt-6 pt-4 border-t border-gray-200">
+                  <div className="flex justify-end gap-4 mt-6 pt-4 border-t" style={{ borderColor: theme.border.primary }}>
                     <button
                       onClick={fecharModalEdicao}
-                     className="px-6 py-2 bg-transparent border border-gray-400 text-gray-700 rounded-lg hover:bg-gray-200 hover:text-gray-900 transition-all duration-200 transform hover:scale-105 font-medium disabled:border-gray-300 disabled:text-gray-400 disabled:bg-transparent disabled:cursor-not-allowed"
+                      className="px-6 py-2 border rounded-lg transition-all duration-200 transform hover:scale-105 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{
+                        borderColor: theme.border.secondary,
+                        color: theme.text.primary,
+                        backgroundColor: theme.background.surface,
+                      }}
                       disabled={submittingEdicao}
                     >
                       Cancelar
@@ -769,7 +839,10 @@ export default function GerenciarDepartamentos() {
                     <button
                       onClick={salvarEdicao}
                       disabled={submittingEdicao}
-                      className="px-6 py-2 bg-[#001960] text-white rounded-lg hover:bg-[#001960]/80 transition-all transform hover:scale-105 font-medium disabled:bg-blue-400 disabled:cursor-not-allowed disabled:transform-none"
+                      className="px-6 py-2 text-white rounded-lg transition-all transform hover:scale-105 font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                      style={{
+                        backgroundColor: theme.brand.subHeader,
+                      }}
                     >
                       {submittingEdicao ? 'Salvando...' : 'Salvar'}
                     </button>

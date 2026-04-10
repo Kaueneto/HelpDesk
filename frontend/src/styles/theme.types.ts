@@ -154,6 +154,63 @@ export interface StatusIndicators {
   info: string;
 }
 
+export interface ActionButtonColors {
+  novo: {
+    border: string;
+    text: string;
+    hover: string;
+    disabled: {
+      border: string;
+      text: string;
+    };
+  };
+  editar: {
+    border: string;
+    text: string;
+    hover: string;
+    disabled: {
+      border: string;
+      text: string;
+    };
+  };
+  ativar: {
+    border: string;
+    text: string;
+    hover: string;
+    disabled: {
+      border: string;
+      text: string;
+    };
+  };
+  desativar: {
+    border: string;
+    text: string;
+    hover: string;
+    disabled: {
+      border: string;
+      text: string;
+    };
+  };
+  resetarSenha: {
+    border: string;
+    text: string;
+    hover: string;
+    disabled: {
+      border: string;
+      text: string;
+    };
+  };
+  excluir: {
+    border: string;
+    text: string;
+    hover: string;
+    disabled: {
+      border: string;
+      text: string;
+    };
+  };
+}
+
 export type Theme = {
   // Cor primária da marca
   brand: {
@@ -186,6 +243,9 @@ export type Theme = {
 
   // Dashboard - Cores específicas para o painel
   dashboard: DashboardColors;
+
+  // os botoes de ação em telas de gerenciamento
+  actionButtons: ActionButtonColors;
 
   detalhesChamado: {
     label: string;

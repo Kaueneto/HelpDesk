@@ -36,7 +36,7 @@ export const darkTheme: Theme = {
   status: {
     aberto: {
       bg: '#B38F00',         // Amarelo escuro (status 1)
-      text: '#FEF08A',       // Amarelo claro
+      text: '#FFFAD9',       // Amarelo claro
       border: '#FBBF24',     // Amarelo
     },
     emAtendimento: {
@@ -228,6 +228,64 @@ export const darkTheme: Theme = {
       bg: '#0C4A6E',
       text: '#BAE6FD',
       border: '#38BDF8',
+    },
+  },
+
+  // botoes de ação em telas de gerenciamento
+  actionButtons: {
+    novo: {
+      border: '#4ADE80',      // Verde claro para escuro
+      text: '#4ADE80',
+      hover: '#22C55E',
+      disabled: {
+        border: '#475569',    // Cinza desabilitado
+        text: '#475569',
+      },
+    },
+    editar: {
+      border: '#A78BFA',      // Roxo claro para escuro
+      text: '#A78BFA',
+      hover: '#8B5CF6',
+      disabled: {
+        border: '#475569',
+        text: '#475569',
+      },
+    },
+    ativar: {
+      border: '#6EE7B7',      // Esmeralda claro para escuro
+      text: '#6EE7B7',
+      hover: '#34D399',
+      disabled: {
+        border: '#475569',
+        text: '#475569',
+      },
+    },
+    desativar: {
+      border: '#FBBF24',      // Laranja claro para escuro
+      text: '#FBBF24',
+      hover: '#F59E0B',
+      disabled: {
+        border: '#475569',
+        text: '#475569',
+      },
+    },
+    resetarSenha: {
+      border: '#60A5FA',      // Azul claro para escuro
+      text: '#60A5FA',
+      hover: '#3B82F6',
+      disabled: {
+        border: '#475569',
+        text: '#475569',
+      },
+    },
+    excluir: {
+      border: '#F87171',      // Vermelho claro para escuro
+      text: '#F87171',
+      hover: '#EF4444',
+      disabled: {
+        border: '#475569',
+        text: '#475569',
+      },
     },
   },
 

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import AdminHeader from '@/components/layouts/AdminHeader';
 import AdminSidebar from '@/components/layouts/AdminSidebar';
 
@@ -13,6 +14,7 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const { user, isAuthenticated, isLoading } = useAuth();
+  const { mode } = useTheme();
   const router = useRouter();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
@@ -36,8 +38,10 @@ export default function AdminLayout({
     return null;
   }
 
+  const bgColor = mode === 'dark' ? '#0F172A' : '#EDEDED';
+
   return (
-    <div className="h-screen flex overflow-hidden" style={{ backgroundColor: '#EDEDED' }}>
+    <div className="h-screen flex overflow-hidden" style={{ backgroundColor: bgColor }}>
       <AdminSidebar 
         collapsed={sidebarCollapsed} 
         onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}

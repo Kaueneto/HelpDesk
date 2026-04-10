@@ -1065,89 +1065,79 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
                   Dados do chamado
                 </h3>
                 <div className="space-y-3">
-                  <div>
-                    <label className="text-sm font-medium" style={{ color: theme.text.tertiary }}>Status</label>
-                    <div className="mt-1">
-                      <span
-                        style={{
-                          display: 'inline-block',
-                          padding: '6px 12px',
-                          borderRadius: '9999px',
-                          border: '1px solid',
-                          fontSize: '14px',
-                          fontWeight: '500',
-                          ...(chamado.status.id === 1 && {
-                            backgroundColor: '#713F12',
-                            color: '#FEF08A',
-                            borderColor: '#FBBF24'
-                          })
-                          || (chamado.status.id === 2 && {
-                            backgroundColor: '#0C4A6E',
-                            color: '#BAE6FD',
-                            borderColor: '#38BDF8'
-                          })
-                          || (chamado.status.id === 3 && {
-                            backgroundColor: '#164E63',
-                            color: '#DCFCE7',
-                            borderColor: '#34D399'
-                          })
-                          || (chamado.status.id === 5 && {
-                            backgroundColor: '#4C1D95',
-                            color: '#E9D5FF',
-                            borderColor: '#D8B4FE'
-                          })
-                          || (chamado.status.id === 4 && {
-                            backgroundColor: '#7F1D1D',
-                            color: '#FEE2E2',
-                            borderColor: '#F87171'
-                          })
-                          || (chamado.status.id === 6 && {
-                            backgroundColor: '#312E81',
-                            color: '#E0E7FF',
-                            borderColor: '#A5B4FC'
-                          })
-                          || (chamado.status.id === 7 && {
-                            backgroundColor: '#7C2D12',
-                            color: '#FFEDD5',
-                            borderColor: '#FB923C'
-                          })
-                          || {
-                            backgroundColor: '#7F1D1D',
-                            color: '#FEE2E2',
-                            borderColor: '#F87171'
-                          }
-                        }}
-                      >
-                        {chamado.status.nome}
-                      </span>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium" style={{ color: theme.text.tertiary }}>Usuario responsável</label>
-                    <p className="mt-1 font-medium" style={{ color: theme.detalhesChamado.redirecionar }}>
+                  <div className="grid grid-cols-[80px_1fr] gap-x-4 gap-y-5 text-sm">
+                    <span className="font-medium" style={{ color: theme.text.secondary }}>Status</span>
+                    <span
+                      style={{
+                        display: 'inline-block',
+                        padding: '4px 12px',
+                        borderRadius: '9999px',
+                        border: '1px solid',
+                        fontSize: '12px',
+                        fontWeight: '500',
+                        width: 'fit-content',
+                        ...(chamado.status.id === 1 && {
+                          backgroundColor: theme.status.aberto.bg,
+                          color: theme.status.aberto.text,
+                          borderColor: theme.status.aberto.border
+                        })
+                        || (chamado.status.id === 2 && {
+                          backgroundColor: theme.status.emAtendimento.bg,
+                          color: theme.status.emAtendimento.text,
+                          borderColor: theme.status.emAtendimento.border
+                        })
+                        || (chamado.status.id === 3 && {
+                          backgroundColor: theme.status.encerrado.bg,
+                          color: theme.status.encerrado.text,
+                          borderColor: theme.status.encerrado.border
+                        })
+                        || (chamado.status.id === 4 && {
+                          backgroundColor: theme.status.cancelado.bg,
+                          color: theme.status.cancelado.text,
+                          borderColor: theme.status.cancelado.border
+                        })
+                        || (chamado.status.id === 5 && {
+                          backgroundColor: theme.status.aguardando.bg,
+                          color: theme.status.aguardando.text,
+                          borderColor: theme.status.aguardando.border
+                        })
+                        || (chamado.status.id === 6 && {
+                          backgroundColor: theme.status.pendenteUsuario.bg,
+                          color: theme.status.pendenteUsuario.text,
+                          borderColor: theme.status.pendenteUsuario.border
+                        })
+                        || (chamado.status.id === 7 && {
+                          backgroundColor: theme.status.pendente.bg,
+                          color: theme.status.pendente.text,
+                          borderColor: theme.status.pendente.border
+                        })
+                        || {
+                          backgroundColor: theme.status.cancelado.bg,
+                          color: theme.status.cancelado.text,
+                          borderColor: theme.status.cancelado.border
+                        }
+                      }}
+                    >
+                      {chamado.status.nome}
+                    </span>
+
+                    <span className="font-medium" style={{ color: theme.text.secondary }}>Responsável</span>
+                    <span style={{ color: theme.detalhesChamado.label }}>
                       {chamado.userResponsavel?.name || 'Não atribuído'}
                       {chamado.userResponsavel?.id === usuarioLogadoId && (
-                        <span className="ml-2" style={{ color: theme.detalhesChamado.Marcarcomoresolvido }}> (Você)</span>
+                        <span style={{ color: theme.detalhesChamado.Marcarcomoresolvido }}> (Você)</span>
                       )}
-                    </p>
-                  </div>
-                <div>
-                <label className="text-sm font-medium" style={{ color: theme.text.tertiary }}>Departamento</label>
-                  <div className="mt-2 flex"> 
-                    <span className="px-4 py-1.5 text-sm tracking-wider border rounded-full font-medium" style={{ backgroundColor: `${theme.detalhesChamado.redirecionar}20`, color: theme.detalhesChamado.redirecionar, borderColor: theme.detalhesChamado.redirecionar }}>
-                      {chamado.departamento.name}
                     </span>
-                  </div>
-                </div>
-                  <div>
-                    <label className="text-sm font-medium" style={{ color: theme.text.tertiary }}>Criado em</label>
-                    <p className="mt-1 font-medium" style={{ color: theme.detalhesChamado.redirecionar }}>{formatarData(chamado.dataAbertura)}</p>
-                  </div>
-                 <div>
-                  <label className="text-sm font-medium" style={{ color: theme.text.tertiary }}>Prioridade</label>
-                  <div className="mt-2 flex">
+
+                    <span className="font-medium" style={{ color: theme.text.secondary }}>Departamento</span>
+                    <span style={{ color: theme.detalhesChamado.label }}>{chamado.departamento.name}</span>
+
+                    <span className="font-medium" style={{ color: theme.text.secondary }}>Criado em</span>
+                    <span style={{ color: theme.detalhesChamado.label }}>{formatarData(chamado.dataAbertura)}</span>
+
+                    <span className="font-medium" style={{ color: theme.text.secondary }}>Prioridade</span>
                     <span 
-                      className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold border"
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold border w-fit"
                       style={{ 
                         backgroundColor: `${chamado.tipoPrioridade.cor}25`, 
                         color: chamado.tipoPrioridade.cor,
@@ -1162,16 +1152,13 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
                         {chamado.tipoPrioridade.nome}
                       </span>
                     </span>
+
+                    <span className="font-medium" style={{ color: theme.text.secondary }}>Tópico</span>
+                    <span style={{ color: theme.detalhesChamado.label }}>{chamado.topicoAjuda.nome}</span>
+
+                    <span className="font-medium" style={{ color: theme.text.secondary }}>Reaberto</span>
+                    <span style={{ color: theme.detalhesChamado.label }}>{chamado.vezesreaberto}</span>
                   </div>
-                </div>
-                  <div>
-                    <label className="text-sm font-medium" style={{ color: theme.text.tertiary }}>Tópico de ajuda</label>
-                    <p className="mt-1 font-medium" style={{ color: theme.detalhesChamado.redirecionar }}>{chamado.topicoAjuda.nome}</p>
-                  </div>
-                    <div>
-                    <label className="text-sm font-medium" style={{ color: theme.text.tertiary }}>Vezes Reaberto</label>
-                    <p className="mt-1 whitespace-pre-wrap font-medium" style={{ color: theme.detalhesChamado.redirecionar }}>{chamado.vezesreaberto}</p>
-                    </div>
                 </div>
                 
               </div>
@@ -1265,18 +1252,22 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
                                   href={fileUrl}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="flex items-center gap-2 px-3 py-2 bg-white border border-green-300 rounded hover:bg-green-100 transition text-sm"
+                                  className="flex items-center gap-2 px-3 py-2 border rounded transition text-sm group hover:opacity-80"
+                                  style={{
+                                    backgroundColor: theme.detalhesChamado.bgBranco,
+                                    borderColor: theme.border.primary
+                                  }}
                                 >
                                   {isImage ? (
-                                    <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: theme.detalhesChamado.redirecionar }}>
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                     </svg>
                                   ) : (
-                                    <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: theme.text.secondary }}>
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                     </svg>
                                   )}
-                                  <span className="text-green-700 max-w-50 truncate">
+                                  <span className="max-w-50 truncate flex-1" style={{ color: theme.text.primary }}>
                                     {anexo.filename}
                                   </span>
                                 </a>

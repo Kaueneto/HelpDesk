@@ -240,4 +240,62 @@ export const lightTheme: Theme = {
       border: '#DBEAFE',
     },
   },
+
+  // botoes de ação em telas de gerenciamento
+  actionButtons: {
+    novo: {
+      border: '#16A34A',      // Verde
+      text: '#16A34A',
+      hover: '#15803D',
+      disabled: {
+        border: '#BBCCDD',    // Cinza desabilitado
+        text: '#BBCCDD',
+      },
+    },
+    editar: {
+      border: '#7C3AED',      // Roxo
+      text: '#7C3AED',
+      hover: '#6D28D9',
+      disabled: {
+        border: '#BBCCDD',
+        text: '#BBCCDD',
+      },
+    },
+    ativar: {
+      border: '#059669',      // Esmeralda
+      text: '#059669',
+      hover: '#047857',
+      disabled: {
+        border: '#BBCCDD',
+        text: '#BBCCDD',
+      },
+    },
+    desativar: {
+      border: '#D97706',      // Laranja
+      text: '#D97706',
+      hover: '#B45309',
+      disabled: {
+        border: '#BBCCDD',
+        text: '#BBCCDD',
+      },
+    },
+    resetarSenha: {
+      border: '#2563EB',      // Azul
+      text: '#2563EB',
+      hover: '#1D4ED8',
+      disabled: {
+        border: '#BBCCDD',
+        text: '#BBCCDD',
+      },
+    },
+    excluir: {
+      border: '#DC2626',      // vermei
+      text: '#DC2626',
+      hover: '#B91C1C',
+      disabled: {
+        border: '#BBCCDD',
+        text: '#BBCCDD',
+      },
+    },
+  },
 };

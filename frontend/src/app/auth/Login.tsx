@@ -114,7 +114,7 @@ export default function Login({ onCadastrarClick, onEsqueceuSenhaClick }: LoginP
             <button
               type="button"
               onClick={onEsqueceuSenhaClick}
-              className="text-sm hover:opacity-80 hover:underline transition-colors font-semibold"
+              className="text-sm hover:opacity-80 hover:underline transition-colors "
               style={{ color: theme.brand.primary }}
             >
               Esqueci minha senha
@@ -145,7 +145,7 @@ export default function Login({ onCadastrarClick, onEsqueceuSenhaClick }: LoginP
           <button
             type="button"
             onClick={onCadastrarClick}
-            className="hover:opacity-80 hover:underline font-semibold transition-colors"
+            className="hover:opacity-80 hover:underline  transition-colors"
             style={{ color: theme.brand.primary }}
           >
             Cadastre-se
