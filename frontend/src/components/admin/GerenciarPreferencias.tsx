@@ -12,7 +12,7 @@ interface Preferencia {
 
 export default function GerenciarPreferencias() {
   const { user } = useContext(AuthContext);
-  const { theme } = useTheme();
+  const { theme, mode } = useTheme();
 
   const [preferencias, setPreferencias] = useState<Preferencia[]>([]);
   const [preferenciasUsuario, setPreferenciasUsuario] = useState<number[]>([]);
@@ -149,11 +149,11 @@ export default function GerenciarPreferencias() {
                           onChange={() => togglePreferencia(preferencia.id)}
                         />
                         <div
-                          className="w-6 h-6 border-2 rounded-md flex items-center justify-center transition-all duration-200"
+                          className="w-6 h-6 border-1 rounded-md flex items-center justify-center transition-all duration-200"
                           style={{
-                            borderColor: isPreferenciaAtiva(preferencia.id) ? theme.brand.subHeader : (theme.mode === 'dark' ? '#4B5563' : '#888B95'),
+                            borderColor: isPreferenciaAtiva(preferencia.id) ? theme.brand.subHeader : (mode === 'dark' ? '#4B5563' : '#888B95'),
                             backgroundColor: isPreferenciaAtiva(preferencia.id) ? theme.brand.subHeader : 'transparent',
-                            boxShadow: isPreferenciaAtiva(preferencia.id) ? `0 0 0 1px ${theme.brand.subHeader}` : `0 0 0 1px ${theme.mode === 'dark' ? '#4B5563' : '#888B95'}`
+                            boxShadow: isPreferenciaAtiva(preferencia.id) ? `0 0 0 1px ${theme.brand.subHeader}` : `0 0 0 1px ${mode === 'dark' ? '#4B5563' : '#888B95'}`
                           }}
                         >
                           {isPreferenciaAtiva(preferencia.id) && (

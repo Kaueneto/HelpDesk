@@ -13,6 +13,7 @@ export default function AdminSidebar({ collapsed, onToggle }: AdminSidebarProps)
   const pathname = usePathname();
   const [gerencialExpanded, setGerencialExpanded] = useState(false);
   const [gerencialPopupOpen, setGerencialPopupOpen] = useState(false);
+  const [logoHovered, setLogoHovered] = useState(false);
   const gerencialButtonRef = useRef<HTMLButtonElement>(null);
   const popupRef = useRef<HTMLDivElement>(null);
 
@@ -61,21 +62,29 @@ export default function AdminSidebar({ collapsed, onToggle }: AdminSidebarProps)
   return (
     <aside
       className={`transition-all duration-100 ease-out flex flex-col relative group ${
-        collapsed ? 'w-16' : 'w-64'
+        collapsed ? 'w-16' : 'w-57'
       } shadow-2xl border-r border-gray-800/50`}
       style={{
         backgroundColor: '#001933',
         background: '#001933',
       }}
     >
-      {/* header com botao de toggle */}
+      {/* header com logo e botao de toggle ajustado*/}
       <div className="p-4">
-        <div className={`flex items-center ${collapsed ? 'justify-center' : 'justify-between'}`}>
-          {!collapsed && (
-            <h1 className="text-white font-bold text-xl transition-all duration-100 ease-out">
-              Central de Chamados
-            </h1>
-          )}
+        <div className={`flex items-center ${collapsed ? 'flex-col gap-3' : 'justify-between'}`}>
+          {/* Logo */}
+          <button
+            onClick={() => router.push('/painel')}
+            onMouseEnter={() => setLogoHovered(true)}
+            onMouseLeave={() => setLogoHovered(false)}
+            className="shrink-0 transition-transform duration-200 "
+            title="Ir para o painel"
+          >
+            <img
+              src={logoHovered ? '/logo2.png' : '/logo1.png'}
+              className={`${!collapsed ? 'ml-6' : ''} transition-all duration-200 ${collapsed ? 'w-6 h-6' : 'w-10 h-10'}`}
+            />
+          </button>
 
           {/* botao de toggle */}
           <button

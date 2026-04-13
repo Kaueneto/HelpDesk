@@ -74,6 +74,7 @@ export interface KanbanColors {
   columnBorder: string;
   textPrimary: string;
   textSecondary: string;
+  cardBg: string;
 }
 
 export interface DashboardColors {
@@ -139,6 +140,8 @@ export interface BackgroundColors {
   modal: string;
   card: string;
   hover: string;
+  tabelaClaro: string;
+  tabelaEscuro: string;
 }
 
 export interface BorderColors {
@@ -217,6 +220,7 @@ export type Theme = {
     primary: string;
     secondary: string;
     subHeader: string;
+    buttonSecondary: string;
   };
 
 

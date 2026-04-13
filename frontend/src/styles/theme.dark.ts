@@ -6,21 +6,24 @@ export const darkTheme: Theme = {
     primary: '#0084FF',      // Azul claro
     secondary: '#E5E7EB',    // Cinza muito claro
     subHeader: '#1A68CF',   
+    buttonSecondary: '#87CEFA',       // Azul para botões
   },
 
   // Backgrounds
   background: {
     pagina: '#0F172A',       // Cinza muito escuro (quase preto)
-    surface: '#1E293B',      // Cinza escuro
+    surface: '#141C2A',      // Cinza escuro
     modal: '#1E293B',        // Cinza escuro para modais
     card: '#334155',         // Cinza médio para cards
     hover: '#475569',        // Cinza médio no hover
+    tabelaClaro: '#00081C',      // Cinza escuro para tabela clara
+    tabelaEscuro: '#121925',     // Cinza muito escuro para tabela escura
   },
 
   // Cores de texto
   text: {
-    primary: '#F1F5F9',      // Quase branco
-    secondary: '#CBD5E1',    // Cinza claro
+    primary: '#f4f4f4',      // Quase branco
+    secondary: '#F3F3F3',    // Cinza claro
     tertiary: '#94A3B8',     // Cinza médio
     invertido: '#0F172A',    // Preto/quase preto
   },
@@ -73,7 +76,7 @@ export const darkTheme: Theme = {
 
   buttonsExclusivos: {
     btLight: '#475569',     // Cinza médio para botão claro
-    btDark: '#002B57',      // Cinza muito escuro para botão escuro
+    btDark: '#144492',      // Cinza muito escuro para botão escuro
   },
 
   // Prioridades
@@ -86,7 +89,7 @@ export const darkTheme: Theme = {
     media: {
       bg: '#0C4A6E',         // Azul escuro
       text: '#BAE6FD',       // Azul claro
-      border: '#38BDF8',     // Azul
+      border: '#00BBFF',     // Azul
     },
     alta: {
       bg: '#713F12',         // Amarelo escuro
@@ -99,9 +102,9 @@ export const darkTheme: Theme = {
       border: '#F87171',     // Vermelho
     },
     urgente: {
-      bg: '#7F1D1D',         // Vermelho escuro
+      bg: '#633232',         // Vermelho escuro
       text: '#FEE2E2',       // Vermelho claro
-      border: '#F87171',     // Vermelho
+      border: '#AF0000',     // Vermelho
     },
   },
 
@@ -115,8 +118,9 @@ export const darkTheme: Theme = {
 
   // Componente Kanban
   kanban: {
-    columnBg: '#1E293B',     // Cinza escuro
+    columnBg: '#051021',     // Cinza escuro
     columnBorder: '#334155', // Cinza médio
+    cardBg: '#1E293B',      // Cinza escuro para cards
     textPrimary: '#F1F5F9',  // Quase branco
     textSecondary: '#CBD5E1', // Cinza claro
   },

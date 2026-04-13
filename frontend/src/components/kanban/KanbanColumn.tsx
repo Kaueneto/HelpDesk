@@ -117,15 +117,15 @@ const KanbanColumn = memo(({
       {isCollapsed ? (
         /* cxoluna recolhida - vertical */
         <div
-          className={`flex flex-col items-center justify-start p-2 rounded-lg border transition-all duration-200 cursor-pointer ${
+          className={`flex flex-col items-center justify-start p-2 rounded-lg transition-all duration-200 cursor-pointer ${
             isOver ? 'shadow-lg' : ''
           }`}
           style={{
             backgroundColor: theme.kanban.columnBg,
-            borderColor: color,
-            borderLeftColor: color,
-            borderLeftWidth: '3px',
-            borderWidth: '1px'
+            borderTop: `1px solid ${theme.kanban.columnBorder}`,
+            borderRight: `1px solid ${theme.kanban.columnBorder}`,
+            borderBottom: `1px solid ${theme.kanban.columnBorder}`,
+            borderLeft: `3px solid ${color}`
           }}
           onClick={() => setIsCollapsed(false)}
         >
@@ -175,13 +175,13 @@ const KanbanColumn = memo(({
         <>
           {/* header da Coluna */}
           <div
-            className={`flex items-center justify-between p-4 rounded-t-lg border transition-all duration-200`}
+            className={`flex items-center justify-between p-4 rounded-t-lg transition-all duration-200`}
             style={{
               backgroundColor: theme.kanban.columnBg,
-              borderColor: theme.kanban.columnBorder,
-              borderTopColor: color,
-              borderTopWidth: '3px',
-              borderWidth: '1px'
+              borderTop: `3px solid ${color}`,
+              borderRight: `1px solid ${theme.kanban.columnBorder}`,
+              borderBottom: '0px',
+              borderLeft: `1px solid ${theme.kanban.columnBorder}`
             }}
           >
             <div className="flex items-center space-x-2">
@@ -224,12 +224,14 @@ const KanbanColumn = memo(({
           <div
             ref={setNodeRef}
             className={`
-              flex-1 min-h-32 p-2 rounded-b-lg border border-t-0
+              flex-1 min-h-32 p-2 rounded-b-lg
               transition-all duration-150
             `}
             style={{
               backgroundColor: isOver ? `${theme.brand.primary}19` : theme.kanban.columnBg,
-              borderColor: isOver ? theme.brand.primary : theme.kanban.columnBorder
+              borderRight: `1px solid ${isOver ? theme.brand.primary : theme.kanban.columnBorder}`,
+              borderBottom: `1px solid ${isOver ? theme.brand.primary : theme.kanban.columnBorder}`,
+              borderLeft: `1px solid ${isOver ? theme.brand.primary : theme.kanban.columnBorder}`
             }}
           >
             {/* indicador de drop */}

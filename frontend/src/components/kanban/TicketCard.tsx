@@ -209,11 +209,11 @@ const TicketCard = memo(({ chamado, onClick, isDragging = false, onSelect, isSel
       `}
       style={{
         ...style,
-        backgroundColor: theme.background.card,
+        backgroundColor: theme.kanban.cardBg,
         borderColor: isSelected ? theme.brand.primary : theme.border.secondary,
         borderWidth: '1px',
         cursor: sortableIsDragging || isDragging ? 'grabbing' : 'pointer',
-        boxShadow: sortableIsDragging || isDragging ? `0 10px 15px -3px ${theme.brand.primary}66` : isSelected ? `0 0 0 2px ${theme.brand.primary}` : '0 1px 2px rgba(0, 0, 0, 0.1)',
+        boxShadow: sortableIsDragging || isDragging ? `0 10px 15px -3px ${theme.brand.primary}66` : isSelected ? `0 0 0 1px ${theme.brand.primary}` : '0 1px 1px rgba(0, 0, 0, 0.1)',
         opacity: sortableIsDragging ? 0.5 : 1,
         transform: (sortableIsDragging || isDragging) ? 'scale(1.05)' : 'scale(1)',
       }}
@@ -255,15 +255,13 @@ const TicketCard = memo(({ chamado, onClick, isDragging = false, onSelect, isSel
             w-5 h-5 rounded-lg border-2 flex items-center justify-center cursor-pointer transition-all
           `}
           style={{
-            backgroundColor: isSelected ? theme.brand.primary : theme.background.hover,
-            borderColor: isSelected ? theme.brand.primary : theme.brand.primary,
-            opacity: isSelected ? 1 : 0.7
+            backgroundColor: isSelected ? theme.brand.primary : 'transparent',
+            borderColor: isSelected ? theme.brand.primary : theme.border.secondary,
+            opacity: 1
           }}
           >
-            {isSelected ? (
-              <FiCheck className="w-3 h-3 text-white" strokeWidth={3} />
-            ) : (
-              <div className="w-1.5 h-1.5 rounded-sm" style={{ backgroundColor: theme.text.tertiary }}></div>
+            {isSelected && (
+              <FiCheck className="w-3 h-3 text-white" strokeWidth={2} />
             )}
           </div>
         </motion.div>

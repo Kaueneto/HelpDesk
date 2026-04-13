@@ -16,6 +16,20 @@ export default function AdminHeader({}: AdminHeaderProps) {
   const [themeSubmenuOpen, setThemeSubmenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
+  // funcao para obter saudação baseado na hora do dia
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    const firstName = user?.name?.split(' ')[0] || 'Usuário';
+    
+    if (hour >= 6 && hour < 12) {
+      return `Bom dia, ${firstName}`;
+    } else if (hour >= 12 && hour < 18) {
+      return `Boa tarde, ${firstName}`;
+    } else {
+      return `Boa noite, ${firstName}`;
+    }
+  };
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -34,7 +48,12 @@ export default function AdminHeader({}: AdminHeaderProps) {
   }, [userMenuOpen]);
 
   return (
-    <header className="h-14 flex items-center justify-end px-6 shadow-lg" style={{ backgroundColor: '#001933' }}>
+    <header className="h-14 flex items-center justify-between px-6 shadow-lg" style={{ backgroundColor: '#001933' }}>
+      {/* Saudação no canto esquerdo */}
+      <div className="text-white font-semibold text-sm font-segoe">
+        {getGreeting()}
+      </div>
+
       <div className="relative flex items-center gap-4">
         {/* Bookmarks Button */}
         <button

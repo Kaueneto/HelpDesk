@@ -11,6 +11,7 @@ import ModalAssumirChamado from '@/app/admin/Modal/AssumirChamado';
 import ModalMarcarResolvido from '@/app/admin/Modal/MarcarResolvido';
 import ModalImprimirChamado from '@/app/admin/Modal/ModalImprimirChamado';
 import ModalEnviarAttPorEmail from '@/app/admin/Modal/EnviarAttPorEmail';
+import ModalEditarChamadoAdmin from '@/app/admin/Modal/ModalEditarChamadoAdmin';
 import { Toaster, toast } from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -127,6 +128,8 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
   const [modalImprimirAberto, setModalImprimirAberto] = useState(false);
   // Estado do modal de envio de email
   const [modalEmailAberto, setModalEmailAberto] = useState(false);
+  // Estado do modal de edição de chamado
+  const [modalEditarAberto, setModalEditarAberto] = useState(false);
   // Estado para animação de saída
   const [animandoSaida, setAnimandoSaida] = useState(false);
   // Estado para animação de entrada (slide-in)
@@ -997,6 +1000,7 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
             Redirecionar
           </button>
           <button
+            onClick={() => setModalEditarAberto(true)}
             className="px-3 md:px-5 py-2 bg-transparent border border-gray-600 text-gray-600 rounded-lg hover:bg-gray-600 hover:text-white transition-all duration-200 transform hover:scale-104  font-medium text-xs md:text-sm whitespace-nowrap active:scale-95 focus:outline-none focus:ring-1 focus:ring-gray-500/50 shrink-0"
           >
             Editar
@@ -1372,7 +1376,7 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
                 {/* Campo de Resposta */}
                 <div className="p-5" style={{ borderColor: theme.border.primary, borderTopWidth: '1px' }}>
                   <label className="block text-sm font-medium mb-2" style={{ color: theme.text.primary }}>
-                    Postar uma resposta
+                    Postar uma resposta ou atualização
                   </label>
                   <textarea
                     value={novaMensagem}
@@ -1534,6 +1538,18 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
         onConfirm={handleEnviarEmail}
         usuarioEmail={chamado?.usuario.email || ''}
         chamadoId={chamadoId}
+      />
+      {/* Modal de Editar Chamado */}
+      <ModalEditarChamadoAdmin
+        isOpen={modalEditarAberto}
+        onClose={() => {
+          setModalEditarAberto(false);
+        }}
+        onSuccess={async () => {
+          setModalEditarAberto(false);
+          await carregarDados();
+        }}
+        chamadoId={parseInt(chamadoId)}
       />
     </div>
   );

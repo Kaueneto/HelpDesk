@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import api from '@/services/api';
 import { useTheme } from '@/contexts/ThemeContext';
-
+import { MdAttachFile } from 'react-icons/md';
 interface Anexo {
   id: number;
   filename: string;
@@ -268,7 +268,7 @@ export default function ModalEditarChamadoAdmin({
             <div className="flex justify-between items-start gap-3">
               <div className="w-full">
                 <p className="text-xs font-medium mb-1 uppercase tracking-wide" style={{ color: theme.text.secondary }}>
-                  Chamado #{numeroChamado || chamadoId}
+                  Editando Chamado #{numeroChamado || chamadoId}
                 </p>
                 <input
                   type="text"
@@ -474,17 +474,24 @@ export default function ModalEditarChamadoAdmin({
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={submitting}
-                  className="inline-flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed border"
+                  className="
+                  inline-flex items-center gap-2 
+                  px-3 py-1.5 
+                  rounded-md 
+                  text-xs font-medium 
+                  transition-all duration-200 
+                  border
+                  hover:scale-105 hover:shadow-sm
+                  focus:outline-none focus:ring-2 focus:ring-offset-1
+                  disabled:opacity-50 disabled:cursor-not-allowed
+                "
                   style={{
                     backgroundColor: `${theme.brand.primary}15`,
                     color: theme.brand.primary,
                     borderColor: theme.brand.primary,
                   }}
                 >
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                      d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                  </svg>
+               <MdAttachFile className="h-3.5 w-3.5" />
                   Arquivos
                 </button>
 

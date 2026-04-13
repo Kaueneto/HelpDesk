@@ -13,7 +13,7 @@ interface TipoPrioridade {
 }
 
 export default function GerenciarTiposPrioridade() {
-  const { theme } = useTheme();
+  const { theme, mode } = useTheme();
   
   // Filtros
   const [nome, setNome] = useState('');
@@ -338,12 +338,12 @@ export default function GerenciarTiposPrioridade() {
                         type="checkbox"
                         checked={todosChecados}
                         onChange={handleCheckAll}
-                        className="w-5 h-5 cursor-pointer rounded appearance-none border-2 checked:bg-blue-600 checked:border-blue-600 relative transition-colors
+                        className="w-5 h-5 cursor-pointer rounded appearance-none border-1 checked:bg-blue-600 checked:border-blue-600 relative transition-colors
                         before:content-['✓'] before:absolute before:inset-0 before:flex before:items-center before:justify-center before:text-white before:text-sm before:font-bold before:opacity-0 checked:before:opacity-100"
                         style={{
-                          borderColor: theme.mode === 'dark' ? '#4B5563' : '#888B95',
+                          borderColor: mode === 'dark' ? '#4B5563' : '#888B95',
                           backgroundColor: todosChecados ? '#2563EB' : theme.background.card,
-                          boxShadow: `0 0 0 1px ${theme.mode === 'dark' ? '#4B5563' : '#888B95'}`
+                          boxShadow: `0 0 0 1px ${mode === 'dark' ? '#4B5563' : '#888B95'}`
                         }}
                       />
                     </th>
@@ -412,12 +412,12 @@ export default function GerenciarTiposPrioridade() {
                           type="checkbox"
                           checked={tiposSelecionados.includes(tipo.id)}
                           onChange={() => handleCheckTipo(tipo.id)}
-                          className="w-5 h-5 cursor-pointer rounded appearance-none border-2 checked:bg-blue-600 checked:border-blue-600 relative transition-colors
+                          className="w-5 h-5 cursor-pointer rounded appearance-none border-1 checked:bg-blue-600 checked:border-blue-600 relative transition-colors
                           before:content-['✓'] before:absolute before:inset-0 before:flex before:items-center before:justify-center before:text-white before:text-sm before:font-bold before:opacity-0 checked:before:opacity-100"
                           style={{
-                            borderColor: theme.mode === 'dark' ? '#4B5563' : '#888B95',
+                            borderColor: mode === 'dark' ? '#4B5563' : '#888B95',
                             backgroundColor: tiposSelecionados.includes(tipo.id) ? '#2563EB' : theme.background.card,
-                            boxShadow: `0 0 0 1px ${theme.mode === 'dark' ? '#4B5563' : '#888B95'}`
+                            boxShadow: `0 0 0 1px ${mode === 'dark' ? '#4B5563' : '#888B95'}`
                           }}
                         />
                       </td>

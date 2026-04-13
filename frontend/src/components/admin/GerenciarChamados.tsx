@@ -138,17 +138,13 @@ export default function GerenciarChamados() {
   // modal de novo chamado
   const [modalNovoChamadoAberto, setModalNovoChamadoAberto] = useState(false);
 
-  // modal de editar chamado individual
-  const [modalEditarChamadoAberto, setModalEditarChamadoAberto] = useState(false);
-  const [chamadoIdEditar, setChamadoIdEditar] = useState<number | null>(null);
-
   // visualização Kanban/Tabela
   const [viewMode, setViewMode] = useState<'table' | 'kanban'>(() => {
     return (localStorage.getItem('ticketsView') as 'table' | 'kanban') || 'table';
   });
 
   // filtro de abas (Todos, Meus, Outros)
-  const [abaFiltro, setAbaFiltro] = useState<'todos' | 'meus' | 'outros'>('todos');
+  const [abaFiltro, setAbaFiltro] = useState<'todos' | 'meus' | 'semResponsavel' | 'outros'>('todos');
   const [ocultarConcluidos, setOcultarConcluidos] = useState(false);
   const [filtrosVisiveis, setFiltrosVisiveis] = useState(() => {
     const saved = localStorage.getItem('filtrosVisiveis');
@@ -301,6 +297,8 @@ export default function GerenciarChamados() {
     } else if (abaFiltro === 'outros') {
       //mostrar chamados onde o usuario naoé responsavel 
       filtrados = chamados.filter(c => c.userResponsavel?.id !== user?.id);
+    } else if (abaFiltro === 'semResponsavel') {
+      filtrados = chamados.filter(c => c.userResponsavel === null);
     }
     
     return filtrados;
@@ -769,33 +767,6 @@ export default function GerenciarChamados() {
     }
   };
 
-  const editarChamadoIndividual = () => {
-    if (chamadosSelecionados.length !== 1) {
-      alert('Selecione exatamente 1 chamado para editar.');
-      return;
-    }
-
-    const chamadoId = chamadosSelecionados[0];
-    const chamado = chamados.find(c => c.id === chamadoId);
-    
-    // Validar se o chamado está encerrado
-    if (chamado && chamado.status?.id === 3) {
-      const confirmacao = window.confirm('Este chamado está encerrado Tem certeza que deseja editar?.');
-      if (!confirmacao) {
-        return;
-      }
-    }
-    
-    setChamadoIdEditar(chamadoId);
-    setModalEditarChamadoAberto(true);
-  };
-
-  const handleSucessoEdicaoChamado = async () => {
-    setChamadosSelecionados([]);
-    setTodosChecados(false);
-    await pesquisarChamados(paginaAtual);
-  };
-
   const formatarData = (data: string | null) => {
     if (!data) return '-';
     const date = new Date(data);
@@ -826,18 +797,6 @@ export default function GerenciarChamados() {
             >
               <FiPlus className="w-3 h-3" />
               Novo
-            </button>
-
-            <button
-              onClick={editarChamadoIndividual}
-              disabled={chamadosSelecionados.length !== 1}
-              title={chamadosSelecionados.length !== 1 ? "Selecione exatamente 1 chamado para editar" : "Editar chamado selecionado"}
-              className="px-2.5 py-1 bg-transparent border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-all duration-200 transform hover:scale-105 font-medium text-sm flex items-center gap-1.5 disabled:border-blue-300 disabled:text-blue-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-1 focus:ring-blue-500/50"
-            >
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
-              Editar
             </button>
           </div>
   {/* container com togglezinho de selecao pra escolher modo de viusalizacao */}
@@ -1069,7 +1028,7 @@ export default function GerenciarChamados() {
                   placeholder="Digite o nome"
                   className="w-full min-w-0 px-3 py-2 border rounded text-sm focus:outline-none transition-all"
                   style={{
-                    backgroundColor: theme.background.surface,
+                    backgroundColor: theme.background.pagina,
                     borderColor: theme.border.secondary,
                     color: theme.text.primary
                   }}
@@ -1333,11 +1292,12 @@ export default function GerenciarChamados() {
                   borderWidth: '1px',
                    backgroundColor: theme.background.surface
                  }}>
-                  {(['todos', 'meus', 'outros'] as const).map((aba) => {
+                  {(['todos', 'meus', 'outros', 'semResponsavel'] as const).map((aba) => {
                     const labels = {
                       todos: 'Todos',
                       meus: 'Meus',
-                      outros: 'Outros'
+                      outros: 'Outros',
+                      semResponsavel: 'Sem responsável'
                     };
 
                     return (
@@ -1348,6 +1308,7 @@ export default function GerenciarChamados() {
                           px-4 py-1 text-[13px] font-medium transition-all duration-200
                           ${aba === 'todos' ? 'rounded-l-lg' : ''} 
                           ${aba === 'outros' ? 'rounded-r-lg' : ''} 
+                          ${aba === 'semResponsavel' ? 'rounded-r-lg' : ''} 
                         `}
                         style={abaFiltro === aba ? {
                           backgroundColor: theme.dashboard.btquadrokanban.bg,
@@ -1544,12 +1505,12 @@ export default function GerenciarChamados() {
                           }}
                           className={`transition-colors cursor-pointer ${linhaAnimando === chamado.id ? 'slideOutLeft' : ''}`}
                           style={{
-                            backgroundColor: index % 2 === 0 ? theme.background.pagina : theme.background.surface,
+                            backgroundColor: index % 2 === 0 ? theme.background.tabelaClaro : theme.background.tabelaEscuro,
                             borderBottomColor: theme.border.secondary,
                             borderBottomWidth: '1px'
                           }}
                           onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = theme.background.hover)}
-                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = index % 2 === 0 ? theme.background.pagina : theme.background.surface)}
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = index % 2 === 0 ? theme.background.tabelaClaro : theme.background.tabelaEscuro)}
                         >
                           <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                             <input
@@ -2052,20 +2013,8 @@ export default function GerenciarChamados() {
          //atualizar os chamdos depois de criar 
           pesquisarChamados(paginaAtual);
         }}
-      />
 
-      {/* modal de editar chamado individual */}
-      {chamadoIdEditar && (
-        <ModalEditarChamadoAdmin
-          isOpen={modalEditarChamadoAberto}
-          onClose={() => {
-            setModalEditarChamadoAberto(false);
-            setChamadoIdEditar(null);
-          }}
-          onSuccess={handleSucessoEdicaoChamado}
-          chamadoId={chamadoIdEditar}
-        />
-      )}
+      />
     </div>
   );
 }

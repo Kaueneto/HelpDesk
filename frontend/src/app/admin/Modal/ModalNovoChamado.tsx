@@ -473,22 +473,22 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
                   switch (normalizedName) {
                     case 'baixa':
                     case 'baixo':
-                      return isActive ? theme.priority.baixa : { bg: theme.priority.baixa.bg, text: theme.text.secondary };
+                      return isActive ? theme.priority.baixa : { bg: '#f0f0f0', text: '#666' };
                     case 'média':
                     case 'media':
                     case 'médio':
                     case 'medio':
-                      return isActive ? theme.priority.media : { bg: theme.priority.media.bg, text: theme.text.secondary };
+                      return isActive ? theme.priority.media : { bg: '#f0f0f0', text: '#666' };
                     case 'alta':
                     case 'alto':
-                      return isActive ? theme.priority.alta : { bg: theme.priority.alta.bg, text: theme.text.secondary };
+                      return isActive ? theme.priority.alta : { bg: '#f0f0f0', text: '#666' };
                     case 'crítica':
                     case 'critica':
-                      return isActive ? theme.priority.critica : { bg: theme.priority.critica.bg, text: theme.text.secondary };
+                      return isActive ? theme.priority.critica : { bg: '#f0f0f0', text: '#666' };
                     case 'urgente':
-                      return isActive ? theme.priority.urgente : { bg: theme.priority.urgente.bg, text: theme.text.secondary };
+                      return isActive ? theme.priority.urgente : { bg: '#f0f0f0', text: '#666' };
                     default:
-                      return isActive ? theme.priority.media : { bg: theme.priority.media.bg, text: theme.text.secondary };
+                      return isActive ? theme.priority.media : { bg: '#f0f0f0', text: '#666' };
                   }
                 };
                 
@@ -524,14 +524,32 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={submitting}
-                className="inline-flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed border"
+                className="
+                  inline-flex items-center gap-2 
+                  px-3 py-1.5 
+                  rounded-md 
+                  text-xs font-medium 
+                  transition-all duration-200 
+                  border
+                  hover:scale-105 hover:shadow-sm
+                  focus:outline-none focus:ring-2 focus:ring-offset-1
+                  disabled:opacity-50 disabled:cursor-not-allowed
+                "
                 style={{
-                  backgroundColor: `${theme.brand.primary}15`,
-                  color: theme.brand.primary,
-                  borderColor: theme.brand.primary,
+                  backgroundColor: `${theme.brand.buttonSecondary}15`,
+                  color: theme.brand.buttonSecondary,
+                  borderColor: theme.brand.buttonSecondary,
+                  // ring dinamico com a cor do tema
+                  boxShadow: '0 0 0 0 transparent',
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.boxShadow = `0 0 0 2px ${theme.brand.primary}40`
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.boxShadow = `0 0 0 0 transparent`
                 }}
               >
-                <MdAttachFile className="h-4 w-4" />
+                <MdAttachFile className="h-3.5 w-3.5" />
                 Arquivos
               </button>
 

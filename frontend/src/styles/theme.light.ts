@@ -6,7 +6,8 @@ export const lightTheme: Theme = {
   brand: {
     primary: '#3B82F6',      // Azul
     secondary: '#1F2937',    // Cinza escuro
-    subHeader: '#1A68CF',   
+    subHeader: '#1A68CF',
+    buttonSecondary: '#60A5FA',       // Azul para botões
   },
 
   // Backgrounds
@@ -16,6 +17,8 @@ export const lightTheme: Theme = {
     modal: '#FFFFFF',        // Branco para modais
     card: '#FFFFFF',         // Branco para cards
     hover: '#F3F4F6',        // Cinza claro no hover
+    tabelaClaro: '#F9FAFB',      // Cinza claro para tabela clara
+    tabelaEscuro: '#F3F4F6',     // Cinza para tabela escura
   },
 
   // Cores de texto
@@ -113,6 +116,7 @@ export const lightTheme: Theme = {
   kanban: {
     columnBg: '#F9FAFB',     // Cinza muito claro
     columnBorder: '#E5E7EB', // Cinza
+    cardBg: '#FFFFFF',      // Branco para cards
     textPrimary: '#1F2937',  // Cinza escuro
     textSecondary: '#6B7280', // Cinza médio
   },

@@ -336,6 +336,64 @@ const KanbanView = ({
     return { groups, columns };
   }, [tickets, groupBy, statusList, prioridades, departamentos, topicosAjuda, somenteAbertos, theme]);
 
+  // estilos para o Select de agrupamento
+  const getSelectStyles = () => {
+    return {
+      control: (base: any) => ({
+        ...base,
+        minHeight: '32px',
+        height: '32px',
+        backgroundColor: theme.background.surface,
+        borderColor: theme.border.secondary,
+        boxShadow: 'none',
+        padding: '0 4px',
+        '&:hover': {
+          borderColor: theme.brand.primary,
+        },
+      }),
+      menu: (base: any) => ({
+        ...base,
+        backgroundColor: theme.background.surface,
+        borderColor: theme.border.secondary,
+      }),
+      menuList: (base: any) => ({
+        ...base,
+        backgroundColor: theme.background.surface,
+        color: theme.text.primary,
+        padding: '4px 0',
+      }),
+      option: (base: any, state: any) => ({
+        ...base,
+        backgroundColor: state.isSelected ? theme.brand.primary : (state.isFocused ? theme.background.hover : 'transparent'),
+        color: state.isSelected ? 'white' : theme.text.primary,
+        cursor: 'pointer',
+        padding: '8px 12px',
+      }),
+      singleValue: (base: any) => ({
+        ...base,
+        color: theme.text.primary,
+      }),
+      input: (base: any) => ({
+        ...base,
+        color: theme.text.primary,
+      }),
+      placeholder: (base: any) => ({
+        ...base,
+        color: theme.text.tertiary,
+      }),
+      indicatorSeparator: () => ({
+        display: 'none',
+      }),
+      dropdownIndicator: (base: any) => ({
+        ...base,
+        color: theme.text.primary,
+        '&:hover': {
+          color: theme.text.primary,
+        },
+      }),
+    };
+  };
+
   const handleGroupByChange = useCallback((option: GroupByOption | null) => {
     if (!option) return;
 
@@ -583,64 +641,50 @@ const KanbanView = ({
       className="h-full"
     >
       {/* seletor de agrupamento */}
-      <div className="mb-4 flex justify-between items-center">
-        <div className="flex items-center space-x-4">
-          <h2 className="text-sm text-gray-700">
-            Exibir por
-          </h2>
-          <div className="w-60">
-            <Select
-              value={groupByOptions.find(opt => opt.value === groupBy)}
-              onChange={handleGroupByChange}
-              options={groupByOptions}
-              placeholder="Agrupar por..."
-              className="text-sm"
-              classNamePrefix="react-select"
-              isSearchable={false}
-              styles={{
-                    control: (base) => ({
-                      ...base,
-                      minHeight: '28px',
-                      height: '30px',
-                    }),
-                    valueContainer: (base) => ({
-                      ...base,
-                      padding: '0 8px',
-                    }),
-                    indicatorsContainer: (base) => ({
-                      ...base,
-                      height: '30px',
-                    }),
-              }}
-            />
+      <div className="mb-6 flex justify-between items-center gap-6" style={{ paddingBottom: '12px', borderBottomColor: theme.border.secondary, borderBottomWidth: '1px' }}>
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-medium" style={{ color: theme.text.secondary }}>
+              Exibir por
+            </span>
+            <div className="w-56">
+              <Select
+                value={groupByOptions.find(opt => opt.value === groupBy)}
+                onChange={handleGroupByChange}
+                options={groupByOptions}
+                placeholder="Selecionar..."
+                isSearchable={false}
+                styles={getSelectStyles()}
+              />
+            </div>
           </div>
           
-          <div className="flex items-center gap-2 ml-4 pl-4 border-l border-gray-300">
-            <span className="text-sm text-gray-600">
-              Ocultar concluídos
+          <div className="flex items-center gap-3 pl-6" style={{ borderLeftColor: theme.border.secondary, borderLeftWidth: '1px' }}>
+            <span className="text-sm" style={{ color: theme.text.secondary }}>
+              Apenas abertos
             </span>
             <button
               type="button"
               onClick={() => setSomenteAbertos(!somenteAbertos)}
-              className={`
-                relative w-10 h-5 rounded-full transition-colors duration-200
-                ${somenteAbertos ? "bg-blue-600" : "bg-gray-300"}
-              `}
+              className="relative w-11 h-6 rounded-full transition-all duration-200"
+              style={{
+                backgroundColor: somenteAbertos ? theme.brand.primary : theme.border.secondary,
+              }}
             >
               <span
-                className={`
-                  absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow
-                  transform transition-transform duration-200
-                  ${somenteAbertos ? "translate-x-5" : ""}
-                `}
+                className="absolute top-1 left-1 w-4 h-4 rounded-full shadow-sm transition-transform duration-200"
+                style={{
+                  backgroundColor: 'white',
+                  transform: somenteAbertos ? 'translateX(20px)' : 'translateX(0)',
+                }}
               />
             </button>
           </div>
         </div>
 
-        <div className="flex items-center space-x-2 text-sm text-gray-600">
-          <span>Exibindo</span>
-          <span className="font-medium">{tickets.length} chamados</span>
+        <div className="flex items-center gap-2 text-sm" style={{ color: theme.text.secondary }}>
+          <span>{tickets.length}</span>
+          <span>chamados</span>
         </div>
       </div>
 
@@ -685,11 +729,11 @@ const KanbanView = ({
           transition={{ delay: 0.3 }}
           className="text-center py-12"
         >
-          <div className="text-gray-400">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
+          <div style={{ color: theme.text.tertiary }}>
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ backgroundColor: theme.background.surface }}>
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum chamado encontrado</h3>
-            <p className="text-gray-600">use os filtros para buscar chamados ou crie um novo.</p>
+            <h3 className="text-lg font-medium mb-2" style={{ color: theme.text.primary }}>Nenhum chamado encontrado</h3>
+            <p style={{ color: theme.text.tertiary }}>use os filtros para buscar chamados ou crie um novo.</p>
           </div>
         </motion.div>
       )}
