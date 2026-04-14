@@ -285,6 +285,15 @@ export type Theme = {
       text: string;
       placeholder: string;
     };
+    select: {
+      bg: string;
+      border: string;
+      text: string;
+      optionBg: string;
+      optionText: string;
+      optionHoverBg: string;
+      focusRing: string;
+    };
     badge: {
       bg: string;
       text: string;

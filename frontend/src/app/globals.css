@@ -790,3 +790,71 @@ html.dark .modal-container {
   background-color: rgb(var(--select-item-selected-bg)) !important;
   color: rgb(var(--select-item-selected-color)) !important;
 }
+
+/* ============================================================================
+   ESTILOS PARA SELECT DO MODAL - RESPONSIVO AO TEMA
+   ============================================================================ */
+
+/* Select padrão melhorado para modal */
+.modal-container select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23F1F5F9' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1rem;
+  padding-right: 2.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+html.dark .modal-container select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23F1F5F9' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+}
+
+/* Select no tema claro */
+select {
+  accent-color: #3B82F6;
+}
+
+/* Select no tema escuro */
+html.dark select {
+  accent-color: #0084FF;
+}
+
+/* Opções do select no tema escuro */
+html.dark select option {
+  background-color: #1E293B;
+  color: #F1F5F9;
+  padding: 0.5rem;
+}
+
+/* Opção selecionada no tema escuro */
+html.dark select option:checked {
+  background-color: #0C4A6E;
+  color: #BAE6FD;
+}
+
+/* Hover no tema escuro */
+html.dark select option:hover {
+  background-color: #334155;
+  color: #F1F5F9;
+}
+
+/* Opções do select no tema claro */
+select option {
+  background-color: #FFFFFF;
+  color: #1F2937;
+  padding: 0.5rem;
+}
+
+/* Opção selecionada no tema claro */
+select option:checked {
+  background-color: #DBEAFE;
+  color: #0C4A6E;
+}
+
+/* Hover no tema claro */
+select option:hover {
+  background-color: #F3F4F6;
+  color: #1F2937;
+}

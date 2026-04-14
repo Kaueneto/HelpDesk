@@ -82,7 +82,7 @@ export default function AdminSidebar({ collapsed, onToggle }: AdminSidebarProps)
           >
             <img
               src={logoHovered ? '/logo2.png' : '/logo1.png'}
-              className={`${!collapsed ? 'ml-6' : ''} transition-all duration-200 ${collapsed ? 'w-6 h-6' : 'w-10 h-10'}`}
+              className={`${!collapsed ? 'ml-2' : ''} transition-all duration-200 ${collapsed ? 'w-6 h-6' : 'w-10 h-10'}`}
             />
           </button>
 

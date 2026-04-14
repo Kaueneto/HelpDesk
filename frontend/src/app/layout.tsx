@@ -14,8 +14,12 @@ const poppins = Poppins({
 export const metadata: Metadata = {
   title: "HelpDesk - Sistema de Chamados",
   description: "Sistema de gerenciamento de chamados técnicos",
+  icons: {
+    icon: "/iconapp.ico",
+    shortcut: "/iconapp.ico",
+    apple: "/iconapp.ico",
+  },
 };
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -24,6 +28,7 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className={poppins.className} suppressHydrationWarning>
       <head>
+        <link rel="icon" href="/iconapp.ico" />
         <script
           dangerouslySetInnerHTML={{
             __html: `

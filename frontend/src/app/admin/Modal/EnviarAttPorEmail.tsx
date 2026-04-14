@@ -60,13 +60,21 @@ function EmailBadgeInput({ label, emails, setEmails, disabled, theme }: { label:
   return (
     <div className="mb-4">
       <label className="block text-sm font-medium mb-2" style={{ color: theme.modalEnviarEmail.textPrimary }}>{label}</label>
-      <div className="flex flex-wrap items-center gap-2 border rounded-lg px-2 py-1 min-h-11" style={{ borderColor: theme.modalEnviarEmail.border, backgroundColor: theme.modalEnviarEmail.input.bg }}>
-        {emails.map((email, idx) => (
-          <span key={email} className="flex items-center px-2 py-1 rounded-full text-xs font-medium mr-1 mb-1" style={{ backgroundColor: theme.modalEnviarEmail.badge.bg, color: theme.modalEnviarEmail.badge.text }}>
-            {email}
-            <button type="button" className="ml-1 hover:opacity-80 focus:outline-none" onClick={() => removeEmail(idx)} disabled={disabled} style={{ color: theme.modalEnviarEmail.badge.text }}>&times;</button>
-          </span>
-        ))}
+      
+      {/* Badges dos emails inseridos */}
+      {emails.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-2">
+          {emails.map((email, idx) => (
+            <span key={email} className="flex items-center px-3 py-1.5 rounded-full text-xs font-medium" style={{ backgroundColor: theme.modalEnviarEmail.badge.bg, color: theme.modalEnviarEmail.badge.text }}>
+              {email}
+              <button type="button" className="ml-2 hover:opacity-80 focus:outline-none font-bold" onClick={() => removeEmail(idx)} disabled={disabled} style={{ color: theme.modalEnviarEmail.badge.text }}>&times;</button>
+            </span>
+          ))}
+        </div>
+      )}
+      
+      {/* Campo de input */}
+      <div className="border rounded-lg px-3 py-2" style={{ borderColor: theme.modalEnviarEmail.border, backgroundColor: theme.modalEnviarEmail.input.bg }}>
         <input
           ref={inputRef}
           type="text"
@@ -75,9 +83,9 @@ function EmailBadgeInput({ label, emails, setEmails, disabled, theme }: { label:
           onKeyDown={handleKeyDown}
           onBlur={handleBlur}
           disabled={disabled}
-          className="flex-1 min-w-30 px-2 py-1 border-none focus:ring-0 bg-transparent outline-none"
+          className="w-full border-none focus:ring-0 outline-none"
           placeholder="Digite e pressione Enter"
-          style={{ color: theme.modalEnviarEmail.input.text }}
+          style={{ color: theme.modalEnviarEmail.input.text, backgroundColor: theme.modalEnviarEmail.input.bg }}
         />
       </div>
     </div>
@@ -200,6 +208,28 @@ const ModalEnviarAttPorEmail: React.FC<ModalEnviarAttPorEmailProps> = ({
     }
   }
 
+  // funcao para retornar cores vibrantes baseadas no status
+  function getStatusColors(id?: number) {
+    switch (id) {
+      case 1: // aberto - amarelo
+        return { bg: 'rgba(201, 194, 0, 0.15)', text: '#FFFFFF', border: '#C9C200' };
+      case 2: // em análise/em andamento - azul
+        return { bg: 'rgba(21, 93, 252, 0.15)', text: '#FFFFFF', border: '#155DFC' };
+      case 3: // concluído/finalizado - verde
+        return { bg: 'rgba(27, 230, 0, 0.15)', text: '#FFFFFF', border: '#1BE600' };
+      case 4: // atrasado - vermelho
+        return { bg: 'rgba(231, 76, 60, 0.15)', text: '#FFFFFF', border: '#E74C3C' };
+      case 5: // reaberto - azul
+        return { bg: 'rgba(21, 93, 252, 0.15)', text: '#FFFFFF', border: '#155DFC' };
+      case 6: // pendente usuário - roxo
+        return { bg: 'rgba(148, 0, 255, 0.15)', text: '#FFFFFF', border: '#9400FF' };
+      case 7: // pendente terceiros - laranja
+        return { bg: 'rgba(254, 154, 0, 0.15)', text: '#FFFFFF', border: '#FE9A00' };
+      default:
+        return { bg: 'rgba(71, 85, 105, 0.15)', text: '#F1F5F9', border: '#475569' };
+    }
+  }
+
   const carregarStatus = async () => {
     try {
       const response = await api.get('/status');
@@ -271,111 +301,136 @@ const ModalEnviarAttPorEmail: React.FC<ModalEnviarAttPorEmailProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center modal-overlay px-4">
-      <div className="rounded-2xl w-full max-w-2xl p-8 border" style={{ backgroundColor: theme.modalEnviarEmail.background, borderColor: theme.modalEnviarEmail.border }}>
-        <h2 className="text-2xl font-bold mb-6 font-segoe flex items-center gap-2" style={{ color: theme.modalEnviarEmail.textPrimary }}>
-          Atualização de chamado por email
-        </h2>
-
-        <EmailBadgeInput label="Destinatário(s)" emails={destinatarios} setEmails={setDestinatarios} disabled={loading} theme={theme} />
-        <div className="flex gap-2 mb-4">
-          <button
-            type="button"
-            onClick={() => setCcAtivo((v) => !v)}
-            className="px-3 py-2 border rounded-lg font-medium text-xs transition-all duration-150 flex items-center gap-1"
-            style={{
-              borderColor: ccAtivo ? theme.brand.primary : theme.modalEnviarEmail.border,
-              backgroundColor: ccAtivo ? `${theme.brand.primary}20` : 'transparent',
-              color: ccAtivo ? theme.brand.primary : theme.modalEnviarEmail.textSecondary
-            }}
-            disabled={loading}
-            title="Adicionar cópia (CC)"
-          >
-            CC
-          </button>
-          <button
-            type="button"
-            onClick={() => setCcoAtivo((v) => !v)}
-            className="px-3 py-2 border rounded-lg font-medium text-xs transition-all duration-150 flex items-center gap-1"
-            style={{
-              borderColor: ccoAtivo ? theme.brand.primary : theme.modalEnviarEmail.border,
-              backgroundColor: ccoAtivo ? `${theme.brand.primary}20` : 'transparent',
-              color: ccoAtivo ? theme.brand.primary : theme.modalEnviarEmail.textSecondary
-            }}
-            disabled={loading}
-            title="Adicionar cópia oculta (CCO)"
-          >
-            CCO
-          </button>
+    <div   className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50 px-4">
+      <div className="rounded-2xl w-full max-w-2xl max-h-[90vh] border flex flex-col" style={{ backgroundColor: theme.modalEnviarEmail.background, borderColor: theme.modalEnviarEmail.border }}>
+        {/* Header */}
+        <div className="p-8 pb-4">
+          <h2 className="text-2xl font-bold mb-0 font-segoe flex items-center gap-2" style={{ color: theme.modalEnviarEmail.textPrimary }}>
+            Atualização de chamado por email
+          </h2>
         </div>
 
-        {ccAtivo && (
-          <EmailBadgeInput label="Cópia (CC)" emails={ccs} setEmails={setCcs} disabled={loading} theme={theme} />
-        )}
-
-        {ccoAtivo && (
-          <EmailBadgeInput label="Cópia Oculta (CCO)" emails={ccos} setEmails={setCcos} disabled={loading} theme={theme} />
-        )}
-
-
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-2" style={{ color: theme.modalEnviarEmail.textPrimary }}>Mensagem/Atualização</label>
-          <textarea
-            value={mensagem}
-            onChange={(e) => setMensagem(e.target.value)}
-            rows={5}
-            disabled={loading}
-            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-1 resize-none disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-            style={{
-              borderColor: theme.modalEnviarEmail.border,
-              backgroundColor: theme.modalEnviarEmail.input.bg,
-              color: theme.modalEnviarEmail.input.text
-            }}
-            placeholder="Digite a mensagem ou atualização do chamado..."
-          />
-          <label className="flex items-center gap-2 mt-2 select-none">
-            <input
-              type="checkbox"
-              checked={incluirTopico}
-              onChange={() => setIncluirTopico((v) => !v)}
+        {/* Conteúdo Scrollável */}
+        <div className="flex-1 overflow-y-auto px-8">
+          <EmailBadgeInput label="Destinatário(s)" emails={destinatarios} setEmails={setDestinatarios} disabled={loading} theme={theme} />
+          <div className="flex gap-2 mb-4">
+            <button
+              type="button"
+              onClick={() => setCcAtivo((v) => !v)}
+              className="px-3 py-2 border rounded-lg font-medium text-xs transition-all duration-150 flex items-center gap-1"
+              style={{
+                borderColor: ccAtivo ? theme.brand.primary : theme.modalEnviarEmail.border,
+                backgroundColor: ccAtivo ? `${theme.brand.primary}20` : 'transparent',
+                color: ccAtivo ? theme.brand.primary : theme.modalEnviarEmail.textSecondary
+              }}
               disabled={loading}
-              className="rounded border"
-              style={{ borderColor: theme.modalEnviarEmail.border }}
-            />
-            <span className="text-xs" style={{ color: theme.modalEnviarEmail.textPrimary }}>Incluir no email o tópico do chamado</span>
-          </label>
-        </div>
+              title="Adicionar cópia (CC)"
+            >
+              CC
+            </button>
+            <button
+              type="button"
+              onClick={() => setCcoAtivo((v) => !v)}
+              className="px-3 py-2 border rounded-lg font-medium text-xs transition-all duration-150 flex items-center gap-1"
+              style={{
+                borderColor: ccoAtivo ? theme.brand.primary : theme.modalEnviarEmail.border,
+                backgroundColor: ccoAtivo ? `${theme.brand.primary}20` : 'transparent',
+                color: ccoAtivo ? theme.brand.primary : theme.modalEnviarEmail.textSecondary
+              }}
+              disabled={loading}
+              title="Adicionar cópia oculta (CCO)"
+            >
+              CCO
+            </button>
+          </div>
 
-        <div className="mb-6">
-          <label className="block text-sm font-medium mb-2" style={{ color: theme.modalEnviarEmail.textPrimary }}>Alterar status</label>
-          <select
-            value={statusSelecionado || ''}
-            onChange={(e) => setStatusSelecionado(e.target.value ? Number(e.target.value) : undefined)}
-            disabled={loading}
-            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-            style={{
-              borderColor: theme.modalEnviarEmail.border,
-              backgroundColor: theme.modalEnviarEmail.input.bg,
-              color: theme.modalEnviarEmail.input.text
-            }}
-          >
-            <option value="">Selecione um status (opcional)</option>
-            {statuses.map((status) => (
-              <option key={status.id} value={status.id}>
-                {status.nome}
-              </option>
-            ))}
-          </select>
-          {statusSelecionado && (
-            <div className="mt-3 flex items-start gap-3">
-              <div className="flex-1 text-sm px-3 py-2 rounded-lg border animate-fadeIn" style={{ backgroundColor: theme.modalEnviarEmail.descricaoStatus.bg, color: theme.modalEnviarEmail.descricaoStatus.text, borderColor: theme.modalEnviarEmail.descricaoStatus.border }}>
-                {getDescricaoStatus(statusSelecionado)}
-              </div>
-            </div>
+          {ccAtivo && (
+            <EmailBadgeInput label="Cópia (CC)" emails={ccs} setEmails={setCcs} disabled={loading} theme={theme} />
           )}
+
+          {ccoAtivo && (
+            <EmailBadgeInput label="Cópia Oculta (CCO)" emails={ccos} setEmails={setCcos} disabled={loading} theme={theme} />
+          )}
+
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-2" style={{ color: theme.modalEnviarEmail.textPrimary }}>Mensagem/Atualização</label>
+            <textarea
+              value={mensagem}
+              onChange={(e) => setMensagem(e.target.value)}
+              rows={5}
+              disabled={loading}
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-1 resize-none disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              style={{
+                borderColor: theme.modalEnviarEmail.border,
+                backgroundColor: theme.modalEnviarEmail.input.bg,
+                color: theme.modalEnviarEmail.input.text
+              }}
+              placeholder="Digite a mensagem ou atualização do chamado..."
+            />
+            <label className="flex items-center gap-2 mt-2 select-none">
+              <input
+                type="checkbox"
+                checked={incluirTopico}
+                onChange={() => setIncluirTopico((v) => !v)}
+                disabled={loading}
+                className="rounded border"
+                style={{ borderColor: theme.modalEnviarEmail.border }}
+              />
+              <span className="text-xs" style={{ color: theme.modalEnviarEmail.textPrimary }}>Incluir no email o tópico do chamado</span>
+            </label>
+          </div>
+
+          <div className="mb-6">
+            <label className="block text-sm font-medium mb-2" style={{ color: theme.modalEnviarEmail.textPrimary }}>Alterar status</label>
+            <div className="relative">
+              <select
+                value={statusSelecionado || ''}
+                onChange={(e) => setStatusSelecionado(e.target.value ? Number(e.target.value) : undefined)}
+                disabled={loading}
+                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all appearance-none pr-10"
+                style={{
+                  borderColor: theme.modalEnviarEmail.border,
+                  backgroundColor: theme.modalEnviarEmail.input.bg,
+                  color: theme.modalEnviarEmail.input.text,
+                  colorScheme: 'dark'
+                }}
+              >
+              <option value="">Selecione um status (opcional)</option>
+              {statuses.map((status) => (
+                <option key={status.id} value={status.id}>
+                  {status.nome}
+                </option>
+              ))}
+              </select>
+              <svg
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 pointer-events-none"
+                style={{ color: theme.modalEnviarEmail.input.text }}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+              </svg>
+            </div>
+            {statusSelecionado && (
+              <div className="mt-3 flex items-start gap-3">
+                <div 
+                  className="flex-1 text-sm px-3 py-2 rounded-lg border animate-fadeIn font-medium" 
+                  style={{ 
+                    backgroundColor: getStatusColors(statusSelecionado).bg, 
+                    color: getStatusColors(statusSelecionado).text, 
+                    borderColor: getStatusColors(statusSelecionado).border 
+                  }}
+                >
+                  {getDescricaoStatus(statusSelecionado)}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="flex gap-3 justify-between mt-6">
+        {/* Footer */}
+        <div className="flex gap-3 justify-between mt-6 p-8 pt-4 border-t" style={{ borderColor: theme.modalEnviarEmail.border }}>
           <button
             onClick={onClose}
             disabled={loading}

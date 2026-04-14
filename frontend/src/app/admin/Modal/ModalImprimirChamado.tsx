@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import { LuCheck, LuMessageSquare, LuHistory, LuX, LuPrinter } from 'react-icons/lu';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface ModalImprimirChamadoProps {
   isOpen: boolean;
@@ -13,6 +15,7 @@ export default function ModalImprimirChamado({
   onClose,
   onConfirm,
 }: ModalImprimirChamadoProps) {
+  const { theme } = useTheme();
   const [incluirConversa, setIncluirConversa] = useState(false);
   const [incluirHistorico, setIncluirHistorico] = useState(false);
 
@@ -25,90 +28,173 @@ export default function ModalImprimirChamado({
 
   return (
     <div 
-      className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4"
+      className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50 px-4"
+      style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
       onClick={onClose}
-      style={{ animation: 'fadeIn 0.15s ease-out' }}
     >
       <div 
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-md"
+        className="rounded-3xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all"
         onClick={(e) => e.stopPropagation()}
-        style={{ animation: 'slideUp 0.2s ease-out', willChange: 'transform, opacity' }}
+        style={{ 
+          backgroundColor: theme.modalEnviarEmail.background,
+          animation: 'modalAppear 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+        }}
       >
         {/* Header do Modal */}
-        <div className="relative bg-linear-to-r from-[#001933] to-[#1a3c7a] px-6 py-5 rounded-t-2xl">
-          <h3 className="text-xl font-bold text-white">
-            Preferências de impressão
-          </h3>
-      
+        <div className="px-8 pt-8 pb-4 flex justify-between items-start border-b" style={{ borderColor: theme.modalEnviarEmail.border }}>
+          <div>
+            <h3 className="text-2xl font-bold tracking-tight" style={{ color: theme.modalEnviarEmail.textPrimary }}>
+              Opções de Impressão
+            </h3>
+            <p className="text-sm mt-1" style={{ color: theme.modalEnviarEmail.textSecondary }}>
+              Selecione o que deseja incluir na impressão.
+            </p>
+          </div>
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 text-white/80 hover:text-white transition-colors"
+            className="p-2 rounded-full transition-colors"
+            style={{ 
+              color: theme.modalEnviarEmail.textSecondary,
+              backgroundColor: 'transparent'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.modalEnviarEmail.border}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            <LuX size={20} />
           </button>
         </div>
 
-        {/* Body do Modal */}
-        <div className="p-6 space-y-3">
-            <h1 className="text-sm font-medium text-gray-900">
-                Selecione:
-            </h1>
-          {/* Opção: Incluir conversa do chamado */}
-          <div
+        {/* Body */}
+        <div className="p-8 space-y-4">
+          
+        {/* Opção: Incluir conversa do chamado */}
+          <button
             onClick={() => setIncluirConversa(!incluirConversa)}
-            className={`
-              relative flex items-center p-4 rounded-xl border-2 cursor-pointer
-              transition-all duration-200
-              ${incluirConversa
-                ? 'border-blue-600 bg-blue-600 text-white shadow-md'
-                : 'border-gray-300 bg-white text-gray-900 hover:border-blue-300 hover:bg-gray-50 hover:shadow-sm'
-              }
-            `}
+            className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 transition-all duration-200 group"
+            style={{
+              borderColor: incluirConversa ? theme.brand.primary : theme.modalEnviarEmail.border,
+              backgroundColor: incluirConversa ? `${theme.brand.primary}20` : theme.modalEnviarEmail.input.bg,
+            }}
           >
-            <span className="text-lg font-medium">
-              Incluir na impressão a conversa do chamado
-            </span>
-          </div>
+            <div 
+              className="p-3 rounded-xl transition-colors"
+              style={{
+                backgroundColor: incluirConversa ? theme.brand.primary : theme.modalEnviarEmail.input.bg,
+                color: incluirConversa ? '#FFFFFF' : theme.modalEnviarEmail.textSecondary,
+              }}
+            >
+              <LuMessageSquare size={22} />
+            </div>
+            
+            <div className="flex-1 text-left">
+              <span 
+                className="block font-semibold transition-colors"
+                style={{ color: incluirConversa ? theme.brand.primary : theme.modalEnviarEmail.textPrimary }}
+              >
+                Conversa do chamado
+              </span>
+              <span className="text-xs" style={{ color: theme.modalEnviarEmail.textSecondary }}>
+                Incluir mensagens/atualizações
+              </span>
+            </div>
 
-          {/* Opção: Imprimir histórico do chamado */}
-          <div
+            <div 
+              className="w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all"
+              style={{
+                backgroundColor: incluirConversa ? theme.brand.primary : theme.modalEnviarEmail.background,
+                borderColor: incluirConversa ? theme.brand.primary : theme.modalEnviarEmail.border,
+              }}
+            >
+              {incluirConversa && <LuCheck size={14} className="text-white stroke-[3px]" />}
+            </div>
+          </button>
+
+        {/* Opção: Imprimir histórico do chamado */}
+          <button
             onClick={() => setIncluirHistorico(!incluirHistorico)}
-            className={`
-              relative flex items-center p-4 rounded-xl border-2 cursor-pointer
-              transition-all duration-200
-              ${incluirHistorico
-                ? 'border-blue-600 bg-blue-600 text-white shadow-md'
-                : 'border-gray-300 bg-white text-gray-900 hover:border-blue-300 hover:bg-gray-50 hover:shadow-sm'
-              }
-            `}
+            className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 transition-all duration-200 group"
+            style={{
+              borderColor: incluirHistorico ? theme.brand.primary : theme.modalEnviarEmail.border,
+              backgroundColor: incluirHistorico ? `${theme.brand.primary}20` : theme.modalEnviarEmail.input.bg,
+            }}
           >
-            <span className="text-lg font-medium">
-              Imprimir histórico do chamado
-            </span>
-          </div>
+            <div 
+              className="p-3 rounded-xl transition-colors"
+              style={{
+                backgroundColor: incluirHistorico ? theme.brand.primary : theme.modalEnviarEmail.input.bg,
+                color: incluirHistorico ? '#FFFFFF' : theme.modalEnviarEmail.textSecondary,
+              }}
+            >
+              <LuHistory size={22} />
+            </div>
+            
+            <div className="flex-1 text-left">
+              <span 
+                className="block font-semibold transition-colors"
+                style={{ color: incluirHistorico ? theme.brand.primary : theme.modalEnviarEmail.textPrimary }}
+              >
+                Histórico completo
+              </span>
+              <span className="text-xs" style={{ color: theme.modalEnviarEmail.textSecondary }}>
+                Logs de eventos e mudanças
+              </span>
+            </div>
+
+            <div 
+              className="w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all"
+              style={{
+                backgroundColor: incluirHistorico ? theme.brand.primary : theme.modalEnviarEmail.background,
+                borderColor: incluirHistorico ? theme.brand.primary : theme.modalEnviarEmail.border,
+              }}
+            >
+              {incluirHistorico && <LuCheck size={14} className="text-white stroke-[3px]" />}
+            </div>
+          </button>
         </div>
 
-        {/* Footer do Modal */}
-        <div className="px-6 py-4 bg-gray-50 rounded-b-2xl flex gap-3 justify-end border-t border-gray-200">
+        {/* Footer */}
+        <div 
+          className="px-8 py-6 border-t flex gap-3"
+          style={{ 
+            backgroundColor: theme.modalEnviarEmail.input.bg,
+            borderColor: theme.modalEnviarEmail.border 
+          }}
+        >
           <button
             onClick={onClose}
-            className="px-6 py-2.5 bg-white border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all font-medium"
+            className="flex-1 px-4 py-3 rounded-xl transition-all font-medium"
+            style={{
+              color: theme.modalEnviarEmail.button.secondary.text,
+              borderColor: theme.modalEnviarEmail.button.secondary.border,
+              backgroundColor: theme.modalEnviarEmail.button.secondary.bg,
+              border: `1px solid ${theme.modalEnviarEmail.button.secondary.border}`
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.modalEnviarEmail.button.secondary.hover}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = theme.modalEnviarEmail.button.secondary.bg}
           >
             Cancelar
           </button>
           <button
             onClick={handleConfirmar}
-            className="px-6 py-2.5 bg-[#001933] text-white rounded-lg hover:bg-[#062975] transition-all font-medium shadow-lg shadow-blue-500/30 flex items-center gap-2"
+            className="flex-2 px-4 py-3 text-white rounded-xl transition-all font-bold shadow-lg flex items-center justify-center gap-2 group"
+            style={{
+              backgroundColor: theme.modalEnviarEmail.button.primary.bg,
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = theme.modalEnviarEmail.button.primary.hover}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = theme.modalEnviarEmail.button.primary.bg}
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-            </svg>
-            Imprimir
+            <LuPrinter size={18} className="group-hover:scale-110 transition-transform" />
+            Confirmar Impressão
           </button>
         </div>
       </div>
+
+      <style jsx>{`
+        @keyframes modalAppear {
+          from { opacity: 0; transform: scale(0.95) translateY(10px); }
+          to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+      `}</style>
     </div>
   );
 }

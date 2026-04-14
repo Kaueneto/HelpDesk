@@ -205,10 +205,19 @@ export const darkTheme: Theme = {
     textSecondary: '#CBD5E1',
     border: '#475569',
     input: {
-      bg: '#0F172A',
-      border: '#334155',
+      bg: '#1E293B',
+      border: '#475569',
       text: '#F1F5F9',
-      placeholder: '#64748B',
+      placeholder: '#94A3B8',
+    },
+    select: {
+      bg: '#334155',
+      border: '#475569',
+      text: '#F1F5F9',
+      optionBg: '#1E293B',
+      optionText: '#F1F5F9',
+      optionHoverBg: '#475569',
+      focusRing: '#0084FF',
     },
     badge: {
       bg: '#0C4A6E',
@@ -219,7 +228,7 @@ export const darkTheme: Theme = {
       primary: {
         bg: '#0084FF',
         text: '#FFFFFF',
-        hover: '#0066CC',
+        hover: '#005EBD',
       },
       secondary: {
         bg: 'transparent',

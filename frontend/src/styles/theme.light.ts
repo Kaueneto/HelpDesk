@@ -215,10 +215,19 @@ export const lightTheme: Theme = {
     textSecondary: '#6B7280',
     border: '#D1D5DB',
     input: {
-      bg: '#F9FAFB',
-      border: '#E5E7EB',
+      bg: '#FFFFFF',
+      border: '#D1D5DB',
       text: '#1F2937',
       placeholder: '#9CA3AF',
+    },
+    select: {
+      bg: '#FFFFFF',
+      border: '#E5E7EB',
+      text: '#1F2937',
+      optionBg: '#FFFFFF',
+      optionText: '#1F2937',
+      optionHoverBg: '#EFF6FF',
+      focusRing: '#3B82F6',
     },
     badge: {
       bg: '#DBEAFE',
