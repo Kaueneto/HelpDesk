@@ -89,6 +89,28 @@ export default function GerenciarChamados() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { theme } = useTheme();
+
+  // constante para a chave do localStorage
+  const STORAGE_KEY = 'chamados_filtros';
+
+  // funções para salvar e carregar filtros do localStorage
+  const salvarFiltrosNoStorage = (filtros: any) => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(filtros));
+    } catch (error) {
+      console.error('Erro ao salvar filtros no localStorage:', error);
+    }
+  };
+
+  const carregarFiltrosDoStorage = () => {
+    try {
+      const filtrosSalvos = localStorage.getItem(STORAGE_KEY);
+      return filtrosSalvos ? JSON.parse(filtrosSalvos) : null;
+    } catch (error) {
+      console.error('Erro ao carregar filtros do localStorage:', error);
+      return null;
+    }
+  };
   
   // filtros
   const [dataAberturaInicio, setDataAberturaInicio] = useState<Date | null>(null);
@@ -150,6 +172,8 @@ export default function GerenciarChamados() {
     const saved = localStorage.getItem('filtrosVisiveis');
     return saved !== null ? saved === 'true' : true;
   });
+
+
 
   // Helper function for React Select component styles
   const getSelectStyles = () => {
@@ -260,9 +284,53 @@ export default function GerenciarChamados() {
     if (!isAuthenticated) return;
     
     carregarDadosIniciais();
-    // carregar chamados automaticamente ao montar
-    pesquisarChamados(1);
-    // limpar cache antigo para evitar conflitos
+    
+    // tentar carregar filtros salvos
+    const filtrosSalvos = carregarFiltrosDoStorage();
+    
+    if (filtrosSalvos) {
+      // restaurar todos os filtros
+      if (filtrosSalvos.dataAberturaInicio) setDataAberturaInicio(new Date(filtrosSalvos.dataAberturaInicio));
+      if (filtrosSalvos.dataAberturaFim) setDataAberturaFim(new Date(filtrosSalvos.dataAberturaFim));
+      if (filtrosSalvos.dataFechamentoInicio) setDataFechamentoInicio(new Date(filtrosSalvos.dataFechamentoInicio));
+      if (filtrosSalvos.dataFechamentoFim) setDataFechamentoFim(new Date(filtrosSalvos.dataFechamentoFim));
+      if (filtrosSalvos.departamentoId?.length) setDepartamentoId(filtrosSalvos.departamentoId);
+      if (filtrosSalvos.topicoAjudaId?.length) setTopicoAjudaId(filtrosSalvos.topicoAjudaId);
+      if (filtrosSalvos.prioridadeId) setPrioridadeId(filtrosSalvos.prioridadeId);
+      if (filtrosSalvos.statusId?.length) setStatusId(filtrosSalvos.statusId);
+      if (filtrosSalvos.assunto) setAssunto(filtrosSalvos.assunto);
+      if (filtrosSalvos.nomeUsuario) setNomeUsuario(filtrosSalvos.nomeUsuario);
+      if (filtrosSalvos.nomeResponsavel) setNomeResponsavel(filtrosSalvos.nomeResponsavel);
+      if (filtrosSalvos.abaFiltro) setAbaFiltro(filtrosSalvos.abaFiltro);
+      if (filtrosSalvos.ocultarConcluidos !== undefined) setOcultarConcluidos(filtrosSalvos.ocultarConcluidos);
+      if (filtrosSalvos.ordenarPor) setOrdenarPor(filtrosSalvos.ordenarPor);
+      if (filtrosSalvos.direcaoOrdem) setDirecaoOrdem(filtrosSalvos.direcaoOrdem);
+      if (filtrosSalvos.paginaAtual) setPaginaAtual(filtrosSalvos.paginaAtual);
+      if (filtrosSalvos.pageSize) setPageSize(filtrosSalvos.pageSize);
+      
+      // fazer a pesquisa com os filtros salvos após restaurá-los
+      // Ususarar setTimeout para aguardar os states serem commitados
+      const timer = setTimeout(() => {
+        pesquisarChamadosComFiltros(
+          filtrosSalvos.dataAberturaInicio ? new Date(filtrosSalvos.dataAberturaInicio) : null,
+          filtrosSalvos.dataAberturaFim ? new Date(filtrosSalvos.dataAberturaFim) : null,
+          filtrosSalvos.dataFechamentoInicio ? new Date(filtrosSalvos.dataFechamentoInicio) : null,
+          filtrosSalvos.dataFechamentoFim ? new Date(filtrosSalvos.dataFechamentoFim) : null,
+          filtrosSalvos.departamentoId || [],
+          filtrosSalvos.topicoAjudaId || [],
+          filtrosSalvos.prioridadeId || '',
+          filtrosSalvos.statusId || [],
+          filtrosSalvos.assunto || '',
+          filtrosSalvos.nomeUsuario || '',
+          filtrosSalvos.nomeResponsavel || '',
+          filtrosSalvos.ocultarConcluidos || false,
+          filtrosSalvos.paginaAtual || 1
+        );
+      }, 100);
+      
+      return () => clearTimeout(timer);
+    }
+    
     localStorage.removeItem('chamadosCache');
   }, [isAuthenticated, authLoading]);
 
@@ -395,6 +463,29 @@ export default function GerenciarChamados() {
 
   const pesquisarChamados = async (page: number = 1, ocultarConcluidosFiltro: boolean = ocultarConcluidos) => {
     if (!isAuthenticated) return;
+    
+    // salvar filtros no localStorage quando pesquisar
+    const filtrosAtuais = {
+      dataAberturaInicio: dataAberturaInicio?.toISOString(),
+      dataAberturaFim: dataAberturaFim?.toISOString(),
+      dataFechamentoInicio: dataFechamentoInicio?.toISOString(),
+      dataFechamentoFim: dataFechamentoFim?.toISOString(),
+      departamentoId,
+      topicoAjudaId,
+      prioridadeId,
+      statusId,
+      assunto,
+      nomeUsuario,
+      nomeResponsavel,
+      abaFiltro,
+      ocultarConcluidos,
+      ordenarPor,
+      direcaoOrdem,
+      paginaAtual: page,
+      pageSize,
+    };
+    salvarFiltrosNoStorage(filtrosAtuais);
+    
     setLoading(true);
     try {
       const params: any = {
@@ -444,6 +535,71 @@ export default function GerenciarChamados() {
     }
   };
 
+  // função auxiliar que faz a pesquisa com filtros passados como parâmetro pra quando voltar da pagina de detalhes
+  const pesquisarChamadosComFiltros = async (
+    dataAberturaInicioParam: Date | null,
+    dataAberturaFimParam: Date | null,
+    dataFechamentoInicioParam: Date | null,
+    dataFechamentoFimParam: Date | null,
+    departamentoIdParam: string[],
+    topicoAjudaIdParam: string[],
+    prioridadeIdParam: string,
+    statusIdParam: string[],
+    assuntoParam: string,
+    nomeUsuarioParam: string,
+    nomeResponsavelParam: string,
+    ocultarConcluidosParam: boolean,
+    pageParam: number
+  ) => {
+    if (!isAuthenticated) return;
+    
+    setLoading(true);
+    try {
+      const params: any = {
+        page: pageParam,
+        pageSize: pageSize || 20,
+      };
+      if (dataAberturaInicioParam) params.dataAberturaInicio = dataAberturaInicioParam.toISOString();
+      if (dataAberturaFimParam) {
+        const fim = new Date(dataAberturaFimParam);
+        fim.setHours(23, 59, 59, 999);
+        params.dataAberturaFim = fim.toISOString();
+      }
+      if (dataFechamentoInicioParam) params.dataFechamentoInicio = dataFechamentoInicioParam.toISOString();
+      if (dataFechamentoFimParam) {
+        const fim = new Date(dataFechamentoFimParam);
+        fim.setHours(23, 59, 59, 999);
+        params.dataFechamentoFim = fim.toISOString();
+      }
+      if (departamentoIdParam.length > 0) params.departamentoId = departamentoIdParam.join(',');
+      if (topicoAjudaIdParam.length > 0) params.topicoAjudaId = topicoAjudaIdParam.join(',');
+      if (prioridadeIdParam) params.prioridadeId = prioridadeIdParam;
+      if (statusIdParam.length > 0) {
+        params.statusId = statusIdParam.join(',');
+      } else if (ocultarConcluidosParam) {
+        params.statusId = [1,2,4,5,6,7].join(',');
+      }
+      if (assuntoParam) params.assunto = assuntoParam;
+      if (nomeUsuarioParam) params.nomeUsuario = nomeUsuarioParam;
+      if (nomeResponsavelParam) params.nomeResponsavel = nomeResponsavelParam;
+
+      const response = await api.get('/chamados', { params });
+    
+      const chamadosRecebidos = response.data.chamados || response.data;
+      setChamados(chamadosRecebidos);
+      setTotalChamados(response.data.total || chamadosRecebidos.length);
+      setTotalPaginas(response.data.totalPages || Math.ceil((response.data.total || chamadosRecebidos.length) / pageSize));
+      setPaginaAtual(pageParam);
+      setChamadosSelecionados([]);
+      setTodosChecados(false);
+      
+    } catch (error) {
+      alert('Erro ao buscar chamados');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const limparFiltros = () => {
     setDataAberturaInicio(null);
     setDataAberturaFim(null);
@@ -456,6 +612,8 @@ export default function GerenciarChamados() {
     setAssunto('');
     setNomeUsuario('');
     setNomeResponsavel('');
+    setAbaFiltro('todos');
+    setOcultarConcluidos(false);
     setChamados([]);
     setChamadosSelecionados([]);
     setTodosChecados(false);
@@ -463,7 +621,10 @@ export default function GerenciarChamados() {
     setTotalPaginas(0);
     setTotalChamados(0);
     setPageSize(20);
+    setOrdenarPor(null);
+    setDirecaoOrdem('asc');
     localStorage.removeItem('chamadosCache');
+    localStorage.removeItem(STORAGE_KEY); // limpar filtros do storage
   };
 
   // Funções para modo Kanban
