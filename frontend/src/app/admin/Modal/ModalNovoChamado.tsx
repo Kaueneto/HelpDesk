@@ -14,13 +14,6 @@ interface TopicosAjuda {
   ativo: boolean;
 }
 
-interface Departamento {
-  id: number;
-  codigo: string;
-  name: string;
-  ativo: boolean;
-}
-
 interface TipoPrioridade {
   id: number;
   nome: string;
@@ -54,7 +47,6 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
   const [assunto, setAssunto] = useState('');
   const [descricao, setDescricao] = useState('');
   const [topicoAjudaId, setTopicoAjudaId] = useState<number>(0);
-  const [departamentoId, setDepartamentoId] = useState<number>(15); // Pré-selecionado
   const [prioridadeId, setPrioridadeId] = useState<number>(0);
   const [responsavelId, setResponsavelId] = useState<number | null>(null);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -62,7 +54,6 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
   
   // Dados dos selects
   const [topicos, setTopicos] = useState<TopicosAjuda[]>([]);
-  const [departamentos, setDepartamentos] = useState<Departamento[]>([]);
   const [prioridades, setPrioridades] = useState<TipoPrioridade[]>([]);
   const [usuarios, setUsuarios] = useState<User[]>([]);
   
@@ -82,16 +73,13 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
 
   const carregarDados = async () => {
     try {
-      const [topicosRes, departamentosRes, prioridadesRes, usersRes] = await Promise.all([
+      const [topicosRes, prioridadesRes, usersRes] = await Promise.all([
         api.get('/topicos_ajuda'),
-        api.get('/departamentos'),
         api.get('/tipo_prioridade'),
         api.get('/users'),
       ]);
 
       setTopicos(topicosRes.data.filter((t: TopicosAjuda) => t.ativo));
-      const departamentosAtivos = departamentosRes.data.filter((d: Departamento) => d.ativo);
-      setDepartamentos(departamentosAtivos);
 
       const prioridadesLista = Array.isArray(prioridadesRes.data) ? prioridadesRes.data : [];
       setPrioridades(prioridadesLista);
@@ -116,12 +104,6 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
 
       setUsuarios(usuariosDisponiveis);
 
-      //departamento marcado por padrao quando existir
-      const departamentoPadrao = departamentosAtivos.find((d: Departamento) => d.id === 15) || departamentosAtivos[0];
-      if (departamentoPadrao) {
-        setDepartamentoId(departamentoPadrao.id);
-      }
-      
       // Definir prioridade padrão (ordem 4 = Média/Baixa)
       const prioridadePadrao = prioridadesLista.find((p: TipoPrioridade) => p.ordem === 4) ||
         [...prioridadesLista].sort((a: TipoPrioridade, b: TipoPrioridade) => a.ordem - b.ordem)[0];
@@ -147,9 +129,6 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
     setTopicoAjudaId(0);
     setSelectedFiles([]);
     setErrorMessage('');
-
-    const departamentoPadrao = departamentos.find((d) => d.id === 15) || departamentos[0];
-    setDepartamentoId(departamentoPadrao ? departamentoPadrao.id : 0);
     
     // Resetar prioridade padrão
     const prioridadePadrao = prioridades.find((p) => p.ordem === 4);
@@ -244,10 +223,6 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
       setErrorMessage('Por favor, selecione um tópico.');
       return;
     }
-    if (!departamentoId) {
-      setErrorMessage('Por favor, selecione um departamento.');
-      return;
-    }
     if (!prioridadeId) {
       setErrorMessage('Por favor, selecione uma prioridade.');
       return;
@@ -265,7 +240,6 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
         resumoChamado: assunto,
         descricaoChamado: descricao,
         topicoAjudaId,
-        departamentoId,
         prioridadeId,
         userResponsavelId: responsavelId,
       });
@@ -317,7 +291,6 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
   if (!isOpen) return null;
 
   const topicosOrdenados = [...topicos].sort((a, b) => Number(a.codigo) - Number(b.codigo));
-  const departamentosOrdenados = [...departamentos].sort((a, b) => Number(a.codigo) - Number(b.codigo));
   const usuariosOrdenados = [...usuarios].sort((a, b) => a.name.localeCompare(b.name));
   const prioridadesOrdenadas = [...prioridades].sort((a, b) => a.ordem - b.ordem);
 
@@ -329,11 +302,6 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
     const topicoOptions = topicos.map((t) => ({
       id: t.id,
       label: `${t.codigo} - ${t.nome}`,
-    }));
-
-    const departamentoOptions = departamentos.map((d) => ({
-      id: d.id,
-      label: `${d.codigo} - ${d.name}`,
     }));
 
 
@@ -442,21 +410,6 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
                   options={topicosOrdenados.map((t) => ({
                     id: t.id,
                     label: `${t.codigo} - ${t.nome}`,
-                  }))}
-                  placeholder="Selecione..."
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-[160px_1fr] items-center gap-2.5">
-                 <label htmlFor="departamento" className="text-base md:text-lg leading-none" style={{ color: theme.text.secondary }}>
-                    Departamento
-                </label>
-                <CustomSelect
-                  value={departamentoId}
-                  onChange={(val) => setDepartamentoId(val)}
-                  options={departamentosOrdenados.map((d) => ({
-                    id: d.id,
-                    label: `${d.codigo} - ${d.name}`,
                   }))}
                   placeholder="Selecione..."
                 />

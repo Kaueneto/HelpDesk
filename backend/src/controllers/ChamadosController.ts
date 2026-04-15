@@ -181,7 +181,6 @@ router.post("/chamados", verifyToken, async (req: AuthenticatedRequest, res: Res
       ramal,
       prioridadeId,
       topicoAjudaId,
-      departamentoId,
       resumoChamado,
       descricaoChamado,
     } = req.body;
@@ -190,22 +189,41 @@ router.post("/chamados", verifyToken, async (req: AuthenticatedRequest, res: Res
 
     const chamadoRepository = AppDataSource.getRepository(Chamados);
     const historicoRepository = AppDataSource.getRepository(ChamadoHistorico);
+    const userRepository = AppDataSource.getRepository(Users);
+
+    // bsucar user pra pegar seu departamento
+    const usuario = await userRepository.findOne({
+      where: { id: usuarioId },
+      select: ["id", "id_departament"]
+    });
+
+    if (!usuario) {
+      return res.status(400).json({
+        mensagem: "Usuário não encontrado",
+      });
+    }
+
+    if (!usuario.id_departament) {
+      return res.status(400).json({
+        mensagem: "Usuário não possui departamento cadastrado",
+      });
+    }
 
     // criar a data atual + log no backend
     const dataAtual = new Date();
 
     // criar chamado com apenas os campos obrigatórios iniciais
     const chamado = chamadoRepository.create({
-      ramal,
+      ramal: Number(ramal),
       //numero do chamdo sera gerado automaticamente no banco pela SEQUENCE
       dataAbertura: dataAtual, // defin explicitamente a data
-      status: { id: 1 }, // 1 = ABERTO
+      status: { id: 1 } as any, // 1 = ABERTO
       resumoChamado,
       descricaoChamado,
-      usuario: { id: usuarioId }, // Usuário que abriu o chamado
-      tipoPrioridade: { id: prioridadeId },
-      topicoAjuda: { id: topicoAjudaId },
-      departamento: { id: departamentoId },
+      usuario: { id: usuarioId } as any, // Usuário que abriu o chamado
+      tipoPrioridade: { id: Number(prioridadeId) } as any,
+      topicoAjuda: { id: Number(topicoAjudaId) } as any,
+      departamento: { id: Number(usuario.id_departament) } as any,
       // Campos que ficam NULL inicialmente:
       // - dataAtribuicao (preenchido quando admin atribuir)
       // - userResponsavel (preenchido quando admin atribuir)
@@ -298,7 +316,6 @@ router.post("/chamados/admin/criar", verifyToken, async (req: AuthenticatedReque
       resumoChamado,
       descricaoChamado,
       topicoAjudaId,
-      departamentoId,
       prioridadeId,
       userResponsavelId,
     } = req.body;
@@ -317,6 +334,24 @@ router.post("/chamados/admin/criar", verifyToken, async (req: AuthenticatedReque
     const historicoRepository = AppDataSource.getRepository(ChamadoHistorico);
     const userRepository = AppDataSource.getRepository(Users);
 
+    // buscar admin para pegar seu departamento
+    const admin = await userRepository.findOne({
+      where: { id: adminId },
+      select: ["id", "name", "email", "id_departament"]
+    });
+
+    if (!admin) {
+      return res.status(400).json({
+        mensagem: "Admin não encontrado",
+      });
+    }
+
+    if (!admin.id_departament) {
+      return res.status(400).json({
+        mensagem: "Admin não possui departamento cadastrado",
+      });
+    }
+
     const dataAtual = new Date();
 
     // Validar que responsável foi fornecido
@@ -326,31 +361,24 @@ router.post("/chamados/admin/criar", verifyToken, async (req: AuthenticatedReque
       });
     }
 
+    const nomeAdmin = admin.name || "Admin";
+
     const chamado = chamadoRepository.create({
       ramal: 0, 
       //numero do chamdo sera gerado automaticamente no banco pela SEQUENCE
       dataAbertura: dataAtual,
-      status: { id: userResponsavelId ? 2 : 1 }, // 2 = EM ANALISE se houver responsável, 1 = ABERTO caso contrário
+      status: { id: userResponsavelId ? 2 : 1 } as any, // 2 = EM ANALISE se houver responsável, 1 = ABERTO caso contrário
       resumoChamado,
       descricaoChamado,
-      usuario: { id: adminId }, // Admin é o "usuário" que abriu
-      tipoPrioridade: { id: prioridadeId },
-      topicoAjuda: { id: topicoAjudaId },
-      departamento: { id: departamentoId },
-      userResponsavel: userResponsavelId ? { id: userResponsavelId } : null, // Atribuir responsável JÁ na criação
+      usuario: { id: adminId } as any, // Admin é o "usuário" que abriu
+      tipoPrioridade: { id: prioridadeId } as any,
+      topicoAjuda: { id: topicoAjudaId } as any,
+      departamento: { id: Number(admin.id_departament) } as any, // Auto-fetch do departamento do admin
+      userResponsavel: userResponsavelId ? { id: userResponsavelId } as any : null, // Atribuir responsável JÁ na criação
       dataAtribuicao: userResponsavelId ? new Date() : null, // Data de atribuição se houver responsável
     });
 
     await chamadoRepository.save(chamado);
-
-
-    // Buscar nome do admin
-    const admin = await userRepository.findOne({
-      where: { id: adminId },
-      select: ["id", "name", "email"]
-    });
-
-    const nomeAdmin = admin?.name || "Admin";
 
     // Registrar no histórico
     const statusNovo = userResponsavelId ? 2 : 1; // EM ANALISE se houver responsável, ABERTO caso contrário
@@ -374,16 +402,18 @@ router.post("/chamados/admin/criar", verifyToken, async (req: AuthenticatedReque
             select: ["id", "name", "email"]
           });
 
-          if (responsavel && admin) {
-            // recarregar chamado com dados completos para o email
-            const chamadoParaEmail = await chamadoRepository.findOne({
-              where: { id: chamado.id },
-              relations: ["usuario", "tipoPrioridade", "departamento", "topicoAjuda", "status", "userResponsavel"],
-            });
+          // recarregar chamado com dados completos para o email
+          const chamadoParaEmail = await chamadoRepository.findOne({
+            where: { id: chamado.id },
+            relations: ["usuario", "tipoPrioridade", "departamento", "topicoAjuda", "status", "userResponsavel"],
+          });
 
-            if (chamadoParaEmail) {
-              await EmailService.enviarEmailChamadoCriadoPorAdmin(responsavel, admin, chamadoParaEmail);
-            }
+          if (responsavel && chamadoParaEmail) {
+            await EmailService.enviarEmailChamadoCriadoPorAdmin(responsavel, {
+              id: admin.id,
+              name: admin.name,
+              email: admin.email
+            } as Users, chamadoParaEmail);
           }
         } catch (emailError) {
           // Log do erro, mas não interrompe

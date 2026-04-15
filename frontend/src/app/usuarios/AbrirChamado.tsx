@@ -11,13 +11,6 @@ interface TopicosAjuda {
   ativo: boolean;
 }
 
-interface Departamento {
-  id: number;
-  codigo: string;
-  name: string;
-  ativo: boolean;
-}
-
 interface TipoPrioridade {
   id: number;
   nome: string;
@@ -36,13 +29,11 @@ export default function AbrirChamado({ userEmail, onSuccess, onCancel }: AbrirCh
   const [ramal, setRamal] = useState('');
   const [prioridadeId, setPrioridadeId] = useState<number>(0);
   const [topicoAjudaId, setTopicoAjudaId] = useState<number>(0);
-  const [departamentoId, setDepartamentoId] = useState<number>(0);
   const [resumoChamado, setResumoChamado] = useState('');
   const [descricaoChamado, setDescricaoChamado] = useState('');
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   
   const [topicos, setTopicos] = useState<TopicosAjuda[]>([]);
-  const [departamentos, setDepartamentos] = useState<Departamento[]>([]);
   const [prioridades, setPrioridades] = useState<TipoPrioridade[]>([]);
   
   const [submitting, setSubmitting] = useState(false);
@@ -62,13 +53,11 @@ export default function AbrirChamado({ userEmail, onSuccess, onCancel }: AbrirCh
       if (!isAuthenticated) return;
       
       try {
-        const [topicosRes, departamentosRes, prioridadesRes] = await Promise.all([
+        const [topicosRes, prioridadesRes] = await Promise.all([
           api.get('/topicos_ajuda'),
-          api.get('/departamentos'),
           api.get('/tipo_prioridade'),
         ]);
         setTopicos(topicosRes.data.filter((t: TopicosAjuda) => t.ativo));
-        setDepartamentos(departamentosRes.data.filter((d: Departamento) => d.ativo));
         setPrioridades(prioridadesRes.data);
         
         const prioridadePadrao = prioridadesRes.data.find((p: TipoPrioridade) => p.ordem === 4);
@@ -165,7 +154,7 @@ export default function AbrirChamado({ userEmail, onSuccess, onCancel }: AbrirCh
     setErrorMessage('');
 
 
-    if (!departamentoId || !prioridadeId || !ramal.trim()) {
+    if (!prioridadeId || !ramal.trim()) {
       setErrorMessage('Por favor, preencha todos os campos obrigatórios.');
       return;
     }
@@ -178,7 +167,6 @@ export default function AbrirChamado({ userEmail, onSuccess, onCancel }: AbrirCh
         ramal,
         prioridadeId,
         topicoAjudaId,
-        departamentoId,
         resumoChamado,
         descricaoChamado,
       });      
@@ -210,7 +198,6 @@ export default function AbrirChamado({ userEmail, onSuccess, onCancel }: AbrirCh
       const prioridadePadrao = prioridades.find((p) => p.ordem === 4);
       setPrioridadeId(prioridadePadrao?.id || 0);
       setTopicoAjudaId(0);
-      setDepartamentoId(0);
       setResumoChamado('');
       setDescricaoChamado('');
       setSelectedFiles([]);
@@ -242,7 +229,6 @@ export default function AbrirChamado({ userEmail, onSuccess, onCancel }: AbrirCh
       const prioridadePadrao = prioridades.find((p) => p.ordem === 4);
       setPrioridadeId(prioridadePadrao?.id || 0);
       setTopicoAjudaId(0);
-      setDepartamentoId(0);
       setResumoChamado('');
       setDescricaoChamado('');
       setSelectedFiles([]);
@@ -433,30 +419,7 @@ export default function AbrirChamado({ userEmail, onSuccess, onCancel }: AbrirCh
           <div className="space-y-4 sm:space-y-6">
             <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">Agora confirme alguns dados</p>
 
- 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-              <div>
-                <label htmlFor="departamento" className="block text-sm sm:text-base font-medium text-gray-800 mb-2 sm:mb-3">
-                  Informe o seu Departamento <span className="text-red-500">*</span>
-                </label>
-                <select
-                  id="departamento"
-                  value={departamentoId}
-                  onChange={(e) => setDepartamentoId(Number(e.target.value))}
-                  required
-                  className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg bg-white text-sm sm:text-base text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent transition-shadow"
-                >
-                  <option value={0}>Selecione...</option>
-                 {departamentos
-                  .sort((a, b) => Number(a.codigo) - Number(b.codigo))
-                  .map((dept) => (
-                    <option key={dept.id} value={dept.id}>
-                      {dept.codigo} - {dept.name}
-                    </option>
-                ))}
-                </select>
-              </div>
-
+            <div className="space-y-4 sm:space-y-6">
               <div>
                 <label className="block text-sm sm:text-base font-medium text-gray-800 mb-2 sm:mb-3">
                   Nível de prioridade <span className="text-red-500">*</span>
@@ -481,35 +444,34 @@ export default function AbrirChamado({ userEmail, onSuccess, onCancel }: AbrirCh
                   ))}
                 </div>
               </div>
-            </div>
 
               <div>
-            <label htmlFor="ramal" className="block text-sm sm:text-base font-medium text-gray-800 mb-2 sm:mb-3">
-              Número do Ramal <span className="text-red-500">*</span>
-            </label>
+                <label htmlFor="ramal" className="block text-sm sm:text-base font-medium text-gray-800 mb-2 sm:mb-3">
+                  Número do Ramal <span className="text-red-500">*</span>
+                </label>
 
-            <div className="relative max-w-xs">
-              <img
-                src="/icons/iconphone.svg"
-                
-                className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 opacity-60 pointer-events-none"
-              />
+                <div className="relative max-w-xs">
+                  <img
+                    src="/icons/iconphone.svg"
+                    
+                    className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 opacity-60 pointer-events-none"
+                  />
 
-              <input
-                id="ramal"
-                type="text"
-                value={ramal}
-                onChange={(e) => setRamal(e.target.value)}
-                required
-                placeholder="Digite o ramal"
-                className="w-full pl-4 sm:pl-5 pr-3 sm:pr-4 py-2 sm:py-3 border border-gray-300 rounded-lg text-sm sm:text-base text-gray-900 
-                          focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent 
-                          transition-shadow shadow-sm"
-              />
+                  <input
+                    id="ramal"
+                    type="text"
+                    value={ramal}
+                    onChange={(e) => setRamal(e.target.value)}
+                    required
+                    placeholder="Digite o ramal"
+                    className="w-full pl-4 sm:pl-5 pr-3 sm:pr-4 py-2 sm:py-3 border border-gray-300 rounded-lg text-sm sm:text-base text-gray-900 
+                              focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent 
+                              transition-shadow shadow-sm"
+                  />
+                </div>
+              </div>
             </div>
-          </div>
 
- 
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-between pt-4 sm:pt-6 md:pt-8">
               <button
                 type="button"

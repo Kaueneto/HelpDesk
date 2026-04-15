@@ -111,6 +111,9 @@ router.post("/users", async (req: Request, res: Response) => {
         .string()
         .required("A senha do usuário é obrigatória!")
         .min(6, "A senha deve conter pelo menos 6 caracteres."),
+      id_departament: yup
+        .string()
+        .required("O departamento é obrigatório!"),
     });
 
     await schema.validate(data, { abortEarly: false });
@@ -147,6 +150,7 @@ router.post("/users", async (req: Request, res: Response) => {
     const newUser = userRepository.create({
       ...data,
       situationUserId: data.situationUserId || 1, // Padrão: ativo
+      id_departament: data.id_departament,
     });
 
     await userRepository.save(newUser);
@@ -554,7 +558,7 @@ router.put("/users/alterar-meu-nome", verifyToken, async (req: AuthenticatedRequ
 router.put("/users/:id",  verifyToken,  async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { name, email, roleId, situationUserId } = req.body;
+    const { name, email, roleId, situationUserId, id_departament } = req.body;
 
     const schema = yup.object().shape({
       name: yup
@@ -565,6 +569,9 @@ router.put("/users/:id",  verifyToken,  async (req: Request, res: Response) => {
         .string()
         .email("Formato de e-mail inválido")
         .required("O e-mail do usuário é obrigatório!"),
+      id_departament: yup
+        .string()
+        .required("O departamento é obrigatório!"),
     });
 
     await schema.validate(req.body, { abortEarly: false });
@@ -597,6 +604,7 @@ router.put("/users/:id",  verifyToken,  async (req: Request, res: Response) => {
     const updateData: Partial<Users> = {
       name,
       email,
+      id_departament,
       updatedAt: new Date(),
     };
 

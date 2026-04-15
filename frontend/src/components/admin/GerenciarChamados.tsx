@@ -1334,7 +1334,7 @@ export default function GerenciarChamados() {
                       borderBottomWidth: '1px'
                     }}>
                       <tr>
-                        <th className="px-4 py-3 text-left">
+                        <th className="px-2 py-2 text-left">
                           <input
                             type="checkbox"
                             checked={todosChecados}
@@ -1343,8 +1343,8 @@ export default function GerenciarChamados() {
                           />
                         </th>
                         <th 
-                          className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none min-w-20"
-                          style={{ color: theme.text.primary }}
+                          className="px-2 py-2 text-left text-xs font-semibold cursor-pointer transition-colors select-none min-w-20"
+                          style={{ color: theme.text.primary, backgroundColor: theme.background.tabelaEscuro }}
                           onClick={() => handleOrdenar('numeroChamado')}
                         >
                           <div className="flex items-center gap-1">
@@ -1355,10 +1355,8 @@ export default function GerenciarChamados() {
                           </div>
                         </th>
                         <th 
-                          className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none min-w-20"
-                          style={{ color: theme.text.primary }}
-                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = theme.background.hover)} 
-                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                          className="px-2 py-2 text-left text-xs font-semibold cursor-pointer transition-colors select-none min-w-20"
+                          style={{ color: theme.text.primary, backgroundColor: theme.background.tabelaEscuro, whiteSpace: 'nowrap' }}
                           onClick={() => handleOrdenar('prioridade')}
                         >
                           <div className="flex items-center gap-1">
@@ -1369,10 +1367,8 @@ export default function GerenciarChamados() {
                           </div>
                         </th>
                         <th 
-                          className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none min-w-50"
-                          style={{ color: theme.text.primary }}
-                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = theme.background.hover)} 
-                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                          className="px-2 py-2 text-left text-xs font-semibold cursor-pointer transition-colors select-none min-w-50"
+                          style={{ color: theme.text.primary, backgroundColor: theme.background.tabelaEscuro, whiteSpace: 'nowrap' }}
                           onClick={() => handleOrdenar('resumo')}
                         >
                           <div className="flex items-center gap-1">
@@ -1383,10 +1379,8 @@ export default function GerenciarChamados() {
                           </div>
                         </th>
                         <th 
-                          className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none min-w-40"
-                          style={{ color: theme.text.primary }}
-                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = theme.background.hover)} 
-                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                          className="px-2 py-2 text-left text-xs font-semibold cursor-pointer transition-colors select-none min-w-40"
+                          style={{ color: theme.text.primary, backgroundColor: theme.background.tabelaEscuro, whiteSpace: 'nowrap' }}
                           onClick={() => handleOrdenar('usuario')}
                         >
                           <div className="flex items-center gap-1">
@@ -1397,10 +1391,8 @@ export default function GerenciarChamados() {
                           </div>
                         </th>
                         <th 
-                          className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none min-w-50"
-                          style={{ color: theme.text.primary }}
-                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = theme.background.hover)} 
-                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                          className="px-2 py-2 text-left text-xs font-semibold cursor-pointer transition-colors select-none min-w-50"
+                          style={{ color: theme.text.primary, backgroundColor: theme.background.tabelaEscuro, whiteSpace: 'nowrap' }}
                           onClick={() => handleOrdenar('departamento')}
                         >
                           <div className="flex items-center gap-1">
@@ -1411,10 +1403,8 @@ export default function GerenciarChamados() {
                           </div>
                         </th>
                         <th 
-                          className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none min-w-38"
-                          style={{ color: theme.text.primary }}
-                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = theme.background.hover)} 
-                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                          className="px-2 py-2 text-left text-xs font-semibold cursor-pointer transition-colors select-none min-w-38"
+                          style={{ color: theme.text.primary, backgroundColor: theme.background.tabelaEscuro, whiteSpace: 'nowrap' }}
                           onClick={() => handleOrdenar('topico')}
                         >
                           <div className="flex items-center gap-1">
@@ -1425,10 +1415,8 @@ export default function GerenciarChamados() {
                           </div>
                         </th>
                         <th 
-                          className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none min-w-30"
-                          style={{ color: theme.text.primary }}
-                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = theme.background.hover)} 
-                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                          className="px-2 py-2 text-left text-xs font-semibold cursor-pointer transition-colors select-none min-w-30"
+                          style={{ color: theme.text.primary, backgroundColor: theme.background.tabelaEscuro, whiteSpace: 'nowrap' }}
                           onClick={() => handleOrdenar('status')}
                         >
                           <div className="flex items-center gap-1">
@@ -1439,10 +1427,8 @@ export default function GerenciarChamados() {
                           </div>
                         </th>
                         <th 
-                          className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none min-w-25"
-                          style={{ color: theme.text.primary }}
-                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = theme.background.hover)} 
-                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                          className="px-2 py-2 text-left text-xs font-semibold cursor-pointer transition-colors select-none min-w-25"
+                          style={{ color: theme.text.primary, backgroundColor: theme.background.tabelaEscuro, whiteSpace: 'nowrap' }}
                           onClick={() => handleOrdenar('dataAbertura')}
                         >
                           <div className="flex items-center gap-1">
@@ -1453,10 +1439,8 @@ export default function GerenciarChamados() {
                           </div>
                         </th>
                         <th
-                          className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none min-w-25"
-                          style={{ color: theme.text.primary }}
-                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = theme.background.hover)} 
-                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                          className="px-2 py-2 text-left text-xs font-semibold cursor-pointer transition-colors select-none min-w-25"
+                          style={{ color: theme.text.primary, backgroundColor: theme.background.tabelaEscuro, whiteSpace: 'nowrap' }}
                           onClick={() => handleOrdenar('dataFechamento')}
                         >
                           <div className="flex items-center gap-1">
@@ -1467,10 +1451,8 @@ export default function GerenciarChamados() {
                           </div>
                         </th>
                         <th 
-                          className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none min-w-50"
-                          style={{ color: theme.text.primary }}
-                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = theme.background.hover)} 
-                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                          className="px-2 py-2 text-left text-xs font-semibold cursor-pointer transition-colors select-none min-w-50"
+                          style={{ color: theme.text.primary, backgroundColor: theme.background.tabelaEscuro, whiteSpace: 'nowrap' }}
                           onClick={() => handleOrdenar('responsavel')}
                         >
                           <div className="flex items-center gap-1">
@@ -1512,7 +1494,7 @@ export default function GerenciarChamados() {
                           onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = theme.background.hover)}
                           onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = index % 2 === 0 ? theme.background.tabelaClaro : theme.background.tabelaEscuro)}
                         >
-                          <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                          <td className="px-2 py-2" onClick={(e) => e.stopPropagation()}>
                             <input
                               type="checkbox"
                               checked={chamadosSelecionados.includes(chamado.id)}
@@ -1521,35 +1503,35 @@ export default function GerenciarChamados() {
                             />
                           </td>
                           {/* Código chamado */}
-                          <td className="px-4 py-3 text-sm font-medium whitespace-nowrap" style={{ color: theme.text.primary }}>
+                          <td className="px-2 py-2 text-xs font-medium" style={{ color: theme.text.primary }}>
                             {chamado.numeroChamado || chamado.id}
                           </td>
                           {/* Prioridade */}
-                          <td className="px-4 py-3 whitespace-nowrap">
+                          <td className="px-2 py-2 whitespace-nowrap">
                             <div className="flex items-center gap-2">
                               <div
                                 className="w-3 h-3 rounded-full"
                                 style={{ backgroundColor: chamado.tipoPrioridade?.cor || '#gray' }}
                               ></div>
-                              <span className="text-sm" style={{ color: `rgb(var(--text-primary))` }}>
+                              <span className="text-xs" style={{ color: `rgb(var(--text-primary))` }}>
                                 {chamado.tipoPrioridade?.nome || '-'}
                               </span>
                             </div>
                           </td>
                           {/* Assunto/Resumo */}
-                          <td className="px-4 py-3 text-sm max-w-50 truncate overflow-hidden text-ellipsis" style={{ color: `rgb(var(--text-primary))` }} title={chamado.resumoChamado}>
+                          <td className="px-2 py-2 text-xs max-w-50 truncate overflow-hidden text-ellipsis" style={{ color: `rgb(var(--text-primary))` }} title={chamado.resumoChamado}>
                             {chamado.resumoChamado}
                           </td>
                           {/* Usuário */}
-                          <td className="px-4 py-3 text-sm max-w-30 truncate overflow-hidden text-ellipsis" style={{ color: `rgb(var(--text-primary))` }} title={chamado.usuario?.name}>
+                          <td className="px-2 py-2 text-xs max-w-30 truncate overflow-hidden text-ellipsis" style={{ color: `rgb(var(--text-primary))` }} title={chamado.usuario?.name}>
                             {chamado.usuario?.name || '-'}
                           </td>
                           {/* Departamento */}
-                          <td className="px-4 py-3 text-sm max-w-30 truncate overflow-hidden text-ellipsis" style={{ color: `rgb(var(--text-primary))` }} title={chamado.departamento?.nome || chamado.departamento?.name}>
+                          <td className="px-2 py-2 text-xs max-w-30 truncate overflow-hidden text-ellipsis" style={{ color: `rgb(var(--text-primary))` }} title={chamado.departamento?.nome || chamado.departamento?.name}>
                             {chamado.departamento?.nome || chamado.departamento?.name || '-'}
                           </td>
                           {/* Tópico */}
-                          <td className="px-4 py-3 text-sm max-w-38 truncate overflow-hidden text-ellipsis" style={{ color: `rgb(var(--text-primary))` }} title={chamado.topicoAjuda?.nome}>
+                          <td className="px-2 py-2 text-xs max-w-38 truncate overflow-hidden text-ellipsis" style={{ color: `rgb(var(--text-primary))` }} title={chamado.topicoAjuda?.nome}>
                             {chamado.topicoAjuda?.nome || '-'}
                           </td>
                           {/* Status */}
@@ -1567,15 +1549,15 @@ export default function GerenciarChamados() {
                             </span>
                           </td>
                           {/* Data Abertura */}
-                          <td className="px-1 py-3 text-sm whitespace-nowrap" style={{ color: theme.text.secondary }}>
+                          <td className="px-2 py-2 text-xs whitespace-nowrap" style={{ color: theme.text.secondary }}>
                             {formatarData(chamado.dataAbertura)}
                           </td>
                           {/* Data Fechamento */}
-                          <td className="px-1 py-3 text-sm whitespace-nowrap" style={{ color: theme.text.secondary }}>
+                          <td className="px-2 py-2 text-xs whitespace-nowrap" style={{ color: theme.text.secondary }}>
                             {formatarData(chamado.dataFechamento)}
                           </td>
                           {/* Responsável */}
-                          <td className="px-4 py-3 text-sm max-w-30 truncate overflow-hidden text-ellipsis" style={{ color: theme.text.primary }} title={chamado.userResponsavel?.name}>
+                          <td className="px-2 py-2 text-xs max-w-30 truncate overflow-hidden text-ellipsis" style={{ color: theme.text.primary }} title={chamado.userResponsavel?.name}>
                             {chamado.userResponsavel?.name || (
                               <span className="italic" style={{ color: theme.text.secondary }}>Não atribuído</span>
                             )}
