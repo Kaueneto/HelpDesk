@@ -223,7 +223,11 @@ export type Theme = {
     buttonSecondary: string;
   };
 
-
+  Votar: {
+    bg: string;
+    text: string;
+    border: string;
+  };
   // Texturas de fundo
   background: BackgroundColors;
 

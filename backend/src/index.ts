@@ -88,6 +88,7 @@ import ParametrosSistemaController from "./controllers/ParametrosSistemaControll
 import LogsSistemaController from "./controllers/LogsSistemaController";
 import { preferencesRouter } from "./controllers/PreferenciasController";
 import KanbanController from "./controllers/KanbanController";
+import SugestoesController from "./controllers/SugestoesController";
 
 // registrar rotas
 app.use("/", TestConnectionController);
@@ -103,6 +104,7 @@ app.use("/", ChamadosMensagensController);
 app.use("/", LogsSistemaController);
 app.use("/", ParametrosSistemaController);
 app.use("/", KanbanController);
+app.use("/", SugestoesController);
 app.use("/preferencias", preferencesRouter);
 app.use(rolesRouter);
 

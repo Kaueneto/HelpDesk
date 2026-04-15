@@ -8,7 +8,11 @@ export const darkTheme: Theme = {
     subHeader: '#1A68CF',   
     buttonSecondary: '#87CEFA',       // Azul para botões
   },
-
+  Votar: {
+    bg: '#006400',      // Verde escuro para fundo do botão de votar
+    text: '#50cf01',       
+    border: '#50cf01',     
+  },
   // Backgrounds
   background: {
     pagina: '#0F172A',       // Cinza muito escuro (quase preto)

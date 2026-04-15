@@ -841,7 +841,7 @@ export default function GerenciarChamados() {
   return (
     <div className={pageSliding ? 'slideOutLeft' : ''} style={{ backgroundColor: theme.background.pagina }}>
       <div className="px-6 py-3" style={{ backgroundColor: theme.brand.primary }}>
-        <h2 className="text-white text-2xl font-semibold">Painel de Chamados</h2>
+        <h2 className="text-white text-2xl font-semibold font-segoe">Painel de Chamados</h2>
       </div>
 
       <div className="px-2 min-h-screen" style={{ backgroundColor: theme.background.pagina }}>

@@ -311,4 +311,10 @@ export const lightTheme: Theme = {
       },
     },
   },
+
+  Votar: {
+    bg: '#3B82F6',
+    text: '#FFFFFF',
+    border: '#2563EB',
+  },
 };
