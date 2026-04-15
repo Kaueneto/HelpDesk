@@ -93,7 +93,7 @@ export default function Parametros() {
   return (
     <>
       <div className="bg-[#1A68CF] px-6 py-4">
-        <h2 className="text-white text-2xl font-semibold">Parâmetros</h2>
+        <h2 className="text-white text-2xl font-semibold font-segoe">Parâmetros</h2>
       </div>
 
       <div className="p-6">

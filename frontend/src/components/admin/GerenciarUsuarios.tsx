@@ -13,6 +13,7 @@ interface Usuario {
   id: number;
   name: string;
   email: string;
+  id_departament: string;
   situationUserId: number;
   situationUser: {
     id: number;
@@ -37,6 +38,15 @@ interface SituationUser {
   updatedAt: string;
 }
 
+interface Departamento {
+  id: number;
+  codigo: number;
+  name: string;
+  ativo: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export default function GerenciarUsuarios() {
   const router = useRouter();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
@@ -52,6 +62,7 @@ export default function GerenciarUsuarios() {
   // Dados
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [situacoes, setSituacoes] = useState<SituationUser[]>([]);
+  const [departamentos, setDepartamentos] = useState<Departamento[]>([]);
   const [loading, setLoading] = useState(false);
 
   // Ordenação
@@ -75,6 +86,7 @@ export default function GerenciarUsuarios() {
   const [novoUsuarioSenha, setNovoUsuarioSenha] = useState('padrao');
   const [novoUsuarioSituationUserId, setNovoUsuarioSituationUserId] = useState(1); // 1 = Ativo por padrão
   const [novoUsuarioRoleId, setNovoUsuarioRoleId] = useState(2); // 2 = Usuário comum por padrão
+  const [novoUsuarioDepartamentId, setNovoUsuarioDepartamentId] = useState(''); // ID do departamento
   const [submittingCadastro, setSubmittingCadastro] = useState(false);
 
   // Modal de edição
@@ -84,24 +96,31 @@ export default function GerenciarUsuarios() {
   const [editandoUsuarioEmail, setEditandoUsuarioEmail] = useState('');
   const [editandoUsuarioSituationUserId, setEditandoUsuarioSituationUserId] = useState(1);
   const [editandoUsuarioRoleId, setEditandoUsuarioRoleId] = useState(2);
+  const [editandoUsuarioDepartamentId, setEditandoUsuarioDepartamentId] = useState(''); // ID do departamento
   const [submittingEdicao, setSubmittingEdicao] = useState(false);
 
-  // Carregar situações ao montar o componente
+  // Carregar situações e departamentos ao montar o componente
   useEffect(() => {
     if (authLoading) return;
     if (!isAuthenticated) return;
     
-    const carregarSituacoes = async () => {
+    const carregarDados = async () => {
       if (!isAuthenticated) return;
       
       try {
-        const response = await api.get('/SituationsUsers');
-        setSituacoes(response.data);
+        const [situacoesRes, departamentosRes] = await Promise.all([
+          api.get('/SituationsUsers'),
+          api.get('/departamentos')
+        ]);
+        setSituacoes(situacoesRes.data);
+        const deptosData = Array.isArray(departamentosRes.data) ? departamentosRes.data : [];
+        setDepartamentos(deptosData);
+        console.log('Departamentos carregados:', deptosData);
       } catch (error) {
-
+        console.error('Erro ao carregar dados:', error);
       }
     };
-    carregarSituacoes();
+    carregarDados();
   }, [isAuthenticated, authLoading]);
 
   const carregarUsuarios = async (pageOrEvent?: number | React.MouseEvent<HTMLButtonElement>) => {
@@ -363,12 +382,17 @@ export default function GerenciarUsuarios() {
   };
 
   const abrirModalCadastro = () => {
+    if (departamentos.length === 0) {
+      alert('Nenhum departamento disponível. Cadastre um departamento primeiro.');
+      return;
+    }
     setModalCadastroAberto(true);
     setNovoUsuarioNome('');
     setNovoUsuarioEmail('');
     setNovoUsuarioSenha('padrao');
     setNovoUsuarioSituationUserId(1); // Padrão: Ativo
     setNovoUsuarioRoleId(2);
+    setNovoUsuarioDepartamentId(''); // Resetar departamento
   };
 
   const fecharModalCadastro = () => {
@@ -378,6 +402,7 @@ export default function GerenciarUsuarios() {
     setNovoUsuarioSenha('padrao');
     setNovoUsuarioSituationUserId(1);
     setNovoUsuarioRoleId(2);
+    setNovoUsuarioDepartamentId(''); // Resetar departamento
   };
 
   const cadastrarUsuario = async () => {
@@ -388,6 +413,11 @@ export default function GerenciarUsuarios() {
 
     if (!novoUsuarioEmail.trim()) {
       alert('O e-mail é obrigatório');
+      return;
+    }
+
+    if (!novoUsuarioDepartamentId) {
+      alert('O departamento é obrigatório');
       return;
     }
 
@@ -408,6 +438,7 @@ export default function GerenciarUsuarios() {
         password: novoUsuarioSenha,
         situationUserId: novoUsuarioSituationUserId,
         roleId: novoUsuarioRoleId,
+        id_departament: novoUsuarioDepartamentId,
       });
 
       alert('Usuário cadastrado com sucesso!');
@@ -427,6 +458,11 @@ export default function GerenciarUsuarios() {
       return;
     }
 
+    if (departamentos.length === 0) {
+      alert('Nenhum departamento disponível. Cadastre um departamento primeiro.');
+      return;
+    }
+
     const usuarioId = usuariosSelecionados[0];
     const usuario = usuarios.find(u => u.id === usuarioId);
 
@@ -440,6 +476,9 @@ export default function GerenciarUsuarios() {
     setEditandoUsuarioEmail(usuario.email);
     setEditandoUsuarioSituationUserId(usuario.situationUserId);
     setEditandoUsuarioRoleId(usuario.roleId);
+    // Garantir que id_departament seja sempre uma string válida
+    const departamentId = usuario.id_departament ? String(usuario.id_departament) : '';
+    setEditandoUsuarioDepartamentId(departamentId);
     setModalEdicaoAberto(true);
   };
 
@@ -450,6 +489,7 @@ export default function GerenciarUsuarios() {
     setEditandoUsuarioEmail('');
     setEditandoUsuarioSituationUserId(1);
     setEditandoUsuarioRoleId(2);
+    setEditandoUsuarioDepartamentId('');
   };
 
   const salvarEdicaoUsuario = async () => {
@@ -460,6 +500,11 @@ export default function GerenciarUsuarios() {
 
     if (!editandoUsuarioEmail.trim()) {
       alert('O e-mail é obrigatório');
+      return;
+    }
+
+    if (!editandoUsuarioDepartamentId) {
+      alert('O departamento é obrigatório');
       return;
     }
 
@@ -475,6 +520,7 @@ export default function GerenciarUsuarios() {
         email: editandoUsuarioEmail,
         situationUserId: editandoUsuarioSituationUserId,
         roleId: editandoUsuarioRoleId,
+        id_departament: editandoUsuarioDepartamentId,
       });
 
       alert('Usuário atualizado com sucesso!');
@@ -504,7 +550,7 @@ export default function GerenciarUsuarios() {
   return (
     <>
       <div className="px-6 py-4" style={{ backgroundColor: theme.brand.subHeader }}>
-        <h2 className="text-white text-2xl font-semibold">Gerenciar Usuários</h2>
+        <h2 className="text-white text-2xl font-semibold font-segoe">Gerenciar Usuários</h2>
       </div>
 
       <div className="p-2" style={{ backgroundColor: theme.background.surface }}>
@@ -680,13 +726,13 @@ export default function GerenciarUsuarios() {
               <table className="w-full">
                 <thead className="border-b" style={{ backgroundColor: theme.background.surface, borderColor: theme.border.primary }}>
                   <tr>
-                    <th className="px-4 py-3 text-left">
+                    <th className="px-2 py-2 text-left">
                       <input
                         type="checkbox"
                         checked={todosChecados}
                         onChange={handleCheckAll}
-                        className="w-5 h-5 cursor-pointer rounded appearance-none border-2 checked:bg-blue-600 checked:border-blue-600 relative transition-colors
-                        before:content-['✓'] before:absolute before:inset-0 before:flex before:items-center before:justify-center before:text-white before:text-sm before:font-bold before:opacity-0 checked:before:opacity-100"
+                        className="w-4 h-4 cursor-pointer rounded appearance-none border-2 checked:bg-blue-600 checked:border-blue-600 relative transition-colors
+                        before:content-['✓'] before:absolute before:inset-0 before:flex before:items-center before:justify-center before:text-white before:text-xs before:font-bold before:opacity-0 checked:before:opacity-100"
                         style={{
                           borderColor: mode === 'dark' ? '#4B5563' : '#888B95',
                           backgroundColor: todosChecados ? '#2563EB' : theme.background.card,
@@ -695,9 +741,9 @@ export default function GerenciarUsuarios() {
                       />
                     </th>
                     <th 
-                      className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none"
+                      className="px-2 py-2 text-left text-xs font-semibold cursor-pointer transition-colors select-none"
                       onClick={() => handleOrdenar('id')}
-                      style={{ color: theme.text.primary, backgroundColor: theme.background.hover }}
+                      style={{ color: theme.text.primary, backgroundColor: theme.background.hover, whiteSpace: 'nowrap' }}
                     >
                       <div className="flex items-center gap-1">
                         ID
@@ -707,7 +753,7 @@ export default function GerenciarUsuarios() {
                       </div>
                     </th>
                     <th 
-                      className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none"
+                      className="px-2 py-2 text-left text-xs font-semibold cursor-pointer transition-colors select-none"
                       onClick={() => handleOrdenar('name')}
                       style={{ color: theme.text.primary, backgroundColor: theme.background.hover }}
                     >
@@ -719,8 +765,9 @@ export default function GerenciarUsuarios() {
                       </div>
                     </th>
                     <th 
-                      className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none"
+                      className="px-2 py-2 text-left text-xs font-semibold cursor-pointer transition-colors select-none"
                       onClick={() => handleOrdenar('email')}
+                      style={{ color: theme.text.primary, backgroundColor: theme.background.hover, whiteSpace: 'nowrap' }}
                     >
                       <div className="flex items-center gap-1">
                         Email
@@ -730,19 +777,21 @@ export default function GerenciarUsuarios() {
                       </div>
                     </th>
                     <th 
-                      className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none"
+                      className="px-2 py-2 text-left text-xs font-semibold cursor-pointer transition-colors select-none"
                       onClick={() => handleOrdenar('role')}
+                      style={{ color: theme.text.primary, backgroundColor: theme.background.hover, whiteSpace: 'nowrap' }}
                     >
                       <div className="flex items-center gap-1">
-                        Tipo usuário (Role)
+                        Tipo
                         {ordenarPor === 'role' && (
                           <span>{direcaoOrdem === 'asc' ? '↑' : '↓'}</span>
                         )}
                       </div>
                     </th>
                     <th 
-                      className="px-4 py-3 text-left text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors select-none"
+                      className="px-2 py-2 text-left text-xs font-semibold cursor-pointer transition-colors select-none"
                       onClick={() => handleOrdenar('situationUser')}
+                      style={{ color: theme.text.primary, backgroundColor: theme.background.hover, whiteSpace: 'nowrap' }}
                     >
                       <div className="flex items-center gap-1">
                         Situação
@@ -752,37 +801,52 @@ export default function GerenciarUsuarios() {
                       </div>
                     </th>
                     <th 
-                      className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none"
+                      className="px-2 py-2 text-left text-xs font-semibold"
+                      style={{ color: theme.text.primary, backgroundColor: theme.background.hover, whiteSpace: 'nowrap' }}
+                    >
+                      Departamento
+                    </th>
+                    <th 
+                      className="px-2 py-2 text-left text-xs font-semibold cursor-pointer transition-colors select-none"
                       onClick={() => handleOrdenar('createdAt')}
-                      style={{ color: theme.text.primary, backgroundColor: theme.background.hover }}
+                      style={{ color: theme.text.primary, backgroundColor: theme.background.hover, whiteSpace: 'nowrap' }}
                     >
                       <div className="flex items-center gap-1">
-                        Criado em
+                        Criado
                         {ordenarPor === 'createdAt' && (
                           <span>{direcaoOrdem === 'asc' ? '↑' : '↓'}</span>
                         )}
                       </div>
                     </th>
                     <th 
-                      className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none"
+                      className="px-2 py-2 text-left text-xs font-semibold cursor-pointer transition-colors select-none"
                       onClick={() => handleOrdenar('updatedAt')}
-                      style={{ color: theme.text.primary, backgroundColor: theme.background.hover }}
+                      style={{ color: theme.text.primary, backgroundColor: theme.background.hover, whiteSpace: 'nowrap' }}
                     >
                       <div className="flex items-center gap-1">
-                        Atualizado em
+                        Atualizado
                         {ordenarPor === 'updatedAt' && (
                           <span>{direcaoOrdem === 'asc' ? '↑' : '↓'}</span>
                         )}
                       </div>
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold" style={{ color: theme.text.primary }}>
-                      Tentativas Login
+                    <th 
+                      className="px-2 py-2 text-left text-xs font-semibold" 
+                      style={{ color: theme.text.primary, backgroundColor: theme.background.hover, whiteSpace: 'nowrap' }}
+                    >
+                      Tent. Login
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold" style={{ color: theme.text.primary }}>
-                      Data Inativação
+                    <th 
+                      className="px-2 py-2 text-left text-xs font-semibold" 
+                      style={{ color: theme.text.primary, backgroundColor: theme.background.hover, whiteSpace: 'nowrap' }}
+                    >
+                      Data Inativ.
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold" style={{ color: theme.text.primary }}>
-                      Motivo Inativação
+                    <th 
+                      className="px-2 py-2 text-left text-xs font-semibold" 
+                      style={{ color: theme.text.primary, backgroundColor: theme.background.hover, whiteSpace: 'nowrap' }}
+                    >
+                      Motivo
                     </th>
                   </tr>
                 </thead>
@@ -796,13 +860,13 @@ export default function GerenciarUsuarios() {
                         backgroundColor: index % 2 === 0 ? theme.background.card : theme.background.surface,
                       }}
                     >
-                      <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                      <td className="px-2 py-2" onClick={(e) => e.stopPropagation()}>
                         <input
                           type="checkbox"
                           checked={usuariosSelecionados.includes(usuario.id)}
                           onChange={() => handleCheckUsuario(usuario.id)}
-                          className="w-5 h-5 cursor-pointer rounded appearance-none border-2 checked:bg-blue-600 checked:border-blue-600 relative transition-colors
-                          before:content-['✓'] before:absolute before:inset-0 before:flex before:items-center before:justify-center before:text-white before:text-sm before:font-bold before:opacity-0 checked:before:opacity-100"
+                          className="w-4 h-4 cursor-pointer rounded appearance-none border-2 checked:bg-blue-600 checked:border-blue-600 relative transition-colors
+                          before:content-['✓'] before:absolute before:inset-0 before:flex before:items-center before:justify-center before:text-white before:text-xs before:font-bold before:opacity-0 checked:before:opacity-100"
                           style={{
                             borderColor: mode === 'dark' ? '#4B5563' : '#888B95',
                             backgroundColor: usuariosSelecionados.includes(usuario.id) ? '#2563EB' : theme.background.card,
@@ -810,47 +874,51 @@ export default function GerenciarUsuarios() {
                           }}
                         />
                       </td>
-                      <td className="px-4 py-3 text-sm font-medium" style={{ color: theme.text.primary }}>
+                      <td className="px-2 py-2 text-xs font-medium" style={{ color: theme.text.primary, whiteSpace: 'nowrap' }}>
                         {usuario.id}
                       </td>
-                      <td className="px-4 py-3 text-sm" style={{ color: theme.text.primary }}>
+                      <td className="px-2 py-2 text-xs" style={{ color: theme.text.primary }}>
                         {usuario.name}
                       </td>
-                      <td className="px-4 py-3 text-sm" style={{ color: theme.text.primary }}>
+                      <td className="px-2 py-2 text-xs" style={{ color: theme.text.primary, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {usuario.email}
                       </td>
-                      <td className="px-4 py-3 text-sm" style={{ color: theme.text.primary }}>
+                      <td className="px-2 py-2 text-xs" style={{ color: theme.text.primary, whiteSpace: 'nowrap' }}>
                         {usuario.role?.nome || '-'}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-2 py-2">
                         {usuario.situationUser ? (
                           <span
-                            className="px-3 py-1 rounded-full text-xs font-medium"
+                            className="px-2 py-1 rounded-full text-xs font-medium"
                             style={{
                               backgroundColor: usuario.situationUser.nomeSituacao.toLowerCase() === 'ativo' ? '#DCFCE7' : '#FEE2E2',
                               color: usuario.situationUser.nomeSituacao.toLowerCase() === 'ativo' ? '#15803D' : '#7F1D1D',
+                              whiteSpace: 'nowrap',
                             }}
                           >
                             {usuario.situationUser.nomeSituacao}
                           </span>
                         ) : (
-                          <span className="text-sm" style={{ color: theme.text.secondary }}>Sem situação</span>
+                          <span className="text-xs" style={{ color: theme.text.secondary }}>-</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-sm" style={{ color: theme.text.secondary }}>
+                      <td className="px-2 py-2 text-xs" style={{ color: theme.text.primary, whiteSpace: 'nowrap' }}>
+                        {departamentos.find(d => d.id.toString() === String(usuario.id_departament))?.name || '-'}
+                      </td>
+                      <td className="px-2 py-2 text-xs" style={{ color: theme.text.secondary, whiteSpace: 'nowrap' }}>
                         {formatarData(usuario.createdAt)}
                       </td>
-                      <td className="px-4 py-3 text-sm" style={{ color: theme.text.secondary }}>
+                      <td className="px-2 py-2 text-xs" style={{ color: theme.text.secondary, whiteSpace: 'nowrap' }}>
                         {formatarData(usuario.updatedAt)}
                       </td>
-                      <td className="px-4 py-3 text-sm" style={{ color: theme.text.secondary }}>
+                      <td className="px-2 py-2 text-xs" style={{ color: theme.text.secondary, whiteSpace: 'nowrap' }}>
                         {usuario.tentativasLogin || 0}
                       </td>
-                      <td className="px-4 py-3 text-sm" style={{ color: theme.text.secondary }}>
+                      <td className="px-2 py-2 text-xs" style={{ color: theme.text.secondary, whiteSpace: 'nowrap' }}>
                         {usuario.dataInativacao ? formatarData(usuario.dataInativacao) : '-'}
                       </td>
-                      <td className="px-4 py-3 text-sm" style={{ color: theme.text.secondary }}>
-                        {usuario.motivoInativacao || '-'}
+                      <td className="px-2 py-2 text-xs" style={{ color: theme.text.secondary }}>
+                        {usuario.motivoInativacao ? usuario.motivoInativacao.substring(0, 20) + (usuario.motivoInativacao.length > 20 ? '...' : '') : '-'}
                       </td>
                     </tr>
                   ))}
@@ -1022,6 +1090,26 @@ export default function GerenciarUsuarios() {
                     <option value={2}>Usuário Comum</option>
                   </select>
                 </div>
+
+                {/* departttment */}
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Departamento *
+                  </label>
+                  <select
+                    value={novoUsuarioDepartamentId}
+                    onChange={(e) => setNovoUsuarioDepartamentId(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900"
+                    disabled={submittingCadastro}
+                  >
+                    <option value="">Selecione um departamento</option>
+                    {departamentos.map(depto => (
+                      <option key={depto.id} value={depto.id.toString()}>
+                        {depto.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
 
@@ -1129,6 +1217,25 @@ export default function GerenciarUsuarios() {
                   >
                     <option value={1}>Administrador</option>
                     <option value={2}>Usuário Comum</option>
+                  </select>
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Departamento *
+                  </label>
+                  <select
+                    value={editandoUsuarioDepartamentId}
+                    onChange={(e) => setEditandoUsuarioDepartamentId(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900"
+                    disabled={submittingEdicao}
+                  >
+                    <option value="">Selecione um departamento</option>
+                    {departamentos.map(depto => (
+                      <option key={depto.id} value={depto.id.toString()}>
+                        {depto.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>

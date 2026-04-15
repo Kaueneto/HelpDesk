@@ -20,6 +20,9 @@ export class Users {
   @Column({ name: "name", length: 100 })
   name!: string;
 
+  @Column({ name: "id_departament", length: 100 })
+  id_departament!: string;
+
   @Column({ unique: true })
   email!: string;
 

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import { FiEdit3 } from 'react-icons/fi';
 
 interface AdminSidebarProps {
   collapsed: boolean;
@@ -261,6 +262,27 @@ export default function AdminSidebar({ collapsed, onToggle }: AdminSidebarProps)
           {collapsed && (
             <div className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-sm rounded opacity-0 group-hover/item:opacity-100 transition-opacity duration-150 pointer-events-none whitespace-nowrap z-50">
               Preferências
+            </div>
+          )}
+        </button>
+
+        <button
+          onClick={() => router.push('/sugestoes')}
+          className={`w-full px-4 py-3 text-left flex items-center gap-3 transition-all duration-150 group/item relative ${
+            isActive('/sugestoes')
+              ? 'bg-linear-to-r from-blue-600/30 to-blue-700/20 text-white border-r-2 border-blue-400'
+              : 'text-gray-300 hover:bg-white/5 hover:text-white'
+          } ${collapsed ? 'justify-center' : ''}`}
+        >
+          <FiEdit3
+            className="w-5 h-5 shrink-0 group-hover/item:scale-110 transition-transform duration-150"
+          />
+          {!collapsed && (
+            <span className="font-medium transition-all duration-200">Sugestões</span>
+          )}
+          {collapsed && (
+            <div className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-sm rounded opacity-0 group-hover/item:opacity-100 transition-opacity duration-150 pointer-events-none whitespace-nowrap z-50">
+              Sugestões
             </div>
           )}
         </button>

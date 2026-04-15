@@ -3,18 +3,10 @@ import jwt from "jsonwebtoken";
 
 export const verifyToken = (req: Request, res: Response, next: NextFunction) => {
   try {
-    // console.log("VALIDATE TOKEN:");
-    // console.log("Cookies:", req.cookies);
-    // console.log("All headers:", Object.keys(req.headers));
-    // console.log("cookie header:", req.headers.cookie);
-    
     // obter token do cookie
     const token = req.cookies['auth-token'];
-    
-
 
     if (!token) {
-      
       return res.status(401).json({ mensagem: "Token não fornecido" });
     }
 
@@ -25,11 +17,14 @@ export const verifyToken = (req: Request, res: Response, next: NextFunction) => 
         return res.status(401).json({ mensagem: "Token inválido ou expirado" });
       }
 
-
-      // add userId ao request para uso nos controllers
-      (req as any).userId = Number(decoded.id);
-      (req as any).userEmail = decoded.email;
-      (req as any).userRoleId = decoded.roleId;
+      // add usuarioAutenticado ao request para uso nos controllers
+      (req as any).usuarioAutenticado = {
+        id: Number(decoded.id),
+        email: decoded.email,
+        roleId: decoded.roleId,
+        id_departament: decoded.id_departament,
+        nome: decoded.nome,
+      };
 
       return next();
     });

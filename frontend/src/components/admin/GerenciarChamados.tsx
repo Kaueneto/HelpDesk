@@ -112,18 +112,41 @@ export default function GerenciarChamados() {
     }
   };
   
+  // heelper para restaurar filtros do localStorage
+  const restaurarFiltrosSalvos = () => {
+    try {
+      const filtrosSalvos = localStorage.getItem('filtrosChamados');
+      if (filtrosSalvos) {
+        return JSON.parse(filtrosSalvos);
+      }
+    } catch (e) {
+      console.error('Erro ao restaurar filtros:', e);
+    }
+    return null;
+  };
+
+  const filtrosSalvos = restaurarFiltrosSalvos();
+  
   // filtros
-  const [dataAberturaInicio, setDataAberturaInicio] = useState<Date | null>(null);
-  const [dataAberturaFim, setDataAberturaFim] = useState<Date | null>(null);
-  const [dataFechamentoInicio, setDataFechamentoInicio] = useState<Date | null>(null);
-  const [dataFechamentoFim, setDataFechamentoFim] = useState<Date | null>(null);
-  const [departamentoId, setDepartamentoId] = useState<string[]>([]);
-  const [topicoAjudaId, setTopicoAjudaId] = useState<string[]>([]);
-  const [prioridadeId, setPrioridadeId] = useState('');
-  const [statusId, setStatusId] = useState<string[]>([]);
-  const [assunto, setAssunto] = useState('');
-  const [nomeUsuario, setNomeUsuario] = useState('');
-  const [nomeResponsavel, setNomeResponsavel] = useState('');
+  const [dataAberturaInicio, setDataAberturaInicio] = useState<Date | null>(
+    filtrosSalvos?.dataAberturaInicio ? new Date(filtrosSalvos.dataAberturaInicio) : null
+  );
+  const [dataAberturaFim, setDataAberturaFim] = useState<Date | null>(
+    filtrosSalvos?.dataAberturaFim ? new Date(filtrosSalvos.dataAberturaFim) : null
+  );
+  const [dataFechamentoInicio, setDataFechamentoInicio] = useState<Date | null>(
+    filtrosSalvos?.dataFechamentoInicio ? new Date(filtrosSalvos.dataFechamentoInicio) : null
+  );
+  const [dataFechamentoFim, setDataFechamentoFim] = useState<Date | null>(
+    filtrosSalvos?.dataFechamentoFim ? new Date(filtrosSalvos.dataFechamentoFim) : null
+  );
+  const [departamentoId, setDepartamentoId] = useState<string[]>(filtrosSalvos?.departamentoId || []);
+  const [topicoAjudaId, setTopicoAjudaId] = useState<string[]>(filtrosSalvos?.topicoAjudaId || []);
+  const [prioridadeId, setPrioridadeId] = useState(filtrosSalvos?.prioridadeId || '');
+  const [statusId, setStatusId] = useState<string[]>(filtrosSalvos?.statusId || []);
+  const [assunto, setAssunto] = useState(filtrosSalvos?.assunto || '');
+  const [nomeUsuario, setNomeUsuario] = useState(filtrosSalvos?.nomeUsuario || '');
+  const [nomeResponsavel, setNomeResponsavel] = useState(filtrosSalvos?.nomeResponsavel || '');
 
   // dados
   const [chamados, setChamados] = useState<Chamado[]>([]);
@@ -143,6 +166,7 @@ export default function GerenciarChamados() {
   const [totalPaginas, setTotalPaginas] = useState(0);
   const [totalChamados, setTotalChamados] = useState(0);
   const [pageSize, setPageSize] = useState(20);
+  const [originalPageSize, setOriginalPageSize] = useState(20); // guardar paginação original antes de mudar para kanban
 
   // ordenação
   const [ordenarPor, setOrdenarPor] = useState<'numeroChamado' | 'prioridade' | 'topico' | 'departamento' | 'status' | 'dataAbertura' | 'dataFechamento' | 'usuario' | 'responsavel' | 'resumo' | null>(null);
@@ -329,6 +353,12 @@ export default function GerenciarChamados() {
       }, 100);
       
       return () => clearTimeout(timer);
+    } else {
+      // ler viewMode do localStorage para determinar pageSize inicial
+      const viewModeFromStorage = (localStorage.getItem('ticketsView') as 'table' | 'kanban') || 'table';
+      const initialPageSize = viewModeFromStorage === 'kanban' ? 10000 : 20;
+      
+      pesquisarChamados(1, ocultarConcluidos, initialPageSize);
     }
     
     localStorage.removeItem('chamadosCache');
@@ -338,6 +368,24 @@ export default function GerenciarChamados() {
     // Guardar preferência de filtros visíveis no localStorage
     localStorage.setItem('filtrosVisiveis', String(filtrosVisiveis));
   }, [filtrosVisiveis]);
+
+  useEffect(() => {
+    // salvar todos os filtros no localStorage sempre que algum muda
+    const filtrosAtuais = {
+      dataAberturaInicio: dataAberturaInicio?.toISOString() || null,
+      dataAberturaFim: dataAberturaFim?.toISOString() || null,
+      dataFechamentoInicio: dataFechamentoInicio?.toISOString() || null,
+      dataFechamentoFim: dataFechamentoFim?.toISOString() || null,
+      departamentoId,
+      topicoAjudaId,
+      prioridadeId,
+      statusId,
+      assunto,
+      nomeUsuario,
+      nomeResponsavel,
+    };
+    localStorage.setItem('filtrosChamados', JSON.stringify(filtrosAtuais));
+  }, [dataAberturaInicio, dataAberturaFim, dataFechamentoInicio, dataFechamentoFim, departamentoId, topicoAjudaId, prioridadeId, statusId, assunto, nomeUsuario, nomeResponsavel]);
 
   const handleOrdenar = (coluna: 'numeroChamado' | 'prioridade' | 'topico' | 'departamento' | 'status' | 'dataAbertura' | 'dataFechamento' | 'usuario' | 'responsavel' | 'resumo') => {
     if (ordenarPor === coluna) {
@@ -461,7 +509,7 @@ export default function GerenciarChamados() {
     }
   };
 
-  const pesquisarChamados = async (page: number = 1, ocultarConcluidosFiltro: boolean = ocultarConcluidos) => {
+  const pesquisarChamados = async (page: number = 1, ocultarConcluidosFiltro: boolean = ocultarConcluidos, customPageSize?: number) => {
     if (!isAuthenticated) return;
     
     // salvar filtros no localStorage quando pesquisar
@@ -490,7 +538,7 @@ export default function GerenciarChamados() {
     try {
       const params: any = {
         page,
-        pageSize: pageSize || 20,
+        pageSize: customPageSize ?? pageSize ?? 20,
       };
       if (dataAberturaInicio) params.dataAberturaInicio = dataAberturaInicio.toISOString();
       if (dataAberturaFim) {
@@ -625,15 +673,27 @@ export default function GerenciarChamados() {
     setDirecaoOrdem('asc');
     localStorage.removeItem('chamadosCache');
     localStorage.removeItem(STORAGE_KEY); // limpar filtros do storage
+    localStorage.removeItem('filtrosChamados'); // compatibilidade com chave alternativa
   };
 
   // Funções para modo Kanban
-  const toggleViewMode = (mode: 'table' | 'kanban') => {
+  const toggleViewMode = async (mode: 'table' | 'kanban') => {
     setViewMode(mode);
     localStorage.setItem('ticketsView', mode);
-    // Resetar paginação ao alternar modo
     setPaginaAtual(1);
-    setPageSize(20);
+    
+    if (mode === 'kanban') {
+      // Ao mudar para kanban: guardar tamanho original e carregar TODOS os chamados
+      setOriginalPageSize(pageSize);
+      setPageSize(10000);
+      // Chamar pesquisarChamados passando 10000 como customPageSize
+      await pesquisarChamados(1, ocultarConcluidos, 10000);
+    } else {
+      // Ao voltar para tabela: restaurar paginação original
+      setPageSize(originalPageSize);
+      // Chamar pesquisarChamados com o pageSize original
+      await pesquisarChamados(1, ocultarConcluidos, originalPageSize);
+    }
   };
 
   const handleTicketUpdate = (ticketId: number, updatedTickets: Chamado[]) => {
@@ -944,7 +1004,7 @@ export default function GerenciarChamados() {
   return (
     <div className={pageSliding ? 'slideOutLeft' : ''} style={{ backgroundColor: theme.background.pagina }}>
       <div className="px-6 py-3" style={{ backgroundColor: theme.brand.primary }}>
-        <h2 className="text-white text-2xl font-semibold">Painel de Chamados</h2>
+        <h2 className="text-white text-2xl font-semibold font-segoe">Painel de Chamados</h2>
       </div>
 
       <div className="px-2 min-h-screen" style={{ backgroundColor: theme.background.pagina }}>
@@ -1418,6 +1478,7 @@ export default function GerenciarChamados() {
                   tickets={chamados}
                   onTicketClick={handleTicketClick}
                   onTicketUpdate={handleTicketUpdate}
+                  onRefresh={() => pesquisarChamados(1, ocultarConcluidos, 10000)}
                   departamentos={departamentos}
                   statusList={statusList}
                   prioridades={prioridades}
@@ -1495,7 +1556,7 @@ export default function GerenciarChamados() {
                       borderBottomWidth: '1px'
                     }}>
                       <tr>
-                        <th className="px-4 py-3 text-left">
+                        <th className="px-2 py-2 text-left">
                           <input
                             type="checkbox"
                             checked={todosChecados}
@@ -1504,8 +1565,8 @@ export default function GerenciarChamados() {
                           />
                         </th>
                         <th 
-                          className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none min-w-20"
-                          style={{ color: theme.text.primary }}
+                          className="px-2 py-2 text-left text-xs font-semibold cursor-pointer transition-colors select-none min-w-20"
+                          style={{ color: theme.text.primary, backgroundColor: theme.background.tabelaEscuro }}
                           onClick={() => handleOrdenar('numeroChamado')}
                         >
                           <div className="flex items-center gap-1">
@@ -1516,10 +1577,8 @@ export default function GerenciarChamados() {
                           </div>
                         </th>
                         <th 
-                          className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none min-w-20"
-                          style={{ color: theme.text.primary }}
-                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = theme.background.hover)} 
-                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                          className="px-2 py-2 text-left text-xs font-semibold cursor-pointer transition-colors select-none min-w-20"
+                          style={{ color: theme.text.primary, backgroundColor: theme.background.tabelaEscuro, whiteSpace: 'nowrap' }}
                           onClick={() => handleOrdenar('prioridade')}
                         >
                           <div className="flex items-center gap-1">
@@ -1530,10 +1589,8 @@ export default function GerenciarChamados() {
                           </div>
                         </th>
                         <th 
-                          className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none min-w-50"
-                          style={{ color: theme.text.primary }}
-                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = theme.background.hover)} 
-                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                          className="px-2 py-2 text-left text-xs font-semibold cursor-pointer transition-colors select-none min-w-50"
+                          style={{ color: theme.text.primary, backgroundColor: theme.background.tabelaEscuro, whiteSpace: 'nowrap' }}
                           onClick={() => handleOrdenar('resumo')}
                         >
                           <div className="flex items-center gap-1">
@@ -1544,10 +1601,8 @@ export default function GerenciarChamados() {
                           </div>
                         </th>
                         <th 
-                          className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none min-w-40"
-                          style={{ color: theme.text.primary }}
-                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = theme.background.hover)} 
-                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                          className="px-2 py-2 text-left text-xs font-semibold cursor-pointer transition-colors select-none min-w-40"
+                          style={{ color: theme.text.primary, backgroundColor: theme.background.tabelaEscuro, whiteSpace: 'nowrap' }}
                           onClick={() => handleOrdenar('usuario')}
                         >
                           <div className="flex items-center gap-1">
@@ -1558,10 +1613,8 @@ export default function GerenciarChamados() {
                           </div>
                         </th>
                         <th 
-                          className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none min-w-50"
-                          style={{ color: theme.text.primary }}
-                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = theme.background.hover)} 
-                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                          className="px-2 py-2 text-left text-xs font-semibold cursor-pointer transition-colors select-none min-w-50"
+                          style={{ color: theme.text.primary, backgroundColor: theme.background.tabelaEscuro, whiteSpace: 'nowrap' }}
                           onClick={() => handleOrdenar('departamento')}
                         >
                           <div className="flex items-center gap-1">
@@ -1572,10 +1625,8 @@ export default function GerenciarChamados() {
                           </div>
                         </th>
                         <th 
-                          className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none min-w-38"
-                          style={{ color: theme.text.primary }}
-                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = theme.background.hover)} 
-                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                          className="px-2 py-2 text-left text-xs font-semibold cursor-pointer transition-colors select-none min-w-38"
+                          style={{ color: theme.text.primary, backgroundColor: theme.background.tabelaEscuro, whiteSpace: 'nowrap' }}
                           onClick={() => handleOrdenar('topico')}
                         >
                           <div className="flex items-center gap-1">
@@ -1586,10 +1637,8 @@ export default function GerenciarChamados() {
                           </div>
                         </th>
                         <th 
-                          className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none min-w-30"
-                          style={{ color: theme.text.primary }}
-                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = theme.background.hover)} 
-                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                          className="px-2 py-2 text-left text-xs font-semibold cursor-pointer transition-colors select-none min-w-30"
+                          style={{ color: theme.text.primary, backgroundColor: theme.background.tabelaEscuro, whiteSpace: 'nowrap' }}
                           onClick={() => handleOrdenar('status')}
                         >
                           <div className="flex items-center gap-1">
@@ -1600,10 +1649,8 @@ export default function GerenciarChamados() {
                           </div>
                         </th>
                         <th 
-                          className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none min-w-25"
-                          style={{ color: theme.text.primary }}
-                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = theme.background.hover)} 
-                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                          className="px-2 py-2 text-left text-xs font-semibold cursor-pointer transition-colors select-none min-w-25"
+                          style={{ color: theme.text.primary, backgroundColor: theme.background.tabelaEscuro, whiteSpace: 'nowrap' }}
                           onClick={() => handleOrdenar('dataAbertura')}
                         >
                           <div className="flex items-center gap-1">
@@ -1614,10 +1661,8 @@ export default function GerenciarChamados() {
                           </div>
                         </th>
                         <th
-                          className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none min-w-25"
-                          style={{ color: theme.text.primary }}
-                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = theme.background.hover)} 
-                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                          className="px-2 py-2 text-left text-xs font-semibold cursor-pointer transition-colors select-none min-w-25"
+                          style={{ color: theme.text.primary, backgroundColor: theme.background.tabelaEscuro, whiteSpace: 'nowrap' }}
                           onClick={() => handleOrdenar('dataFechamento')}
                         >
                           <div className="flex items-center gap-1">
@@ -1628,10 +1673,8 @@ export default function GerenciarChamados() {
                           </div>
                         </th>
                         <th 
-                          className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none min-w-50"
-                          style={{ color: theme.text.primary }}
-                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = theme.background.hover)} 
-                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                          className="px-2 py-2 text-left text-xs font-semibold cursor-pointer transition-colors select-none min-w-50"
+                          style={{ color: theme.text.primary, backgroundColor: theme.background.tabelaEscuro, whiteSpace: 'nowrap' }}
                           onClick={() => handleOrdenar('responsavel')}
                         >
                           <div className="flex items-center gap-1">
@@ -1673,7 +1716,7 @@ export default function GerenciarChamados() {
                           onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = theme.background.hover)}
                           onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = index % 2 === 0 ? theme.background.tabelaClaro : theme.background.tabelaEscuro)}
                         >
-                          <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                          <td className="px-2 py-2" onClick={(e) => e.stopPropagation()}>
                             <input
                               type="checkbox"
                               checked={chamadosSelecionados.includes(chamado.id)}
@@ -1682,35 +1725,35 @@ export default function GerenciarChamados() {
                             />
                           </td>
                           {/* Código chamado */}
-                          <td className="px-4 py-3 text-sm font-medium whitespace-nowrap" style={{ color: theme.text.primary }}>
+                          <td className="px-2 py-2 text-xs font-medium" style={{ color: theme.text.primary }}>
                             {chamado.numeroChamado || chamado.id}
                           </td>
                           {/* Prioridade */}
-                          <td className="px-4 py-3 whitespace-nowrap">
+                          <td className="px-2 py-2 whitespace-nowrap">
                             <div className="flex items-center gap-2">
                               <div
                                 className="w-3 h-3 rounded-full"
                                 style={{ backgroundColor: chamado.tipoPrioridade?.cor || '#gray' }}
                               ></div>
-                              <span className="text-sm" style={{ color: `rgb(var(--text-primary))` }}>
+                              <span className="text-xs" style={{ color: `rgb(var(--text-primary))` }}>
                                 {chamado.tipoPrioridade?.nome || '-'}
                               </span>
                             </div>
                           </td>
                           {/* Assunto/Resumo */}
-                          <td className="px-4 py-3 text-sm max-w-50 truncate overflow-hidden text-ellipsis" style={{ color: `rgb(var(--text-primary))` }} title={chamado.resumoChamado}>
+                          <td className="px-2 py-2 text-xs max-w-50 truncate overflow-hidden text-ellipsis" style={{ color: `rgb(var(--text-primary))` }} title={chamado.resumoChamado}>
                             {chamado.resumoChamado}
                           </td>
                           {/* Usuário */}
-                          <td className="px-4 py-3 text-sm max-w-30 truncate overflow-hidden text-ellipsis" style={{ color: `rgb(var(--text-primary))` }} title={chamado.usuario?.name}>
+                          <td className="px-2 py-2 text-xs max-w-30 truncate overflow-hidden text-ellipsis" style={{ color: `rgb(var(--text-primary))` }} title={chamado.usuario?.name}>
                             {chamado.usuario?.name || '-'}
                           </td>
                           {/* Departamento */}
-                          <td className="px-4 py-3 text-sm max-w-30 truncate overflow-hidden text-ellipsis" style={{ color: `rgb(var(--text-primary))` }} title={chamado.departamento?.nome || chamado.departamento?.name}>
+                          <td className="px-2 py-2 text-xs max-w-30 truncate overflow-hidden text-ellipsis" style={{ color: `rgb(var(--text-primary))` }} title={chamado.departamento?.nome || chamado.departamento?.name}>
                             {chamado.departamento?.nome || chamado.departamento?.name || '-'}
                           </td>
                           {/* Tópico */}
-                          <td className="px-4 py-3 text-sm max-w-38 truncate overflow-hidden text-ellipsis" style={{ color: `rgb(var(--text-primary))` }} title={chamado.topicoAjuda?.nome}>
+                          <td className="px-2 py-2 text-xs max-w-38 truncate overflow-hidden text-ellipsis" style={{ color: `rgb(var(--text-primary))` }} title={chamado.topicoAjuda?.nome}>
                             {chamado.topicoAjuda?.nome || '-'}
                           </td>
                           {/* Status */}
@@ -1728,15 +1771,15 @@ export default function GerenciarChamados() {
                             </span>
                           </td>
                           {/* Data Abertura */}
-                          <td className="px-1 py-3 text-sm whitespace-nowrap" style={{ color: theme.text.secondary }}>
+                          <td className="px-2 py-2 text-xs whitespace-nowrap" style={{ color: theme.text.secondary }}>
                             {formatarData(chamado.dataAbertura)}
                           </td>
                           {/* Data Fechamento */}
-                          <td className="px-1 py-3 text-sm whitespace-nowrap" style={{ color: theme.text.secondary }}>
+                          <td className="px-2 py-2 text-xs whitespace-nowrap" style={{ color: theme.text.secondary }}>
                             {formatarData(chamado.dataFechamento)}
                           </td>
                           {/* Responsável */}
-                          <td className="px-4 py-3 text-sm max-w-30 truncate overflow-hidden text-ellipsis" style={{ color: theme.text.primary }} title={chamado.userResponsavel?.name}>
+                          <td className="px-2 py-2 text-xs max-w-30 truncate overflow-hidden text-ellipsis" style={{ color: theme.text.primary }} title={chamado.userResponsavel?.name}>
                             {chamado.userResponsavel?.name || (
                               <span className="italic" style={{ color: theme.text.secondary }}>Não atribuído</span>
                             )}
@@ -2171,8 +2214,11 @@ export default function GerenciarChamados() {
         isOpen={modalNovoChamadoAberto}
         onClose={() => setModalNovoChamadoAberto(false)}
         onSuccess={() => {
-         //atualizar os chamdos depois de criar 
-          pesquisarChamados(paginaAtual);
+          // atualizar os chamados depois de criar 
+          // respeitar o modo de visualização (kanban = 10000, table = pageSize padrão)
+          const viewModeFromStorage = (localStorage.getItem('ticketsView') as 'table' | 'kanban') || 'table';
+          const sizeForSearch = viewModeFromStorage === 'kanban' ? 10000 : pageSize;
+          pesquisarChamados(1, ocultarConcluidos, sizeForSearch);
         }}
 
       />

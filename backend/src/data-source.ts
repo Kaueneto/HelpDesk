@@ -22,6 +22,9 @@ import { LogsSistema } from "./entities/LogsSistema";
 import { Preferences } from "./entities/Preferences";
 import { PrefUsers } from "./entities/PrefUsers";
 import { KanbanPositions } from "./entities/KanbanPositions";
+import { Sugestoes } from "./entities/Sugestoes";
+import { SugestoesVotos } from "./entities/SugestoesVotos";
+import { SugestoesInteracoes } from "./entities/SugestoesInteracoes";
 //carregar as variaveis  do arquivo .env
 
 
@@ -37,7 +40,7 @@ export const AppDataSource = new DataSource({
   database: process.env.DB_DATABASE,
   synchronize: false, 
   logging: false,
-  entities: [SituationsUsers, Users, ChamadoHistorico, ChamadoMensagens, Departamentos, TipoPrioridade, Chamados, TopicosAjuda, StatusChamado, Roles, ChamadoAnexos, ParametrosSistema, LogsSistema, Preferences, PrefUsers, KanbanPositions],
+  entities: [SituationsUsers, Users, ChamadoHistorico, ChamadoMensagens, Departamentos, TipoPrioridade, Chamados, TopicosAjuda, StatusChamado, Roles, ChamadoAnexos, ParametrosSistema, LogsSistema, Preferences, PrefUsers, KanbanPositions, Sugestoes, SugestoesVotos, SugestoesInteracoes],
   subscribers: [],
   migrations: [__dirname + "/migrations/*.js"],
   
