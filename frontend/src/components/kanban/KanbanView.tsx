@@ -15,6 +15,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import Select from 'react-select';
 import toast from 'react-hot-toast';
+import { FiRefreshCw } from 'react-icons/fi';
 import { useTheme } from '@/contexts/ThemeContext';
 import KanbanColumn from './KanbanColumn';
 import TicketCard from './TicketCard';
@@ -80,6 +81,7 @@ interface KanbanViewProps {
   tickets: Chamado[];
   onTicketClick?: (ticket: Chamado) => void;
   onTicketUpdate?: (ticketId: number, updates: any) => void;
+  onRefresh?: () => void;
   departamentos?: any[];
   statusList?: any[];
   prioridades?: any[];
@@ -100,6 +102,7 @@ const KanbanView = ({
   tickets,
   onTicketClick,
   onTicketUpdate,
+  onRefresh,
   departamentos = [],
   statusList = [],
   prioridades = [],
@@ -170,7 +173,22 @@ const KanbanView = ({
     }
     setSelectedTickets(newSelected);
   };
-  const [somenteAbertos, setSomenteAbertos] = useState(false);
+const [somenteAbertos, setSomenteAbertos] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      if (onRefresh) {
+        await onRefresh();
+      }
+      toast.success('Chamados recarregados!');
+    } catch (error) {
+      toast.error('Erro ao recarregar chamados');
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [onRefresh]);
   // agrupar tickets de acordo com o critério selecionado
   const groupedTickets = useMemo(() => {
     const groups: { [key: string]: Chamado[] } = {};
@@ -661,7 +679,7 @@ const KanbanView = ({
           
           <div className="flex items-center gap-3 pl-6" style={{ borderLeftColor: theme.border.secondary, borderLeftWidth: '1px' }}>
             <span className="text-sm" style={{ color: theme.text.secondary }}>
-              Apenas abertos
+              Não mostrar concluídos
             </span>
             <button
               type="button"
@@ -677,6 +695,25 @@ const KanbanView = ({
                   backgroundColor: 'white',
                   transform: somenteAbertos ? 'translateX(20px)' : 'translateX(0)',
                 }}
+              />
+            </button>
+
+            {/* botao de recarergar chamados */}
+            <div className="border-l" style={{ borderLeftColor: theme.border.secondary, height: '24px', margin: '0 8px' }}></div>
+            <button
+              type="button"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="p-1.5 rounded-lg transition-all duration-200 hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{
+                backgroundColor: isRefreshing ? theme.brand.primary : 'transparent',
+                color: isRefreshing ? 'white' : theme.text.secondary,
+              }}
+              title="Recarregar chamados"
+            >
+              <FiRefreshCw 
+                className={`w-4 h-4 ${ isRefreshing ? 'animate-spin' : ''}`}
+                strokeWidth={2.5}
               />
             </button>
           </div>

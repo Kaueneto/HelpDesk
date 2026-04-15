@@ -90,18 +90,41 @@ export default function GerenciarChamados() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { theme } = useTheme();
   
+  // heelper para restaurar filtros do localStorage
+  const restaurarFiltrosSalvos = () => {
+    try {
+      const filtrosSalvos = localStorage.getItem('filtrosChamados');
+      if (filtrosSalvos) {
+        return JSON.parse(filtrosSalvos);
+      }
+    } catch (e) {
+      console.error('Erro ao restaurar filtros:', e);
+    }
+    return null;
+  };
+
+  const filtrosSalvos = restaurarFiltrosSalvos();
+  
   // filtros
-  const [dataAberturaInicio, setDataAberturaInicio] = useState<Date | null>(null);
-  const [dataAberturaFim, setDataAberturaFim] = useState<Date | null>(null);
-  const [dataFechamentoInicio, setDataFechamentoInicio] = useState<Date | null>(null);
-  const [dataFechamentoFim, setDataFechamentoFim] = useState<Date | null>(null);
-  const [departamentoId, setDepartamentoId] = useState<string[]>([]);
-  const [topicoAjudaId, setTopicoAjudaId] = useState<string[]>([]);
-  const [prioridadeId, setPrioridadeId] = useState('');
-  const [statusId, setStatusId] = useState<string[]>([]);
-  const [assunto, setAssunto] = useState('');
-  const [nomeUsuario, setNomeUsuario] = useState('');
-  const [nomeResponsavel, setNomeResponsavel] = useState('');
+  const [dataAberturaInicio, setDataAberturaInicio] = useState<Date | null>(
+    filtrosSalvos?.dataAberturaInicio ? new Date(filtrosSalvos.dataAberturaInicio) : null
+  );
+  const [dataAberturaFim, setDataAberturaFim] = useState<Date | null>(
+    filtrosSalvos?.dataAberturaFim ? new Date(filtrosSalvos.dataAberturaFim) : null
+  );
+  const [dataFechamentoInicio, setDataFechamentoInicio] = useState<Date | null>(
+    filtrosSalvos?.dataFechamentoInicio ? new Date(filtrosSalvos.dataFechamentoInicio) : null
+  );
+  const [dataFechamentoFim, setDataFechamentoFim] = useState<Date | null>(
+    filtrosSalvos?.dataFechamentoFim ? new Date(filtrosSalvos.dataFechamentoFim) : null
+  );
+  const [departamentoId, setDepartamentoId] = useState<string[]>(filtrosSalvos?.departamentoId || []);
+  const [topicoAjudaId, setTopicoAjudaId] = useState<string[]>(filtrosSalvos?.topicoAjudaId || []);
+  const [prioridadeId, setPrioridadeId] = useState(filtrosSalvos?.prioridadeId || '');
+  const [statusId, setStatusId] = useState<string[]>(filtrosSalvos?.statusId || []);
+  const [assunto, setAssunto] = useState(filtrosSalvos?.assunto || '');
+  const [nomeUsuario, setNomeUsuario] = useState(filtrosSalvos?.nomeUsuario || '');
+  const [nomeResponsavel, setNomeResponsavel] = useState(filtrosSalvos?.nomeResponsavel || '');
 
   // dados
   const [chamados, setChamados] = useState<Chamado[]>([]);
@@ -121,6 +144,7 @@ export default function GerenciarChamados() {
   const [totalPaginas, setTotalPaginas] = useState(0);
   const [totalChamados, setTotalChamados] = useState(0);
   const [pageSize, setPageSize] = useState(20);
+  const [originalPageSize, setOriginalPageSize] = useState(20); // guardar paginação original antes de mudar para kanban
 
   // ordenação
   const [ordenarPor, setOrdenarPor] = useState<'numeroChamado' | 'prioridade' | 'topico' | 'departamento' | 'status' | 'dataAbertura' | 'dataFechamento' | 'usuario' | 'responsavel' | 'resumo' | null>(null);
@@ -260,8 +284,12 @@ export default function GerenciarChamados() {
     if (!isAuthenticated) return;
     
     carregarDadosIniciais();
-    // carregar chamados automaticamente ao montar
-    pesquisarChamados(1);
+    
+    // ler viewMode do localStorage para determinar pageSize inicial
+    const viewModeFromStorage = (localStorage.getItem('ticketsView') as 'table' | 'kanban') || 'table';
+    const initialPageSize = viewModeFromStorage === 'kanban' ? 10000 : 20;
+    
+    pesquisarChamados(1, ocultarConcluidos, initialPageSize);
     // limpar cache antigo para evitar conflitos
     localStorage.removeItem('chamadosCache');
   }, [isAuthenticated, authLoading]);
@@ -270,6 +298,24 @@ export default function GerenciarChamados() {
     // Guardar preferência de filtros visíveis no localStorage
     localStorage.setItem('filtrosVisiveis', String(filtrosVisiveis));
   }, [filtrosVisiveis]);
+
+  useEffect(() => {
+    // salvar todos os filtros no localStorage sempre que algum muda
+    const filtrosAtuais = {
+      dataAberturaInicio: dataAberturaInicio?.toISOString() || null,
+      dataAberturaFim: dataAberturaFim?.toISOString() || null,
+      dataFechamentoInicio: dataFechamentoInicio?.toISOString() || null,
+      dataFechamentoFim: dataFechamentoFim?.toISOString() || null,
+      departamentoId,
+      topicoAjudaId,
+      prioridadeId,
+      statusId,
+      assunto,
+      nomeUsuario,
+      nomeResponsavel,
+    };
+    localStorage.setItem('filtrosChamados', JSON.stringify(filtrosAtuais));
+  }, [dataAberturaInicio, dataAberturaFim, dataFechamentoInicio, dataFechamentoFim, departamentoId, topicoAjudaId, prioridadeId, statusId, assunto, nomeUsuario, nomeResponsavel]);
 
   const handleOrdenar = (coluna: 'numeroChamado' | 'prioridade' | 'topico' | 'departamento' | 'status' | 'dataAbertura' | 'dataFechamento' | 'usuario' | 'responsavel' | 'resumo') => {
     if (ordenarPor === coluna) {
@@ -393,13 +439,13 @@ export default function GerenciarChamados() {
     }
   };
 
-  const pesquisarChamados = async (page: number = 1, ocultarConcluidosFiltro: boolean = ocultarConcluidos) => {
+  const pesquisarChamados = async (page: number = 1, ocultarConcluidosFiltro: boolean = ocultarConcluidos, customPageSize?: number) => {
     if (!isAuthenticated) return;
     setLoading(true);
     try {
       const params: any = {
         page,
-        pageSize: pageSize || 20,
+        pageSize: customPageSize ?? pageSize ?? 20,
       };
       if (dataAberturaInicio) params.dataAberturaInicio = dataAberturaInicio.toISOString();
       if (dataAberturaFim) {
@@ -464,15 +510,27 @@ export default function GerenciarChamados() {
     setTotalChamados(0);
     setPageSize(20);
     localStorage.removeItem('chamadosCache');
+    localStorage.removeItem('filtrosChamados');
   };
 
   // Funções para modo Kanban
-  const toggleViewMode = (mode: 'table' | 'kanban') => {
+  const toggleViewMode = async (mode: 'table' | 'kanban') => {
     setViewMode(mode);
     localStorage.setItem('ticketsView', mode);
-    // Resetar paginação ao alternar modo
     setPaginaAtual(1);
-    setPageSize(20);
+    
+    if (mode === 'kanban') {
+      // Ao mudar para kanban: guardar tamanho original e carregar TODOS os chamados
+      setOriginalPageSize(pageSize);
+      setPageSize(10000);
+      // Chamar pesquisarChamados passando 10000 como customPageSize
+      await pesquisarChamados(1, ocultarConcluidos, 10000);
+    } else {
+      // Ao voltar para tabela: restaurar paginação original
+      setPageSize(originalPageSize);
+      // Chamar pesquisarChamados com o pageSize original
+      await pesquisarChamados(1, ocultarConcluidos, originalPageSize);
+    }
   };
 
   const handleTicketUpdate = (ticketId: number, updatedTickets: Chamado[]) => {
@@ -1257,6 +1315,7 @@ export default function GerenciarChamados() {
                   tickets={chamados}
                   onTicketClick={handleTicketClick}
                   onTicketUpdate={handleTicketUpdate}
+                  onRefresh={() => pesquisarChamados(1, ocultarConcluidos, 10000)}
                   departamentos={departamentos}
                   statusList={statusList}
                   prioridades={prioridades}
@@ -1992,8 +2051,11 @@ export default function GerenciarChamados() {
         isOpen={modalNovoChamadoAberto}
         onClose={() => setModalNovoChamadoAberto(false)}
         onSuccess={() => {
-         //atualizar os chamdos depois de criar 
-          pesquisarChamados(paginaAtual);
+          // atualizar os chamados depois de criar 
+          // respeitar o modo de visualização (kanban = 10000, table = pageSize padrão)
+          const viewModeFromStorage = (localStorage.getItem('ticketsView') as 'table' | 'kanban') || 'table';
+          const sizeForSearch = viewModeFromStorage === 'kanban' ? 10000 : pageSize;
+          pesquisarChamados(1, ocultarConcluidos, sizeForSearch);
         }}
 
       />
