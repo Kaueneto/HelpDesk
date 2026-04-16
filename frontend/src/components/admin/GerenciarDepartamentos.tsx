@@ -459,7 +459,7 @@ export default function GerenciarDepartamentos() {
                         type="checkbox"
                         checked={todosChecados}
                         onChange={handleCheckAll}
-                        className="w-5 h-5 cursor-pointer rounded appearance-none border-1 checked:bg-blue-600 checked:border-blue-600 relative transition-colors
+                        className="w-5 h-5 cursor-pointer rounded appearance-none border checked:bg-blue-600 checked:border-blue-600 relative transition-colors
                         before:content-['✓'] before:absolute before:inset-0 before:flex before:items-center before:justify-center before:text-white before:text-sm before:font-bold before:opacity-0 checked:before:opacity-100"
                         style={{
                           borderColor: mode === 'dark' ? '#4B5563' : '#888B95',
@@ -533,7 +533,7 @@ export default function GerenciarDepartamentos() {
                           type="checkbox"
                           checked={departamentosSelecionados.includes(departamento.id)}
                           onChange={() => handleCheckDepartamento(departamento.id)}
-                          className="w-5 h-5 cursor-pointer rounded appearance-none border-1 checked:bg-blue-600 checked:border-blue-600 relative
+                          className="w-5 h-5 cursor-pointer rounded appearance-none border checked:bg-blue-600 checked:border-blue-600 relative
                           before:content-['✓'] before:absolute before:inset-0 before:flex before:items-center before:justify-center before:text-white before:text-sm before:font-bold before:opacity-0 checked:before:opacity-100"
                           style={{
                             borderColor: mode === 'dark' ? '#4B5563' : '#888B95',

@@ -13,6 +13,7 @@ import ModalEditarChamadoAdmin from '@/app/admin/Modal/ModalEditarChamadoAdmin';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiGrid, FiList, FiFilter, FiPlus } from 'react-icons/fi';
 import KanbanView from '../kanban/KanbanView';
+import Avatar from '@/components/Avatar';
 import { HiOutlineChevronDown } from 'react-icons/hi';
 
 
@@ -30,6 +31,7 @@ interface Chamado {
   userResponsavel: {
     id: number;
     name: string;
+    avatar_url?: string | null;
   } | null;
   tipoPrioridade: {
     id: number;
@@ -331,10 +333,13 @@ export default function GerenciarChamados() {
       if (filtrosSalvos.direcaoOrdem) setDirecaoOrdem(filtrosSalvos.direcaoOrdem);
       if (filtrosSalvos.paginaAtual) setPaginaAtual(filtrosSalvos.paginaAtual);
       if (filtrosSalvos.pageSize) setPageSize(filtrosSalvos.pageSize);
+      if (filtrosSalvos.viewMode) setViewMode(filtrosSalvos.viewMode); // Restaurar o modo de visualização
       
       // fazer a pesquisa com os filtros salvos após restaurá-los
       // Ususarar setTimeout para aguardar os states serem commitados
       const timer = setTimeout(() => {
+        // calcular pageSize correto baseado no viewMode restaurado
+        const customPageSizeParaFiltros = filtrosSalvos.viewMode === 'kanban' ? 10000 : (filtrosSalvos.pageSize || 20);
         pesquisarChamadosComFiltros(
           filtrosSalvos.dataAberturaInicio ? new Date(filtrosSalvos.dataAberturaInicio) : null,
           filtrosSalvos.dataAberturaFim ? new Date(filtrosSalvos.dataAberturaFim) : null,
@@ -348,7 +353,8 @@ export default function GerenciarChamados() {
           filtrosSalvos.nomeUsuario || '',
           filtrosSalvos.nomeResponsavel || '',
           filtrosSalvos.ocultarConcluidos || false,
-          filtrosSalvos.paginaAtual || 1
+          filtrosSalvos.paginaAtual || 1,
+          customPageSizeParaFiltros
         );
       }, 100);
       
@@ -531,6 +537,7 @@ export default function GerenciarChamados() {
       direcaoOrdem,
       paginaAtual: page,
       pageSize,
+      viewMode, // Salvar o modo de visualização
     };
     salvarFiltrosNoStorage(filtrosAtuais);
     
@@ -564,6 +571,8 @@ export default function GerenciarChamados() {
       if (assunto) params.assunto = assunto;
       if (nomeUsuario) params.nomeUsuario = nomeUsuario;
       if (nomeResponsavel) params.nomeResponsavel = nomeResponsavel;
+      // Indicar ao backend se está em modo KANBAN
+      params.isKanbanView = viewMode === 'kanban' ? 'true' : 'false';
 
       const response = await api.get('/chamados', { params });
     
@@ -597,7 +606,8 @@ export default function GerenciarChamados() {
     nomeUsuarioParam: string,
     nomeResponsavelParam: string,
     ocultarConcluidosParam: boolean,
-    pageParam: number
+    pageParam: number,
+    customPageSizeParam?: number
   ) => {
     if (!isAuthenticated) return;
     
@@ -605,7 +615,7 @@ export default function GerenciarChamados() {
     try {
       const params: any = {
         page: pageParam,
-        pageSize: pageSize || 20,
+        pageSize: customPageSizeParam ?? pageSize ?? 20,
       };
       if (dataAberturaInicioParam) params.dataAberturaInicio = dataAberturaInicioParam.toISOString();
       if (dataAberturaFimParam) {
@@ -630,13 +640,16 @@ export default function GerenciarChamados() {
       if (assuntoParam) params.assunto = assuntoParam;
       if (nomeUsuarioParam) params.nomeUsuario = nomeUsuarioParam;
       if (nomeResponsavelParam) params.nomeResponsavel = nomeResponsavelParam;
+      // Indicar ao backend se está em modo KANBAN
+      params.isKanbanView = viewMode === 'kanban' ? 'true' : 'false';
 
       const response = await api.get('/chamados', { params });
     
       const chamadosRecebidos = response.data.chamados || response.data;
+      const effectivePageSize = customPageSizeParam ?? pageSize ?? 20;
       setChamados(chamadosRecebidos);
       setTotalChamados(response.data.total || chamadosRecebidos.length);
-      setTotalPaginas(response.data.totalPages || Math.ceil((response.data.total || chamadosRecebidos.length) / pageSize));
+      setTotalPaginas(response.data.totalPages || Math.ceil((response.data.total || chamadosRecebidos.length) / effectivePageSize));
       setPaginaAtual(pageParam);
       setChamadosSelecionados([]);
       setTodosChecados(false);
@@ -674,6 +687,11 @@ export default function GerenciarChamados() {
     localStorage.removeItem('chamadosCache');
     localStorage.removeItem(STORAGE_KEY); // limpar filtros do storage
     localStorage.removeItem('filtrosChamados'); // compatibilidade com chave alternativa
+  };
+
+  // Função auxiliar para obter o pageSize correto baseado no modo de visualização
+  const getEffectivePageSize = (): number => {
+    return viewMode === 'kanban' ? 10000 : pageSize;
   };
 
   // Funções para modo Kanban
@@ -745,7 +763,7 @@ export default function GerenciarChamados() {
       });
 
       alert('Chamados marcados como resolvidos!');
-      await pesquisarChamados();
+      await pesquisarChamados(1, ocultarConcluidos, getEffectivePageSize());
     } catch (error) {
 
       alert('Erro ao marcar chamados como resolvidos');
@@ -862,7 +880,7 @@ export default function GerenciarChamados() {
       alert(response.data.message || ` ${chamadosSelecionados.length} chamado(s) atribuído(s) com sucesso!`);
       setChamadosSelecionados([]);
       setTodosChecados(false);
-      await pesquisarChamados(paginaAtual);
+      await pesquisarChamados(paginaAtual, ocultarConcluidos, getEffectivePageSize());
     } catch (error: any) {
 
       const errorMessage = error.response?.data?.message || 
@@ -923,7 +941,7 @@ export default function GerenciarChamados() {
       setModalEdicaoAberto(false);
       setChamadosSelecionados([]);
       setTodosChecados(false);
-      await pesquisarChamados(paginaAtual);
+      await pesquisarChamados(paginaAtual, ocultarConcluidos, getEffectivePageSize());
     } catch (error: any) {
 
       const errorMessage = error.response?.data?.message || 
@@ -975,7 +993,7 @@ export default function GerenciarChamados() {
       alert(response.data.mensagem || `${chamadosSelecionados.length} chamado(s) excluído(s) com sucesso!`);
       setChamadosSelecionados([]);
       setTodosChecados(false);
-      await pesquisarChamados(paginaAtual);
+      await pesquisarChamados(paginaAtual, ocultarConcluidos, getEffectivePageSize());
     } catch (error: any) {
     
       const errorMessage = error.response?.data?.mensagem || 
@@ -1366,7 +1384,7 @@ export default function GerenciarChamados() {
                 Limpar Filtros
               </button>
               <button
-                onClick={() => pesquisarChamados(1)}
+                onClick={() => pesquisarChamados(1, ocultarConcluidos, getEffectivePageSize())}
                 disabled={loading}
                 className="px-6 py-2 text-white rounded font-medium text-sm transition-all hover:shadow-md active:scale-95"
                 style={{
@@ -1779,8 +1797,21 @@ export default function GerenciarChamados() {
                             {formatarData(chamado.dataFechamento)}
                           </td>
                           {/* Responsável */}
-                          <td className="px-2 py-2 text-xs max-w-30 truncate overflow-hidden text-ellipsis" style={{ color: theme.text.primary }} title={chamado.userResponsavel?.name}>
-                            {chamado.userResponsavel?.name || (
+                          <td className="px-2 py-2 text-xs" style={{ color: theme.text.primary }}>
+                            {chamado.userResponsavel ? (
+                              <div className="flex items-center gap-2 min-w-0">
+                                <Avatar
+                                  name={chamado.userResponsavel.name}
+                                  avatarUrl={chamado.userResponsavel.avatar_url}
+                                  size="sm"
+                                />
+                                <span className="truncate" title={chamado.userResponsavel.name}>
+                                  {chamado.userResponsavel.name}
+                                </span>
+                                {/* debiguii */}
+                       
+                              </div>
+                            ) : (
                               <span className="italic" style={{ color: theme.text.secondary }}>Não atribuído</span>
                             )}
                           </td>

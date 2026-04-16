@@ -5,6 +5,7 @@ import api from '@/services/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import CustomSelect from '@/components/admin/CustomSelect';
+import UserSelect from '@/components/admin/UserSelect';
 import { MdAttachFile } from 'react-icons/md';
 
 interface TopicosAjuda {
@@ -26,6 +27,8 @@ interface User {
   name: string;
   email: string;
   roleId: number;
+  departamento?: string;
+  avatar_url?: string | null;
 }
 
 interface ModalNovoChamadoProps {
@@ -73,10 +76,11 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
 
   const carregarDados = async () => {
     try {
-      const [topicosRes, prioridadesRes, usersRes] = await Promise.all([
+      const [topicosRes, prioridadesRes, usersRes, deptosRes] = await Promise.all([
         api.get('/topicos_ajuda'),
         api.get('/tipo_prioridade'),
         api.get('/users'),
+        api.get('/departamentos'),
       ]);
 
       setTopicos(topicosRes.data.filter((t: TopicosAjuda) => t.ativo));
@@ -84,10 +88,21 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
       const prioridadesLista = Array.isArray(prioridadesRes.data) ? prioridadesRes.data : [];
       setPrioridades(prioridadesLista);
       
-      // Filtrar apenas administradores
+      const departamentosLista = Array.isArray(deptosRes.data) ? deptosRes.data : [];
+
+      // Filtrar apenas administradores e mapear departamentos
       const todosUsuarios = Array.isArray(usersRes.data) ? usersRes.data : (usersRes.data.usuarios || []);
-      const admins = todosUsuarios.filter((u: User) => u.roleId === 1);
+      const admins = todosUsuarios
+        .filter((u: User) => u.roleId === 1)
+        .map((u: any) => ({
+          ...u,
+          departamento: departamentosLista.find((d: any) => String(d.id) === String(u.id_departament))?.name || '',
+        }));
+
       const usuarioLogadoCompleto = todosUsuarios.find((u: User) => u.id === user?.id);
+      if (usuarioLogadoCompleto) {
+         usuarioLogadoCompleto.departamento = departamentosLista.find((d: any) => String(d.id) === String(usuarioLogadoCompleto.id_departament))?.name || '';
+      }
 
       //garante que o usuario logado vai esta selecionado por padrao
       const usuariosDisponiveis = [...admins];
@@ -294,10 +309,7 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
   const usuariosOrdenados = [...usuarios].sort((a, b) => a.name.localeCompare(b.name));
   const prioridadesOrdenadas = [...prioridades].sort((a, b) => a.ordem - b.ordem);
 
-    const responsavelOptions = usuarios.map((u) => ({
-      id: u.id,
-      label: u.name,
-    }));
+
 
     const topicoOptions = topicos.map((t) => ({
       id: t.id,
@@ -393,11 +405,10 @@ export default function ModalNovoChamado({ isOpen, onClose, onSuccess }: ModalNo
                 <label htmlFor="responsavel" className="text-base md:text-lg leading-none" style={{ color: theme.text.secondary }}>
                   Responsável
                 </label>
-                <CustomSelect
+                <UserSelect
                   value={responsavelId}
                   onChange={setResponsavelId}
-                  options={responsavelOptions}
-                  placeholder="Selecione..."
+                  options={usuariosOrdenados}
                 />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-[160px_1fr] items-center gap-2.5">

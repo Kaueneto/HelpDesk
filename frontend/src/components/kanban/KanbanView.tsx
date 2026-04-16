@@ -721,7 +721,7 @@ const [somenteAbertos, setSomenteAbertos] = useState(false);
 
         <div className="flex items-center gap-2 text-sm" style={{ color: theme.text.secondary }}>
           <span>{tickets.length}</span>
-          <span>chamados</span>
+          <span>Registros</span>
         </div>
       </div>
 
