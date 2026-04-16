@@ -501,6 +501,35 @@ router.get("/chamados/:id", verifyToken, async (req: AuthenticatedRequest, res: 
       })
     );
 
+    // gerar signed URL para avatar do userResponsavel se existir
+    let userResponsavelFormatado = null;
+    if (chamado.userResponsavel && chamado.userResponsavel.avatar_url) {
+      try {
+        const { data: signedUrlData } = await supabase.storage
+          .from(SUPABASE_BUCKET)
+          .createSignedUrl(chamado.userResponsavel.avatar_url, 3600);
+        
+        userResponsavelFormatado = {
+          id: chamado.userResponsavel.id,
+          name: chamado.userResponsavel.name,
+          avatar_url: signedUrlData?.signedUrl || chamado.userResponsavel.avatar_url
+        };
+      } catch (error) {
+        console.warn(`Erro ao gerar signed URL para avatar do userResponsavel ${chamado.userResponsavel.id}:`, error);
+        userResponsavelFormatado = {
+          id: chamado.userResponsavel.id,
+          name: chamado.userResponsavel.name,
+          avatar_url: chamado.userResponsavel.avatar_url
+        };
+      }
+    } else if (chamado.userResponsavel) {
+      userResponsavelFormatado = {
+        id: chamado.userResponsavel.id,
+        name: chamado.userResponsavel.name,
+        avatar_url: null
+      };
+    }
+
     // Formatar resposta
     const chamadoFormatado = {
       id: chamado.id,
@@ -520,10 +549,7 @@ router.get("/chamados/:id", verifyToken, async (req: AuthenticatedRequest, res: 
       departamento: chamado.departamento,
       topicoAjuda: chamado.topicoAjuda,
       status: chamado.status,
-      userResponsavel: chamado.userResponsavel ? {
-        id: chamado.userResponsavel.id,
-        name: chamado.userResponsavel.name
-      } : null,
+      userResponsavel: userResponsavelFormatado,
       userFechamento: chamado.userFechamento ? {
         id: chamado.userFechamento.id,
         name: chamado.userFechamento.name
@@ -557,11 +583,13 @@ router.get("/chamados", verifyToken, async (req: AuthenticatedRequest, res: Resp
       dataFechamentoInicio,
       dataFechamentoFim,
       page = 1,
-      pageSize = 10
+      pageSize = 10,
+      isKanbanView = 'false' // Indicador de modo KANBAN para não aplicar paginação
     } = req.query;
     
     const userRoleId = req.userRoleId; // role do usuario logado
     const userId = req.userId; // id do usuario logado
+    const isKanban = String(isKanbanView).toLowerCase() === 'true';
 
     // Converter para números
     const pageNum = Math.max(1, parseInt(String(page)) || 1);
@@ -762,10 +790,40 @@ router.get("/chamados", verifyToken, async (req: AuthenticatedRequest, res: Resp
       });
     });
 
-    // Formatar resposta
-    const chamadosFormatados = chamados.map((chamado: any) => {
+    // Formatar resposta com signed URLs para avatares
+    const chamadosFormatados = await Promise.all(chamados.map(async (chamado: any) => {
       // Se tiver múltiplas posições, retornar um array; senão retornar null ou a primeira
       const posicoesDoCard = posicoesPorChamado[chamado.id] || [];
+      
+      // Gerar signed URL para avatar do userResponsavel se existir
+      let userResponsavelFormatado = null;
+      if (chamado.userResponsavel && chamado.userResponsavel.avatar_url) {
+        try {
+          const { data: signedUrlData } = await supabase.storage
+            .from(SUPABASE_BUCKET)
+            .createSignedUrl(chamado.userResponsavel.avatar_url, 3600);
+          
+          userResponsavelFormatado = {
+            id: chamado.userResponsavel.id,
+            name: chamado.userResponsavel.name,
+            avatar_url: signedUrlData?.signedUrl || chamado.userResponsavel.avatar_url
+          };
+        } catch (error) {
+          console.warn(`Erro ao gerar signed URL para avatar do userResponsavel ${chamado.userResponsavel.id}:`, error);
+          userResponsavelFormatado = {
+            id: chamado.userResponsavel.id,
+            name: chamado.userResponsavel.name,
+            avatar_url: chamado.userResponsavel.avatar_url
+          };
+        }
+      } else if (chamado.userResponsavel) {
+        userResponsavelFormatado = {
+          id: chamado.userResponsavel.id,
+          name: chamado.userResponsavel.name,
+          avatar_url: null
+        };
+      }
+      
       return {
         id: chamado.id,
         numeroChamado: chamado.numeroChamado,
@@ -784,12 +842,12 @@ router.get("/chamados", verifyToken, async (req: AuthenticatedRequest, res: Resp
         departamento: chamado.departamento,
         topicoAjuda: chamado.topicoAjuda,
         status: chamado.status,
-        userResponsavel: chamado.userResponsavel ? { id: chamado.userResponsavel.id, name: chamado.userResponsavel.name } : null,
+        userResponsavel: userResponsavelFormatado,
         userFechamento: chamado.userFechamento ? { id: chamado.userFechamento.id, name: chamado.userFechamento.name } : null,
         // Retornar array de todas as posições para o frontend escolher a correta
         kanbanPositions: posicoesDoCard.length > 0 ? posicoesDoCard : null,
       };
-    });
+    }));
 
     return res.status(200).json({
       chamados: chamadosFormatados,
@@ -900,10 +958,54 @@ router.put("/chamados/:id/atribuir", verifyToken, async (req: AuthenticatedReque
    
     }
 
+    // Recarregar chamado com todas as relações para retornar dados atualizados
+    const chamadoAtualizado = await chamadoRepository.findOne({
+      where: { id: Number(id) },
+      relations: [
+        "usuario",
+        "userResponsavel",
+        "userFechamento",
+        "tipoPrioridade",
+        "departamento",
+        "topicoAjuda",
+        "status",
+      ],
+    });
+
+    // gerar signed URL para avatar do userResponsavel se existir
+    let userResponsavelFormatado = null;
+    if (chamadoAtualizado?.userResponsavel && chamadoAtualizado.userResponsavel.avatar_url) {
+      try {
+        const { data: signedUrlData } = await supabase.storage
+          .from(SUPABASE_BUCKET)
+          .createSignedUrl(chamadoAtualizado.userResponsavel.avatar_url, 3600);
+        
+        userResponsavelFormatado = {
+          id: chamadoAtualizado.userResponsavel.id,
+          name: chamadoAtualizado.userResponsavel.name,
+          avatar_url: signedUrlData?.signedUrl || chamadoAtualizado.userResponsavel.avatar_url
+        };
+      } catch (error) {
+        console.warn(`Erro ao gerar signed URL para avatar do userResponsavel:`, error);
+        userResponsavelFormatado = {
+          id: chamadoAtualizado.userResponsavel.id,
+          name: chamadoAtualizado.userResponsavel.name,
+          avatar_url: chamadoAtualizado.userResponsavel.avatar_url
+        };
+      }
+    } else if (chamadoAtualizado?.userResponsavel) {
+      userResponsavelFormatado = {
+        id: chamadoAtualizado.userResponsavel.id,
+        name: chamadoAtualizado.userResponsavel.name,
+        avatar_url: null
+      };
+    }
+
+    const resposta = chamadoAtualizado ? { ...chamadoAtualizado, userResponsavel: userResponsavelFormatado } : chamado;
 
     return res.status(200).json({
       mensagem: "Chamado atribuído com sucesso!",
-      chamado,
+      chamado: resposta,
     });
   } catch (error) {
     return res.status(500).json({
@@ -984,9 +1086,40 @@ router.put("/chamados/:id/assumir", verifyToken, async (req: AuthenticatedReques
       ],
     });
 
+    // Gerar signed URL para avatar do userResponsavel se existir
+    let userResponsavelFormatado = null;
+    if (chamadoAtualizado?.userResponsavel && chamadoAtualizado.userResponsavel.avatar_url) {
+      try {
+        const { data: signedUrlData } = await supabase.storage
+          .from(SUPABASE_BUCKET)
+          .createSignedUrl(chamadoAtualizado.userResponsavel.avatar_url, 3600);
+        
+        userResponsavelFormatado = {
+          id: chamadoAtualizado.userResponsavel.id,
+          name: chamadoAtualizado.userResponsavel.name,
+          avatar_url: signedUrlData?.signedUrl || chamadoAtualizado.userResponsavel.avatar_url
+        };
+      } catch (error) {
+        console.warn(`Erro ao gerar signed URL para avatar do userResponsavel:`, error);
+        userResponsavelFormatado = {
+          id: chamadoAtualizado.userResponsavel.id,
+          name: chamadoAtualizado.userResponsavel.name,
+          avatar_url: chamadoAtualizado.userResponsavel.avatar_url
+        };
+      }
+    } else if (chamadoAtualizado?.userResponsavel) {
+      userResponsavelFormatado = {
+        id: chamadoAtualizado.userResponsavel.id,
+        name: chamadoAtualizado.userResponsavel.name,
+        avatar_url: null
+      };
+    }
+
+    const resposta = chamadoAtualizado ? { ...chamadoAtualizado, userResponsavel: userResponsavelFormatado } : null;
+
     return res.status(200).json({
       mensagem: "Chamado atribuido com sucesso!",
-      chamado: chamadoAtualizado,
+      chamado: resposta,
     });
   } catch (error) {
     return res.status(500).json({

@@ -56,6 +56,9 @@ export class Users {
   @Column({ name: "motivo_inativacao", type: "text", nullable: true })
   motivoInativacao!: string | null;
 
+  @Column({ name: "avatar_url", type: "varchar", nullable: true })
+  avatar_url!: string | null;
+
   @CreateDateColumn({ name: "created_at" })
   createdAt!: Date;
 

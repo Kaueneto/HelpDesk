@@ -26,6 +26,11 @@ export const verifyToken = (req: Request, res: Response, next: NextFunction) => 
         nome: decoded.nome,
       };
 
+      // add propriedades individuais para compatibilidade com controllers
+      (req as any).userId = Number(decoded.id);
+      (req as any).userEmail = decoded.email;
+      (req as any).userRoleId = decoded.roleId;
+
       return next();
     });
   } catch (error) {

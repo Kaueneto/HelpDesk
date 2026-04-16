@@ -69,7 +69,8 @@ router.post("/login", async (req: Request, res: Response) => {
         id: userData.id,
         name: userData.name,
         email: userData.email,
-        roleId: userData.roleId
+        roleId: userData.roleId,
+        avatar_url: userData.avatar_url || null
       },
     });
   } catch (error: any) {

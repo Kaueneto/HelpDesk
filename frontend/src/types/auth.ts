@@ -7,6 +7,7 @@ export interface User {
   email: string;
   roleId: number;
   ativo: boolean;
+  avatar_url?: string | null;
 }
 
 /**
@@ -28,6 +29,7 @@ export interface LoginResponse {
     email: string;
     roleId: number;
     ativo: boolean;
+    avatar_url?: string | null;
     token: string;
   };
 }

@@ -3,6 +3,7 @@ import { Users } from "../entities/Users";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { SecurityUtils } from "../utils/SecurityUtils";
+import { supabase, SUPABASE_BUCKET } from "../config/supabase";
 
 export class AuthService {
   /**
@@ -67,11 +68,26 @@ export class AuthService {
       { 
         id: user.id, 
         email: user.email,
-        roleId: user.roleId 
+        roleId: user.roleId,
+        id_departament: user.id_departament
       },
       process.env.JWT_SECRET || "",
       { expiresIn: "8h" } // Token expira em 8 horas
     );
+
+    // gerar URL assinada do avatar se existir
+    let avatarSignedUrl: string | null = null;
+    if (user.avatar_url) {
+      try {
+        const { data } = await supabase.storage
+          .from(SUPABASE_BUCKET)
+          .createSignedUrl(user.avatar_url, 3600); // 1 hora de validade
+        avatarSignedUrl = data?.signedUrl || null;
+      } catch (error) {
+        console.error('Erro ao gerar URL assinada do avatar:', error);
+        avatarSignedUrl = null;
+      }
+    }
 
     // Retornar dados do usuário (sem a senha) e o token
     return {
@@ -79,6 +95,7 @@ export class AuthService {
       name: user.name,
       email: user.email,
       roleId: user.roleId,
+      avatar_url: avatarSignedUrl,
       token,
       // dados para localStorage (sem informações sensíveis)
       userInfo: {
