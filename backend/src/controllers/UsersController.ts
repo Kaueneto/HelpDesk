@@ -10,12 +10,42 @@ import bcrypt from "bcryptjs"
 import { verifyToken } from "../Middleware/AuthMiddleware";
 import { AuthService } from "../services/AuthService";
 import { SecurityUtils } from "../utils/SecurityUtils";
+import { supabase, SUPABASE_BUCKET } from "../config/supabase";
 
 interface AuthenticatedRequest extends Request {
   userId?: number;
   userEmail?: string;
   userRoleId?: number;
+  file?: Express.Multer.File;
 }
+
+const sanitizeFilename = (filename: string): string => {
+  const withoutControls = filename.replace(/[\x00-\x1F\x7F]/g, "");
+  const ascii = withoutControls
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9._ -]/g, "_")
+    .replace(/\s+/g, "_");
+
+  const cleaned = ascii.replace(/[\\/:*?"<>|]/g, "_").trim();
+  if (!cleaned) {
+    return "avatar";
+  }
+
+  if (cleaned.length <= 180) {
+    return cleaned;
+  }
+
+  const extIndex = cleaned.lastIndexOf(".");
+  if (extIndex <= 0) {
+    return cleaned.slice(0, 180);
+  }
+
+  const ext = cleaned.slice(extIndex);
+  const base = cleaned.slice(0, extIndex);
+  const maxBaseLength = Math.max(1, 180 - ext.length);
+  return `${base.slice(0, maxBaseLength)}${ext}`;
+};
 
 // listar todos os users
 router.get("/users", verifyToken, async (req: Request, res: Response) => {
@@ -66,7 +96,28 @@ router.get("/users", verifyToken, async (req: Request, res: Response) => {
       .orderBy("user.id", "DESC")
       .getMany();
 
-    res.status(200).json(users);
+    // gerar signed URLs para avatares
+    const usersWithAvatarUrls = await Promise.all(
+      users.map(async (user) => {
+        if (user.avatar_url) {
+          try {
+            const { data: signedUrlData } = await supabase.storage
+              .from(SUPABASE_BUCKET)
+              .createSignedUrl(user.avatar_url, 3600);
+            return {
+              ...user,
+              avatar_url: signedUrlData?.signedUrl || user.avatar_url,
+            };
+          } catch (error) {
+            console.warn(`Erro ao gerar signed URL para avatar do usuário ${user.id}:`, error);
+            return user;
+          }
+        }
+        return user;
+      })
+    );
+
+    res.status(200).json(usersWithAvatarUrls);
   } catch (error) {
     
     res.status(500).json({ mensagem: "Erro ao listar usuários" });
@@ -118,7 +169,7 @@ router.post("/users", async (req: Request, res: Response) => {
 
     await schema.validate(data, { abortEarly: false });
 
-    // Validar força da senha (exceto para senha padrão "padrao")
+    // validar força da senha (exceto para senha padrão "padrao")
     if (data.password !== "padrao") {
       const passwordValidation = SecurityUtils.validatePassword(data.password);
       if (!passwordValidation.isValid) {
@@ -633,4 +684,157 @@ router.put("/users/:id",  verifyToken,  async (req: Request, res: Response) => {
     });
   }
 });
+
+// upload de avatar
+router.post("/users/upload-avatar/:id", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const file = req.file;
+
+    if (!file) {
+      return res.status(400).json({ mensagem: "Nenhum arquivo foi enviado" });
+    }
+
+    // validar tipo de arquivo
+    const tiposPermitidos = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+    if (!tiposPermitidos.includes(file.mimetype)) {
+      return res.status(400).json({ mensagem: "Tipo de arquivo não suportado. Use JPG, PNG, GIF ou WebP" });
+    }
+
+    // validar tamanho (máximo 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      return res.status(400).json({ mensagem: "Arquivo muito grande. Máximo 5MB" });
+    }
+
+    const userRepository = AppDataSource.getRepository(Users);
+
+    // buscar user 
+    const user = await userRepository.findOne({
+      where: { id: parseInt(id) },
+    });
+
+    if (!user) {
+      return res.status(404).json({ mensagem: "Usuário não encontrado" });
+    }
+
+    // se já tem avatar, deletar o antigo
+    if (user.avatar_url) {
+      try {
+        await supabase.storage.from(SUPABASE_BUCKET).remove([user.avatar_url]);
+      } catch (deleteError) {
+        console.warn("Aviso: não foi possível deletar avatar anterior", deleteError);
+      }
+    }
+
+    // gerar path único: avatars/{userId}/{timestamp}-{nome}
+    const timestamp = Date.now();
+    const safeFilename = sanitizeFilename(file.originalname);
+    const randomSuffix = Math.random().toString(36).slice(2, 8);
+    const storagePath = `avatars/${parseInt(id)}/${timestamp}-${randomSuffix}-${safeFilename}`;
+
+    // upload para o Supabase Storage
+    const { error: uploadError } = await supabase.storage
+      .from(SUPABASE_BUCKET)
+      .upload(storagePath, file.buffer, {
+        contentType: file.mimetype || "application/octet-stream",
+        upsert: false,
+      });
+
+    if (uploadError) {
+      return res.status(500).json({
+        mensagem: "Erro ao fazer upload do arquivo",
+        erro: uploadError.message,
+      });
+    }
+
+    // att avatar URL no usuário (salva apenas a path, não a URL completa)
+    user.avatar_url = storagePath;
+    user.updatedAt = new Date();
+    await userRepository.save(user);
+
+    // gerar signed URL para retornar (válida por 1 hora)
+    const { data: signedUrlData } = await supabase.storage
+      .from(SUPABASE_BUCKET)
+      .createSignedUrl(storagePath, 3600);
+
+    res.status(200).json({
+      mensagem: "Avatar atualizado com sucesso!",
+      avatar_url: storagePath,
+      signedUrl: signedUrlData?.signedUrl,
+    });
+  } catch (error) {
+    console.error("Erro no upload:", error);
+    res.status(500).json({ mensagem: "Erro ao fazer upload do avatar" });
+  }
+});
+
+// deletar a foto
+router.delete("/users/delete-avatar/:id", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const userRepository = AppDataSource.getRepository(Users);
+
+    // Buscar user
+    const user = await userRepository.findOne({
+      where: { id: parseInt(id) },
+    });
+
+    if (!user) {
+      return res.status(404).json({ mensagem: "Usuário não encontrado" });
+    }
+
+    // se tem avatar, deletar do storage
+    if (user.avatar_url) {
+      try {
+        await supabase.storage.from(SUPABASE_BUCKET).remove([user.avatar_url]);
+      } catch (deleteError) {
+        console.warn("Aviso: não foi possível deletar arquivo do storage", deleteError);
+      }
+    }
+
+    // remover avatar_url do banco
+    user.avatar_url = null;
+    user.updatedAt = new Date();
+    await userRepository.save(user);
+
+    res.status(200).json({ mensagem: "Avatar removido com sucesso!" });
+  } catch (error) {
+    console.error("Erro ao deletar avatar:", error);
+    res.status(500).json({ mensagem: "Erro ao remover avatar" });
+  }
+});
+
+// get avatar signed URL
+router.get("/users/:id/avatar-url", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const userRepository = AppDataSource.getRepository(Users);
+
+    const user = await userRepository.findOne({
+      where: { id: parseInt(id) },
+    });
+
+    if (!user) {
+      return res.status(404).json({ mensagem: "Usuário não encontrado" });
+    }
+
+    if (!user.avatar_url) {
+      return res.status(404).json({ mensagem: "Usuário não possui avatar" });
+    }
+
+    // gerar signed URL para a path armazenada (válida por 1 hora)
+    const { data: signedUrlData } = await supabase.storage
+      .from(SUPABASE_BUCKET)
+      .createSignedUrl(user.avatar_url, 3600);
+
+    res.status(200).json({
+      avatar_url: user.avatar_url,
+      signedUrl: signedUrlData?.signedUrl,
+    });
+  } catch (error) {
+    console.error("Erro ao gerar signed URL:", error);
+    res.status(500).json({ mensagem: "Erro ao gerar URL do avatar" });
+  }
+});
+
 export default router;

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { FiBook, FiUser, FiSun, FiMoon, FiSettings, FiLogOut, FiChevronDown } from 'react-icons/fi';
+import Avatar from '@/components/Avatar';
 
 interface AdminHeaderProps {}
 
@@ -78,7 +79,11 @@ export default function AdminHeader({}: AdminHeaderProps) {
           onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.15)'}
           onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
         >
-          <FiUser className="w-5 h-5" />
+          <Avatar 
+            name={user?.name} 
+            avatarUrl={user?.avatar_url}
+            size="sm"
+          />
           <span className="font-medium hidden sm:inline text-sm">{user?.name}</span>
           <FiChevronDown className={`w-4 h-4 transition-transform duration-200 ${userMenuOpen ? 'rotate-180' : ''}`} />
         </button>
@@ -108,15 +113,11 @@ export default function AdminHeader({}: AdminHeaderProps) {
                 }}
               >
                 <div className="flex items-center gap-3 mb-3">
-                  <div 
-                    className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
-                    style={{
-                      backgroundColor: `rgb(var(--brand-primary))`,
-                      color: 'white'
-                    }}
-                  >
-                    <FiUser className="w-5 h-5" />
-                  </div>
+                  <Avatar 
+                    name={user?.name} 
+                    avatarUrl={user?.avatar_url}
+                    size="lg"
+                  />
                   <div className="flex-1 min-w-0">
                     <div className="font-bold text-base truncate" style={{ color: `rgb(var(--text-primary))` }}>
                       {user?.name}
@@ -222,7 +223,7 @@ export default function AdminHeader({}: AdminHeaderProps) {
                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                   >
                     <FiSettings className="w-5 h-5" />
-                    <span className="flex-1 text-left font-medium text-sm">Configurações</span>
+                    <span className="flex-1 text-left font-medium text-sm">Meus dados</span>
                   </button>
                 </div>
 

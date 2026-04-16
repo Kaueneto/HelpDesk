@@ -17,8 +17,8 @@ export default function Home() {
     if (!isLoading) {
       if (isAuthenticated && user) {
         // Se o usuário estiver logado, redireciona baseado na role
-        if (user.roleId === 1) {
-          // Admin vai para o painel administrativo
+        if (user.roleId === 1 || user.roleId === 3) {
+          // Admin ou Usuariopro vai para o painel administrativo
           router.push(`${baseUrl}/painel`);
         } else {
           // Usuário comum vai para a página de usuários

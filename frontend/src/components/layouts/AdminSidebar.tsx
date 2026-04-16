@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { FiEdit3 } from 'react-icons/fi';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface AdminSidebarProps {
   collapsed: boolean;
@@ -12,6 +13,7 @@ interface AdminSidebarProps {
 export default function AdminSidebar({ collapsed, onToggle }: AdminSidebarProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const { user } = useAuth();
   const [gerencialExpanded, setGerencialExpanded] = useState(false);
   const [gerencialPopupOpen, setGerencialPopupOpen] = useState(false);
   const [logoHovered, setLogoHovered] = useState(false);
@@ -150,6 +152,7 @@ export default function AdminSidebar({ collapsed, onToggle }: AdminSidebarProps)
         </button>
 
         {/* Gerencial */}
+        {user?.roleId === 1 && (
         <div className="relative">
           <button
             ref={gerencialButtonRef}
@@ -242,6 +245,7 @@ export default function AdminSidebar({ collapsed, onToggle }: AdminSidebarProps)
             </div>
           )}
         </div>
+        )}
 
         <button
           onClick={() => router.push('/preferencias')}

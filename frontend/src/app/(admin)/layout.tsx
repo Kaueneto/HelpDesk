@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import AdminHeader from '@/components/layouts/AdminHeader';
@@ -16,15 +16,23 @@ export default function AdminLayout({
   const { user, isAuthenticated, isLoading } = useAuth();
   const { mode } = useTheme();
   const router = useRouter();
+  const pathname = usePathname();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       router.push(`${baseUrl}/auth/login`);
-    } else if (!isLoading && user && user.roleId !== 1) {
+    } else if (!isLoading && user && (user.roleId !== 1 && user.roleId !== 3)) {
       router.push(`${baseUrl}/usuario/inicial`);
+    } else if (!isLoading && user && user.roleId === 3) {
+      const allowedAdminPaths = ['/painel', '/chamados', '/preferencias', '/sugestoes', '/perfil'];
+      const isAllowedAdminPath = allowedAdminPaths.some(p => pathname.startsWith(p)) || pathname.startsWith('/chamado/');
+      
+      if (!isAllowedAdminPath && pathname !== '/') {
+        router.push(`${baseUrl}/painel`);
+      }
     }
-  }, [isAuthenticated, isLoading, user, router]);
+  }, [isAuthenticated, isLoading, user, router, pathname]);
 
   if (isLoading) {
     return (
@@ -34,7 +42,7 @@ export default function AdminLayout({
     );
   }
 
-  if (!isAuthenticated || !user || user.roleId !== 1) {
+  if (!isAuthenticated || !user || (user.roleId !== 1 && user.roleId !== 3)) {
     return null;
   }
 
