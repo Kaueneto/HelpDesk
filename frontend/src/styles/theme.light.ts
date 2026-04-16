@@ -18,7 +18,8 @@ export const lightTheme: Theme = {
     card: '#FFFFFF',         // Branco para cards
     hover: '#F3F4F6',        // Cinza claro no hover
     tabelaClaro: '#F9FAFB',      // Cinza claro para tabela clara
-    tabelaEscuro: '#F3F4F6',     // Cinza para tabela escura
+    tabelaEscuro: '#F3F3F3',     // Cinza para tabela escura
+
   },
 
   // Cores de texto

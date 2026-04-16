@@ -60,6 +60,22 @@ export default function DetalhesSugestao() {
     }
   };
 
+  const normalizarStatus = (status: string): string => {
+    const statusMap: { [key: string]: string } = {
+      'aberta': 'Aberta',
+      'em_analise': 'Em análise',
+      'planejada': 'Planejada',
+      'em_desenvolvimento': 'Em desenvolvimento',
+      'concluida': 'Concluída',
+      'recusada': 'Recusada',
+    };
+    return statusMap[status] || status;
+  };
+
+  const normalizarEscopo = (escopo: string): string => {
+    return escopo === 'global' ? 'Global' : 'Departamento';
+  };
+
   const handleVotar = async () => {
     try {
       await api.post(`/sugestoes/${sugestaoId}/votar`);
@@ -124,6 +140,7 @@ export default function DetalhesSugestao() {
       case 'resposta_admin':
         return <FiMessageCircle size={16} />;
       case 'mudanca_status':
+      case 'mudanca_escopo':
         return <FiCheck size={16} />;
       default:
         return <FiClock size={16} />;
@@ -135,6 +152,7 @@ export default function DetalhesSugestao() {
       case 'resposta_admin':
         return '#1976d2';
       case 'mudanca_status':
+      case 'mudanca_escopo':
         return '#388e3c';
       default:
         return theme.text.secondary;
@@ -158,7 +176,11 @@ export default function DetalhesSugestao() {
     ...(sugestao?.interacoes?.map((interacao: any) => ({
       id: `interaction-${interacao.id}`,
       type: interacao.tipo,
-      titulo: interacao.tipo === 'mudanca_status' ? `Status alterado para ${interacao.status_novo}` : `${interacao.usuario.name}: ${interacao.mensagem}`,
+      titulo: interacao.tipo === 'mudanca_status' 
+        ? `Status alterado para ${normalizarStatus(interacao.status_novo)}` 
+        : interacao.tipo === 'mudanca_escopo'
+        ? `Escopo alterado para ${normalizarEscopo(interacao.escopo_novo)}`
+        : `${interacao.usuario.name}: ${interacao.mensagem}`,
       data: interacao.criadoEm,
     })) || []),
   ].sort((a, b) => new Date(b.data || '').getTime() - new Date(a.data || '').getTime());
@@ -194,80 +216,83 @@ export default function DetalhesSugestao() {
       <div className="max-w-5xl mx-auto relative">
         {/* Conteúdo principal */}
         <div className="mr-0 lg:mr-96 pr-0 lg:pr-8">
-          {/* Botão voltar - parte do fluxo normal */}
-          <button
-            onClick={() => router.back()}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg mb-6 hover:opacity-80 transition-all border"
-            style={{
-              backgroundColor: theme.background.surface,
-              color: theme.text.primary,
-              borderColor: theme.border.secondary,
-            }}
-          >
-            <FiArrowLeft size={18} />
-            <span className="text-sm font-medium">Voltar</span>
-          </button>
+          {/* Botão voltar e aviso de escopo */}
+          <div className="flex items-center gap-4 mb-6">
+            <button
+              onClick={() => router.back()}
+              className="flex items-center gap-2 px-6 py-3 rounded-lg hover:opacity-80 transition-all border whitespace-nowrap flex-shrink-0"
+              style={{
+                backgroundColor: theme.background.surface,
+                color: theme.text.primary,
+                borderColor: theme.border.secondary,
+              }}
+            >
+              <FiArrowLeft size={20} />
+              <span className="font-medium">Voltar</span>
+            </button>
+
+            {/* Aviso de escopo/visibilidade */}
+            <div className="p-3 rounded-lg border flex-1" style={{
+              backgroundColor: 'transparent',
+              borderColor: sugestao.escopo === 'global' ? '#1976d2' : (mode === 'light' ? '#0044cc' : '#ffb300'),
+            }}>
+              <p style={{
+                color: sugestao.escopo === 'global' ? '#1976d2' : (mode === 'light' ? '#0044cc' : '#f57c00'),
+                fontSize: '0.9rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                margin: 0,
+              }}>
+                {sugestao.escopo === 'global' ? (
+                  <>
+                    <FiGlobe size={16} />
+                    <span>Todos os usuários do sistema podem ver esta sugestão</span>
+                  </>
+                ) : (
+                  <>
+                    <FiLock size={16} />
+                    <span>Apenas você e seu departamento veem esta sugestão</span>
+                  </>
+                )}
+              </p>
+            </div>
+          </div>
 
           {/* TITULO E STATUYS DA SUGESTAO */}
           <div className="mt-0">
             <h1 className="text-1xl lg:text-2xl font-bold mb-4 font-segoe" style={{ color: theme.text.primary }}>
               {sugestao.titulo}
             </h1>
-
-            {/* Badges de status */}
-            <div className="flex items-center gap-3 flex-wrap mb-8">
-              <span
-                className="px-3 py-1 rounded-full text-sm font-medium"
-                style={{ backgroundColor: statusStyle.bg, color: statusStyle.text }}
-              >
-                {statusStyle.label}
-              </span>
-              {sugestao.privado && (
-                <span className="px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800 flex items-center gap-1">
-                  <FiLock size={14} />
-                  Privada
-                </span>
-              )}
-              {sugestao.escopo === 'global' && (
-                <span className="px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 flex items-center gap-1">
-                  <FiGlobe size={14} />
-                  Global
-                </span>
-              )}
-            </div>
           </div>
 
-          {/*  DESCRIÇÃO DA SUGESTAO */}
+          {/* Descrição da sugestão */}
           <div className="mb-12">
             <p style={{ color: theme.text.secondary, lineHeight: '1.8', fontSize: '1.05rem', fontFamily: 'Segoe UI' }}>
               {sugestao.descricao}
             </p>
           </div>
 
-          {/* SERÇÃO E VISIBILIDADE */}
-          <div className="mb-8 p-4 rounded-lg border" style={{
-            backgroundColor: 'transparent',
-            borderColor: sugestao.escopo === 'global' ? '#1976d2' : (mode === 'light' ? '#0044cc' : '#ffb300'),
-          }}>
-            <p style={{
-              color: sugestao.escopo === 'global' ? '#1976d2' : (mode === 'light' ? '#0044cc' : '#f57c00'),
-              fontSize: '0.95rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-            }}>
-              {sugestao.escopo === 'global' ? (
-                <>
-                  <FiGlobe size={16} />
-                  Todos os usuários do sistema podem ver esta sugestão
-                </>
-              ) : (
-                <>
-                  <FiLock size={16} />
-                  Por enquanto, apenas você e seu departamento veem esta sugestão
-                </>
-              )}
-            </p>
+          {/* Badges de status */}
+          <div className="flex items-center gap-3 flex-wrap mb-8">
+            <span
+              className="px-3 py-1 rounded-full text-sm font-medium"
+              style={{ backgroundColor: statusStyle.bg, color: statusStyle.text }}
+            >
+              {statusStyle.label}
+            </span>
+            {sugestao.privado && (
+              <span className="px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800 flex items-center gap-1">
+                <FiLock size={14} />
+                Privada
+              </span>
+            )}
+            {sugestao.escopo === 'global' && (
+              <span className="px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 flex items-center gap-1">
+                <FiGlobe size={14} />
+                Global
+              </span>
+            )}
           </div>
 
           {/* Seção de comentários */}
@@ -424,13 +449,13 @@ export default function DetalhesSugestao() {
                     className="absolute left-0 top-1 w-8 h-8 rounded-full border-2 flex-shrink-0 flex items-center justify-center"
                     style={{
                       backgroundColor: theme.background.surface,
-                      borderColor: item.type === 'resposta_admin' ? '#1976d2' : item.type === 'mudanca_status' ? '#388e3c' : item.type === 'voto' ? '#f59e0b' : theme.border.secondary,
+                      borderColor: item.type === 'resposta_admin' ? '#1976d2' : item.type === 'mudanca_status' || item.type === 'mudanca_escopo' ? '#388e3c' : item.type === 'voto' ? '#f59e0b' : theme.border.secondary,
                     }}
                   >
                     <div
                       className="text-xs"
                       style={{
-                        color: item.type === 'resposta_admin' ? '#1976d2' : item.type === 'mudanca_status' ? '#388e3c' : item.type === 'voto' ? '#f59e0b' : theme.text.secondary,
+                        color: item.type === 'resposta_admin' ? '#1976d2' : item.type === 'mudanca_status' || item.type === 'mudanca_escopo' ? '#388e3c' : item.type === 'voto' ? '#f59e0b' : theme.text.secondary,
                       }}
                     >
                       {getTimelineItemIcon(item.type)}

@@ -161,6 +161,7 @@ router.patch('/sugestoes/:id/status', verifyToken, async (req: Request, res: Res
 // alterar escopo (admin apenas)
 router.patch('/sugestoes/:id/escopo', verifyToken, async (req: Request, res: Response) => {
   try {
+    const usuarioId = (req as any).usuarioAutenticado.id;
     const roleId = (req as any).usuarioAutenticado.roleId;
 
     if (roleId !== 1) { // apenas Admin (1)
@@ -173,7 +174,7 @@ router.patch('/sugestoes/:id/escopo', verifyToken, async (req: Request, res: Res
     }
 
     const sugestaoId = parseInt(req.params.id);
-    const sugestao = await sugestoesService.atualizarEscopo(sugestaoId, escopo);
+    const sugestao = await sugestoesService.atualizarEscopo(sugestaoId, escopo, usuarioId);
 
     res.json({
       mensagem: `Escopo alterado para ${escopo} com sucesso`,

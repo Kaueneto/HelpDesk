@@ -164,7 +164,7 @@ export default function AdminHeader({}: AdminHeaderProps) {
                         }}
                         className="w-full px-3 py-2 rounded-lg flex items-center gap-3 transition-all duration-200 text-sm"
                         style={{
-                          color: mode === 'light' ? `rgb(var(--brand-primary))` : `rgb(var(--text-secondary))`,
+                            color: mode === 'light' ? `#1A68CF` : `rgb(var(--text-secondary))`,
                           backgroundColor: mode === 'light' ? `rgba(var(--brand-primary), 0.1)` : 'transparent'
                         }}
                         onMouseEnter={(e) => {
@@ -186,7 +186,7 @@ export default function AdminHeader({}: AdminHeaderProps) {
                         }}
                         className="w-full px-3 py-2 rounded-lg flex items-center gap-3 transition-all duration-200 text-sm mt-1"
                         style={{
-                          color: mode === 'dark' ? `rgb(var(--brand-primary))` : `rgb(var(--text-secondary))`,
+                          color: mode === 'dark' ? `#87CEEB` : `rgb(var(--text-secondary))`,
                           backgroundColor: mode === 'dark' ? `rgba(var(--brand-primary), 0.1)` : 'transparent'
                         }}
                         onMouseEnter={(e) => {

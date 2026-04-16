@@ -280,15 +280,33 @@ export class SugestoesService {
   }
 
   // atualizar escopo (apenas admin)
-  async atualizarEscopo(sugestaoId: number, escopo: 'departamento' | 'global') {
+  async atualizarEscopo(sugestaoId: number, escopo: 'departamento' | 'global', usuarioId?: number) {
     const sugestao = await this.sugestoesRepository.findOne({ where: { id: sugestaoId } });
 
     if (!sugestao) {
       throw new Error('Sugestão não encontrada');
     }
 
+    const escopoAnterior = sugestao.escopo;
     sugestao.escopo = escopo;
-    return await this.sugestoesRepository.save(sugestao);
+    await this.sugestoesRepository.save(sugestao);
+
+    // registrar mudança como interação
+    if (usuarioId) {
+      const mensagem = `Escopo alterado de "${escopoAnterior}" para "${escopo}"`;
+      const interacao = this.interacoesRepository.create({
+        sugestaoId,
+        usuarioId,
+        mensagem,
+        tipo: 'mudanca_escopo',
+        escopo_anterior: escopoAnterior,
+        escopo_novo: escopo,
+      });
+
+      await this.interacoesRepository.save(interacao);
+    }
+
+    return sugestao;
   }
 
   // verificar acesso à sugestão - VALIDAÇÃO RIGOROSA

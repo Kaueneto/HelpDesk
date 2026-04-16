@@ -227,7 +227,7 @@ export default function NosAjudeAMelhorar() {
         <h2 className="text-white text-2xl font-semibold font-segoe">Nos ajude a melhorar</h2>
       </div>
 
-      <div className="min-h-screen p-6 md:p-8" style={{ backgroundColor: theme.background.pagina }}>
+      <div className="min-h-screen p-6 md:p-8" style={{ backgroundColor: theme.background.tabelaEscuro }}>
         {/* Descrição */}
         <p className="text-sm mb-8" style={{ color: theme.text.secondary }}>
           Buscamos priorizar sua produtividade e garantir uma boa experiência, caso queira sugerir uma melhoria, nos avise!
@@ -346,7 +346,7 @@ export default function NosAjudeAMelhorar() {
                       <motion.button
                         whileHover={{ scale: 1.02 }}
                         onClick={() => handleSelecionarTipo(false)}
-                        className="p-6 rounded-lg border-2 transition-all text-left cursor-pointer"
+                        className="p-6 rounded-lg border transition-all text-left cursor-pointer"
                         style={{
                           backgroundColor: `${theme.brand.primary}15`,
                           borderColor: theme.brand.primary,
@@ -374,7 +374,7 @@ export default function NosAjudeAMelhorar() {
                       <motion.button
                         whileHover={{ scale: 1.02 }}
                         onClick={() => handleSelecionarTipo(true)}
-                        className="p-6 rounded-lg border-2 transition-all text-left cursor-pointer"
+                        className="p-6 rounded-lg border transition-all text-left cursor-pointer"
                         style={{
                           backgroundColor: `#ff000015`,
                           borderColor: '#ff0000',
@@ -533,7 +533,7 @@ export default function NosAjudeAMelhorar() {
                         onClick={() => router.push(`/sugestoes/${sugestao.id}`)}
                         className="group p-5 rounded-xl cursor-pointer transition-all hover:shadow-md border"
                         style={{
-                          backgroundColor: theme.background.card,
+                          backgroundColor: theme.background.tabelaClaro,
                           borderColor: theme.border.secondary,
                         }}
                         whileHover={{ y: -2 }}

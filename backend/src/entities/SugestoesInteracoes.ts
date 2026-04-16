@@ -18,16 +18,22 @@ export class SugestoesInteracoes {
 
   @Column({
     type: 'enum',
-    enum: ['comentario', 'resposta_admin', 'mudanca_status'],
+    enum: ['comentario', 'resposta_admin', 'mudanca_status', 'mudanca_escopo'],
     default: 'comentario',
   })
-  tipo!: 'comentario' | 'resposta_admin' | 'mudanca_status';
+  tipo!: 'comentario' | 'resposta_admin' | 'mudanca_status' | 'mudanca_escopo';
 
   @Column({ type: 'varchar', length: 100, nullable: true })
   status_anterior?: string | null;
 
   @Column({ type: 'varchar', length: 100, nullable: true })
   status_novo?: string | null;
+
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  escopo_anterior?: string | null;
+
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  escopo_novo?: string | null;
 
   @CreateDateColumn({ name: 'created_at' })
   criadoEm!: Date;

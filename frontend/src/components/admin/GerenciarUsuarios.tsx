@@ -731,7 +731,7 @@ export default function GerenciarUsuarios() {
                         type="checkbox"
                         checked={todosChecados}
                         onChange={handleCheckAll}
-                        className="w-4 h-4 cursor-pointer rounded appearance-none border-2 checked:bg-blue-600 checked:border-blue-600 relative transition-colors
+                        className="w-4 h-4 cursor-pointer rounded appearance-none border checked:bg-blue-600 checked:border-blue-600 relative transition-colors
                         before:content-['✓'] before:absolute before:inset-0 before:flex before:items-center before:justify-center before:text-white before:text-xs before:font-bold before:opacity-0 checked:before:opacity-100"
                         style={{
                           borderColor: mode === 'dark' ? '#4B5563' : '#888B95',
@@ -865,7 +865,7 @@ export default function GerenciarUsuarios() {
                           type="checkbox"
                           checked={usuariosSelecionados.includes(usuario.id)}
                           onChange={() => handleCheckUsuario(usuario.id)}
-                          className="w-4 h-4 cursor-pointer rounded appearance-none border-2 checked:bg-blue-600 checked:border-blue-600 relative transition-colors
+                          className="w-4 h-4 cursor-pointer rounded appearance-none border checked:bg-blue-600 checked:border-blue-600 relative transition-colors
                           before:content-['✓'] before:absolute before:inset-0 before:flex before:items-center before:justify-center before:text-white before:text-xs before:font-bold before:opacity-0 checked:before:opacity-100"
                           style={{
                             borderColor: mode === 'dark' ? '#4B5563' : '#888B95',
@@ -987,22 +987,23 @@ export default function GerenciarUsuarios() {
           onClick={fecharModalCadastro}
         >
           <div 
-            className="bg-white rounded-lg shadow-2xl w-full max-w-2xl mx-4 animate-slideUp"
+            className="rounded-lg shadow-2xl w-full max-w-2xl mx-4 animate-slideUp"
+            style={{ backgroundColor: theme.background.card }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Cabeçalho */}
-            <div className="border-b border-gray-200 px-6 py-4">
-              <h3 className="text-xl font-semibold text-gray-800 text-center">
+            <div className="border-b px-6 py-4" style={{ borderColor: theme.border.primary }}>
+              <h3 className="text-xl font-semibold text-center" style={{ color: theme.text.primary }}>
                 Cadastrar Usuário
               </h3>
             </div>
 
             {/* Corpo do Modal */}
-            <div className="p-6">
+            <div className="p-6" style={{ backgroundColor: theme.background.card }}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Nome */}
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium mb-2" style={{ color: theme.text.primary }}>
                     Nome *
                   </label>
                   <input
@@ -1010,14 +1011,19 @@ export default function GerenciarUsuarios() {
                     value={novoUsuarioNome}
                     onChange={(e) => setNovoUsuarioNome(e.target.value)}
                     placeholder="Digite o nome completo"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900"
+                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-1 transition-colors"
+                    style={{
+                      borderColor: theme.border.secondary,
+                      backgroundColor: theme.background.surface,
+                      color: theme.text.primary,
+                    }}
                     disabled={submittingCadastro}
                   />
                 </div>
 
                 {/* Email */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium mb-2" style={{ color: theme.text.primary }}>
                     Email *
                   </label>
                   <input
@@ -1025,14 +1031,19 @@ export default function GerenciarUsuarios() {
                     value={novoUsuarioEmail}
                     onChange={(e) => setNovoUsuarioEmail(e.target.value)}
                     placeholder="email@exemplo.com"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900"
+                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-1 transition-colors"
+                    style={{
+                      borderColor: theme.border.secondary,
+                      backgroundColor: theme.background.surface,
+                      color: theme.text.primary,
+                    }}
                     disabled={submittingCadastro}
                   />
                 </div>
 
                 {/* Senha */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium mb-2" style={{ color: theme.text.primary }}>
                     Senha *
                   </label>
                   <input
@@ -1040,7 +1051,11 @@ export default function GerenciarUsuarios() {
                     value={novoUsuarioSenha}
                     onChange={(e) => setNovoUsuarioSenha(e.target.value)}
                     placeholder="Senha forte: 6+ chars, maiúscula, minúscula, número, especial"
-                    className={`w-full px-4 py-2 border ${getPasswordStrengthColor(novoUsuarioSenha)} rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900`}
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-1 transition-colors ${getPasswordStrengthColor(novoUsuarioSenha)}`}
+                    style={{
+                      backgroundColor: theme.background.surface,
+                      color: theme.text.primary,
+                    }}
                     disabled={submittingCadastro}
                   />
                   {novoUsuarioSenha && novoUsuarioSenha !== 'padrao' && (
@@ -1051,20 +1066,25 @@ export default function GerenciarUsuarios() {
                       {getPasswordStrengthText(novoUsuarioSenha)}
                     </div>
                   )}
-                  <p className="text-sm text-gray-500 mt-1">
+                  <p className="text-sm mt-1" style={{ color: theme.text.secondary }}>
                     Use uma senha forte ou mantenha "padrao" para o padrão do sistema.
                   </p>
                 </div>
 
                 {/* Situação */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium mb-2" style={{ color: theme.text.primary }}>
                     Situação
                   </label>
                   <select
                     value={novoUsuarioSituationUserId}
                     onChange={(e) => setNovoUsuarioSituationUserId(parseInt(e.target.value))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900"
+                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-1 transition-colors"
+                    style={{
+                      borderColor: theme.border.secondary,
+                      backgroundColor: theme.background.surface,
+                      color: theme.text.primary,
+                    }}
                     disabled={submittingCadastro}
                   >
                     {situacoes.map(situacao => (
@@ -1077,13 +1097,18 @@ export default function GerenciarUsuarios() {
 
                 {/* tipo do user (admin ou normal) */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium mb-2" style={{ color: theme.text.primary }}>
                     Tipo de usuário
                   </label>
                   <select
                     value={novoUsuarioRoleId}
                     onChange={(e) => setNovoUsuarioRoleId(parseInt(e.target.value))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900"
+                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-1 transition-colors"
+                    style={{
+                      borderColor: theme.border.secondary,
+                      backgroundColor: theme.background.surface,
+                      color: theme.text.primary,
+                    }}
                     disabled={submittingCadastro}
                   >
                     <option value={1}>Administrador</option>
@@ -1094,13 +1119,18 @@ export default function GerenciarUsuarios() {
 
                 {/* departttment */}
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium mb-2" style={{ color: theme.text.primary }}>
                     Departamento *
                   </label>
                   <select
                     value={novoUsuarioDepartamentId}
                     onChange={(e) => setNovoUsuarioDepartamentId(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900"
+                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-1 transition-colors"
+                    style={{
+                      borderColor: theme.border.secondary,
+                      backgroundColor: theme.background.surface,
+                      color: theme.text.primary,
+                    }}
                     disabled={submittingCadastro}
                   >
                     <option value="">Selecione um departamento</option>
@@ -1115,19 +1145,27 @@ export default function GerenciarUsuarios() {
             </div>
 
             {/* rodape*/}
-            <div className="border-t border-gray-200 px-6 py-4 flex gap-3 justify-end bg-gray-50 rounded-b-lg">
+            <div className="border-t px-6 py-4 flex gap-3 justify-end rounded-b-lg" style={{ borderColor: theme.border.primary, backgroundColor: theme.background.surface }}>
               <button
                 onClick={fecharModalCadastro}
                 disabled={submittingCadastro}
-                className="px-6 py-2 bg-transparent border border-gray-400 text-gray-700 rounded-lg hover:bg-gray-200 hover:text-gray-900 transition-all duration-200 transform hover:scale-105 font-medium disabled:border-gray-300 disabled:text-gray-400 disabled:bg-transparent disabled:cursor-not-allowed"
-
+                className="px-6 py-2 rounded-lg transition-all duration-200 transform hover:scale-105 font-medium disabled:cursor-not-allowed"
+                style={{
+                  backgroundColor: 'transparent',
+                  borderColor: theme.border.secondary,
+                  color: theme.text.primary,
+                  border: `1px solid ${theme.border.secondary}`,
+                }}
               >
                 Fechar
               </button>
               <button
                 onClick={cadastrarUsuario}
                 disabled={submittingCadastro}
-                className="px-6 py-2 bg-[#001960] text-white rounded-lg hover:bg-[#001960]/80 transition-all transform hover:scale-105 font-medium disabled:bg-blue-400 disabled:cursor-not-allowed disabled:transform-none"
+                className="px-6 py-2 text-white rounded-lg hover:opacity-90 transition-all transform hover:scale-105 font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                style={{
+                  backgroundColor: theme.brand.primary,
+                }}
               >
                 {submittingCadastro ? 'Cadastrando...' : 'Cadastrar'}
               </button>
@@ -1143,22 +1181,23 @@ export default function GerenciarUsuarios() {
           onClick={fecharModalEdicao}
         >
           <div 
-            className="bg-white rounded-lg shadow-2xl w-full max-w-2xl mx-4 animate-slideUp"
+            className="rounded-lg shadow-2xl w-full max-w-2xl mx-4 animate-slideUp"
+            style={{ backgroundColor: theme.background.card }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Cabeçalho */}
-            <div className="border-b border-gray-200 px-6 py-4">
-              <h3 className="text-xl font-semibold text-gray-800 text-center">
+            <div className="border-b px-6 py-4" style={{ borderColor: theme.border.primary }}>
+              <h3 className="text-xl font-semibold text-center" style={{ color: theme.text.primary }}>
                 Editar Usuário
               </h3>
             </div>
 
             {/* Corpo do Modal */}
-            <div className="p-6">
+            <div className="p-6" style={{ backgroundColor: theme.background.card }}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Nome */}
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium mb-2" style={{ color: theme.text.primary }}>
                     Nome *
                   </label>
                   <input
@@ -1166,14 +1205,19 @@ export default function GerenciarUsuarios() {
                     value={editandoUsuarioNome}
                     onChange={(e) => setEditandoUsuarioNome(e.target.value)}
                     placeholder="Digite o nome completo"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900"
+                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-1 transition-colors"
+                    style={{
+                      borderColor: theme.border.secondary,
+                      backgroundColor: theme.background.surface,
+                      color: theme.text.primary,
+                    }}
                     disabled={submittingEdicao}
                   />
                 </div>
 
                 {/* Email */}
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium mb-2" style={{ color: theme.text.primary }}>
                     Email *
                   </label>
                   <input
@@ -1181,20 +1225,30 @@ export default function GerenciarUsuarios() {
                     value={editandoUsuarioEmail}
                     onChange={(e) => setEditandoUsuarioEmail(e.target.value)}
                     placeholder="email@exemplo.com"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900"
+                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-1 transition-colors"
+                    style={{
+                      borderColor: theme.border.secondary,
+                      backgroundColor: theme.background.surface,
+                      color: theme.text.primary,
+                    }}
                     disabled={submittingEdicao}
                   />
                 </div>
 
                 {/* Situação */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium mb-2" style={{ color: theme.text.primary }}>
                     Situação
                   </label>
                   <select
                     value={editandoUsuarioSituationUserId}
                     onChange={(e) => setEditandoUsuarioSituationUserId(parseInt(e.target.value))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900"
+                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-1 transition-colors"
+                    style={{
+                      borderColor: theme.border.secondary,
+                      backgroundColor: theme.background.surface,
+                      color: theme.text.primary,
+                    }}
                     disabled={submittingEdicao}
                   >
                     {situacoes.map(situacao => (
@@ -1207,13 +1261,18 @@ export default function GerenciarUsuarios() {
 
                 {/* Tipo de usuário */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium mb-2" style={{ color: theme.text.primary }}>
                     Tipo de usuário
                   </label>
                   <select
                     value={editandoUsuarioRoleId}
                     onChange={(e) => setEditandoUsuarioRoleId(parseInt(e.target.value))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900"
+                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-1 transition-colors"
+                    style={{
+                      borderColor: theme.border.secondary,
+                      backgroundColor: theme.background.surface,
+                      color: theme.text.primary,
+                    }}
                     disabled={submittingEdicao}
                   >
                     <option value={1}>Administrador</option>
@@ -1223,13 +1282,18 @@ export default function GerenciarUsuarios() {
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium mb-2" style={{ color: theme.text.primary }}>
                     Departamento *
                   </label>
                   <select
                     value={editandoUsuarioDepartamentId}
                     onChange={(e) => setEditandoUsuarioDepartamentId(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900"
+                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-1 transition-colors"
+                    style={{
+                      borderColor: theme.border.secondary,
+                      backgroundColor: theme.background.surface,
+                      color: theme.text.primary,
+                    }}
                     disabled={submittingEdicao}
                   >
                     <option value="">Selecione um departamento</option>
@@ -1244,18 +1308,27 @@ export default function GerenciarUsuarios() {
             </div>
 
             {/* Rodapé */}
-            <div className="border-t border-gray-200 px-6 py-4 flex gap-3 justify-end bg-gray-50 rounded-b-lg">
+            <div className="border-t px-6 py-4 flex gap-3 justify-end rounded-b-lg" style={{ borderColor: theme.border.primary, backgroundColor: theme.background.surface }}>
               <button
                 onClick={fecharModalEdicao}
                 disabled={submittingEdicao}
-                className="px-6 py-2 bg-transparent border border-gray-400 text-gray-700 rounded-lg hover:bg-gray-200 hover:text-gray-900 transition-all duration-200 transform hover:scale-105 font-medium disabled:border-gray-300 disabled:text-gray-400 disabled:bg-transparent disabled:cursor-not-allowed"
+                className="px-6 py-2 rounded-lg transition-all duration-200 transform hover:scale-105 font-medium disabled:cursor-not-allowed"
+                style={{
+                  backgroundColor: 'transparent',
+                  borderColor: theme.border.secondary,
+                  color: theme.text.primary,
+                  border: `1px solid ${theme.border.secondary}`,
+                }}
               >
                 Cancelar
               </button>
               <button
                 onClick={salvarEdicaoUsuario}
                 disabled={submittingEdicao}
-                className="px-6 py-2 bg-[#001960] text-white rounded-lg hover:bg-[#001960]/80 transition-all transform hover:scale-105 font-medium disabled:bg-blue-400 disabled:cursor-not-allowed disabled:transform-none"
+                className="px-6 py-2 text-white rounded-lg hover:opacity-90 transition-all transform hover:scale-105 font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                style={{
+                  backgroundColor: theme.brand.primary,
+                }}
               >
                 {submittingEdicao ? 'Salvando...' : 'Salvar Alterações'}
               </button>

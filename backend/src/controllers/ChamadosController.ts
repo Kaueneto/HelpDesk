@@ -323,10 +323,10 @@ router.post("/chamados/admin/criar", verifyToken, async (req: AuthenticatedReque
     const adminId = req.userId; // ID do admin que está criando
     const adminRoleId = req.userRoleId;
 
-    // Verificar se é admin
-    if (adminRoleId !== 1) {
+    // verificar se é admin ou userpro
+    if (adminRoleId !== 1 && adminRoleId !== 3) {
       return res.status(403).json({
-        mensagem: "Apenas administradores podem usar esta função",
+        mensagem: "Apenas administradores e usuários pro podem usar esta função",
       });
     }
 
