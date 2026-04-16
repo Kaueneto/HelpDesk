@@ -6,7 +6,7 @@ import api from '@/services/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { motion } from 'framer-motion';
-import { FiArrowLeft, FiThumbsUp, FiMessageCircle, FiClock, FiUser, FiCheck, FiX } from 'react-icons/fi';
+import { FiArrowLeft, FiThumbsUp, FiMessageCircle, FiClock, FiUser, FiCheck, FiX, FiLock, FiGlobe } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
 interface Sugestao {
@@ -30,7 +30,7 @@ export default function DetalhesSugestao() {
   const router = useRouter();
   const params = useParams();
   const { user } = useAuth();
-  const { theme } = useTheme();
+  const { theme, mode } = useTheme();
 
   const sugestaoId = parseInt(params.id as string);
   const [sugestao, setSugestao] = useState<Sugestao | null>(null);
@@ -153,7 +153,7 @@ export default function DetalhesSugestao() {
       id: `vote-${voto.id}`,
       type: 'voto',
       titulo: `${voto.usuario.name} apoiou`,
-      data: voto.created_at || sugestao?.criadoEm,
+      data: voto.criadoEm || sugestao?.criadoEm,
     })) || []),
     ...(sugestao?.interacoes?.map((interacao: any) => ({
       id: `interaction-${interacao.id}`,
@@ -161,7 +161,7 @@ export default function DetalhesSugestao() {
       titulo: interacao.tipo === 'mudanca_status' ? `Status alterado para ${interacao.status_novo}` : `${interacao.usuario.name}: ${interacao.mensagem}`,
       data: interacao.criadoEm,
     })) || []),
-  ].sort((a, b) => new Date(a.data || '').getTime() - new Date(b.data || '').getTime());
+  ].sort((a, b) => new Date(b.data || '').getTime() - new Date(a.data || '').getTime());
 
   if (loading) {
     return (
@@ -208,9 +208,9 @@ export default function DetalhesSugestao() {
             <span className="text-sm font-medium">Voltar</span>
           </button>
 
-          {/* Título e Status */}
+          {/* TITULO E STATUYS DA SUGESTAO */}
           <div className="mt-0">
-            <h1 className="text-4xl lg:text-5xl font-bold mb-4" style={{ color: theme.text.primary }}>
+            <h1 className="text-1xl lg:text-2xl font-bold mb-4 font-segoe" style={{ color: theme.text.primary }}>
               {sugestao.titulo}
             </h1>
 
@@ -223,38 +223,77 @@ export default function DetalhesSugestao() {
                 {statusStyle.label}
               </span>
               {sugestao.privado && (
-                <span className="px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
-                  🔒 Privada
+                <span className="px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800 flex items-center gap-1">
+                  <FiLock size={14} />
+                  Privada
                 </span>
               )}
               {sugestao.escopo === 'global' && (
-                <span className="px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                  🌍 Global
+                <span className="px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 flex items-center gap-1">
+                  <FiGlobe size={14} />
+                  Global
                 </span>
               )}
             </div>
           </div>
 
-          {/* Descrição - SEM CONTORNO */}
+          {/*  DESCRIÇÃO DA SUGESTAO */}
           <div className="mb-12">
-            <p style={{ color: theme.text.secondary, lineHeight: '1.8', fontSize: '1.05rem' }}>
+            <p style={{ color: theme.text.secondary, lineHeight: '1.8', fontSize: '1.05rem', fontFamily: 'Segoe UI' }}>
               {sugestao.descricao}
+            </p>
+          </div>
+
+          {/* SERÇÃO E VISIBILIDADE */}
+          <div className="mb-8 p-4 rounded-lg border" style={{
+            backgroundColor: 'transparent',
+            borderColor: sugestao.escopo === 'global' ? '#1976d2' : (mode === 'light' ? '#0044cc' : '#ffb300'),
+          }}>
+            <p style={{
+              color: sugestao.escopo === 'global' ? '#1976d2' : (mode === 'light' ? '#0044cc' : '#f57c00'),
+              fontSize: '0.95rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+            }}>
+              {sugestao.escopo === 'global' ? (
+                <>
+                  <FiGlobe size={16} />
+                  Todos os usuários do sistema podem ver esta sugestão
+                </>
+              ) : (
+                <>
+                  <FiLock size={16} />
+                  Por enquanto, apenas você e seu departamento veem esta sugestão
+                </>
+              )}
             </p>
           </div>
 
           {/* Seção de comentários */}
           <div className="mb-8">
-            <h2 className="text-2xl font-bold mb-6" style={{ color: theme.text.primary }}>
+            <h2 className="text-lg font-bold mb-6 font-segoe" style={{ color: theme.text.primary }}>
               Comentários ({comentarios.length})
             </h2>
 
-            {/* Form de novo comentário */}
-            {!sugestao.privado && (
+            {/* VERIFICAR PERMISSAO PRA COMENTAR */}
+            {sugestao.privado && user?.id !== sugestao.usuarioCriacao.id && user?.roleId !== 1 && user?.roleId !== 3 ? (
+              // sugestão privada e usuário NÃO é o criador e NÃO é admin
+              <div className="p-4 rounded-lg border mb-8" style={{
+                backgroundColor: `#ff000010`,
+                borderColor: '#ff0000',
+              }}>
+                <p style={{ color: '#ff0000', fontWeight: '500' }}>
+                  🔒 Esta sugestão é privada. Apenas o criador pode adicionar comentários.
+                </p>
+              </div>
+            ) : (
+              // sugestão pública OU privada mas usuário é o criador OU é admin
               <form onSubmit={handleComentario} className="mb-8">
                 <textarea
                   value={commentText}
                   onChange={(e) => setCommentText(e.target.value)}
-                  placeholder="Adicione um comentário..."
+                  placeholder="Adicione um comentário relevante ou uma sugestão para melhorar a ideia..."
                   rows={3}
                   className="w-full px-4 py-3 rounded-lg outline-none border mb-3 resize-none"
                   style={{

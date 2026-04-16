@@ -18,8 +18,8 @@ export class Sugestoes {
   @Column({ name: 'usuario_criacao_id', type: 'integer' })
   usuarioCriacaoId!: number;
 
-  @Column({ name: 'departamento_id', type: 'integer', nullable: true })
-  departamentoId!: number | null;
+  @Column({ name: 'departamento_id', type: 'integer' })
+  departamentoId!: number;
 
   @Column({ type: 'enum', enum: ['departamento', 'global'], default: 'departamento' })
   escopo!: 'departamento' | 'global';
@@ -45,9 +45,9 @@ export class Sugestoes {
   @JoinColumn({ name: 'usuario_criacao_id' })
   usuarioCriacao!: Users;
 
-  @ManyToOne(() => Departamentos, { eager: true, nullable: true })
+  @ManyToOne(() => Departamentos, { eager: true })
   @JoinColumn({ name: 'departamento_id' })
-  departamento!: Departamentos | null;
+  departamento!: Departamentos;
 
   @OneToMany(() => SugestoesVotos, (voto) => voto.sugestao, { cascade: true })
   votos!: SugestoesVotos[];

@@ -15,14 +15,34 @@ import cors from "cors";
 // importar cookie-parser
 import cookieParser from "cookie-parser";
 
+// importar multer para upload de arquivos
+import multer from "multer";
+
 // importar DataSource
 import { AppDataSource } from "./data-source";
 
 // criar a aplicação express
 const app = express();
 
+// configurar multer para upload de arquivos
+const storage = multer.memoryStorage();
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: (req, file, cb) => {
+    const tiposPermitidos = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+    if (tiposPermitidos.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Tipo de arquivo não suportado"));
+    }
+  },
+});
+
 // middlewares
 app.use(express.json());
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
+app.use(upload.single("avatar"));
 app.use(cors({
   origin: function (origin, callback) {
    

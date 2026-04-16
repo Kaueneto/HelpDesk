@@ -16,11 +16,15 @@ router.post('/sugestoes', verifyToken, async (req: Request, res: Response) => {
       return res.status(400).json({ mensagem: 'Título e descrição são obrigatórios' });
     }
 
+    if (!departamentoId) {
+      return res.status(400).json({ mensagem: 'Você precisa estar vinculado a um departamento para criar sugestões' });
+    }
+
     const sugestao = await sugestoesService.criarSugestao({
       titulo,
       descricao,
       usuarioCriacaoId: usuarioId,
-      departamentoId: departamentoId ? parseInt(departamentoId) : null,
+      departamentoId: parseInt(departamentoId),
       escopo: escopo || 'departamento',
       privado: privado || false,
     });
@@ -38,11 +42,15 @@ router.post('/sugestoes', verifyToken, async (req: Request, res: Response) => {
 router.get('/sugestoes', verifyToken, async (req: Request, res: Response) => {
   try {
     const usuarioId = (req as any).usuarioAutenticado?.id;
-    const isAdmin = (req as any).usuarioAutenticado?.roleId === 1;
+    const userDept = (req as any).usuarioAutenticado?.id_departament;
+    const roleId = (req as any).usuarioAutenticado?.roleId;
 
     if (!usuarioId) {
       return res.status(400).json({ mensagem: 'usuarioId não encontrado' });
     }
+
+    // log para debug
+    console.log(`[SUGESTOES_LIST] User ${usuarioId} (role=${roleId}, dept=${userDept})`);
 
     const filtros = {
       status: req.query.status as string | undefined,
@@ -50,7 +58,7 @@ router.get('/sugestoes', verifyToken, async (req: Request, res: Response) => {
       ordenarPor: (req.query.ordenarPor as 'votos' | 'recente' | 'antigo') || 'recente',
     };
 
-    const sugestoes = await sugestoesService.listarSugestoes(usuarioId, isAdmin, filtros);
+    const sugestoes = await sugestoesService.listarSugestoes(usuarioId, roleId, filtros);
 
     res.json({
       total: sugestoes.length,
@@ -67,9 +75,9 @@ router.get('/sugestoes/:id', verifyToken, async (req: Request, res: Response) =>
   try {
     const sugestaoId = parseInt(req.params.id);
     const usuarioId = (req as any).usuarioAutenticado.id;
-    const isAdmin = (req as any).usuarioAutenticado.roleId === 1;
+    const roleId = (req as any).usuarioAutenticado.roleId;
 
-    const sugestao = await sugestoesService.obterDetalhes(sugestaoId, usuarioId, isAdmin);
+    const sugestao = await sugestoesService.obterDetalhes(sugestaoId, usuarioId, roleId);
 
     res.json(sugestao);
   } catch (error: any) {
@@ -102,20 +110,23 @@ router.post('/sugestoes/:id/comentario', verifyToken, async (req: Request, res: 
   try {
     const sugestaoId = parseInt(req.params.id);
     const usuarioId = (req as any).usuarioAutenticado.id;
-     const { mensagem } = req.body;
+    const { mensagem } = req.body;
 
     if (!mensagem) {
       return res.status(400).json({ mensagem: 'Mensagem é obrigatória' });
     }
 
-     const interacao = await sugestoesService.adicionarComentario(sugestaoId, usuarioId, mensagem);
+    const interacao = await sugestoesService.adicionarComentario(sugestaoId, usuarioId, mensagem);
 
     res.status(201).json({
-       mensagem: 'Comentário adicionado com sucesso',
-       interacao,
+      mensagem: 'Comentário adicionado com sucesso',
+      interacao,
     });
   } catch (error: any) {
-       res.status(500).json({ mensagem: 'erro ao adicionar comentário', erro: error.message });
+    if (error.message === 'Apenas o criador da sugestão privada pode adicionar comentários') {
+      return res.status(403).json({ mensagem: error.message });
+    }
+    res.status(500).json({ mensagem: 'erro ao adicionar comentário', erro: error.message });
   }
 });
 
@@ -123,10 +134,10 @@ router.post('/sugestoes/:id/comentario', verifyToken, async (req: Request, res: 
 router.patch('/sugestoes/:id/status', verifyToken, async (req: Request, res: Response) => {
   try {
     const usuarioId = (req as any).usuarioAutenticado.id;
-    const isAdmin = (req as any).usuarioAutenticado.roleId === 1;
+    const roleId = (req as any).usuarioAutenticado.roleId;
 
-    if (!isAdmin) {
-      return res.status(403).json({ mensagem: 'apenas administradores podem alterar status' });
+    if (roleId !== 1 && roleId !== 3) { // Admin (1) ou Usuariopro (3)
+      return res.status(403).json({ mensagem: 'apenas administradores e supervisores podem alterar status' });
     }
 
     const sugestaoId = parseInt(req.params.id);
@@ -147,25 +158,29 @@ router.patch('/sugestoes/:id/status', verifyToken, async (req: Request, res: Res
   }
 });
 
-// promover sugestao para global (admin apenas)
-router.patch('/sugestoes/:id/promover', verifyToken, async (req: Request, res: Response) => {
+// alterar escopo (admin apenas)
+router.patch('/sugestoes/:id/escopo', verifyToken, async (req: Request, res: Response) => {
   try {
-    const usuarioId = (req as any).usuarioAutenticado.id;
-    const isAdmin = (req as any).usuarioAutenticado.roleId === 1;
+    const roleId = (req as any).usuarioAutenticado.roleId;
 
-    if (!isAdmin) {
-      return res.status(403).json({ mensagem: 'Apenas administradores podem promover sugestões' });
+    if (roleId !== 1) { // apenas Admin (1)
+      return res.status(403).json({ mensagem: 'Apenas administradores podem alterar o escopo' });
+    }
+
+    const { escopo } = req.body;
+    if (escopo !== 'departamento' && escopo !== 'global') {
+      return res.status(400).json({ mensagem: 'Escopo inválido' });
     }
 
     const sugestaoId = parseInt(req.params.id);
-    const sugestao = await sugestoesService.promoverParaGlobal(sugestaoId);
+    const sugestao = await sugestoesService.atualizarEscopo(sugestaoId, escopo);
 
     res.json({
-      mensagem: 'Sugestão promovida para global com sucesso',
+      mensagem: `Escopo alterado para ${escopo} com sucesso`,
       sugestao,
     });
   } catch (error: any) {
-    res.status(500).json({ mensagem: 'erro ao promover sugestão', erro: error.message });
+    res.status(500).json({ mensagem: 'erro ao alterar escopo', erro: error.message });
   }
 });
 
