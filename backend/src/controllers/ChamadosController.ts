@@ -607,8 +607,27 @@ router.get("/chamados", verifyToken, async (req: AuthenticatedRequest, res: Resp
       .leftJoinAndSelect("chamado.userResponsavel", "userResponsavel")
       .leftJoinAndSelect("chamado.userFechamento", "userFechamento");
 
-    // Filtro obrigatorio: usuarios comuns veem apenas seus proprios chamados
-    if (userRoleId !== 1) {
+    // filtro obrigatorio: controla visibilidade por role
+    if (userRoleId === 1) {
+      // admin (roleId 1): ve TODOS os tickets
+      // sem filtro de departamento/usuário
+    } else if (userRoleId === 3) {
+      // supervisor (roleId 3): ve tickets do seu departamento
+      const userRepository = AppDataSource.getRepository(Users);
+      const supervisor = await userRepository.findOne({ where: { id: userId } });
+      
+      if (supervisor && supervisor.id_departament) {
+        console.log(`*******[DEPARTAMENTO] Supervisor ${userId} vendo tickets do departamento ${supervisor.id_departament}`);
+        queryBuilder.andWhere("chamado.id_departamento = :departamentoId", { 
+          departamentoId: supervisor.id_departament 
+        });
+      } else {
+        console.warn(`⚠️DEPART Supervisor ${userId} nao possui departamento cadastrado!`);
+        // se nao tem departamento, nao ve nada
+        queryBuilder.andWhere("1=0"); // impossivel verdadeiro
+      }
+    } else {
+      // user comum (roleId 2): ve apenas seus próprios tickets
       queryBuilder.andWhere("chamado.id_user = :userId", { userId });
     }
 
@@ -2234,6 +2253,113 @@ router.delete("/chamados/excluir-multiplos", verifyToken, async (req: Authentica
       error: true,
       message: "Erro ao deletar chamados",
       details: error instanceof Error ? error.message : "Erro desconhecido"
+    });
+  }
+});
+
+/**
+ * PATCH /chamados/:id/move
+ * Move um chamado entre colunas do Kanban (suporta todos os modos: status, prioridade, etc e personalizada)
+ */
+router.patch("/chamados/:id/move", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const chamadoId = parseInt(req.params.id);
+    const { groupBy, columnValue, position, boardId, moveId } = req.body;
+
+    // Validar parâmetros obrigatórios
+    if (!groupBy || columnValue === undefined || position === undefined) {
+      return res.status(400).json({
+        error: true,
+        message: "Parâmetros obrigatórios: groupBy, columnValue, position",
+      });
+    }
+
+    // Validar groupBy
+    const validGroupByValues = [
+      "status",
+      "prioridade",
+      "responsavel",
+      "departamento",
+      "topico",
+      "personalizada",
+    ];
+
+    if (!validGroupByValues.includes(groupBy)) {
+      return res.status(400).json({
+        error: true,
+        message: `Tipo de agrupamento inválido. Valores aceitos: ${validGroupByValues.join(", ")}`,
+      });
+    }
+
+    // Verificar se chamado existe
+    const chamadoRepository = AppDataSource.getRepository(Chamados);
+    const chamado = await chamadoRepository.findOne({ where: { id: chamadoId } });
+
+    if (!chamado) {
+      return res.status(404).json({
+        error: true,
+        message: "Chamado não encontrado",
+      });
+    }
+
+    // Se for personalizada, salvar a posição no KanbanPositions
+    if (groupBy === "personalizada") {
+      const kanbanPositionRepository = AppDataSource.getRepository(KanbanPositions);
+
+      // Buscar posição existente
+      let position_record = await kanbanPositionRepository.findOne({
+        where: { idChamado: chamadoId },
+      });
+
+      if (!position_record) {
+        // Criar novo registro
+        position_record = kanbanPositionRepository.create({
+          idChamado: chamadoId,
+          columnValue: String(columnValue),
+          position: Number(position),
+          groupBy: "personalizada",
+        });
+      } else {
+        // Atualizar registro existente
+        position_record.columnValue = String(columnValue);
+        position_record.position = Number(position);
+      }
+
+      await kanbanPositionRepository.save(position_record);
+
+      console.log(
+        `✅ Chamado ${chamadoId} movido para coluna ${columnValue} na posição ${position}`
+      );
+
+      // 🔌 Notificar em tempo real via WebSocket
+      if (boardId && (global as any).RealtimeService) {
+        (global as any).RealtimeService.notifyCardMoved(boardId, {
+          chamadoId,
+          columnValue: String(columnValue),
+          position: Number(position),
+          groupBy,
+          moveId, // ✅ ID único para deduplicação no frontend
+          timestamp: new Date(),
+        });
+      }
+    }
+
+    // Retornar sucesso
+    return res.json({
+      error: false,
+      message: `Chamado movido com sucesso para ${groupBy}`,
+      data: {
+        chamadoId,
+        groupBy,
+        columnValue,
+        position,
+      },
+    });
+  } catch (error: any) {
+    console.error("Erro ao mover chamado:", error);
+    return res.status(500).json({
+      error: true,
+      message: error.message || "Erro ao mover chamado",
     });
   }
 });

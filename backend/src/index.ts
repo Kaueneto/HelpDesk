@@ -4,6 +4,7 @@ import "reflect-metadata";
 
 // importar biblioteca express
 import express from "express";
+import http from "http";
 
 // importar variáveis de ambiente
 import dotenv from "dotenv";
@@ -108,7 +109,9 @@ import ParametrosSistemaController from "./controllers/ParametrosSistemaControll
 import LogsSistemaController from "./controllers/LogsSistemaController";
 import { preferencesRouter } from "./controllers/PreferenciasController";
 import KanbanController from "./controllers/KanbanController";
+import KanbanNewController from "./controllers/KanbanNewController";
 import SugestoesController from "./controllers/SugestoesController";
+import { RealtimeService } from "./services/RealtimeService";
 
 // registrar rotas
 app.use("/", TestConnectionController);
@@ -124,6 +127,7 @@ app.use("/", ChamadosMensagensController);
 app.use("/", LogsSistemaController);
 app.use("/", ParametrosSistemaController);
 app.use("/", KanbanController);
+app.use("/", KanbanNewController);
 app.use("/", SugestoesController);
 app.use("/preferencias", preferencesRouter);
 app.use(rolesRouter);
@@ -133,15 +137,25 @@ AppDataSource.initialize()
   .then(() => {
     console.log("Banco de dados conectado com sucesso!");
 
-    // Usar porta configurada no .env
-    const PORT = Number(process.env.PORT) ;
+    // criar servidor HTTP para WebSocket
+    const server = http.createServer(app);
+    
+    // iniciar realtimeService (WebSocket)
+    const realtimeService = RealtimeService.initialize(server);
+    console.log("*****WebSocket (Socket.io) inicializado");
+    
+    // exportar realtimeService globalmente para os controllers acessarem
+    (global as any).RealtimeService = realtimeService;
 
-    app.listen(PORT, '0.0.0.0', () => {
+    // Usar porta configurada no .env
+    const PORT = Number(process.env.PORT);
+
+    server.listen(PORT, '0.0.0.0', () => {
       console.log(' Servidor backend iniciado com sucesso!');
       console.log(` Porta: ${PORT}`);
       console.log(` Acesso local:     http://localhost:${PORT}`);
       console.log(` Acesso na rede:   http://{IP-DO-SERVIDOR}:${PORT}`);
-      console.log(` este conexão:    http://localhost:${PORT}/test-connection`);
+      console.log(` Health check:     http://localhost:${PORT}/test-connection`);
       console.log('═'.repeat(60));
     });
   })
