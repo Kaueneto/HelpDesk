@@ -2302,33 +2302,39 @@ router.patch("/chamados/:id/move", verifyToken, async (req: AuthenticatedRequest
       });
     }
 
-    // Se for personalizada, salvar a posição no KanbanPositions
+    // SALVAR POSIÇÃO APENAS PARA EXIBIÇÕES PERSONALIZADAS
     if (groupBy === "personalizada") {
       const kanbanPositionRepository = AppDataSource.getRepository(KanbanPositions);
 
-      // Buscar posição existente
+      //BUSCAR POSIÇÃO EXISTTENTE PRA ESTE GROUPBY ESPECIFICO
       let position_record = await kanbanPositionRepository.findOne({
-        where: { idChamado: chamadoId },
+        where: { 
+          idChamado: chamadoId,
+          groupBy: groupBy  // filtrar pelo groupBy específico
+        },
       });
 
       if (!position_record) {
         // Criar novo registro
         position_record = kanbanPositionRepository.create({
           idChamado: chamadoId,
-          columnValue: String(columnValue),
+          columnValue: columnValue === null ? null : String(columnValue),
           position: Number(position),
-          groupBy: "personalizada",
+          groupBy: groupBy,
+          updatedBy: (req as AuthenticatedRequest).userId || null,
         });
       } else {
         // Atualizar registro existente
-        position_record.columnValue = String(columnValue);
+        position_record.columnValue = columnValue === null ? null : String(columnValue);
         position_record.position = Number(position);
+        position_record.groupBy = groupBy;
+        position_record.updatedBy = (req as AuthenticatedRequest).userId || null;
       }
 
       await kanbanPositionRepository.save(position_record);
 
       console.log(
-        `✅ Chamado ${chamadoId} movido para coluna ${columnValue} na posição ${position}`
+        `✅ Chamado ${chamadoId} movido em "${groupBy}" para coluna ${columnValue} na posição ${position}`
       );
 
       // 🔌 Notificar em tempo real via WebSocket
@@ -2339,6 +2345,61 @@ router.patch("/chamados/:id/move", verifyToken, async (req: AuthenticatedRequest
           position: Number(position),
           groupBy,
           moveId, // ✅ ID único para deduplicação no frontend
+          timestamp: new Date(),
+        });
+      }
+    } else {
+      // ATT ENTIDADE CHAMADO DIRETAMENTE PARA OUTROS MODOS DE AGRUPAMENTO
+      if (columnValue !== null && columnValue !== undefined && columnValue !== 'unassigned') {
+        const colValueNum = Number(columnValue);
+        
+        switch (groupBy) {
+          case 'status':
+            chamado.status = { id: colValueNum } as any;
+            break;
+          case 'prioridade':
+            chamado.tipoPrioridade = { id: colValueNum } as any;
+            break;
+          case 'responsavel':
+            chamado.userResponsavel = { id: colValueNum } as any;
+            break;
+          case 'departamento':
+            chamado.departamento = { id: colValueNum } as any;
+            break;
+          case 'topico':
+            chamado.topicoAjuda = { id: colValueNum } as any;
+            break;
+        }
+      } else if (columnValue === 'unassigned' || columnValue === null) {
+        if (groupBy === 'responsavel') {
+          chamado.userResponsavel = null;
+        } else if (groupBy === 'departamento') {
+          chamado.departamento = null as any;
+        } else if (groupBy === 'topico') {
+          chamado.topicoAjuda = null as any;
+        } else if (groupBy === 'prioridade') {
+          chamado.tipoPrioridade = null as any;
+        } else if (groupBy === 'status') {
+          chamado.status = null as any;
+        }
+      }
+
+      await chamadoRepository.save(chamado);
+      
+      console.log(
+        `Chamado ${chamadoId} atualizado no agrupamento "${groupBy}"`
+      );
+
+      // notificar websocket geral, que recarregara o chamado a tempo 
+      if ((global as any).RealtimeService) {
+         // o dashboard não-personalizado provavelmente usa requisição REST ou outro evento
+         // vamos notificar ambos
+        (global as any).RealtimeService.notifyCardMoved('global', {
+          chamadoId,
+          columnValue: String(columnValue),
+          position: Number(position),
+          groupBy,
+          moveId,
           timestamp: new Date(),
         });
       }

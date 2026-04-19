@@ -714,7 +714,7 @@ export default function GerenciarChamados() {
     }
   };
 
-  const handleTicketUpdate = (ticketId: number, updatedTickets: Chamado[]) => {
+  const handleTicketUpdate = (ticketId: number, updatedTickets: any) => {
     // Atualizar tickets localmente SEM fazer refetch
     setChamados(updatedTickets);
   };

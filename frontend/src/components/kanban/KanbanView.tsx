@@ -10,7 +10,7 @@ import {
   useSensor,
   useSensors,
   DragOverlay,
-  rectIntersection,
+  closestCorners,
 } from '@dnd-kit/core';
 import { motion, AnimatePresence } from 'framer-motion';
 import Select from 'react-select';
@@ -151,6 +151,7 @@ const KanbanView = ({
   const [selectedTickets, setSelectedTickets] = useState<Set<number>>(new Set());
   const [somenteAbertos, setSomenteAbertos] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [dragOverInfo, setDragOverInfo] = useState<{ ticketId: number, targetColumn: string, overId: string | number } | null>(null);
   const [selectedBoardId, setSelectedBoardId] = useState<number | null>(() => {
     const saved = localStorage.getItem('kanbanSelectedBoard');
     return saved ? parseInt(saved) : null;
@@ -182,27 +183,26 @@ const KanbanView = ({
         position: data.position,
       });
 
-      // att APENAS o ticket movido no estado local
-      const updatedTickets = tickets.map(ticket => {
-        if (ticket.id !== data.chamadoId) return ticket;
-
-        return {
-          ...ticket,
-          kanbanPositions: {
-            groupBy: 'personalizada',
-            columnValue: data.columnValue?.toString() || null,
-            position: data.position
-          }
-        };
-      });
-
       // chamar callback para atualizar parent component
       if (onTicketUpdate) {
-        onTicketUpdate(data.chamadoId, updatedTickets);
+        onTicketUpdate(data.chamadoId, (prevTickets: Chamado[]) => 
+          prevTickets.map(ticket => {
+            if (ticket.id !== data.chamadoId) return ticket;
+    
+            return {
+              ...ticket,
+              kanbanPositions: {
+                groupBy: 'personalizada',
+                columnValue: data.columnValue?.toString() || null,
+                position: data.position
+              }
+            };
+          })
+        );
         console.log('✅ [REALTIME] Ticket atualizado por outro usuário');
       }
     }
-  }, [groupBy, selectedBoardId, tickets, onTicketUpdate, lastLocalMoveId]);
+  }, [groupBy, selectedBoardId, onTicketUpdate, lastLocalMoveId]);
 
   const handleColumnCreatedRealtime = useCallback((column: any) => {
     console.log('➕ [REALTIME] Nova coluna criada:', column);
@@ -275,7 +275,7 @@ const KanbanView = ({
     })
   );
 
-  const handleTicketSelect = (ticketId: number, selected: boolean) => {
+  const handleTicketSelect = useCallback((ticketId: number, selected: boolean) => {
     const newSelected = new Set(selectedTickets);
     if (selected) {
       newSelected.add(ticketId);
@@ -283,7 +283,7 @@ const KanbanView = ({
       newSelected.delete(ticketId);
     }
     setSelectedTickets(newSelected);
-  };
+  }, [selectedTickets]);
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
@@ -341,13 +341,25 @@ const KanbanView = ({
     
     const map: { [columnId: string]: Chamado[] } = {};
     
-    // caoluna especial para tickets sem coluna atribuída
+    // coluna especial para tickets sem coluna atribuída
     map['unassigned'] = [];
     
     // inicializar cada coluna fixa com array vazio
     columns.forEach(col => {
       map[col.id.toString()] = [];
     });
+    
+    // helper para pegar posição
+    const getPos = (ticket: Chamado) => {
+      if (!ticket.kanbanPositions) return 999999;
+      if (!Array.isArray(ticket.kanbanPositions) && ticket.kanbanPositions.groupBy === 'personalizada') {
+        return ticket.kanbanPositions.position;
+      } else if (Array.isArray(ticket.kanbanPositions)) {
+        const pos = ticket.kanbanPositions.find((p: any) => p.groupBy === 'personalizada');
+        return pos ? pos.position : 999999;
+      }
+      return 999999;
+    };
     
     // distribuir tickets nas colunas baseado na kanbanPositions
     tickets.forEach(ticket => {
@@ -378,9 +390,51 @@ const KanbanView = ({
         map['unassigned'].push(ticket);
       }
     });
+
+    // GARANTIR QUE TODAS AS COLUNAS ESTEJAM ORDENADAS PELA POSIÇÃO NO BOARD PERSONALIZADO
+    Object.keys(map).forEach(key => {
+      map[key].sort((a, b) => {
+        const posA = getPos(a);
+        const posB = getPos(b);
+        return posA - posB;
+      });
+    });
+
+    // INSERIR GHOST PARA VISUALIZAÇÃO DE DRAG INTER-COLUNAS
+    if (dragOverInfo) {
+      const { ticketId, targetColumn, overId } = dragOverInfo;
+      let foundTicket: Chamado | null = null;
+
+      // Localizar o ticket e remove-lo de sua coluna de origem para evitar duplicatas
+      for (const col of Object.keys(map)) {
+        const idx = map[col].findIndex(t => t.id === ticketId);
+        if (idx !== -1) {
+          foundTicket = map[col][idx];
+          map[col] = [...map[col]]; // clonar
+          map[col].splice(idx, 1);
+          break;
+        }
+      }
+
+      // adicionar ele na nova coluna
+      if (foundTicket && map[targetColumn]) {
+        map[targetColumn] = [...map[targetColumn]]; // clonar a alvo
+
+        if (targetColumn === String(overId)) {
+          map[targetColumn].push(foundTicket);
+        } else {
+          const targetIndex = map[targetColumn].findIndex(t => t.id === overId);
+          if (targetIndex !== -1) {
+            map[targetColumn].splice(targetIndex, 0, foundTicket);
+          } else {
+            map[targetColumn].push(foundTicket);
+          }
+        }
+      }
+    }
     
     return map;
-  }, [tickets, columns, groupBy]);
+  }, [tickets, columns, groupBy, dragOverInfo]);
 
   // agrupar tickets de acordo com o critério selecionado
   const groupedTickets = useMemo(() => {
@@ -485,10 +539,10 @@ const KanbanView = ({
 
       switch (groupBy) {
         case 'status':
-          targetGroup = ticket.status.id.toString();
+          targetGroup = ticket.status?.id?.toString() || 'default';
           break;
         case 'prioridade':
-          targetGroup = ticket.tipoPrioridade.id.toString();
+          targetGroup = ticket.tipoPrioridade?.id?.toString() || 'default';
           break;
         case 'responsavel':
           targetGroup = ticket.userResponsavel
@@ -496,10 +550,10 @@ const KanbanView = ({
             : 'sem-responsavel';
           break;
         case 'departamento':
-          targetGroup = ticket.departamento.id.toString();
+          targetGroup = ticket.departamento?.id?.toString() || 'default';
           break;
         case 'topico':
-          targetGroup = ticket.topicoAjuda.id.toString();
+          targetGroup = ticket.topicoAjuda?.id?.toString() || 'default';
           break;
         default:
           targetGroup = 'default';
@@ -544,8 +598,39 @@ const KanbanView = ({
       });
     });
 
+    // INSERIR GHOST PARA VISUALIZAÇÃO DE DRAG INTER-COLUNAS  MODOS NORMAIS
+    if (dragOverInfo) {
+      const { ticketId, targetColumn, overId } = dragOverInfo;
+      let foundTicket: Chamado | null = null;
+
+      for (const col of Object.keys(groups)) {
+        const idx = groups[col].findIndex(t => t.id === ticketId);
+        if (idx !== -1) {
+          foundTicket = groups[col][idx];
+          groups[col] = [...groups[col]]; 
+          groups[col].splice(idx, 1);
+          break;
+        }
+      }
+
+      if (foundTicket && groups[targetColumn]) {
+        groups[targetColumn] = [...groups[targetColumn]]; 
+
+        if (targetColumn === String(overId)) {
+          groups[targetColumn].push(foundTicket);
+        } else {
+          const targetIndex = groups[targetColumn].findIndex(t => t.id === overId);
+          if (targetIndex !== -1) {
+            groups[targetColumn].splice(targetIndex, 0, foundTicket);
+          } else {
+            groups[targetColumn].push(foundTicket);
+          }
+        }
+      }
+    }
+
     return { groups, columns };
-  }, [tickets, groupBy, statusList, prioridades, departamentos, topicosAjuda, somenteAbertos, theme]);
+  }, [tickets, groupBy, statusList, prioridades, departamentos, topicosAjuda, somenteAbertos, theme, dragOverInfo]);
 
   // estilos para o Select de agrupamento
   const getSelectStyles = () => {
@@ -647,7 +732,7 @@ const KanbanView = ({
     return 999999;
   };
 
-  const moveTicket = async (
+  const moveTicket = useCallback(async (
     ticketId: number,
     targetColumn: string,
     newPosition: number = 1500,
@@ -655,12 +740,28 @@ const KanbanView = ({
   ) => {
 
     const ticketToMove = tickets.find(t => t.id === ticketId);
-    if (!ticketToMove) return;
+    if (!ticketToMove) {
+      console.error('❌ TICKET NAO ENCONTRADO:', ticketId);
+      return;
+    }
+
+    // VALIDAR POSIÇÃO
+    if (!Number.isFinite(newPosition) || newPosition < 1) {
+      console.error('❌ POSIÇÃO INVALIDA:', newPosition);
+      toast.error('Erro: posição inválida. Tente novamente.');
+      return;
+    }
+
+    // GARANTIR QUE POSIÇÃO ESTÁ NO PADRÃO 1000+ (não valores como 156)
+    const roundedPosition = Math.round(newPosition);
+    if (roundedPosition < 1000 && groupBy === 'personalizada') {
+      console.warn('⚠️ POSIÇÃO ABAIXO DE 1000:', roundedPosition, '→ ajustando para 1000');
+    }
 
     const previousTickets = tickets;
     let columnValue: string | number | null = null;
     
-    // Gegerar ID único para este movimento (usado para deduplicação de eventos realtime)
+    // GERAR ID UNICO PRA ESSE MOVIMENTO (para deduplicação no realtime)
     const moveId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
     try {
@@ -676,53 +777,71 @@ const KanbanView = ({
         columnValue = getColumnValue(targetColumn);
       }
 
-      const updatedTickets = tickets.map(ticket => {
-        if (ticket.id !== ticketId) return ticket;
+      // APENAS ATUALIZAR O TICKET MOVIDO
+      const updatedTicket = { ...ticketToMove };
 
-        const updatedTicket = { ...ticket };
+      // Preservar outras posições de kanban se já existirem
+      const newPosObj = {
+        groupBy,
+        columnValue: columnValue?.toString() || null,
+        position: roundedPosition
+      };
 
-        // Atualizar apenas kanbanPositions, sem mudar status/prioridade/etc em modo personalizada
-        updatedTicket.kanbanPositions = {
-          groupBy,
-          columnValue: columnValue?.toString() || null,
-          position: newPosition
-        };
-
-        // Só atualizar campos se NÃO for personalizada
-        if (groupBy !== 'personalizada') {
-          switch (groupBy) {
-            case 'status':
-              const statusFound = statusList.find(s => s.id.toString() === targetColumn);
-              if (statusFound) updatedTicket.status = statusFound;
-              break;
-            case 'prioridade':
-              const prioridadeFound = prioridades.find(p => p.id.toString() === targetColumn);
-              if (prioridadeFound) updatedTicket.tipoPrioridade = prioridadeFound;
-              break;
-            case 'responsavel':
-              if (targetColumn === 'sem-responsavel') {
-                updatedTicket.userResponsavel = null;
-              } else {
-                const userFound = usuarios.find(u => u.id.toString() === targetColumn);
-                if (userFound) updatedTicket.userResponsavel = userFound;
-              }
-              break;
-            case 'departamento':
-              const deptFound = departamentos.find(d => d.id.toString() === targetColumn);
-              if (deptFound) updatedTicket.departamento = deptFound;
-              break;
-            case 'topico':
-              const topicoFound = topicosAjuda.find(t => t.id.toString() === targetColumn);
-              if (topicoFound) updatedTicket.topicoAjuda = topicoFound;
-              break;
-          }
+      if (Array.isArray(ticketToMove.kanbanPositions)) {
+        const existingIndex = ticketToMove.kanbanPositions.findIndex((p: any) => p.groupBy === groupBy);
+        const newPositions = [...ticketToMove.kanbanPositions];
+        if (existingIndex >= 0) {
+          newPositions[existingIndex] = newPosObj;
+        } else {
+          newPositions.push(newPosObj);
         }
+        updatedTicket.kanbanPositions = newPositions;
+      } else if (ticketToMove.kanbanPositions && (ticketToMove.kanbanPositions as any).groupBy) {
+        const currentPosObj = ticketToMove.kanbanPositions as any;
+        if (currentPosObj.groupBy === groupBy) {
+          updatedTicket.kanbanPositions = [newPosObj];
+        } else {
+          updatedTicket.kanbanPositions = [currentPosObj, newPosObj];
+        }
+      } else {
+        updatedTicket.kanbanPositions = [newPosObj];
+      }
 
-        return updatedTicket;
-      });
+      // Só atualizar campos se NÃO for personalizada
+      if (groupBy !== 'personalizada') {
+        switch (groupBy) {
+          case 'status':
+            const statusFound = statusList.find(s => s.id.toString() === targetColumn);
+            if (statusFound) updatedTicket.status = statusFound;
+            break;
+          case 'prioridade':
+            const prioridadeFound = prioridades.find(p => p.id.toString() === targetColumn);
+            if (prioridadeFound) updatedTicket.tipoPrioridade = prioridadeFound;
+            break;
+          case 'responsavel':
+            if (targetColumn === 'sem-responsavel') {
+              updatedTicket.userResponsavel = null;
+            } else {
+              const userFound = usuarios.find(u => u.id.toString() === targetColumn);
+              if (userFound) updatedTicket.userResponsavel = userFound;
+            }
+            break;
+          case 'departamento':
+            const deptFound = departamentos.find(d => d.id.toString() === targetColumn);
+            if (deptFound) updatedTicket.departamento = deptFound;
+            break;
+          case 'topico':
+            const topicoFound = topicosAjuda.find(t => t.id.toString() === targetColumn);
+            if (topicoFound) updatedTicket.topicoAjuda = topicoFound;
+            break;
+        }
+      }
 
+      // ATUALIZAR APENAS ESTE TICKET VIA FUNÇÃO (Para evitar bugs de concorrência / overwrite local em drags rápidos)
       if (onTicketUpdate) {
-        onTicketUpdate(ticketId, updatedTickets);
+        onTicketUpdate(ticketId, (prevTickets: Chamado[]) => 
+          prevTickets.map(t => t.id === ticketId ? updatedTicket : t)
+        );
       } else {
         console.warn('⚠️ onTicketUpdate não está definido');
       }
@@ -730,217 +849,292 @@ const KanbanView = ({
       const payload = {
         groupBy,
         columnValue: columnValue === null ? null : columnValue,
-        position: newPosition,
-        moveId, // ID único para deduplicação em tempo real
+        position: roundedPosition,
+        moveId,
         ...(groupBy === 'personalizada' && selectedBoardId && { boardId: selectedBoardId })
       };
 
-      console.log('📤 Enviando payload:', {
+      console.log('[BACKEND] Enviando:', {
         ticketId,
-        moveId,
-        payload,
-        groupBy,
+        position: roundedPosition,
         columnValue,
-        newPosition,
-        targetColumn,
-        boardId: selectedBoardId
+        groupBy,
       });
 
       // Guardar moveId para ignorar o próprio evento realtime depois
       setLastLocalMoveId(moveId);
 
       const response = await api.patch(`/chamados/${ticketId}/move`, payload);
-      console.log('✅ Resposta:', response.data);
+      console.log('[BACKEND] OK - Ticket salvo!');
       toast.success('Chamado movido!');
 
     } catch (error: any) {
-      console.error('❌ Erro completo ao mover chamado:', {
-        status: error.response?.status,
-        message: error.response?.data?.message,
-        error: error.response?.data?.error,
-        fullError: error.response?.data,
-        payload: {
-          groupBy,
-          columnValue,
-          position: newPosition
-        }
-      });
+      console.error('[BACKEND] Erro:', error.response?.data?.message);
 
+      // Reverter no frontend APENAS este ticket com o estado anterior via função
       if (onTicketUpdate) {
-        onTicketUpdate(ticketId, previousTickets);
+        onTicketUpdate(ticketId, (prevTickets: Chamado[]) => 
+          prevTickets.map(t => t.id === ticketId ? ticketToMove : t)
+        );
       }
       toast.error(
         error.response?.data?.message ||
         'Erro ao mover chamado'
       );
     }
-  };
+  }, [tickets, groupBy, statusList, prioridades, departamentos, topicosAjuda, selectedBoardId, onTicketUpdate]);
 
-  const handleDragStart = (event: DragStartEvent) => {
+  const handleDragStart = useCallback((event: DragStartEvent) => {
     const { active } = event;
     const ticket = tickets.find(t => t.id === active.id);
     setActiveTicket(ticket || null);
+    setDragOverInfo(null);
+  }, [tickets]);
+
+  const handleDragOver = useCallback((event: DragOverEvent) => {
+    const { active, over } = event;
+    
+    if (!over) {
+      setDragOverInfo(null);
+      return;
+    }
+
+    const activeId = Number(active.id);
+    const overId = over.id;
+
+    if (activeId === overId) return;
+
+    let targetColumnId: string | null = null;
+    const overData = over.data.current as any;
+    
+    // descobrir qual a coluna de destino baseada no item alvo
+    if (overData?.type === 'column') {
+      targetColumnId = String(overId);
+    } else if (overData?.sortable?.containerId) {
+      targetColumnId = String(overData.sortable.containerId);
+    } else if (overData?.columnValue !== undefined) {
+      targetColumnId = String(overData.columnValue);
+    }
+
+    if (targetColumnId) {
+      setDragOverInfo({
+        ticketId: activeId,
+        targetColumn: targetColumnId,
+        overId,
+      });
+    }
+  }, []);
+
+  // fun helper para calcular posição entre dois tickets 
+  // garante que sempre há um espaço válido
+  const calcPositionBetweenTickets = (columnTickets: Chamado[], overIndex: number, currentGroupBy: string, activeTicketId: number): number => {
+    // verificar se está movendo para baixo na mesma coluna
+    const activeIndexOriginal = columnTickets.findIndex(t => t.id === activeTicketId);
+    const isMovingDown = activeIndexOriginal !== -1 && activeIndexOriginal < overIndex;
+
+    // filtrar o activeTicket do array da coluna para simular como a coluna ficará SEM ELE
+    // isso é essencial para reordenação na MESMA COLUNA funcionar!
+    const filteredTickets = columnTickets.filter(t => t.id !== activeTicketId);
+    
+    // opcionalmente, recalcular o overIndex se o overTicket não for o activeTicket
+    // mas vamos simplesmente procurar quem é o overTicket (onde o mouse soltou os itens)
+    const overTicket = columnTickets[overIndex];
+    if (!overTicket) return 1000;
+
+    // se soltou em si mesmo na mesma coluna
+    if (overTicket.id === activeTicketId) {
+      const currentPos = getPositionForGroupBy(overTicket.kanbanPositions);
+      return currentPos !== 999999 ? currentPos : 1000;
+    }
+
+    const sortedTickets = [...filteredTickets].sort((a, b) => {
+      const posA = getPositionForGroupBy(a.kanbanPositions);
+      const posB = getPositionForGroupBy(b.kanbanPositions);
+      const valA = posA !== 999999 ? posA : Number.MAX_SAFE_INTEGER;
+      const valB = posB !== 999999 ? posB : Number.MAX_SAFE_INTEGER;
+      return valA - valB;
+    });
+
+    const actualIndex = sortedTickets.findIndex(t => t.id === overTicket.id);
+
+    if (actualIndex === -1) {
+      // se não achou na lista filtrada (ex: se era o único item na coluna)
+      return 1000;
+    }
+
+    const overPosValue = getPositionForGroupBy(overTicket.kanbanPositions) !== 999999 
+      ? getPositionForGroupBy(overTicket.kanbanPositions) 
+      : (actualIndex + 1) * 1000;
+
+    let prevPosValue: number;
+    let nextPosValue: number;
+
+    if (isMovingDown) {
+      // MOVENDO PRA BAIXO: Colocar DEPOIS do overTicket
+      prevPosValue = overPosValue;
+      const nextTicket = sortedTickets[actualIndex + 1];
+      nextPosValue = nextTicket 
+        ? (getPositionForGroupBy(nextTicket.kanbanPositions) !== 999999 ? getPositionForGroupBy(nextTicket.kanbanPositions) : overPosValue + 2000)
+        : overPosValue + 2000; // Se não tiver ticket depois, soma 2000
+    } else {
+      // MOVENDO PRA CIMA: Colocar ANTES do overTicket
+      nextPosValue = overPosValue;
+      if (actualIndex === 0) {
+        prevPosValue = 0; // Usado para forçar o recuo inicial
+      } else {
+        const prevTicket = sortedTickets[actualIndex - 1];
+        prevPosValue = getPositionForGroupBy(prevTicket.kanbanPositions) !== 999999 
+          ? getPositionForGroupBy(prevTicket.kanbanPositions) 
+          : nextPosValue - 1000;
+      }
+    }
+
+    if (prevPosValue === 0) {
+      const newPos = Math.max(1000, Math.floor(nextPosValue / 2));
+      return newPos >= nextPosValue ? nextPosValue - 100 : newPos;
+    }
+
+    if (prevPosValue >= nextPosValue) {
+      return prevPosValue + 1000;
+    }
+
+    return Math.floor((prevPosValue + nextPosValue) / 2);
   };
 
-  const handleDragOver = (event: DragOverEvent) => {
-    // Pode adicionar feedback visual aqui se necessário
-  };
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
+    setDragOverInfo(null); // Lipar placeholder imediatamente
 
-  const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveTicket(null);
 
     if (!over) {
-      console.warn('⚠️ Drop sem zona válida');
+      console.warn('⚠️ DROP SEM ZONA VALIDA');
       return;
     }
 
     const ticketId = active.id as number;
+    const ticket = tickets.find(t => t.id === ticketId);
+    
+    if (!ticket) {
+      console.warn('⚠️ TICKET NAO ENCONTRADO:', ticketId);
+      return;
+    }
 
-    // modo personalizada - lógica simplificada
+    // modo personalizada
     if (groupBy === 'personalizada') {
       let targetColumnId: string | null = null;
       let newPosition: number = 1000;
 
-      // nao permitir soltar em "Tickets sem coluna" - precisa ser em coluna fixa
-      if (over.id === 'unassigned') {
-        console.warn('⚠️ Solte em uma coluna personalizada, não em "Tickets sem coluna"');
-        return;
-      }
+      // VERIFICAR SE DROPOU EM UMA COLUNA VAZIA OU NAO 
+      const isValidColumn = over.id === 'unassigned' || columns.some(col => col.id.toString() === over.id);
 
-      // over.id é o columnId ou ticketId
-      const overIsColumn = columns.some(col => col.id.toString() === over.id);
-
-      if (overIsColumn) {
-        // Dropou na coluna vazia ou no final
+      if (isValidColumn) {
+        // dropou na coluna
         targetColumnId = over.id as string;
         const columnTickets = ticketsByColumn[targetColumnId] || [];
+        const filteredTickets = columnTickets.filter(t => t.id !== ticketId);
 
-        if (columnTickets.length === 0) {
+        if (filteredTickets.length === 0) {
           newPosition = 1000;
         } else {
-          const lastTicket = columnTickets[columnTickets.length - 1];
+          // colocar no final da coluna
+          const lastTicket = filteredTickets[filteredTickets.length - 1];
           const lastPos = getPositionForGroupBy(lastTicket.kanbanPositions);
-          const lastPosition = lastPos !== 999999 ? lastPos : columnTickets.length * 1000;
-          newPosition = lastPosition + 1000;
+          const lastPositionValue = lastPos !== 999999 ? lastPos : filteredTickets.length * 1000;
+          newPosition = lastPositionValue + 1000;
         }
       } else {
-        // Dropou sobre outro ticket - encontrar coluna e posição
+        // dropou sobre um ticket específico
+        let foundTicket = false;
+
+        // procurar em todas as colunas
         for (const col of columns) {
           const colId = col.id.toString();
-          const ticket = ticketsByColumn[colId]?.find(t => t.id === over.id);
-          if (ticket) {
-            targetColumnId = colId;
-            const columnTickets = ticketsByColumn[colId];
-            const overIndex = columnTickets.findIndex(t => t.id === over.id);
+          const columnTickets = ticketsByColumn[colId] || [];
+          const targetIndex = columnTickets.findIndex(t => t.id === over.id);
 
-            if (overIndex === 0) {
-              const overPos = getPositionForGroupBy(ticket.kanbanPositions);
-              newPosition = Math.max(overPos - 500, 100);
-            } else {
-              const prevTicket = columnTickets[overIndex - 1];
-              const prevPos = getPositionForGroupBy(prevTicket.kanbanPositions);
-              const overPos = getPositionForGroupBy(ticket.kanbanPositions);
-              newPosition = Math.floor((prevPos + overPos) / 2);
-              
-              if (newPosition === prevPos || newPosition === overPos) {
-                newPosition = prevPos + 500;
-              }
-            }
+          if (targetIndex !== -1) {
+            targetColumnId = colId;
+            newPosition = calcPositionBetweenTickets(columnTickets, targetIndex, groupBy, ticketId);
+            foundTicket = true;
             break;
           }
         }
 
-        // Se não encontrou em colunas fixas, tenta em "Tickets sem coluna"
-        if (!targetColumnId) {
-          const unassignedTicket = ticketsByColumn['unassigned']?.find(t => t.id === over.id);
-          if (unassignedTicket) {
-            // Não permitir mover dentro de "Tickets sem coluna"
-            console.warn('⚠️ Solte em uma coluna personalizada');
-            return;
+        // procurar em "unassigned"
+        if (!foundTicket) {
+          const unassignedTickets = ticketsByColumn['unassigned'] || [];
+          const targetIndex = unassignedTickets.findIndex(t => t.id === over.id);
+
+          if (targetIndex !== -1) {
+            targetColumnId = 'unassigned';
+            newPosition = calcPositionBetweenTickets(unassignedTickets, targetIndex, groupBy, ticketId);
+            foundTicket = true;
           }
+        }
+
+        if (!foundTicket) {
+          console.warn('⚠️ Ticket alvo não encontrado:', over.id);
+          return;
         }
       }
 
       if (!targetColumnId) return;
-
-      // Usar columnId como columnValue para personalizada
       moveTicket(ticketId, targetColumnId, newPosition, '');
       return;
     }
 
     // ===== MODO NORMAL (status, prioridade, etc) =====
     let targetColumnId: string | null = null;
-    let fromColumnId: string | null = null;
     let newPosition: number = 1000;
 
-    // Encontrar a coluna de origem
-    for (const columnId of Object.keys(groupedTickets.groups)) {
-      if (groupedTickets.groups[columnId].find(t => t.id === ticketId)) {
-        fromColumnId = columnId;
-        break;
-      }
-    }
+    // verificar se dropou em uma coluna
+    const isValidColumn = groupedTickets.columns.some(col => col.id === over.id);
 
-    // Verificar se foi dropado sobre outro card
-    let overTicket: Chamado | null = null;
-    for (const columnId of Object.keys(groupedTickets.groups)) {
-      const foundTicket = groupedTickets.groups[columnId].find(t => t.id === over.id);
-      if (foundTicket && over.id !== ticketId) {
-        overTicket = foundTicket;
-        targetColumnId = columnId;
-        break;
-      }
-    }
+    if (isValidColumn) {
+      // dropou na coluna
+      targetColumnId = over.id as string;
+      const columnTickets = groupedTickets.groups[targetColumnId] || [];
+      const filteredTickets = columnTickets.filter(t => t.id !== ticketId);
 
-    // Se dropou sobre um card, calcular posição entre cards adjacentes
-    if (overTicket && targetColumnId) {
-      const columnTickets = groupedTickets.groups[targetColumnId];
-      const overIndex = columnTickets.findIndex(t => t.id === over.id);
-
-      const overPosition = getPositionForGroupBy(overTicket.kanbanPositions);
-      const calculatedOverPosition = overPosition !== 999999 ? overPosition : (overIndex + 1) * 1000;
-
-      if (overIndex === 0) {
-        newPosition = Math.max(calculatedOverPosition - 500, 100);
+      if (filteredTickets.length === 0) {
+        newPosition = 1000;
       } else {
-        const previousTicket = columnTickets[overIndex - 1];
-        const previousPos = getPositionForGroupBy(previousTicket.kanbanPositions);
-        const previousPosition = previousPos !== 999999 ? previousPos : overIndex * 1000;
-
-        newPosition = Math.floor((previousPosition + calculatedOverPosition) / 2);
-
-        if (newPosition === previousPosition || newPosition === calculatedOverPosition) {
-          newPosition = previousPosition + 500;
-        }
+        // Colocar no final da coluna
+        const lastTicket = filteredTickets[filteredTickets.length - 1];
+        const lastPos = getPositionForGroupBy(lastTicket.kanbanPositions);
+        const lastPositionValue = lastPos !== 999999 ? lastPos : filteredTickets.length * 1000;
+        newPosition = lastPositionValue + 1000;
       }
     } else {
-      // Dropou na coluna vazia ou no final
-      targetColumnId = over.id as string;
+      //dropou sobre outro ticket
+      let foundTicket = false;
 
-      if (groupedTickets.groups[targetColumnId] !== undefined) {
-        const columnTickets = groupedTickets.groups[targetColumnId];
+      for (const columnId of Object.keys(groupedTickets.groups)) {
+        const columnTickets = groupedTickets.groups[columnId];
+        const targetIndex = columnTickets.findIndex(t => t.id === over.id);
 
-        if (columnTickets.length === 0) {
-          newPosition = 1000;
-        } else {
-          const lastTicket = columnTickets[columnTickets.length - 1];
-          const lastPos = getPositionForGroupBy(lastTicket.kanbanPositions);
-          const lastPosition = lastPos !== 999999 ? lastPos : columnTickets.length * 1000;
-
-          newPosition = lastPosition + 1000;
+        if (targetIndex !== -1 && over.id !== ticketId) {
+          targetColumnId = columnId;
+          newPosition = calcPositionBetweenTickets(columnTickets, targetIndex, groupBy, ticketId);
+          foundTicket = true;
+          break;
         }
-      } else {
+      }
+
+      if (!foundTicket) {
+        console.warn('⚠️ TICKET ALVO NAO ENCONTRADO:', over.id);
         return;
       }
     }
 
     if (!targetColumnId) {
+      console.warn('⚠️ COLUNA DE DESTINO NAO IDENTIFICADA');
       return;
     }
 
-    moveTicket(ticketId, targetColumnId, newPosition, fromColumnId || '');
-  };
+    moveTicket(ticketId, targetColumnId, newPosition, '');
+  }, [tickets, groupBy, columns, ticketsByColumn, groupedTickets, moveTicket]);
 
   return (
     <motion.div
@@ -1043,7 +1237,7 @@ const KanbanView = ({
           // Board com coluna dinâmica "Tickets sem coluna" + colunas fixas
           <DndContext
             sensors={sensors}
-            collisionDetection={rectIntersection}
+            collisionDetection={closestCorners}
             onDragStart={handleDragStart}
             onDragOver={handleDragOver}
             onDragEnd={handleDragEnd}
@@ -1051,20 +1245,22 @@ const KanbanView = ({
             {/* Colunas */}
             <div className="flex gap-4 overflow-x-auto pb-4 min-h-0">
               <AnimatePresence>
-                {/* Coluna dinâmica - Tickets sem coluna */}
-                <div key="unassigned">
-                  <KanbanColumn
-                    id="unassigned"
-                    title="Tickets sem coluna"
-                    color={theme.border.secondary}
-                    tickets={ticketsByColumn['unassigned'] || []}
-                    onTicketClick={onTicketClick}
-                    groupBy="personalizada"
-                    columnValue="unassigned"
-                    selectedTickets={selectedTickets}
-                    onTicketSelect={handleTicketSelect}
-                  />
-                </div>
+                {/* Coluna dinâmica - Tickets sem coluna (apenas se houver tickets) */}
+                {ticketsByColumn['unassigned']?.length > 0 && (
+                  <div key="unassigned">
+                    <KanbanColumn
+                      id="unassigned"
+                      title="Tickets sem coluna"
+                      color={theme.border.secondary}
+                      tickets={ticketsByColumn['unassigned'] || []}
+                      onTicketClick={onTicketClick}
+                      groupBy="personalizada"
+                      columnValue="unassigned"
+                      selectedTickets={selectedTickets}
+                      onTicketSelect={handleTicketSelect}
+                    />
+                  </div>
+                )}
 
                 {/* Colunas fixas personalizadas */}
                 {columns.map((column) => (
@@ -1101,9 +1297,14 @@ const KanbanView = ({
               </motion.button>
             </div>
 
-            <DragOverlay>
+            <DragOverlay dropAnimation={{
+              duration: 250,
+              easing: 'cubic-bezier(0.18, 0.67, 0.6, 1.22)'
+            }}>
               {activeTicket ? (
-                <TicketCard chamado={activeTicket} isDragging={true} />
+                <div style={{ transform: 'rotate(2deg) scale(1.03)', opacity: 0.95, boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.15)', borderRadius: '0.5rem', zIndex: 9999 }}>
+                  <TicketCard chamado={activeTicket} isDragging={true} />
+                </div>
               ) : null}
             </DragOverlay>
           </DndContext>
@@ -1121,7 +1322,7 @@ const KanbanView = ({
         // Renderizar boards dinâmicos (agrupamento normal)
         <DndContext
           sensors={sensors}
-          collisionDetection={rectIntersection}
+          collisionDetection={closestCorners}
           onDragStart={handleDragStart}
           onDragOver={handleDragOver}
           onDragEnd={handleDragEnd}
@@ -1145,9 +1346,14 @@ const KanbanView = ({
             </AnimatePresence>
             </div>
 
-            <DragOverlay>
+            <DragOverlay dropAnimation={{
+              duration: 250,
+              easing: 'cubic-bezier(0.18, 0.67, 0.6, 1.22)'
+            }}>
               {activeTicket ? (
-                <TicketCard chamado={activeTicket} isDragging={true} />
+                <div style={{ transform: 'rotate(2deg) scale(1.03)', opacity: 0.95, boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.15)', borderRadius: '0.5rem', zIndex: 9999 }}>
+                  <TicketCard chamado={activeTicket} isDragging={true} />
+                </div>
               ) : null}
             </DragOverlay>
 

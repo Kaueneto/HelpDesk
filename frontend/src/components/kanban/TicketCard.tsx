@@ -109,9 +109,9 @@ const TicketCard = memo(({ chamado, onClick, isDragging = false, onSelect, isSel
   });
 
   const style = {
-    transform: CSS.Transform.toString(transform),
+    transform: CSS.Translate.toString(transform), // Translate no lugar de Transform resolve bugs de resize
     transition,
-    opacity: sortableIsDragging ? 0.5 : 1,
+    pointerEvents: sortableIsDragging || isDragging ? 'none' : 'auto' as 'none' | 'auto',
   };
 
   const formatDate = (dateString: string) => {
@@ -181,46 +181,41 @@ const TicketCard = memo(({ chamado, onClick, isDragging = false, onSelect, isSel
     }
   };
 
-
   return (
-    <motion.div
+    <div
       ref={setNodeRef}
       {...attributes}
       {...listeners}
-      layout
-      initial={{ opacity: 0, y: 10, scale: 0.95 }}
-      animate={{ 
-        opacity: 1, 
-        y: 0,
-        scale: showMoveAnimation ? 1.02 : 1,
-      }}
-      exit={{ opacity: 0, y: -10 }}
-      transition={{ 
-        duration: 0.3, 
-        ease: "easeOut",
-        scale: { duration: 0.4 }
-      }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      className={`
-        rounded-lg shadow-sm border transition-all duration-100 ease-out
-        relative overflow-hidden group
-        select-none
-      `}
-      style={{
-        ...style,
-        backgroundColor: theme.kanban.cardBg,
-        borderColor: isSelected ? theme.brand.primary : theme.border.secondary,
-        borderWidth: '1px',
-        cursor: sortableIsDragging || isDragging ? 'grabbing' : 'pointer',
-        boxShadow: sortableIsDragging || isDragging ? `0 10px 15px -3px ${theme.brand.primary}66` : isSelected ? `0 0 0 1px ${theme.brand.primary}` : '0 1px 1px rgba(0, 0, 0, 0.1)',
-        opacity: sortableIsDragging ? 0.5 : 1,
-        transform: (sortableIsDragging || isDragging) ? 'scale(1.05)' : 'scale(1)',
-      }}
-      onClick={handleCardClick}
+      style={style}
+      className="w-full touch-none mb-1"
     >
-      {/* efeito de glow quando move */}
-      <AnimatePresence>
+      <motion.div
+        layout="position"
+        animate={{ 
+          scale: showMoveAnimation ? 1.02 : 1,
+        }}
+        transition={{ 
+          duration: 0.15, 
+          ease: "easeOut",
+        }}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        className={`
+          rounded-lg shadow-sm border transition-shadow duration-100 ease-out
+          relative overflow-hidden group select-none
+        `}
+        style={{
+          backgroundColor: sortableIsDragging ? `${theme.brand.primary}1a` : theme.kanban.cardBg,
+          borderColor: isSelected ? theme.kanban.cardBg : (sortableIsDragging ? theme.brand.primary : theme.kanban.cardBg),
+          borderWidth: '1px',
+          borderStyle: sortableIsDragging ? 'dashed' : 'solid',
+          cursor: sortableIsDragging || isDragging ? 'grabbing' : 'grab',
+          boxShadow: isSelected ? `0 0 0 1px ${theme.brand.primary}` : (sortableIsDragging ? 'none' : '0 1px 3px rgba(0, 0, 0, 0.05)'),
+        }}
+        onClick={handleCardClick}
+      >
+        {/* efeito de glow quando move */}
+        <AnimatePresence>
         {showMoveAnimation && (
           <motion.div
             initial={{ opacity: 1, scale: 0.95 }}
@@ -234,10 +229,10 @@ const TicketCard = memo(({ chamado, onClick, isDragging = false, onSelect, isSel
       </AnimatePresence>
       {/* visual indicator pra drag */}
       {sortableIsDragging && (
-        <div className="absolute inset-0 opacity-10" style={{ backgroundColor: theme.brand.primary }}></div>
+        <div className="absolute inset-0 transition-opacity duration-200" style={{ backgroundColor: `${theme.brand.primary}05` }}></div>
       )}
 
-      <div className="p-3">
+      <div className="p-3" style={{ opacity: sortableIsDragging ? 0 : 1 }}>
         {/* header com checkbox, assunto e numero */}
         <div className="flex items-start gap-2 mb-2">
           {/* checkbox - aparece ao hover ou quando selecionado */}
@@ -346,7 +341,8 @@ const TicketCard = memo(({ chamado, onClick, isDragging = false, onSelect, isSel
           </div>
         </div>
       </div>
-    </motion.div>
+      </motion.div>
+    </div>
   );
 });
 

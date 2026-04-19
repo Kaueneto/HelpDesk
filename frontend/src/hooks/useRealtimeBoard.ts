@@ -37,6 +37,7 @@ export function useRealtimeBoard({
   const socketRef = useRef<Socket | null>(null);
   const reconnectAttempts = useRef(0);
   const maxReconnectAttempts = 5;
+  const lastEventRef = useRef<{ [key: string]: number }>({});  // ✅ Deduplicação
 
   useEffect(() => {
     // Não conectar se board não foi definido ou se está desabilitado
@@ -102,9 +103,21 @@ export function useRealtimeBoard({
     // ==================== LISTENERS DE EVENTOS ====================
 
     /**
-     * Card movido entre colunas
+     * card movido entre colunas - COM DEDUPLICAÇÃO
      */
     socket.on('card-moved', (data) => {
+      // DEDUPLICAÇÃO: Ignorar eventos duplicados dentro de 100ms
+      const eventKey = `card-moved-${data.chamadoId}-${data.columnValue}-${data.position}`;
+      const now = Date.now();
+      const lastTime = lastEventRef.current[eventKey] || 0;
+
+      if (now - lastTime < 100) {
+        console.log(`⏭️  [REALTIME] Evento duplicado ignorado para card ${data.chamadoId}`);
+        return;
+      }
+
+      lastEventRef.current[eventKey] = now;
+
       console.log(`📌 [REALTIME] Card movido em tempo real:`, {
         chamadoId: data.chamadoId,
         columnValue: data.columnValue,

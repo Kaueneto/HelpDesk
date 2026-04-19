@@ -122,9 +122,9 @@ export const darkTheme: Theme = {
 
   // Componente Kanban
   kanban: {
-    columnBg: '#051021',     // Cinza escuro
-    columnBorder: '#334155', // Cinza médio
-    cardBg: '#1E293B',      // Cinza escuro para cards
+    columnBg: '#000000',     // Cinza escuro
+    columnBorder: '#1E1E1E', // Cinza médio
+    cardBg: '#1E1E1E',      // Cinza escuro para cards
     textPrimary: '#F1F5F9',  // Quase branco
     textSecondary: '#CBD5E1', // Cinza claro
   },

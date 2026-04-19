@@ -103,6 +103,9 @@ const KanbanColumn = memo(({
     },
   });
 
+  //memoizar lista de IDs de tickets para evitar re-ordenações desnecessárias
+  const ticketIds = tickets.map(t => t.id);
+
   return (
     <motion.div
       initial={{ opacity: 0, x: 20 }}
@@ -178,7 +181,7 @@ const KanbanColumn = memo(({
             className={`flex items-center justify-between p-4 rounded-t-lg transition-all duration-200`}
             style={{
               backgroundColor: theme.kanban.columnBg,
-              borderTop: `3px solid ${color}`,
+              borderTop: `4px solid ${color}`,
               borderRight: `1px solid ${theme.kanban.columnBorder}`,
               borderBottom: '0px',
               borderLeft: `1px solid ${theme.kanban.columnBorder}`
@@ -225,6 +228,7 @@ const KanbanColumn = memo(({
             ref={setNodeRef}
             className={`
               flex-1 min-h-32 p-2 rounded-b-lg
+              max-h-[calc(100vh-220px)] overflow-y-auto custom-scrollbar
               transition-all duration-150
             `}
             style={{
@@ -240,7 +244,7 @@ const KanbanColumn = memo(({
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="mb-2 p-2 border-2 border-dashed rounded-lg"
+                className="mb-2 p-2 border-2 border-dashed rounded-lg shrink-0"
                 style={{
                   borderColor: theme.brand.primary,
                   backgroundColor: `${theme.brand.primary}1a`
@@ -254,29 +258,22 @@ const KanbanColumn = memo(({
 
             {/* lista de tickets */}
             <SortableContext
-              items={tickets.map(t => t.id)}
+              id={id}
+              items={ticketIds}
               strategy={verticalListSortingStrategy}
             >
-              <div className="max-h-[calc(100vh-300px)] overflow-y-auto custom-scrollbar pr-2">
-                <div className="space-y-2">
+              <div className="space-y-2 pr-1 min-h-25">
                 {tickets.length > 0 ? (
-                  tickets.map((ticket, index) => (
-                    <motion.div
-                      key={ticket.id}
-                      layout
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.15 }}
-                  >
-                    <TicketCard
-                      chamado={ticket}
-                      onClick={() => onTicketClick?.(ticket)}
-                      isSelected={selectedTickets.has(ticket.id)}
-                      onSelect={onTicketSelect}
-                    />
-                  </motion.div>
-                ))
+                  tickets.map((ticket) => (
+                    <div key={ticket.id} className="mb-2">
+                      <TicketCard
+                        chamado={ticket}
+                        onClick={() => onTicketClick?.(ticket)}
+                        isSelected={selectedTickets.has(ticket.id)}
+                        onSelect={onTicketSelect}
+                      />
+                    </div>
+                  ))
               ) : (
                   <motion.div
                     initial={{ opacity: 0 }}
@@ -290,7 +287,6 @@ const KanbanColumn = memo(({
                   </motion.div>
                 )}
               </div>
-            </div>
             </SortableContext>
           </div>
         </>
