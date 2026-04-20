@@ -54,6 +54,7 @@ interface UseBoardDataReturn {
   createColumn: (nome: string) => Promise<Column | null>;
   updateColumn: (columnId: number, nome: string) => Promise<void>;
   deleteColumn: (columnId: number) => Promise<void>;
+  removeColumnLocal: (columnId: number) => void;
   reorderColumns: (columnIds: number[]) => Promise<void>;
   
   // Card operations
@@ -459,6 +460,16 @@ export const useBoardData = (idDepartamento: number): UseBoardDataReturn => {
     []
   );
 
+  // remover coluna do estado local (sem chamada à API) - usado para WebSocket
+  const removeColumnLocal = useCallback(
+    (columnId: number) => {
+      console.log(`removendo coluna ${columnId} do estado local (WebSocket)`);
+      setColumns((prev) => prev.filter((c) => c.id !== columnId));
+      setCards((prev) => prev.filter((card) => card.columnId !== columnId));
+    },
+    []
+  );
+
   // Carregar boards ao montar
   useEffect(() => {
     loadBoards();
@@ -478,6 +489,7 @@ export const useBoardData = (idDepartamento: number): UseBoardDataReturn => {
     createColumn,
     updateColumn,
     deleteColumn,
+    removeColumnLocal,
     reorderColumns,
     addCardToColumn,
     moveCard,

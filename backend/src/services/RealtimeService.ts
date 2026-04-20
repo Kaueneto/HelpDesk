@@ -33,7 +33,10 @@ export class RealtimeService {
 
   private setupEventListeners() {
     this.io.on("connection", (socket: Socket) => {
-      console.log(`✅ cliente WebSocket conectado: ${socket.id}`);
+      console.log(`✅ Cliente WebSocket conectado: ${socket.id}`);
+      
+      // rastrear qual board este socket está observando
+      let currentBoardId: number | null = null;
 
       /**
        * Entrar em sala de um board específico
@@ -41,7 +44,16 @@ export class RealtimeService {
        */
       socket.on("join-board", (boardId: number) => {
         const room = `board-${boardId}`;
+        
+        // se estava em outra sala, sair dela primeiro
+        if (currentBoardId !== null && currentBoardId !== boardId) {
+          const oldRoom = `board-${currentBoardId}`;
+          console.log(`   → Cliente ${socket.id} saiu de ${oldRoom} (mudando de board)`);
+          socket.leave(oldRoom);
+        }
+        
         socket.join(room);
+        currentBoardId = boardId;
         console.log(`📌 Cliente ${socket.id} entrou na sala ${room}`);
 
         // Notificar outros clientes que alguém entrou
@@ -57,18 +69,33 @@ export class RealtimeService {
        */
       socket.on("leave-board", (boardId: number) => {
         const room = `board-${boardId}`;
-        socket.leave(room);
-        console.log(`👋 Cliente ${socket.id} saiu da sala ${room}`);
+        if (currentBoardId === boardId) {
+          socket.leave(room);
+          currentBoardId = null;
+          console.log(`Cliente ${socket.id} saiu da sala ${room}`);
 
-        this.io.to(room).emit("user-left", {
-          userId: socket.id,
-          boardId,
-          timestamp: new Date(),
-        });
+          this.io.to(room).emit("user-left", {
+            userId: socket.id,
+            boardId,
+            timestamp: new Date(),
+          });
+        } else {
+          console.warn(`⚠️ Cliente ${socket.id} tentou sair de ${room}, mas está em board ${currentBoardId}`);
+        }
       });
 
       socket.on("disconnect", () => {
         console.log(`❌ Cliente desconectado: ${socket.id}`);
+        // a desconexão automática remove o socket de todas as salas
+        if (currentBoardId !== null) {
+          const room = `board-${currentBoardId}`;
+          this.io.to(room).emit("user-left", {
+            userId: socket.id,
+            boardId: currentBoardId,
+            timestamp: new Date(),
+          });
+          currentBoardId = null;
+        }
       });
     });
   }
@@ -83,16 +110,20 @@ export class RealtimeService {
     groupBy: string;
   }) {
     const room = `board-${boardId}`;
+    
+    // verificar quantos clientes estão na sala
+    const roomClients = this.io.sockets.adapter.rooms.get(room);
+    const clientCount = roomClients ? roomClients.size : 0;
+    
     console.log(`   [REALTIME] Notificando movimento de card`);
     console.log(`   Sala: ${room}`);
     console.log(`   Ticket ID: ${data.chamadoId}`);
     console.log(`   Coluna: ${data.columnValue}`);
     console.log(`   Posição: ${data.position}`);
-    
-    // Verificar quantos clientes estão na sala
-    const room_obj = this.io.sockets.adapter.rooms.get(room);
-    const clientCount = room_obj ? room_obj.size : 0;
-    console.log(`   Clientes na sala: ${clientCount}`);
+    console.log(`   Clientes conectados na sala: ${clientCount}`);
+    if (clientCount > 0) {
+      console.log(`   IDs: ${Array.from(roomClients!).join(', ')}`);
+    }
     
     // Incluir boardId no evento
     this.io.to(room).emit("card-moved", {

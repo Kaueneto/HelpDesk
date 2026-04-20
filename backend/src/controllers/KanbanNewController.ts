@@ -246,7 +246,26 @@ router.delete("/columns/:id", verifyToken, async (req: AuthenticatedRequest, res
   try {
     const colunaId = parseInt(req.params.id);
 
+    // buscar coluna para pegar boardId antes de deletar
+    const colunaAtual = await columnService.getColumnById(colunaId);
+    if (!colunaAtual) {
+      return res.status(404).json({
+        error: true,
+        message: "Coluna não encontrada",
+      });
+    }
+
+    const boardId = colunaAtual.board.id;
+
+    // deletar coluna
     await columnService.deleteColumn(colunaId);
+
+    // notificar outros clientes via WebSocket
+    const realtimeService = (global as any).RealtimeService;
+    if (realtimeService) {
+      realtimeService.notifyColumnDeleted(boardId, colunaId);
+      console.log(`Broadcast enviado para sala board-${boardId}: coluna ${colunaId} deletada`);
+    }
 
     res.json({
       error: false,

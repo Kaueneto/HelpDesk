@@ -1,9 +1,9 @@
 "use client";
 
-import { memo, useState } from 'react';
+import { memo, useState, useRef, useEffect } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '@/contexts/ThemeContext';
 import TicketCard from './TicketCard';
 import { Work_Sans } from "next/font/google";
@@ -75,6 +75,12 @@ interface KanbanColumnProps {
   columnValue: string;
   selectedTickets?: Set<number>;
   onTicketSelect?: (ticketId: number, selected: boolean) => void;
+  onSelectAll?: (ticketIds: number[]) => void;
+  onDeleteColumn?: () => void;
+  onRenameColumn?: (newName: string) => void;
+  onMoveAllCards?: (targetColumnId: string) => void | Promise<void>;
+  availableColumns?: Array<{ id: string; nome: string }>;
+  isSpecialColumn?: boolean;
 }
 
 const KanbanColumn = memo(({
@@ -86,10 +92,21 @@ const KanbanColumn = memo(({
   groupBy,
   columnValue,
   selectedTickets = new Set(),
-  onTicketSelect
+  onTicketSelect,
+  onSelectAll,
+  onDeleteColumn,
+  onRenameColumn,
+  onMoveAllCards,
+  availableColumns = [],
+  isSpecialColumn = false
 }: KanbanColumnProps) => {
   const { theme } = useTheme();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [newName, setNewName] = useState(title);
+  const [isMoveSubmenuOpen, setIsMoveSubmenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const {
     isOver,
@@ -103,8 +120,40 @@ const KanbanColumn = memo(({
     },
   });
 
+  // fechar menu ao clicar fora
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    }
+
+    if (isMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [isMenuOpen]);
+
   //memoizar lista de IDs de tickets para evitar re-ordenações desnecessárias
   const ticketIds = tickets.map(t => t.id);
+
+  // handlers para as ações do menu
+  const handleSelectAll = () => {
+    onSelectAll?.(ticketIds);
+    setIsMenuOpen(false);
+  };
+
+  const handleRename = () => {
+    if (newName.trim() && newName !== title) {
+      onRenameColumn?.(newName);
+    }
+    setIsRenaming(false);
+  };
+
+  const handleMoveToColumn = (targetColumnId: string) => {
+    onMoveAllCards?.(targetColumnId);
+    setIsMenuOpen(false);
+  };
 
   return (
     <motion.div
@@ -211,6 +260,183 @@ const KanbanColumn = memo(({
                 </svg>
               </button>
 
+              {/* menuzinho das colunas */}
+              <div className="relative" ref={menuRef}>
+                <button
+                  onClick={() => setIsMenuOpen(!isMenuOpen)}
+                  className="transition-colors p-1 rounded hover:opacity-70"
+                  style={{ color: theme.kanban.textSecondary }}
+                  title="Opções da coluna"
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <circle cx="12" cy="5" r="2" />
+                    <circle cx="12" cy="12" r="2" />
+                    <circle cx="12" cy="19" r="2" />
+                  </svg>
+                </button>
+
+                <AnimatePresence>
+                  {isMenuOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95, y: -8 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: -8 }}
+                      transition={{ duration: 0.1 }}
+                      className="absolute right-0 mt-1 w-48 rounded-lg shadow-lg z-50 py-1"
+                      style={{
+                        backgroundColor: theme.background.surface,
+                        borderColor: theme.border.secondary,
+                        border: `1px solid ${theme.border.secondary}`
+                      }}
+                    >
+                      {/* sel. Todos */}
+                      <button
+                        onClick={handleSelectAll}
+                        className="w-full text-left px-4 py-2 text-sm transition-colors"
+                        style={{
+                          color: theme.text.primary,
+                          backgroundColor: 'transparent',
+                        }}
+                        onMouseEnter={(e) => {
+                          (e.currentTarget as HTMLElement).style.backgroundColor = theme.background.hover;
+                        }}
+                        onMouseLeave={(e) => {
+                          (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent';
+                        }}
+                      >
+                        Selecionar Todos
+                      </button>
+
+                      {/* mudar nome da coluna - nao disponivel pra coluna especial (coluna que contem os tickets semcoluna) */}
+                      {!isSpecialColumn && (
+                        <button
+                          onClick={() => {
+                            setIsRenaming(true);
+                            setIsMenuOpen(false);
+                          }}
+                          className="w-full text-left px-4 py-2 text-sm transition-colors"
+                          style={{
+                            color: theme.text.primary,
+                            backgroundColor: 'transparent',
+                          }}
+                          onMouseEnter={(e) => {
+                            (e.currentTarget as HTMLElement).style.backgroundColor = theme.background.hover;
+                          }}
+                          onMouseLeave={(e) => {
+                            (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent';
+                          }}
+                        >
+                          Alterar Nome
+                        </button>
+                      )}
+
+                      {availableColumns.length > 0 && (
+                        <>
+                          <div className="border-t" style={{ borderColor: theme.border.secondary }} />
+                          <div className="relative">
+                            <button
+                              onClick={() => setIsMoveSubmenuOpen(!isMoveSubmenuOpen)}
+                              className="w-full text-left px-4 py-2 text-sm transition-colors flex items-center justify-between"
+                              style={{
+                                color: theme.text.primary,
+                                backgroundColor: isMoveSubmenuOpen ? theme.background.hover : 'transparent',
+                              }}
+                              onMouseEnter={(e) => {
+                                if (!isMoveSubmenuOpen) {
+                                  (e.currentTarget as HTMLElement).style.backgroundColor = theme.background.hover;
+                                }
+                              }}
+                              onMouseLeave={(e) => {
+                                if (!isMoveSubmenuOpen) {
+                                  (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent';
+                                }
+                              }}
+                            >
+                              <span>Mover Cards Para</span>
+                              <svg
+                                className={`w-4 h-4 transition-transform ${isMoveSubmenuOpen ? 'rotate-90' : ''}`}
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                              </svg>
+                            </button>
+
+                            <AnimatePresence>
+                              {isMoveSubmenuOpen && (
+                                <motion.div
+                                  initial={{ opacity: 0, x: -8 }}
+                                  animate={{ opacity: 1, x: 0 }}
+                                  exit={{ opacity: 0, x: -8 }}
+                                  transition={{ duration: 0.1 }}
+                                  className="absolute left-full top-0 mt-0 ml-1 w-40 rounded-lg shadow-lg z-50 bg-transparent"
+                                >
+                                  <div
+                                    className="rounded-lg py-1"
+                                    style={{
+                                      backgroundColor: theme.background.surface,
+                                      border: `1px solid ${theme.border.secondary}`
+                                    }}
+                                  >
+                                    {availableColumns.map((col) => (
+                                      <button
+                                        key={col.id}
+                                        onClick={() => {
+                                          handleMoveToColumn(col.id);
+                                          setIsMoveSubmenuOpen(false);
+                                        }}
+                                        className="w-full text-left px-4 py-2 text-sm transition-colors"
+                                        style={{
+                                          color: theme.text.primary,
+                                          backgroundColor: 'transparent',
+                                        }}
+                                        onMouseEnter={(e) => {
+                                          (e.currentTarget as HTMLElement).style.backgroundColor = theme.background.hover;
+                                        }}
+                                        onMouseLeave={(e) => {
+                                          (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent';
+                                        }}
+                                      >
+                                        {col.nome}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </div>
+                        </>
+                      )}
+                      {!isSpecialColumn && (
+                        <>
+                          <div className="border-t" style={{ borderColor: theme.border.secondary }} />
+                          <button
+                            onClick={() => {
+                              setIsMenuOpen(false);
+                              onDeleteColumn?.();
+                            }}
+                            className="w-full text-left px-4 py-2 text-sm transition-colors"
+                            style={{
+                              color: '#EF4444',
+                              backgroundColor: 'transparent',
+                            }}
+                            onMouseEnter={(e) => {
+                              (e.currentTarget as HTMLElement).style.backgroundColor = `rgba(239, 68, 68, 0.1)`;
+                            }}
+                            onMouseLeave={(e) => {
+                              (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent';
+                            }}
+                          >
+                            Excluir Coluna
+                          </button>
+                        </>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
               {/* contador */}
               <span className={`text-xs font-medium px-2 py-1 rounded-full transition-all`}
                 style={{
@@ -282,13 +508,84 @@ const KanbanColumn = memo(({
                     className="text-center py-8"
                   >
                     <div style={{ color: theme.kanban.textSecondary }} className="text-sm">
-                      Arraste cards aqui
+                      Arraste ticket's aqui
                     </div>
                   </motion.div>
                 )}
               </div>
             </SortableContext>
           </div>
+
+          {/*modal pra renomear */}
+          <AnimatePresence>
+            {isRenaming && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 flex items-center justify-center z-50"
+                style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
+                onClick={() => setIsRenaming(false)}
+              >
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  className="rounded-lg p-6 w-96 shadow-xl"
+                  style={{ backgroundColor: theme.background.surface }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <h3 className="text-lg font-semibold mb-4" style={{ color: theme.text.primary }}>
+                    Alterar Nome da Coluna
+                  </h3>
+                  <input
+                    type="text"
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleRename();
+                      } else if (e.key === 'Escape') {
+                        setIsRenaming(false);
+                        setNewName(title);
+                      }
+                    }}
+                    autoFocus
+                    className="w-full px-3 py-2 rounded border mb-4 outline-none text-sm"
+                    style={{
+                      backgroundColor: theme.background.card,
+                      borderColor: theme.border.primary,
+                      color: theme.text.primary,
+                    }}
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleRename}
+                      className="flex-1 px-4 py-2 rounded font-medium text-sm text-white transition-all"
+                      style={{
+                        backgroundColor: theme.brand.primary,
+                      }}
+                    >
+                      Salvar
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsRenaming(false);
+                        setNewName(title);
+                      }}
+                      className="flex-1 px-4 py-2 rounded font-medium text-sm transition-all border"
+                      style={{
+                        borderColor: theme.border.secondary,
+                        color: theme.text.secondary,
+                      }}
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </>
       )}
     </motion.div>

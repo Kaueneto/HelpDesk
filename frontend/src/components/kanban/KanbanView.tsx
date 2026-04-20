@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useCallback, useEffect } from 'react';
+import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import {
   DndContext,
   DragEndEvent,
@@ -20,7 +20,6 @@ import { useTheme } from '@/contexts/ThemeContext';
 import KanbanColumn from './KanbanColumn';
 import TicketCard from './TicketCard';
 import CreateBoardModal from './CreateBoardModal';
-import AddColumnModal from './AddColumnModal';
 import EmptyBoardState from './EmptyBoardState';
 import { useBoardData } from '@/hooks/useBoardData';
 import { useRealtimeBoard } from '@/hooks/useRealtimeBoard';
@@ -123,6 +122,8 @@ const KanbanView = ({
     createBoard,
     selectBoard,
     createColumn,
+    deleteColumn,
+    removeColumnLocal,
   } = useBoardData(departamentoId);
 
   
@@ -146,7 +147,9 @@ const KanbanView = ({
   }, [boards]);
 
   const [isCreateBoardModalOpen, setIsCreateBoardModalOpen] = useState(false);
-  const [isAddColumnModalOpen, setIsAddColumnModalOpen] = useState(false);
+  const [isAddingColumn, setIsAddingColumn] = useState(false);
+  const [newColumnName, setNewColumnName] = useState('');
+  const columnInputRef = useRef<HTMLInputElement>(null);
   const [activeTicket, setActiveTicket] = useState<Chamado | null>(null);
   const [selectedTickets, setSelectedTickets] = useState<Set<number>>(new Set());
   const [somenteAbertos, setSomenteAbertos] = useState(false);
@@ -157,6 +160,7 @@ const KanbanView = ({
     return saved ? parseInt(saved) : null;
   });
   const [lastLocalMoveId, setLastLocalMoveId] = useState<string | null>(null); // Rastrear último movimento local
+  const [deleteConfirmModal, setDeleteConfirmModal] = useState<{ isOpen: boolean; columnId: string | null }>({ isOpen: false, columnId: null });
 
   // sincronizar selectedBoardId quando selectedBoard muda
   useEffect(() => {
@@ -165,6 +169,32 @@ const KanbanView = ({
       localStorage.setItem('kanbanSelectedBoard', selectedBoard.id.toString());
     }
   }, [selectedBoard, groupBy]);
+
+  // focar no input de coluna quando ativa modo edição
+  useEffect(() => {
+    if (isAddingColumn && columnInputRef.current) {
+      columnInputRef.current?.focus();
+    }
+  }, [isAddingColumn]);
+
+  // fechar campo de coluna ao clicar fora
+  useEffect(() => {
+    if (!isAddingColumn) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      // Se clicou fora do input e botões, fecha
+      if (columnInputRef.current && !columnInputRef.current.contains(e.target as Node)) {
+        // Verificar se clicou em um dos botões (Criar/Cancelar)
+        const target = e.target as HTMLElement;
+        if (!target.closest('button[class*="flex-1"]')) {
+          handleCancelColumnEdit();
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isAddingColumn]);
 
   // ==================== REALTIME LISTENERS ====================
   const handleCardMovedRealtime = useCallback((data: any) => {
@@ -212,13 +242,14 @@ const KanbanView = ({
     }
   }, [groupBy, selectedBoardId, onRefresh]);
 
-  const handleColumnDeletedRealtime = useCallback((data: any) => {
-    console.log('🗑️ [REALTIME] Coluna deletada:', data.columnId);
-    // recarregar colunas (necessário pois é estrutura de dados)
+  const handleColumnDeletedRealtime = useCallback((columnId: number) => {
+    console.log('[REALTIME] Coluna deletada por outro usuário:', columnId);
+    // Remover coluna do estado local de forma fluida (sem refresh)
     if (groupBy === 'personalizada' && selectedBoardId) {
-      onRefresh?.();
+      removeColumnLocal(columnId);
+      console.log('Coluna removida do estado local com animação suave');
     }
-  }, [groupBy, selectedBoardId, onRefresh]);
+  }, [groupBy, selectedBoardId, removeColumnLocal]);
 
   // usar WebSocket para atualizações em tempo real (apenas para board personalizado)
   useRealtimeBoard({
@@ -327,13 +358,81 @@ const KanbanView = ({
     [createBoard, selectBoard, departamentoId]
   );
 
-  // handller para criar coluna
+  // handler para criar coluna inline
   const handleCreateColumn = useCallback(
     async (nome: string) => {
-      await createColumn(nome);
+      if (!nome.trim()) {
+        toast.error('Nome da coluna não pode estar vazio');
+        return;
+      }
+      try {
+        await createColumn(nome);
+        // limpar input para próxima coluna, mas manter em modo edição
+        setNewColumnName('');
+        toast.success('Coluna criada com sucesso!');
+        // NÃO desativar isAddingColumn - mantém input aberto para próxima coluna
+      } catch (error) {
+        toast.error('Erro ao criar coluna');
+      }
     },
     [createColumn]
   );
+
+  // handler para submit do input inline
+  const handleColumnInputSubmit = useCallback(() => {
+    handleCreateColumn(newColumnName);
+  }, [newColumnName, handleCreateColumn]);
+
+  // handler para cancelar edição da coluna
+  const handleCancelColumnEdit = useCallback(() => {
+    setIsAddingColumn(false);
+    setNewColumnName('');
+  }, []);
+
+  const handleSelectAllCardsInColumn = useCallback((ticketIds: number[]) => {
+    const newSelected = new Set(selectedTickets);
+    ticketIds.forEach(id => newSelected.add(id));
+    setSelectedTickets(newSelected);
+    toast.success(`${ticketIds.length} cards selecionados!`);
+  }, [selectedTickets]);
+
+  const handleDeleteColumn = useCallback((columnId: string) => {
+    // abrir modal de confirmação
+    setDeleteConfirmModal({ isOpen: true, columnId });
+  }, []);
+
+  const handleConfirmDelete = useCallback(async () => {
+    try {
+      if (!deleteConfirmModal.columnId) return;
+
+      const numColumnId = parseInt(deleteConfirmModal.columnId, 10);
+      console.log(`deletando coluna ${numColumnId}...`);
+
+      // usar função do hook que atualiza estado local de forma fluida
+      await deleteColumn(numColumnId);
+      
+      console.log(`Coluna ${numColumnId} deletada com sucesso!`);
+      // fechar modal
+      setDeleteConfirmModal({ isOpen: false, columnId: null });
+    } catch (error: any) {
+      console.error('❌ Erro ao deletar coluna:', error);
+      // toast de erro já é mostrado pelo hook
+    }
+  }, [deleteConfirmModal.columnId, deleteColumn]);
+
+  const handleCancelDelete = useCallback(() => {
+    setDeleteConfirmModal({ isOpen: false, columnId: null });
+  }, []);
+
+  const handleRenameColumn = useCallback(async (columnId: string, newName: string) => {
+    try {
+ 
+      toast.success('Coluna renomeada com sucesso!');
+      onRefresh?.();
+    } catch (error) {
+      toast.error('Erro ao renomear coluna');
+    }
+  }, [selectedBoardId, onRefresh]);
 
   // quando em modo personalizada, criar mapa de tickets por coluna
   const ticketsByColumn = useMemo(() => {
@@ -884,6 +983,42 @@ const KanbanView = ({
     }
   }, [tickets, groupBy, statusList, prioridades, departamentos, topicosAjuda, selectedBoardId, onTicketUpdate]);
 
+  // handler para mover múltiplos cards selecionados
+  const handleMoveAllCardsToColumn = useCallback(async (fromColumnId: string, toColumnId: string) => {
+    try {
+      // pegar cards selecionados
+      if (selectedTickets.size === 0) {
+        toast.error('Nenhum card selecionado para mover');
+        return;
+      }
+
+      const cardsToMove = Array.from(selectedTickets);
+      console.log(`📦 Movendo ${cardsToMove.length} cards de ${fromColumnId} para ${toColumnId}`);
+
+      // para modo personalizada, calcular posições incrementadas
+      const targetColumnTickets = ticketsByColumn[toColumnId] || [];
+      let basePosition = targetColumnTickets.length > 0
+        ? Math.max(...targetColumnTickets.map(t => getPositionForGroupBy(t.kanbanPositions))) + 1000
+        : 1000;
+
+      // mover cada card de forma sequencial
+      let movedCount = 0;
+      for (const ticketId of cardsToMove) {
+        const position = basePosition + (movedCount * 1000);
+        await moveTicket(ticketId, toColumnId, position, fromColumnId);
+        movedCount++;
+      }
+
+      // limpar seleção após mover
+      setSelectedTickets(new Set());
+      console.log(` ${movedCount} cards movidos com sucesso!`);
+      toast.success(`${movedCount} cards movidos com sucesso!`);
+    } catch (error) {
+      console.error('❌ Erro ao mover cards:', error);
+      toast.error('Erro ao mover cards');
+    }
+  }, [selectedTickets, ticketsByColumn, moveTicket, getPositionForGroupBy]);
+
   const handleDragStart = useCallback((event: DragStartEvent) => {
     const { active } = event;
     const ticket = tickets.find(t => t.id === active.id);
@@ -1258,6 +1393,10 @@ const KanbanView = ({
                       columnValue="unassigned"
                       selectedTickets={selectedTickets}
                       onTicketSelect={handleTicketSelect}
+                      onSelectAll={handleSelectAllCardsInColumn}
+                      onMoveAllCards={(toColumnId) => handleMoveAllCardsToColumn('unassigned', toColumnId)}
+                      availableColumns={columns.map(col => ({ id: col.id.toString(), nome: col.nome }))}
+                      isSpecialColumn={true}
                     />
                   </div>
                 )}
@@ -1275,26 +1414,92 @@ const KanbanView = ({
                       columnValue={column.id.toString()}
                       selectedTickets={selectedTickets}
                       onTicketSelect={handleTicketSelect}
+                      onSelectAll={handleSelectAllCardsInColumn}
+                      onDeleteColumn={() => handleDeleteColumn(column.id.toString())}
+                      onRenameColumn={(newName) => handleRenameColumn(column.id.toString(), newName)}
+                      onMoveAllCards={(toColumnId) => handleMoveAllCardsToColumn(column.id.toString(), toColumnId)}
+                      availableColumns={columns.filter(c => c.id !== column.id).map(c => ({ id: c.id.toString(), nome: c.nome }))}
                     />
                   </div>
                 ))}
               </AnimatePresence>
 
               {/* Botão para adicionar coluna - do lado da última coluna */}
-              <motion.button
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                whileHover={{ scale: 1.05 }}
-                onClick={() => setIsAddColumnModalOpen(true)}
-                disabled={boardLoading}
-                className="min-w-80 h-fit px-6 py-4 rounded-lg border-2 border-dashed flex flex-col items-center justify-center gap-2 font-medium transition-all duration-200 disabled:opacity-50 shrink-0"
-                style={{
-                  borderColor: theme.border.secondary,
-                  color: theme.text.tertiary,
-                }}
-              >
-                <span className="text-sm">+ Nova coluna</span>
-              </motion.button>
+              <AnimatePresence mode="wait">
+                {!isAddingColumn ? (
+                  <motion.button
+                    key="add-button"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ duration: 0.15 }}
+                    whileHover={{ scale: 1.0, backgroundColor: 'rgba(107, 114, 128, 0.15)' }}
+                    onClick={() => setIsAddingColumn(true)}
+                    disabled={boardLoading}
+                    className="min-w-80 h-fit px-5 py-3 rounded-lg border flex flex-col items-center justify-center gap-2 font-medium transition-all duration-200 disabled:opacity-50 shrink-0"
+                    style={{
+                      borderColor: 'rgba(107, 114, 128, 0.3)',
+                      color: theme.text.tertiary,
+                      backgroundColor: 'rgba(107, 114, 128, 0.08)',
+                    }}
+                  >
+                    <span className="text-sm">+ Nova coluna</span>
+                  </motion.button>
+                ) : (
+                  <motion.div
+                    key="input-field"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ duration: 0.15 }}
+                    className="min-w-80 h-fit flex flex-col gap-2 shrink-0"
+                  >
+                    <input
+                      ref={columnInputRef}
+                      type="text"
+                      value={newColumnName}
+                      onChange={(e) => setNewColumnName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          handleColumnInputSubmit();
+                        } else if (e.key === 'Escape') {
+                          handleCancelColumnEdit();
+                        }
+                      }}
+                      placeholder="Nome da coluna"
+                      className="w-full px-3 py-2 rounded border transition-all duration-200 outline-none text-sm font-medium"
+                      style={{
+                        backgroundColor: theme.background.card,
+                        borderColor: theme.border.primary,
+                        color: theme.text.primary,
+                      }}
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleColumnInputSubmit}
+                        disabled={!newColumnName.trim() || boardLoading}
+                        className="flex-1 px-3 py-2 rounded font-medium text-sm text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                        style={{
+                          backgroundColor: theme.brand.primary,
+                        }}
+                      >
+                        Criar
+                      </button>
+                      <button
+                        onClick={handleCancelColumnEdit}
+                        disabled={boardLoading}
+                        className="flex-1 px-3 py-2 rounded font-medium text-sm transition-all duration-200 border disabled:opacity-50 disabled:cursor-not-allowed"
+                        style={{
+                          borderColor: theme.border.secondary,
+                          color: theme.text.secondary,
+                        }}
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             <DragOverlay dropAnimation={{
@@ -1314,7 +1519,7 @@ const KanbanView = ({
             hasBoard={false}
             boardName=""
             onCreateBoard={() => setIsCreateBoardModalOpen(true)}
-            onCreateColumn={() => setIsAddColumnModalOpen(true)}
+            onCreateColumn={() => setIsAddingColumn(true)}
             isLoading={boardLoading}
           />
         )
@@ -1375,18 +1580,62 @@ const KanbanView = ({
         </DndContext>
       )}
 
+      {/* modal de confirmação de deletar coluna */}
+      <AnimatePresence>
+        {deleteConfirmModal.isOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 flex items-center justify-center z-50"
+            style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
+            onClick={handleCancelDelete}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="rounded-lg p-6 w-96 shadow-xl"
+              style={{ backgroundColor: theme.background.surface }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-lg font-semibold mb-4" style={{ color: theme.text.primary }}>
+                Deletar coluna?
+              </h3>
+              <p className="mb-6 text-sm" style={{ color: theme.text.secondary }}>
+                Tem certeza que deseja deletar esta coluna? Caso tenha tickets nesta coluna, eles serão movidos para "Tickets sem coluna".
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleConfirmDelete}
+                  className="flex-1 px-4 py-2 rounded font-medium text-sm text-white transition-all"
+                  style={{
+                    backgroundColor: '#EF4444',
+                  }}
+                >
+                  Deletar
+                </button>
+                <button
+                  onClick={handleCancelDelete}
+                  className="flex-1 px-4 py-2 rounded font-medium text-sm transition-all border"
+                  style={{
+                    borderColor: theme.border.secondary,
+                    color: theme.text.secondary,
+                  }}
+                >
+                  Cancelar
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Modals */}
       <CreateBoardModal
         isOpen={isCreateBoardModalOpen}
         onClose={() => setIsCreateBoardModalOpen(false)}
         onSubmit={handleCreateBoard}
-        isLoading={boardLoading}
-      />
-
-      <AddColumnModal
-        isOpen={isAddColumnModalOpen}
-        onClose={() => setIsAddColumnModalOpen(false)}
-        onSubmit={handleCreateColumn}
         isLoading={boardLoading}
       />
     </motion.div>

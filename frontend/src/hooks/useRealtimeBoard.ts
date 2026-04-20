@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { io, Socket } from 'socket.io-client';
+import SocketManager from '@/services/socketManager';
 
 interface UseRealtimeBoardProps {
   boardId: number | null;
@@ -34,161 +34,120 @@ export function useRealtimeBoard({
   onUserJoined,
   onUserLeft,
 }: UseRealtimeBoardProps) {
-  const socketRef = useRef<Socket | null>(null);
-  const reconnectAttempts = useRef(0);
-  const maxReconnectAttempts = 5;
+  const unsubscribersRef = useRef<Array<() => void>>([]);
   const lastEventRef = useRef<{ [key: string]: number }>({});  // ✅ Deduplicação
 
   useEffect(() => {
     // Não conectar se board não foi definido ou se está desabilitado
     if (!boardId || !enabled) {
-      if (socketRef.current?.connected) {
-        socketRef.current?.disconnect();
-        socketRef.current = null;
-      }
       console.log(`⚠️  [REALTIME] Hook desabilitado: boardId=${boardId}, enabled=${enabled}`);
+      // limpar listeners
+      unsubscribersRef.current.forEach(unsubscribe => unsubscribe());
+      unsubscribersRef.current = [];
       return;
     }
 
     console.log(`🔧 [REALTIME] Inicializando hook para board ${boardId} (enabled=${enabled})`);
 
-    // Se já temos uma conexão, apenas trocar de sala
-    if (socketRef.current?.connected) {
-      console.log(`🔄 [REALTIME] Reusando conexão existente`);
-      // Sair da sala anterior
-      const prevBoardId = socketRef.current.id;
-      if (prevBoardId) {
-        socketRef.current.emit('leave-board', prevBoardId);
-      }
-      
-      // Entrar na nova sala
-      socketRef.current.emit('join-board', boardId);
-      return;
+    const socketManager = SocketManager.getInstance();
+    
+    // conectar e entrar no board
+    socketManager.joinBoard(boardId);
+
+    // registrar listeners
+    unsubscribersRef.current = [];
+
+    // card movido
+    if (onCardMoved) {
+      const unsubscribe = socketManager.on('card-moved', (data: any) => {
+        // DEDUPLICAÇÃO: Ignorar eventos duplicados dentro de 100ms
+        const eventKey = `card-moved-${data.chamadoId}-${data.columnValue}-${data.position}`;
+        const now = Date.now();
+        const lastTime = lastEventRef.current[eventKey] || 0;
+
+        if (now - lastTime < 100) {
+          console.log(`⏭️  [REALTIME] Evento duplicado ignorado para card ${data.chamadoId}`);
+          return;
+        }
+
+        lastEventRef.current[eventKey] = now;
+
+        console.log(`📌 [REALTIME] Card movido em tempo real:`, {
+          chamadoId: data.chamadoId,
+          columnValue: data.columnValue,
+          position: data.position,
+          fromServer: data.fromServer,
+          timestamp: data.timestamp,
+        });
+        onCardMoved(data);
+      });
+      unsubscribersRef.current.push(unsubscribe);
     }
 
-    // Criar nova conexão WebSocket
-    console.log(`🔌 [REALTIME] Conectando WebSocket para board ${boardId}...`);
-    console.log(`   API URL: ${process.env.NEXT_PUBLIC_API_URL}`);
-    
-    const socket = io(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000', {
-      reconnection: true,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
-      reconnectionAttempts: maxReconnectAttempts,
-      transports: ['websocket', 'polling'],
-    });
-
-    socketRef.current = socket;
-
-    // Event listeners
-    socket.on('connect', () => {
-      console.log(`✅ [REALTIME] WebSocket conectado: ${socket.id}`);
-      console.log(`   URL: ${process.env.NEXT_PUBLIC_API_URL}`);
-      reconnectAttempts.current = 0;
-      
-      // Entrar na sala do board
-      console.log(`📌 [REALTIME] Tentando entrar na sala board-${boardId}`);
-      socket.emit('join-board', boardId);
-    });
-
-    socket.on('disconnect', (reason) => {
-      console.log(`❌ [REALTIME] WebSocket desconectado: ${reason}`);
-    });
-
-    socket.on('connect_error', (error) => {
-      console.error('❌ [REALTIME] Erro ao conectar WebSocket:', error);
-      reconnectAttempts.current += 1;
-    });
-
-    // ==================== LISTENERS DE EVENTOS ====================
-
-    /**
-     * card movido entre colunas - COM DEDUPLICAÇÃO
-     */
-    socket.on('card-moved', (data) => {
-      // DEDUPLICAÇÃO: Ignorar eventos duplicados dentro de 100ms
-      const eventKey = `card-moved-${data.chamadoId}-${data.columnValue}-${data.position}`;
-      const now = Date.now();
-      const lastTime = lastEventRef.current[eventKey] || 0;
-
-      if (now - lastTime < 100) {
-        console.log(`⏭️  [REALTIME] Evento duplicado ignorado para card ${data.chamadoId}`);
-        return;
-      }
-
-      lastEventRef.current[eventKey] = now;
-
-      console.log(`📌 [REALTIME] Card movido em tempo real:`, {
-        chamadoId: data.chamadoId,
-        columnValue: data.columnValue,
-        position: data.position,
-        fromServer: data.fromServer,
-        timestamp: data.timestamp,
+    // coluna criada
+    if (onColumnCreated) {
+      const unsubscribe = socketManager.on('column-created', (column: any) => {
+        console.log(`➕ [REALTIME] Coluna criada em tempo real:`, column);
+        onColumnCreated(column);
       });
-      onCardMoved?.(data);
-    });
+      unsubscribersRef.current.push(unsubscribe);
+    }
 
-    /**
-     * Nova coluna criada
-     */
-    socket.on('column-created', (column) => {
-      console.log(`➕ [REALTIME] Coluna criada em tempo real:`, column);
-      onColumnCreated?.(column);
-    });
+    // coluna deletada
+    if (onColumnDeleted) {
+      const unsubscribe = socketManager.on('column-deleted', (data: any) => {
+        console.log(`🗑️ [REALTIME] Coluna deletada em tempo real:`, data.columnId);
+        onColumnDeleted(data.columnId);
+      });
+      unsubscribersRef.current.push(unsubscribe);
+    }
 
-    /**
-     * Coluna deletada
-     */
-    socket.on('column-deleted', (data) => {
-      console.log(`🗑️ [REALTIME] Coluna deletada em tempo real:`, data.columnId);
-      onColumnDeleted?.(data.columnId);
-    });
+    // coluna atualizada
+    if (onColumnUpdated) {
+      const unsubscribe = socketManager.on('column-updated', (column: any) => {
+        console.log(`✏️ [REALTIME] Coluna atualizada em tempo real:`, column);
+        onColumnUpdated(column);
+      });
+      unsubscribersRef.current.push(unsubscribe);
+    }
 
-    /**
-     * Coluna atualizada (nome, etc)
-     */
-    socket.on('column-updated', (column) => {
-      console.log(`✏️ [REALTIME] Coluna atualizada em tempo real:`, column);
-      onColumnUpdated?.(column);
-    });
+    // Colunas reordenadas
+    if (onColumnsReordered) {
+      const unsubscribe = socketManager.on('columns-reordered', (data: any) => {
+        console.log(`↔️ [REALTIME] Colunas reordenadas em tempo real:`, data.columns);
+        onColumnsReordered(data.columns);
+      });
+      unsubscribersRef.current.push(unsubscribe);
+    }
 
-    /**
-     * Colunas reordenadas
-     */
-    socket.on('columns-reordered', (data) => {
-      console.log(`↔️ [REALTIME] Colunas reordenadas em tempo real:`, data.columns);
-      onColumnsReordered?.(data.columns);
-    });
+    // user entrou
+    if (onUserJoined) {
+      const unsubscribe = socketManager.on('user-joined', (data: any) => {
+        console.log(`👤 [REALTIME] Usuário entrou na sala:`, data.userId);
+        onUserJoined(data);
+      });
+      unsubscribersRef.current.push(unsubscribe);
+    }
 
-    /**
-     * Outro usuário entrou na sala
-     */
-    socket.on('user-joined', (data) => {
-      console.log(`👤 [REALTIME] Usuário entrou na sala:`, data.userId);
-      onUserJoined?.(data);
-    });
+    // user saiu
+    if (onUserLeft) {
+      const unsubscribe = socketManager.on('user-left', (data: any) => {
+        console.log(`👤 [REALTIME] Usuário saiu da sala:`, data.userId);
+        onUserLeft(data);
+      });
+      unsubscribersRef.current.push(unsubscribe);
+    }
 
-    /**
-     * Outro usuário saiu da sala
-     */
-    socket.on('user-left', (data) => {
-      console.log(`👤 [REALTIME] Usuário saiu da sala:`, data.userId);
-      onUserLeft?.(data);
-    });
-
-    // Cleanup ao desmontar
+    // cleanup ao desmontar ou mudar de boardId
     return () => {
-      if (socket.connected) {
-        socket.emit('leave-board', boardId);
-        socket.disconnect();
-      }
+      console.log(`👋 [REALTIME] Limpando listeners do board ${boardId}`);
+      // Desinscrever de todos os eventos
+      unsubscribersRef.current.forEach(unsubscribe => unsubscribe());
+      unsubscribersRef.current = [];
+      // Sair do board
+      socketManager.leaveBoard();
     };
-  }, [boardId, enabled]);
-
-  return {
-    isConnected: socketRef.current?.connected ?? false,
-    socket: socketRef.current,
-  };
+  }, [boardId, enabled, onCardMoved, onColumnCreated, onColumnDeleted, onColumnUpdated, onColumnsReordered, onUserJoined, onUserLeft]);
 }
 
 export default useRealtimeBoard;
