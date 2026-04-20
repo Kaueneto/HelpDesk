@@ -10,6 +10,18 @@ interface TopicoAjuda {
   codigo: number;
   nome: string;
   ativo: boolean;
+  criadoPor?: number | null;
+  criadoEm?: string | null;
+  editadoPor?: number | null;
+  editadoEm?: string | null;
+  usuarioCriador?: {
+    id: number;
+    name: string;
+  } | null;
+  usuarioEditor?: {
+    id: number;
+    name: string;
+  } | null;
 }
 
 export default function GerenciarTopicosAjuda() {
@@ -24,7 +36,7 @@ export default function GerenciarTopicosAjuda() {
   const [loading, setLoading] = useState(false);
 
   // ordenação
-  const [ordenarPor, setOrdenarPor] = useState<'id' | 'codigo' | 'nome' | 'ativo' | null>(null);
+  const [ordenarPor, setOrdenarPor] = useState<'codigo' | 'nome' | 'ativo' | null>(null);
   const [direcaoOrdem, setDirecaoOrdem] = useState<'asc' | 'desc'>('asc');
 
   // Seleção múltipla
@@ -280,7 +292,7 @@ export default function GerenciarTopicosAjuda() {
     }
   };
 
-  const handleOrdenar = (coluna: 'id' | 'codigo' | 'nome' | 'ativo') => {
+  const handleOrdenar = (coluna: 'codigo' | 'nome' | 'ativo') => {
     if (ordenarPor === coluna) {
       if (direcaoOrdem === 'asc') {
         setDirecaoOrdem('desc');
@@ -460,26 +472,14 @@ export default function GerenciarTopicosAjuda() {
                         type="checkbox"
                         checked={todosChecados}
                         onChange={handleCheckAll}
-                        className="w-5 h-5 cursor-pointer rounded appearance-none border-1 checked:bg-blue-600 checked:border-blue-600 relative transition-colors
+                        className="w-5 h-5 cursor-pointer rounded appearance-none border checked:bg-blue-500 checked:border-blue-500 relative transition-colors
                         before:content-['✓'] before:absolute before:inset-0 before:flex before:items-center before:justify-center before:text-white before:text-sm before:font-bold before:opacity-0 checked:before:opacity-100"
                         style={{
-                          borderColor: mode === 'dark' ? '#4B5563' : '#888B95',
-                          backgroundColor: todosChecados ? '#2563EB' : theme.background.card,
-                          boxShadow: `0 0 0 1px ${mode === 'dark' ? '#4B5563' : '#888B95'}`
+                          borderColor: mode === 'dark' ? '#555555' : '#999999',
+                          backgroundColor: todosChecados ? '#3B82F6' : theme.background.card,
+                          borderWidth: '1px',
                         }}
                       />
-                    </th>
-                    <th 
-                      className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none"
-                      onClick={() => handleOrdenar('id')}
-                      style={{ color: theme.text.primary, backgroundColor: theme.background.hover }}
-                    >
-                      <div className="flex items-center gap-1">
-                        ID
-                        {ordenarPor === 'id' && (
-                          <span>{direcaoOrdem === 'asc' ? '↑' : '↓'}</span>
-                        )}
-                      </div>
                     </th>
                     <th 
                       className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none"
@@ -517,6 +517,18 @@ export default function GerenciarTopicosAjuda() {
                         )}
                       </div>
                     </th>
+                    <th 
+                      className="px-4 py-3 text-left text-sm font-semibold"
+                      style={{ color: theme.text.primary, backgroundColor: theme.background.hover }}
+                    >
+                      Criado Por
+                    </th>
+                    <th 
+                      className="px-4 py-3 text-left text-sm font-semibold"
+                      style={{ color: theme.text.primary, backgroundColor: theme.background.hover }}
+                    >
+                      Editado Por
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -526,7 +538,8 @@ export default function GerenciarTopicosAjuda() {
                       className="border-b transition-colors"
                       style={{
                         borderColor: theme.border.secondary,
-                        backgroundColor: index % 2 === 0 ? theme.background.card : theme.background.surface,
+                        backgroundColor: mode === 'dark' ? '#1a1a1a' : (index % 2 === 0 ? theme.background.card : theme.background.surface),
+                        color: mode === 'dark' ? '#f1f1f1' : theme.text.primary,
                       }}
                     >
                       <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
@@ -534,31 +547,67 @@ export default function GerenciarTopicosAjuda() {
                           type="checkbox"
                           checked={topicosSelecionados.includes(topico.id)}
                           onChange={() => handleCheckTopico(topico.id)}
-                          className="w-5 h-5 cursor-pointer rounded appearance-none border-1 checked:bg-blue-600 checked:border-blue-600 relative transition-colors
+                          className="w-5 h-5 cursor-pointer rounded appearance-none border checked:bg-blue-500 checked:border-blue-500 relative transition-colors
                           before:content-['✓'] before:absolute before:inset-0 before:flex before:items-center before:justify-center before:text-white before:text-sm before:font-bold before:opacity-0 checked:before:opacity-100"
                           style={{
-                            borderColor: mode === 'dark' ? '#4B5563' : '#888B95',
-                            backgroundColor: topicosSelecionados.includes(topico.id) ? '#2563EB' : theme.background.card,
-                            boxShadow: `0 0 0 1px ${mode === 'dark' ? '#4B5563' : '#888B95'}`
+                            borderColor: mode === 'dark' ? '#555555' : '#999999',
+                            backgroundColor: topicosSelecionados.includes(topico.id) ? '#3B82F6' : theme.background.card,
+                            borderWidth: '1px',
                           }}
                         />
                       </td>
-                      <td className="px-4 py-3 text-sm font-medium" style={{ color: theme.text.primary }}>
-                        {topico.id}
-                      </td>
-                      <td className="px-4 py-3 text-sm font-medium" style={{ color: theme.text.primary }}>
+                      <td className="px-4 py-3 text-sm font-medium" style={{ color: mode === 'dark' ? '#f1f1f1' : theme.text.primary }}>
                         {topico.codigo}
                       </td>
-                      <td className="px-4 py-3 text-sm" style={{ color: theme.text.primary }}>
+                      <td className="px-4 py-3 text-sm" style={{ color: mode === 'dark' ? '#f1f1f1' : theme.text.primary }}>
                         {topico.nome}
                       </td>
                       <td className="px-4 py-3">
-                        <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full" style={{
-                          backgroundColor: topico.ativo ? '#DCFCE7' : '#FEE2E2',
-                          color: topico.ativo ? '#15803D' : '#7F1D1D',
-                        }}>
+                        <span 
+                          className="inline-flex px-3 py-1 text-xs font-semibold rounded-lg border"
+                          style={{
+                            backgroundColor: mode === 'dark' 
+                              ? (topico.ativo ? '#0f172a' : '#0f172a')
+                              : (topico.ativo ? '#DCFCE7' : '#FEE2E2'),
+                            color: mode === 'dark'
+                              ? (topico.ativo ? '#4ade80' : '#f87171')
+                              : (topico.ativo ? '#15803D' : '#7F1D1D'),
+                            borderColor: mode === 'dark'
+                              ? (topico.ativo ? '#4ade80' : '#f87171')
+                              : (topico.ativo ? '#86efac' : '#fca5a5'),
+                            borderWidth: '1.5px',
+                          }}
+                        >
                           {topico.ativo ? 'Ativo' : 'Inativo'}
                         </span>
+                      </td>
+                      <td className="px-4 py-3 text-sm" style={{ color: mode === 'dark' ? '#f1f1f1' : theme.text.primary }}>
+                        {topico.usuarioCriador ? (
+                          <div className="flex flex-col">
+                            <span>{topico.usuarioCriador.name}</span>
+                            {topico.criadoEm && (
+                              <span style={{ color: mode === 'dark' ? '#999999' : theme.text.secondary, fontSize: '0.75rem' }}>
+                                {new Date(topico.criadoEm).toLocaleString('pt-BR')}
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <span style={{ color: mode === 'dark' ? '#666666' : theme.text.secondary }}>-</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-sm" style={{ color: mode === 'dark' ? '#f1f1f1' : theme.text.primary }}>
+                        {topico.usuarioEditor ? (
+                          <div className="flex flex-col">
+                            <span>{topico.usuarioEditor.name}</span>
+                            {topico.editadoEm && (
+                              <span style={{ color: mode === 'dark' ? '#999999' : theme.text.secondary, fontSize: '0.75rem' }}>
+                                {new Date(topico.editadoEm).toLocaleString('pt-BR')}
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <span style={{ color: mode === 'dark' ? '#666666' : theme.text.secondary }}>-</span>
+                        )}
                       </td>
                     </tr>
                   ))}

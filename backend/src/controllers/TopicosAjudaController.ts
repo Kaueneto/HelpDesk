@@ -15,9 +15,12 @@ const router = Router();
 router.get("/topicos_ajuda", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const topicosRepository = AppDataSource.getRepository(TopicosAjuda);
-    const topicos = await topicosRepository.find({
-      order: { nome: "ASC" },
-    });
+    const topicos = await topicosRepository
+      .createQueryBuilder("topico")
+      .leftJoinAndSelect("topico.usuarioCriador", "usuarioCriador")
+      .leftJoinAndSelect("topico.usuarioEditor", "usuarioEditor")
+      .orderBy("topico.nome", "ASC")
+      .getMany();
 
     return res.status(200).json(topicos);
   } catch (error) {
@@ -33,10 +36,13 @@ router.get("/topicos_ajuda/:id", verifyToken, async (req: AuthenticatedRequest, 
     const { id } = req.params;
     const topicosRepository = AppDataSource.getRepository(TopicosAjuda);
 
-    const topico = await topicosRepository.findOne({
-      where: { id: Number(id) },
-      relations: ["chamados"],
-    });
+    const topico = await topicosRepository
+      .createQueryBuilder("topico")
+      .where("topico.id = :id", { id: Number(id) })
+      .leftJoinAndSelect("topico.usuarioCriador", "usuarioCriador")
+      .leftJoinAndSelect("topico.usuarioEditor", "usuarioEditor")
+      .leftJoinAndSelect("topico.chamados", "chamados")
+      .getOne();
 
     if (!topico) {
       return res.status(404).json({ mensagem: "Tópico não encontrado" });
@@ -51,9 +57,10 @@ router.get("/topicos_ajuda/:id", verifyToken, async (req: AuthenticatedRequest, 
 });
 
 
-router.post("/topicos_ajuda", async (req: Request, res: Response) => {
+router.post("/topicos_ajuda", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { codigo, nome, ativo } = req.body;
+    const userId = req.userId;
     
     if (!codigo) {
       return res.status(400).json({ mensagem: "O código do tópico é obrigatório" });
@@ -87,15 +94,23 @@ router.post("/topicos_ajuda", async (req: Request, res: Response) => {
       codigo: Number(codigo),
       nome,
       ativo: ativo !== undefined ? ativo : true,
+      criadoPor: userId || null,
+      criadoEm: new Date(),
+      editadoPor: null,
+      editadoEm: null,
     });
 
+
     await topicosRepository.save(novoTopico);
+
+  
 
     return res.status(201).json({
       mensagem: "Tópico criado com sucesso!",
       topico: novoTopico,
     });
   } catch (error) {
+    console.error("ERRO ao criar tópico:", error);
     return res.status(500).json({
       mensagem: "Erro ao criar tópico",
     });
@@ -103,10 +118,11 @@ router.post("/topicos_ajuda", async (req: Request, res: Response) => {
 });
 
 
-router.put("/topicos_ajuda/:id", async (req: Request, res: Response) => {
+router.put("/topicos_ajuda/:id", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
     const { codigo, nome, ativo } = req.body;
+    const userId = req.userId;
 
     if (!codigo) {
       return res.status(400).json({ mensagem: "Código do tópico é obrigatório" });
@@ -151,6 +167,9 @@ router.put("/topicos_ajuda/:id", async (req: Request, res: Response) => {
     if (ativo !== undefined) {
       topico.ativo = ativo;
     }
+    topico.editadoPor = userId || null;
+    topico.editadoEm = new Date();
+    
     await topicosRepository.save(topico);
 
     return res.status(200).json({
@@ -191,10 +210,11 @@ router.delete("/topicos_ajuda/:id", async (req: Request, res: Response) => {
 });
 
 // rota para ativar/desativar tópico
-router.patch("/topicos_ajuda/:id/status", async (req: Request, res: Response) => {
+router.patch("/topicos_ajuda/:id/status", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
     const { ativo } = req.body;
+    const userId = req.userId;
 
     if (ativo === undefined) {
       return res.status(400).json({ mensagem: "Status ativo é obrigatório" });
@@ -211,6 +231,9 @@ router.patch("/topicos_ajuda/:id/status", async (req: Request, res: Response) =>
     }
 
     topico.ativo = ativo;
+    topico.editadoPor = userId || null;
+    topico.editadoEm = new Date();
+    
     await topicosRepository.save(topico);
 
     return res.status(200).json({

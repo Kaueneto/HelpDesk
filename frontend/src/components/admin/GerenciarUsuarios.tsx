@@ -731,12 +731,12 @@ export default function GerenciarUsuarios() {
                         type="checkbox"
                         checked={todosChecados}
                         onChange={handleCheckAll}
-                        className="w-4 h-4 cursor-pointer rounded appearance-none border checked:bg-blue-600 checked:border-blue-600 relative transition-colors
+                        className="w-4 h-4 cursor-pointer rounded appearance-none border checked:bg-blue-500 checked:border-blue-500 relative transition-colors
                         before:content-['✓'] before:absolute before:inset-0 before:flex before:items-center before:justify-center before:text-white before:text-xs before:font-bold before:opacity-0 checked:before:opacity-100"
                         style={{
-                          borderColor: mode === 'dark' ? '#4B5563' : '#888B95',
-                          backgroundColor: todosChecados ? '#2563EB' : theme.background.card,
-                          boxShadow: `0 0 0 1px ${mode === 'dark' ? '#4B5563' : '#888B95'}`
+                          borderColor: mode === 'dark' ? '#555555' : '#999999',
+                          backgroundColor: todosChecados ? '#3B82F6' : theme.background.card,
+                          borderWidth: '1px',
                         }}
                       />
                     </th>
@@ -857,7 +857,8 @@ export default function GerenciarUsuarios() {
                       className="border-b transition-colors"
                       style={{
                         borderColor: theme.border.secondary,
-                        backgroundColor: index % 2 === 0 ? theme.background.card : theme.background.surface,
+                        backgroundColor: mode === 'dark' ? '#1a1a1a' : (index % 2 === 0 ? theme.background.card : theme.background.surface),
+                        color: mode === 'dark' ? '#F1F1F1' : theme.text.primary,
                       }}
                     >
                       <td className="px-2 py-2" onClick={(e) => e.stopPropagation()}>
@@ -865,25 +866,25 @@ export default function GerenciarUsuarios() {
                           type="checkbox"
                           checked={usuariosSelecionados.includes(usuario.id)}
                           onChange={() => handleCheckUsuario(usuario.id)}
-                          className="w-4 h-4 cursor-pointer rounded appearance-none border checked:bg-blue-600 checked:border-blue-600 relative transition-colors
+                          className="w-4 h-4 cursor-pointer rounded appearance-none border checked:bg-blue-500 checked:border-blue-500 relative transition-colors
                           before:content-['✓'] before:absolute before:inset-0 before:flex before:items-center before:justify-center before:text-white before:text-xs before:font-bold before:opacity-0 checked:before:opacity-100"
                           style={{
-                            borderColor: mode === 'dark' ? '#4B5563' : '#888B95',
-                            backgroundColor: usuariosSelecionados.includes(usuario.id) ? '#2563EB' : theme.background.card,
-                            boxShadow: `0 0 0 1px ${mode === 'dark' ? '#4B5563' : '#888B95'}`
+                            borderColor: mode === 'dark' ? '#555555' : '#999999',
+                            backgroundColor: usuariosSelecionados.includes(usuario.id) ? '#3B82F6' : theme.background.card,
+                            borderWidth: '1px',
                           }}
                         />
                       </td>
-                      <td className="px-2 py-2 text-xs font-medium" style={{ color: theme.text.primary, whiteSpace: 'nowrap' }}>
+                      <td className="px-2 py-2 text-xs font-medium" style={{ color: mode === 'dark' ? '#b0b0b0' : theme.text.primary, whiteSpace: 'nowrap' }}>
                         {usuario.id}
                       </td>
-                      <td className="px-2 py-2 text-xs" style={{ color: theme.text.primary }}>
+                      <td className="px-2 py-2 text-xs" style={{ color: mode === 'dark' ? '#F1F1F1' : theme.text.primary }}>
                         {usuario.name}
                       </td>
-                      <td className="px-2 py-2 text-xs" style={{ color: theme.text.primary, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      <td className="px-2 py-2 text-xs" style={{ color: mode === 'dark' ? '#F1F1F1' : theme.text.primary, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {usuario.email}
                       </td>
-                      <td className="px-2 py-2 text-xs" style={{ color: theme.text.primary, whiteSpace: 'nowrap' }}>
+                      <td className="px-2 py-2 text-xs" style={{ color: mode === 'dark' ? '#F1F1F1' : theme.text.primary, whiteSpace: 'nowrap' }}>
                         {usuario.role?.nome || '-'}
                       </td>
                       <td className="px-2 py-2">
@@ -902,22 +903,22 @@ export default function GerenciarUsuarios() {
                           <span className="text-xs" style={{ color: theme.text.secondary }}>-</span>
                         )}
                       </td>
-                      <td className="px-2 py-2 text-xs" style={{ color: theme.text.primary, whiteSpace: 'nowrap' }}>
+                      <td className="px-2 py-2 text-xs" style={{ color: mode === 'dark' ? '#F1F1F1' : theme.text.primary, whiteSpace: 'nowrap' }}>
                         {departamentos.find(d => d.id.toString() === String(usuario.id_departament))?.name || '-'}
                       </td>
-                      <td className="px-2 py-2 text-xs" style={{ color: theme.text.secondary, whiteSpace: 'nowrap' }}>
+                      <td className="px-2 py-2 text-xs" style={{ color: mode === 'dark' ? '#F1F1F1' : theme.text.primary, whiteSpace: 'nowrap' }}>
                         {formatarData(usuario.createdAt)}
                       </td>
-                      <td className="px-2 py-2 text-xs" style={{ color: theme.text.secondary, whiteSpace: 'nowrap' }}>
+                      <td className="px-2 py-2 text-xs" style={{ color: mode === 'dark' ? '#F1F1F1' : theme.text.primary, whiteSpace: 'nowrap' }}>
                         {formatarData(usuario.updatedAt)}
                       </td>
-                      <td className="px-2 py-2 text-xs" style={{ color: theme.text.secondary, whiteSpace: 'nowrap' }}>
+                      <td className="px-2 py-2 text-xs" style={{ color: mode === 'dark' ? '#F1F1F1' : theme.text.primary, whiteSpace: 'nowrap' }}>
                         {usuario.tentativasLogin || 0}
                       </td>
-                      <td className="px-2 py-2 text-xs" style={{ color: theme.text.secondary, whiteSpace: 'nowrap' }}>
+                      <td className="px-2 py-2 text-xs" style={{ color: mode === 'dark' ? '#F1F1F1' : theme.text.primary, whiteSpace: 'nowrap' }}>
                         {usuario.dataInativacao ? formatarData(usuario.dataInativacao) : '-'}
                       </td>
-                      <td className="px-2 py-2 text-xs" style={{ color: theme.text.secondary }}>
+                      <td className="px-2 py-2 text-xs" style={{ color: mode === 'dark' ? '#F1F1F1' : theme.text.primary, whiteSpace: 'nowrap' }}>
                         {usuario.motivoInativacao ? usuario.motivoInativacao.substring(0, 20) + (usuario.motivoInativacao.length > 20 ? '...' : '') : '-'}
                       </td>
                     </tr>

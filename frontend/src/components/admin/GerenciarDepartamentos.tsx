@@ -24,7 +24,7 @@ export default function GerenciarDepartamentos() {
   const [loading, setLoading] = useState(false);
 
   // ordenação
-  const [ordenarPor, setOrdenarPor] = useState<'id' | 'codigo' | 'name' | 'ativo' | null>(null);
+  const [ordenarPor, setOrdenarPor] = useState<'codigo' | 'name' | 'ativo' | null>(null);
   const [direcaoOrdem, setDirecaoOrdem] = useState<'asc' | 'desc'>('asc');
 
   // Seleção múltipla
@@ -279,7 +279,7 @@ export default function GerenciarDepartamentos() {
     }
   };
 
-  const handleOrdenar = (coluna: 'id' | 'codigo' | 'name' | 'ativo') => {
+  const handleOrdenar = (coluna: 'codigo' | 'name' | 'ativo') => {
     if (ordenarPor === coluna) {
       if (direcaoOrdem === 'asc') {
         setDirecaoOrdem('desc');
@@ -459,26 +459,14 @@ export default function GerenciarDepartamentos() {
                         type="checkbox"
                         checked={todosChecados}
                         onChange={handleCheckAll}
-                        className="w-5 h-5 cursor-pointer rounded appearance-none border checked:bg-blue-600 checked:border-blue-600 relative transition-colors
+                        className="w-5 h-5 cursor-pointer rounded appearance-none border checked:bg-blue-500 checked:border-blue-500 relative transition-colors
                         before:content-['✓'] before:absolute before:inset-0 before:flex before:items-center before:justify-center before:text-white before:text-sm before:font-bold before:opacity-0 checked:before:opacity-100"
                         style={{
-                          borderColor: mode === 'dark' ? '#4B5563' : '#888B95',
-                          backgroundColor: todosChecados ? '#2563EB' : theme.background.card,
-                          boxShadow: `0 0 0 1px ${mode === 'dark' ? '#4B5563' : '#888B95'}`
+                          borderColor: mode === 'dark' ? '#555555' : '#999999',
+                          backgroundColor: todosChecados ? '#3B82F6' : theme.background.card,
+                          borderWidth: '1px',
                         }}
                       />
-                    </th>
-                    <th 
-                      className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none"
-                      onClick={() => handleOrdenar('id')}
-                      style={{ color: theme.text.primary, backgroundColor: theme.background.hover }}
-                    >
-                      <div className="flex items-center gap-1">
-                        ID
-                        {ordenarPor === 'id' && (
-                          <span>{direcaoOrdem === 'asc' ? '↑' : '↓'}</span>
-                        )}
-                      </div>
                     </th>
                     <th 
                       className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none"
@@ -525,7 +513,8 @@ export default function GerenciarDepartamentos() {
                       className="border-b transition-colors"
                       style={{
                         borderColor: theme.border.secondary,
-                        backgroundColor: index % 2 === 0 ? theme.background.card : theme.background.surface,
+                        backgroundColor: mode === 'dark' ? '#1a1a1a' : (index % 2 === 0 ? theme.background.card : theme.background.surface),
+                        color: mode === 'dark' ? '#f1f1f1' : theme.text.primary,
                       }}
                     >
                       <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
@@ -533,29 +522,37 @@ export default function GerenciarDepartamentos() {
                           type="checkbox"
                           checked={departamentosSelecionados.includes(departamento.id)}
                           onChange={() => handleCheckDepartamento(departamento.id)}
-                          className="w-5 h-5 cursor-pointer rounded appearance-none border checked:bg-blue-600 checked:border-blue-600 relative
+                          className="w-5 h-5 cursor-pointer rounded appearance-none border checked:bg-blue-500 checked:border-blue-500 relative transition-colors
                           before:content-['✓'] before:absolute before:inset-0 before:flex before:items-center before:justify-center before:text-white before:text-sm before:font-bold before:opacity-0 checked:before:opacity-100"
                           style={{
-                            borderColor: mode === 'dark' ? '#4B5563' : '#888B95',
-                            backgroundColor: departamentosSelecionados.includes(departamento.id) ? '#2563EB' : theme.background.card,
-                            boxShadow: `0 0 0 1px ${mode === 'dark' ? '#4B5563' : '#888B95'}`
+                            borderColor: mode === 'dark' ? '#555555' : '#999999',
+                            backgroundColor: departamentosSelecionados.includes(departamento.id) ? '#3B82F6' : theme.background.card,
+                            borderWidth: '1px',
                           }}
                         />
                       </td>
-                      <td className="px-4 py-3 text-sm font-medium" style={{ color: theme.text.primary }}>
-                        {departamento.id}
-                      </td>
-                      <td className="px-4 py-3 text-sm font-medium" style={{ color: theme.text.primary }}>
+                      <td className="px-4 py-3 text-sm font-medium\" style={{ color: mode === 'dark' ? '#f1f1f1' : theme.text.primary }}>
                         {departamento.codigo}
                       </td>
-                      <td className="px-4 py-3 text-sm" style={{ color: theme.text.primary }}>
+                      <td className="px-4 py-3 text-sm" style={{ color: mode === 'dark' ? '#f1f1f1' : theme.text.primary }}>
                         {departamento.name}
                       </td>
                       <td className="px-4 py-3">
-                        <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full" style={{
-                          backgroundColor: departamento.ativo ? '#DCFCE7' : '#FEE2E2',
-                          color: departamento.ativo ? '#15803D' : '#7F1D1D',
-                        }}>
+                        <span 
+                          className="inline-flex px-3 py-1 text-xs font-semibold rounded-lg border"
+                          style={{
+                            backgroundColor: mode === 'dark' 
+                              ? (departamento.ativo ? '#0f172a' : '#0f172a')
+                              : (departamento.ativo ? '#DCFCE7' : '#FEE2E2'),
+                            color: mode === 'dark'
+                              ? (departamento.ativo ? '#4ade80' : '#f87171')
+                              : (departamento.ativo ? '#15803D' : '#7F1D1D'),
+                            borderColor: mode === 'dark'
+                              ? (departamento.ativo ? '#4ade80' : '#f87171')
+                              : (departamento.ativo ? '#86efac' : '#fca5a5'),
+                            borderWidth: '1.5px',
+                          }}
+                        >
                           {departamento.ativo ? 'Ativo' : 'Inativo'}
                         </span>
                       </td>
