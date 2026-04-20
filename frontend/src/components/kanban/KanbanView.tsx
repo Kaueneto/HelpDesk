@@ -15,7 +15,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import Select from 'react-select';
 import toast from 'react-hot-toast';
-import { FiRefreshCw } from 'react-icons/fi';
+import { FiRefreshCw, FiPlus } from 'react-icons/fi';
 import { useTheme } from '@/contexts/ThemeContext';
 import KanbanColumn from './KanbanColumn';
 import TicketCard from './TicketCard';
@@ -1170,14 +1170,14 @@ const KanbanView = ({
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setIsCreateBoardModalOpen(true)}
-                className="p-1.5 rounded-md transition-all duration-200 hover:opacity-80"
+                className="p-1.5 rounded-md transition-all duration-200 hover:opacity-80 flex items-center justify-center shadow-sm"
                 style={{
                   backgroundColor: theme.background.hover,
                   color: theme.brand.primary,
                 }}
-                title="Criar novo quadro personalizado"
+                title="Criar novo quadro"
               >
-                <span className="text-lg font-bold">+</span>
+                <FiPlus className="w-4.5 h-4.5" strokeWidth={3} />
               </motion.button>
             </div>
           </div>
