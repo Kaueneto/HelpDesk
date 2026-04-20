@@ -1,11 +1,12 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 import { MdEmail } from 'react-icons/md';
 import { useRouter } from 'next/navigation';
 import api from '@/services/api';
+import SocketManager from '@/services/socketManager';
 import ModalRedirecionarChamado from '@/app/admin/Modal/RedirecionarChamado';
 import ModalAssumirChamado from '@/app/admin/Modal/AssumirChamado';
 import ModalMarcarResolvido from '@/app/admin/Modal/MarcarResolvido';
@@ -118,6 +119,7 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
   const [usuarioLogadoId, setUsuarioLogadoId] = useState<number | null>(null);
   const [anexosResposta, setAnexosResposta] = useState<File[]>([]);
   const [isDraggingResposta, setIsDraggingResposta] = useState(false);
+
   // Estado do modal de redirecionamento
   const [modalRedirecionarAberto, setModalRedirecionarAberto] = useState(false);
   // Estado do modal de assumir chamado
@@ -136,6 +138,9 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
   const [animandoEntrada, setAnimandoEntrada] = useState(true);
   // origem do transform (ex: '30% 20%') para efeito de expandir a partir do clique
   const [transformOrigin, setTransformOrigin] = useState<string | undefined>(undefined);
+  // Ref para rastrear se listeners já foram registrados
+  const listenersRegistradosRef = useRef(false);
+  const socketRef = useRef<any>(null);
 
   useEffect(() => {
     // só  carregar dados se estiver autenticado
@@ -146,35 +151,57 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
     carregarUsuarioLogado();
   }, [chamadoId, isAuthenticated, authLoading]);
 
-  // Auto-atualização do chat a cada 5 segundos
+  // autto-atualização do chat via WebSocket (sem polling)
   useEffect(() => {
-    // só atualiza se estiver autenticado, na aba de detalhes e não estiver carregando
-    if (!isAuthenticated || abaAtiva !== 'detalhes' || loading) return;
-
-    const intervalo = setInterval(() => {
-      carregarMensagensEHistorico();
-    }, 5000); // 5 segundos
-
-    // Limpa o intervalo quando o componente é desmontado ou quando muda de aba
-    return () => clearInterval(intervalo);
-  }, [chamadoId, abaAtiva, loading, isAuthenticated]);
-
-  const carregarMensagensEHistorico = async () => {
-    if (!isAuthenticated) return; // Proteção adicional
+    console.log('[WEBSOCKET] Setup iniciado', { chamadoId, isAuthenticated });
     
-    try {
-      const [mensagensRes, historicoRes] = await Promise.all([
-        api.get(`/chamados/${chamadoId}/mensagens`),
-        api.get(`/chamados/${chamadoId}/historico`),
-      ]);
-
-      setMensagens(mensagensRes.data);
-      setHistorico(historicoRes.data);
-    } catch (error) {
-
-      // nao mostra alert para nao interromper o usuario
+    if (!isAuthenticated || !chamadoId) {
+      console.log('[WEBSOCKET] Saindo cedo');
+      return;
     }
-  };
+
+    const socketManager = SocketManager.getInstance();
+    const status = socketManager.getStatus();
+    console.log('[WEBSOCKET] Status atual do socket:', status);
+    
+    // entrar na sala via manager (ele trata reconexão automaticamente)
+    socketManager.joinChamado(Number(chamadoId));
+    console.log('[WEBSOCKET] joinChamado chamado');
+
+    // registrar listeners via manager (não direto no socket)
+    const unsubMsg = socketManager.on('msg-new', (data: any) => {
+      console.log('[msg-new] Evento recebido via manager:', data);
+      
+      // sempre recarregar das APIs para garantir assinatura de anexos e sync perfeito
+      carregarDados(true);
+      
+      // rola o chat para o fim assim que a mensagem chegar
+      setTimeout(() => {
+        const chatContainer = document.querySelector('.overflow-y-auto.max-h-125');
+        if (chatContainer) chatContainer.scrollTop = chatContainer.scrollHeight;
+      }, 500);
+    });
+
+    const unsubHistorico = socketManager.on('history-new', (data: any) => {
+      console.log('[📜 history-new] Evento recebido via manager:', data);
+      carregarDados(true);
+    });
+
+    // listener de teste para diagnosticar
+    const unsubTest = socketManager.on('test-event', (data: any) => {
+      console.log('[🧪 test-event] Evento de teste recebido! Sistema de WebSocket está funcionando:', data);
+    });
+
+    console.log('[WEBSOCKET] Listeners registrados (msg-new, history-new, test-event)');
+
+    return () => {
+      console.log('[CLEANUP] Saindo da sala e removendo listeners:', chamadoId);
+      unsubMsg();
+      unsubHistorico();
+      unsubTest();
+      socketManager.leaveChamado(Number(chamadoId));
+    };
+  }, [chamadoId, isAuthenticated]);
 
   const carregarUsuarioLogado = () => {
     // obter id do usuário do contexto de autenticação
@@ -183,10 +210,10 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
     }
   };
 
-  const carregarDados = async () => {
+  const carregarDados = async (silent = false) => {
     if (!isAuthenticated) return; // protecao adicional
     
-    setLoading(true);
+    if (!silent) setLoading(true);
     try {
       const [chamadoRes, mensagensRes, historicoRes] = await Promise.all([
         api.get(`/chamados/${chamadoId}`),
@@ -214,7 +241,7 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
         },
       });
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
@@ -336,10 +363,27 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
 
     setEnviandoMensagem(true);
     try {
-      // Primeiro, criar a mensagem
+      console.log(`[ENVIAR MENSAGEM] Iniciando envio para chamado ${chamadoId}`);
+
       const responseMensagem = await api.post(`/chamados/${chamadoId}/mensagens`, {
         mensagem: novaMensagem,
       });
+
+      console.log(`[ENVIAR MENSAGEM] Resposta recebida do API:`, responseMensagem.data);
+
+      // add a mensagem imediatamente após o servidor confirmar
+      if (responseMensagem.data) {
+        const novaMsg = responseMensagem.data.mensagem || responseMensagem.data;
+        setMensagens(prev => {
+          if (prev.some(m => m.id === novaMsg.id)) return prev;
+          return [...prev, novaMsg];
+        });
+
+        setTimeout(() => {
+          const chatContainer = document.querySelector('.overflow-y-auto.max-h-125');
+          if (chatContainer) chatContainer.scrollTop = chatContainer.scrollHeight;
+        }, 100);
+      }
 
       // Atualiza o chamado com o objeto atualizado retornado pelo backend
       if (responseMensagem.data.chamado) {
@@ -347,6 +391,7 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
       }
 
       const mensagemId = responseMensagem.data.mensagem?.id || responseMensagem.data.id;
+      console.log(`[ENVIAR MENSAGEM] ID da mensagem: ${mensagemId}`);
 
       // Se houver anexos, fazer upload vinculado à mensagem
       if (anexosResposta.length > 0 && mensagemId) {
@@ -393,8 +438,9 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
 
       setNovaMensagem('');
       setAnexosResposta([]);
-      await carregarMensagensEHistorico();
-      
+
+      carregarDados(true);
+
       toast.success('Resposta enviada com sucesso!', {
         style: {
           background: '#fff',

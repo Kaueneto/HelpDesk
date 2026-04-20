@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import api from '@/services/api';
+import SocketManager from '@/services/socketManager';
 import ModalEditarChamadoUsuario from './ModalEditarChamadoUsuario';
 import ModalConfirmarReabertura from './ModalConfirmarReabertura';
 
@@ -25,6 +26,8 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
   const [modalConfirmarReaberturaAberto, setModalConfirmarReaberturaAberto] = useState(false);
   const [anexosCarregados, setAnexosCarregados] = useState(false);
 
+  const listenersRegistradosRef = useRef(false);
+
   useEffect(() => {
     buscarMensagens(chamado.id);
     buscarHistorico(chamado.id);
@@ -32,27 +35,65 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
     carregarAnexosDescricao(chamado.id);
   }, [chamado.id]);
 
-  // auto-atualização do chat a cada 5 segundos
+  // auto-atualização do chat via WebSocket (sem polling)
   useEffect(() => {
-    // Só atualiza se estiver na aba de detalhes e não estiver enviando resposta
-    if (detalheTab !== 'detalhes' || submittingResposta) return;
+    console.log('[WEBSOCKET] Setup iniciado', { chamadoId: chamado?.id });
+    
+    if (!chamado?.id) {
+      console.log('[WEBSOCKET] Saindo cedo');
+      return;
+    }
 
-    const intervalo = setInterval(() => {
-      carregarMensagensEHistorico();
-    }, 5000); // 5 segundos
+    const socketManager = SocketManager.getInstance();
+    const status = socketManager.getStatus();
+    console.log('[WEBSOCKET] Status atual do socket:', status);
+    
+    // entrar na sala via manager (ele trata reconexão automaticamente)
+    socketManager.joinChamado(Number(chamado.id));
+    console.log('[WEBSOCKET] joinChamado chamado');
 
-    // limpa o intervalo quando o componente é desmontado ou quando muda de aba
-    return () => clearInterval(intervalo);
-  }, [chamado.id, detalheTab, submittingResposta]);
-  const buscarMensagens = async (chamadoId: number) => {
-    setLoadingMensagens(true);
+    // registrar listeners via manager (não direto no socket)
+    const unsubMsg = socketManager.on('msg-new', (data: any) => {
+      console.log('[✉️ msg-new] Evento recebido via manager:', data);
+      // Sempre recarregar das APIs para garantir assinatura de anexos e sync perfeito
+      buscarMensagens(chamado.id, true);
+      
+      // rola o chat para o fim assim que a mensagem chegar
+      setTimeout(() => {
+        const chatContainer = document.getElementById('chat-messages-container') || document.querySelector('.overflow-y-auto');
+        if (chatContainer) chatContainer.scrollTop = chatContainer.scrollHeight;
+      }, 500);
+    });
+
+    const unsubHistorico = socketManager.on('history-new', (data: any) => {
+      console.log('[📜 history-new] Evento recebido via manager:', data);
+      buscarHistorico(chamado.id);
+    });
+
+    // Listener de teste para diagnosticar
+    const unsubTest = socketManager.on('test-event', (data: any) => {
+      console.log('[🧪 test-event] Evento de teste recebido! Sistema de WebSocket está funcionando:', data);
+    });
+
+    console.log('[WEBSOCKET]✅✅✅✅Listeners registrados (msg-new, history-new, test-event)');
+
+    return () => {
+      console.log('[CLEANUP] Saindo da sala e removendo listeners:', chamado.id);
+      unsubMsg();
+      unsubHistorico();
+      unsubTest();
+      socketManager.leaveChamado(Number(chamado.id));
+    };
+  }, [chamado?.id]);
+  const buscarMensagens = async (chamadoId: number, silent = false) => {
+    if (!silent) setLoadingMensagens(true);
     try {
       const response = await api.get(`/chamados/${chamadoId}/mensagens`);
       setMensagens(response.data);
     } catch (error) {
     
     } finally {
-      setLoadingMensagens(false);
+      if (!silent) setLoadingMensagens(false);
     }
   };
 
@@ -62,25 +103,6 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
       setHistorico(response.data);
     } catch (error) {
       
-    }
-  };
-
- const carregarMensagensEHistorico = async () => {
-    try {
-      const [mensagensRes, historicoRes, chamadoRes] = await Promise.all([
-        api.get(`/chamados/${chamado.id}/mensagens`),
-        api.get(`/chamados/${chamado.id}/historico`),
-        api.get(`/chamados/${chamado.id}`),
-      ]);
-
-      setMensagens(mensagensRes.data);
-      setHistorico(historicoRes.data);
-      setChamadoAtualizado(chamadoRes.data);
-      
-      // Anexos iniciais só carregam uma vez
-    } catch (error) {
-   
-      // nao mostra alert para nao interromper o usuario
     }
   };
 
@@ -122,15 +144,30 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
     setErrorMessage('');
 
     try {
+      console.log(`\n[ENVIAR MENSAGEM] Iniciando envio para chamado ${chamado.id}`);
 
-      
       const response = await api.post(`/chamados/${chamado.id}/mensagens`, {
         mensagem: novaMensagem,
       });
 
+      console.log(`✅ [ENVIAR MENSAGEM] Resposta recebida do API:`, response.data);
    
       const mensagemId = response.data.mensagem?.id || response.data.id;
-  
+      console.log(`✅ [ENVIAR MENSAGEM] ID da mensagem: ${mensagemId}`);
+      
+      // Adiciona a mensagem imediatamente após o servidor confirmar (mesmo que websocket falhe para o dono)
+      if (response.data) {
+        const novaMsg = response.data.mensagem || response.data;
+        setMensagens(prev => {
+          if (prev.some(m => m.id === novaMsg.id)) return prev;
+          return [...prev, novaMsg];
+        });
+        
+        setTimeout(() => {
+          const chatContainer = document.getElementById('chat-messages-container');
+          if (chatContainer) chatContainer.scrollTop = chatContainer.scrollHeight;
+        }, 100);
+      }
 
       if (anexosResposta.length > 0 && mensagemId) {
       
@@ -154,7 +191,14 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
 
       setNovaMensagem('');
       setAnexosResposta([]);
-      await carregarMensagensEHistorico();
+
+      // removido o recarregamento total (buscarMensagens) com loading para evitar piscar a tela.
+      // o frontend é atualizado via array setMensagens!
+      // se houverem anexos (e mensagemId), recarrega silenciosamente
+      if (anexosResposta.length > 0) {
+        buscarMensagens(chamado.id, true);
+      }
+        
     } catch (error: any) {
       const mensagemErro = error.response?.data?.mensagem || 'Erro ao publicar resposta.';
       setErrorMessage(mensagemErro);
@@ -347,7 +391,7 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
             ) : (
               <>
                 {/* container de mensagens com scroll */}
-             <div className="flex-[1_0_200px] overflow-y-auto px-2 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-3 md:py-4 space-y-3 sm:space-y-4 bg-gray-50">
+               <div id="chat-messages-container" className="flex-[1_0_200px] overflow-y-auto px-2 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-3 md:py-4 space-y-3 sm:space-y-4 bg-gray-50">
                   {/* 1° mensagem do usuário */}
                   <div className="flex justify-end">
                     <div className="max-w-[85%] sm:max-w-[75%] md:max-w-[65%] bg-blue-50 border-r-4 border-blue-500 rounded-lg p-2 sm:p-3 md:p-4 shadow-sm">

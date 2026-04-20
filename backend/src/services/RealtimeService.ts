@@ -4,6 +4,11 @@ import { Server as SocketIOServer, Socket } from "socket.io";
 export class RealtimeService {
   private io: SocketIOServer;
   private static instance: RealtimeService;
+  
+  // rastrear usuários em salas de chamados (para evitar fantasmas)
+  private chamadoRooms: Map<string, Set<string>> = new Map();
+  // rastrear heartbeat de sockets
+  private heartbeatIntervals: Map<string, NodeJS.Timeout> = new Map();
 
   private constructor(httpServer: HTTPServer) {
     this.io = new SocketIOServer(httpServer, {
@@ -12,6 +17,8 @@ export class RealtimeService {
         credentials: true,
       },
       transports: ["websocket", "polling"],
+      pingInterval: 25000, // ping a cada 25 segundos
+      pingTimeout: 20000,  // timeout se não houver pong em 20 segundos
     });
 
     this.setupEventListeners();
@@ -37,6 +44,8 @@ export class RealtimeService {
       
       // rastrear qual board este socket está observando
       let currentBoardId: number | null = null;
+      // rastrear qual chamado este socket está observando
+      let currentChamadoId: number | null = null;
 
       /**
        * Entrar em sala de um board específico
@@ -84,9 +93,125 @@ export class RealtimeService {
         }
       });
 
+      //entrar em sala de um chamado pra receber msgs em tempo real
+      socket.on("join-chamado", (chamadoId: number, ack: (response: any) => void) => {
+        console.log(`\n`);
+        console.log(`🔌 ═══════════════════════════════════════════════════`);
+        console.log(`🔌 EVENTO: join-chamado`);
+        console.log(`🔌 ═══════════════════════════════════════════════════`);
+        console.log(`   Socket ID: ${socket.id}`);
+        console.log(`   Chamado ID: ${chamadoId}`);
+        console.log(`   ACK presente? ${typeof ack === 'function' ? 'SIM ✅✅✅' : 'NÃO ❌❌❌'}`);
+        
+        const room = `chamado-${chamadoId}`;
+        
+        // se estava observando outro chamado, sair primeiro
+        if (currentChamadoId !== null && currentChamadoId !== chamadoId) {
+          const oldRoom = `chamado-${currentChamadoId}`;
+          socket.leave(oldRoom);
+          
+          // Remover do mapa de rastreamento
+          if (this.chamadoRooms.has(oldRoom)) {
+            this.chamadoRooms.get(oldRoom)?.delete(socket.id);
+          }
+          
+          console.log(`   → Cliente saiu de ${oldRoom}`);
+          
+          // notificar se users saiu
+          this.io.to(oldRoom).emit("user-left-chamado", {
+            socketId: socket.id,
+            chamadoId: currentChamadoId,
+            usuariosNaSala: this.getUsuariosNaChamado(currentChamadoId),
+            timestamp: new Date(),
+          });
+        }
+        
+        // entrar na nova sala
+        socket.join(room);
+        currentChamadoId = chamadoId;
+        
+        // rastrear user
+        if (!this.chamadoRooms.has(room)) {
+          this.chamadoRooms.set(room, new Set());
+        }
+        this.chamadoRooms.get(room)?.add(socket.id);
+        
+        console.log(`✅ Socket adicionado à sala: ${room}`);
+        console.log(`   Total na sala: ${this.chamadoRooms.get(room)?.size}`);
+        
+        // CHAMAR ACK (acknowledgement) para confirmar entrada
+        try {
+          if (typeof ack === 'function') {
+            console.log(`Enviando ACK de sucesso...`);
+            ack({ success: true, room, socketId: socket.id });
+            console.log(`✅✅✅✅ ACK enviado com sucesso!`);
+          } else {
+            console.warn(`⚠️ ACK não é função!`);
+          }
+        } catch (err) {
+          console.error(`❌❌❌ Erro ao chamar ACK:`, err);
+        }
+        
+        // notificar outros clientes //teste 
+        this.io.to(room).emit("user-joined-chamado", {
+          socketId: socket.id,
+          chamadoId,
+          usuariosNaSala: this.getUsuariosNaChamado(chamadoId),
+          timestamp: new Date(),
+        });
+
+        //  emitir um evento de teste 2 segundos depois para validar comunicação
+        setTimeout(() => {
+          console.log(`\n🧪 TEST: Enviando evento de teste para a sala ${room}`);
+          this.io.to(room).emit("test-event", {
+            message: "Este é um evento de teste para validar que eventos customizados funcionam",
+            timestamp: new Date(),
+          });
+          console.log(`✅✅✅✅ TEST: Evento de teste enviado\n`);
+        }, 2000);
+        
+        console.log(`🔌 ═══════════════════════════════════════════════════\n`);
+      });
+
+    //sair da sala de um chamado
+      socket.on("leave-chamado", (chamadoId: number) => {
+        const room = `chamado-${chamadoId}`;
+        if (currentChamadoId === chamadoId) {
+          socket.leave(room);
+          
+          // Remover do mapa de rastreamento
+          if (this.chamadoRooms.has(room)) {
+            this.chamadoRooms.get(room)?.delete(socket.id);
+            // Se sala ficou vazia, remover do mapa
+            if (this.chamadoRooms.get(room)?.size === 0) {
+              this.chamadoRooms.delete(room);
+              console.log(`🗑️ Sala ${room} removida (vazia)`);
+            }
+          }
+          
+          currentChamadoId = null;
+          console.log(`Cliente ${socket.id} saiu da sala ${room}`);
+
+          // Notificar
+          this.io.to(room).emit("user-left-chamado", {
+            socketId: socket.id,
+            chamadoId,
+            usuariosNaSala: this.getUsuariosNaChamado(chamadoId),
+            timestamp: new Date(),
+          });
+        }
+      });
+
       socket.on("disconnect", () => {
         console.log(`❌ Cliente desconectado: ${socket.id}`);
-        // a desconexão automática remove o socket de todas as salas
+        
+        // Limpar heartbeat
+        if (this.heartbeatIntervals.has(socket.id)) {
+          clearInterval(this.heartbeatIntervals.get(socket.id));
+          this.heartbeatIntervals.delete(socket.id);
+        }
+        
+        // Notificar saída de board
         if (currentBoardId !== null) {
           const room = `board-${currentBoardId}`;
           this.io.to(room).emit("user-left", {
@@ -94,15 +219,107 @@ export class RealtimeService {
             boardId: currentBoardId,
             timestamp: new Date(),
           });
-          currentBoardId = null;
+        }
+        
+        // Notificar saída de chamado
+        if (currentChamadoId !== null) {
+          const room = `chamado-${currentChamadoId}`;
+          if (this.chamadoRooms.has(room)) {
+            this.chamadoRooms.get(room)?.delete(socket.id);
+            if (this.chamadoRooms.get(room)?.size === 0) {
+              this.chamadoRooms.delete(room);
+            }
+          }
+          
+          this.io.to(room).emit("user-left-chamado", {
+            socketId: socket.id,
+            chamadoId: currentChamadoId,
+            usuariosNaSala: this.getUsuariosNaChamado(currentChamadoId),
+            timestamp: new Date(),
+          });
         }
       });
     });
   }
 
-  /**
-   * Notificar movimento de card em tempo real para todos os clientes do board
-   */
+//notificar uma nova mensagem no chamado
+  public notifyNovaMsg(chamadoId: number, mensagem: any) {
+    const room = `chamado-${chamadoId}`;
+    const roomClients = this.io.sockets.adapter.rooms.get(room);
+    const clientCount = roomClients ? roomClients.size : 0;
+    
+    console.log(`\n`);
+    console.log(`💬 ═══════════════════════════════════════════════════`);
+    console.log(`💬 EMITINDO NOVA MENSAGEM`);
+    console.log(`💬 ═══════════════════════════════════════════════════`);
+    console.log(`   Sala: ${room}`);
+    console.log(`   Mensagem ID: ${mensagem.id}`);
+    console.log(`   Texto: "${mensagem.mensagem}"`);
+    console.log(`   Usuário: ${mensagem.usuario?.name || 'Desconhecido'}`);
+    console.log(`   Clientes na sala: ${clientCount}`);
+    
+    if (clientCount > 0) {
+      console.log(`   Socket IDs: ${Array.from(roomClients!).join(', ')}`);
+    } else {
+      console.warn(`   ⚠️ ATENÇÃO: Nenhum cliente na sala!`);
+    }
+    
+    const eventData = {
+      mensagem,
+      chamadoId,
+      timestamp: new Date(),
+    };
+    
+    console.log(`📤 Emitindo para ${clientCount} cliente(s)...`);
+    console.log(`   Dados do evento:`, JSON.stringify(eventData, null, 2));
+    
+    this.io.to(room).emit("msg-new", eventData);
+    
+    console.log(`✅ Evento 'msg-new' emitido com sucesso para sala ${room}`);
+    console.log(`💬 ═══════════════════════════════════════════════════\n`);
+  }
+
+ //notificar novo historico no chamdo
+  public notifyNovoHistorico(chamadoId: number, historico: any) {
+    const room = `chamado-${chamadoId}`;
+    const roomClients = this.io.sockets.adapter.rooms.get(room);
+    const clientCount = roomClients ? roomClients.size : 0;
+    
+    console.log(`📝 Notificando novo histórico na sala ${room}`);
+    console.log(`   Histórico ID: ${historico.id}`);
+    console.log(`   Clientes conectados: ${clientCount}`);
+    
+    if (clientCount > 0) {
+      console.log(`   IDs: ${Array.from(roomClients!).join(', ')}`);
+    }
+    
+    this.io.to(room).emit("history-new", {
+      historico,
+      chamadoId,
+      timestamp: new Date(),
+    });
+    
+    console.log(`✅✅✅ evento 'history-new' emitido para ${clientCount} clientes`);
+  }
+
+  private getUsuariosNaChamado(chamadoId: number): string[] {
+    const room = `chamado-${chamadoId}`;
+    if (this.chamadoRooms.has(room)) {
+      return Array.from(this.chamadoRooms.get(room) || []);
+    }
+    return [];
+  }
+
+
+  public cleanupEmptyRooms(): void {
+    const now = Date.now();
+    this.chamadoRooms.forEach((usuarios, room) => {
+      if (usuarios.size === 0) {
+        this.chamadoRooms.delete(room);
+        console.log(`🧹 Sala ${room} removida (cleanup)`);
+      }
+    });
+  }
   public notifyCardMoved(boardId: number, data: {
     chamadoId: number;
     columnValue: number | string;

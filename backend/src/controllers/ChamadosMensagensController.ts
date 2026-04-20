@@ -7,6 +7,7 @@ import { Chamados } from "../entities/Chamados";
 import { Users } from "../entities/Users";
 import { supabase, SUPABASE_BUCKET } from "../config/supabase";
 import { verifyToken } from "../Middleware/AuthMiddleware";
+import RealtimeService from "../services/RealtimeService";
 
 interface AuthenticatedRequest extends Request {
   user?: Users;
@@ -25,7 +26,6 @@ router.post("/chamados/:id/mensagens", verifyToken, async (req: AuthenticatedReq
     const { mensagem } = req.body;
     const usuarioId = req.userId;
     const roleId = req.userRoleId;
-
 
     const mensagensRepository = AppDataSource.getRepository(ChamadoMensagens);
     const historicoRepository = AppDataSource.getRepository(ChamadoHistorico);
@@ -51,7 +51,6 @@ router.post("/chamados/:id/mensagens", verifyToken, async (req: AuthenticatedReq
       });
     }
 
-
     const novaMensagem = mensagensRepository.create({
       mensagem,
       usuario: { id: usuarioId },
@@ -60,7 +59,18 @@ router.post("/chamados/:id/mensagens", verifyToken, async (req: AuthenticatedReq
 
     await mensagensRepository.save(novaMensagem);
 
-    await historicoRepository.save({
+    // buscar mensagem completa com dados do usuário para emitir via WebSocket
+    const mensagemComUsuario = await AppDataSource.getRepository(ChamadoMensagens)
+      .createQueryBuilder("mensagem")
+      .leftJoinAndSelect("mensagem.usuario", "usuario")
+      .where("mensagem.id = :id", { id: novaMensagem.id })
+      .getOne();
+
+    console.log(`✅ [POST MSG] Mensagem salva - ID: ${novaMensagem.id}, Chamado: ${id}`);
+    console.log(`✅ [POST MSG] Mensagem com usuário:`, mensagemComUsuario);
+
+    // Criar histórico
+    const novoHistorico = await historicoRepository.save({
       chamado: { id: Number(id) },
       usuario: { id: usuarioId },
       acao: "Mensagem enviada",
@@ -68,9 +78,68 @@ router.post("/chamados/:id/mensagens", verifyToken, async (req: AuthenticatedReq
       dataMov: new Date(),
     });
 
-    return res.status(201).json(novaMensagem);
-  } catch (error) {
+    // buscar histórico completo com dados do usuário
+    const historicoComUsuario = await AppDataSource.getRepository(ChamadoHistorico)
+      .createQueryBuilder("historico")
+      .leftJoinAndSelect("historico.usuario", "usuario")
+      .where("historico.id = :id", { id: novoHistorico.id })
+      .getOne();
 
+    console.log(`✅ [POST MSG] Histórico salvo - ID: ${novoHistorico.id}`);
+    console.log(`✅ [POST MSG] Histórico com usuário:`, historicoComUsuario);
+
+    // emitir eventos WebSocket para todos os clientes na sala do chamado
+    try {
+      const realtimeService = RealtimeService.getInstance();
+      console.log(`\n`);
+      console.log(`📡 ═══════════════════════════════════════════════════`);
+      console.log(`📡 [POST MSG] Emitindo eventos WebSocket`);
+      console.log(`📡 ═══════════════════════════════════════════════════`);
+      console.log(`   Chamado ID: ${id}`);
+      console.log(`   Mensagem ID: ${novaMensagem.id}`);
+      console.log(`   RealtimeService obtido`);
+      
+      // TEST: Emitir para todos os clients PRIMEIRO para confirmar comunicação
+      console.log(`TEST: Emitindo broadcast-test para TODOS os clients...`);
+      const io = realtimeService['io']; // Acessar a instância do Socket.io
+      if (io) {
+        io.emit('broadcast-test', { 
+          message: 'Sistema testando conexão',
+          timestamp: new Date() 
+        });
+        console.log(`TEST: broadcast-test emitido para todos`);
+      }
+      
+      if (mensagemComUsuario) {
+        console.log(`Emitindo 'msg-new' para sala chamado-${id}`);
+        
+        // TEST: Adicionar delay para garantir que o cliente está realmente na sala
+        console.log(`TEST: Aguardando 500ms para garantir que o cliente está na sala...`);
+        setTimeout(() => {
+          console.log(`TEST: Delay finalizado, emitindo agora...`);
+          realtimeService.notifyNovaMsg(Number(id), mensagemComUsuario);
+          console.log(`'msg-new' emitido`);
+        }, 500);
+      } else {
+        console.warn(`⚠️⚠️⚠️ Mensagem com usuário é nula!`);
+      }
+      
+      if (historicoComUsuario) {
+        console.log(` Emitindo 'history-new' para sala chamado-${id}`);
+        realtimeService.notifyNovoHistorico(Number(id), historicoComUsuario);
+        console.log(`✅✅✅ 'history-new' emitido`);
+      } else {
+        console.warn(`⚠️⚠️⚠️ Histórico com usuário é nula!`);
+      }
+      console.log(`📡 ═══════════════════════════════════════════════════\n`);
+    } catch (wsError) {
+      console.error("❌❌❌ Erro ao emitir eventos WebSocket:", wsError);
+      // nao falha a requisição se WebSocket falhar
+    }
+
+    return res.status(201).json(mensagemComUsuario);
+  } catch (error) {
+    console.error("Erro ao enviar mensagem:", error);
     return res.status(500).json({
       mensagem: "Erro ao enviar mensagem",
     });
