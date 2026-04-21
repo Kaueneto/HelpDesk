@@ -24,17 +24,13 @@ class SocketManager {
     public connect(): Socket {
     // se já está conectado, retornar o socket existente
     if (this.socket?.connected) {
-      console.log(`[SOCKET] Reusando conexão existente (${this.socket.id})`);
       return this.socket;
     }
 
     // se está tentando reconectar, aguardar
     if (this.socket && !this.socket.connected) {
-      console.log(`[SOCKET] Socket existe mas não está conectado. Devolvendo socket para aguardar reconexão...`);
       return this.socket;
     }
-
-    console.log(`🔌 [SOCKET] Criando nova conexão WebSocket...`);
 
     this.socket = io(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000', {
       reconnection: true,
@@ -44,8 +40,6 @@ class SocketManager {
       transports: ['websocket'], // FORÇAR WEBSOCKET para evitar bugs de polling no Next.js
     });
 
-    console.log(` [SOCKET] Socket criado (aguardando conexão):`, this.socket.id);
-
     this.setupEventListeners();
     return this.socket;
   }
@@ -53,24 +47,20 @@ class SocketManager {
   private setupEventListeners() {
     if (!this.socket) return;
 
-    console.log(` [SOCKET] Registrando event listeners...`);
-
     this.socket.on('connect', () => {
       console.log(`✅ [SOCKET] WebSocket conectado: ${this.socket!.id}`);
       this.connectionAttempts = 0;
 
       // re-entrar no board se estava em um
       if (this.currentBoardId) {
-        console.log(`[SOCKET] Re-entrando no board ${this.currentBoardId}`);
         this.socket!.emit('join-board', this.currentBoardId);
       }
 
       // re-entrar em TODOS os chamados ativos
       this.chamadoRefs.forEach((refs, chamadoId) => {
         if (refs > 0) {
-          console.log(`[SOCKET] Re-entrando no chamado ${chamadoId} (refs: ${refs})`);
           this.socket!.emit('join-chamado', chamadoId, (response: any) => {
-            console.log(`[SOCKET] Re-join chamado ${chamadoId} ACK:`, response);
+            // ACK recebido silenciosamente
           });
         }
       });
@@ -83,16 +73,6 @@ class SocketManager {
     this.socket.on('connect_error', (error) => {
       console.error(`❌ [SOCKET] Erro ao conectar:`, error);
       this.connectionAttempts += 1;
-    });
-
-    // Listener para evento de teste do servidor
-    this.socket.on('test-event', (data) => {
-      console.log(`🧪 [SOCKET] Evento de teste recebido:`, data);
-    });
-
-    // Listener para broadcast de teste
-    this.socket.on('broadcast-test', (data) => {
-      console.log(`📢 [SOCKET] Broadcast de teste recebido:`, data);
     });
 
     // listeners registrados dinamicamente
@@ -139,12 +119,10 @@ class SocketManager {
 
     //se já está em outro board, sair primeiro
     if (this.currentBoardId !== null && this.currentBoardId !== boardId) {
-      console.log(`[SOCKET] Saindo do board ${this.currentBoardId}`);
       socket.emit('leave-board', this.currentBoardId);
     }
 
     this.currentBoardId = boardId;
-    console.log(`[SOCKET] Entrando no board ${boardId}`);
     socket.emit('join-board', boardId);
   }
 
@@ -152,38 +130,52 @@ class SocketManager {
   public leaveBoard(): void {
     if (!this.socket || !this.currentBoardId) return;
 
-    console.log(`[SOCKET] Saindo do board ${this.currentBoardId}`);
     this.socket.emit('leave-board', this.currentBoardId);
     this.currentBoardId = null;
   }
 
   //entrar em um chamado
-  public joinChamado(chamadoId: number): void {
+  public joinChamado(chamadoId: number): Promise<boolean> {
     const socket = this.connect();
 
     // incrementar contador de referências
     const refs = this.chamadoRefs.get(chamadoId) ?? 0;
     this.chamadoRefs.set(chamadoId, refs + 1);
 
-    console.log(`[SOCKET] joinChamado ${chamadoId} (refs: ${refs + 1})`);
-    console.log(`[SOCKET] Socket conectado? ${socket.connected}, Socket ID: ${socket.id}`);
+    // retornar Promise que resolve IMEDIATAMENTE (não bloqueia)
+    return new Promise((resolve) => {
+      // so emitir join se for a primeira referência
+      if (refs === 0) {
+        //Passar a callback do ACK para confirmar entrada na sala
+        socket.emit('join-chamado', chamadoId, (response: any) => {
+          // ACK recebido silenciosamente
+        });
+        
+        // Resolver imediatamente - confiamos no servidor
+        resolve(true);
+      } else {
+        // se já está na sala, resolver imediatamente
+        resolve(true);
+      }
+    });
+  }
 
-    // so emitir join se for a primeira referência
-    if (refs === 0) {
-      console.log(`[SOCKET] Primeira referência - emitindo join-chamado`);
-      
-      // socket.IO enfileira automaticamente, não precisa checar connected
-      socket.emit('join-chamado', chamadoId, (response: any) => {
-        console.log(`[SOCKET] ACK recebido para join-chamado ${chamadoId}:`, response);
-      });
-      
-      // add listener de teste para confirmar que está na sala
-      setTimeout(() => {
-        console.log(`[SOCKET] TEST: Verificando se recebi evento de teste após 3s (deve ter recebido em 2s do servidor)...`);
-      }, 3000);
-    } else {
-      console.log(`[SOCKET] Referência já existe (${refs}), não emitindo join novamente`);
-    }
+  // verificar se está realmente na sala
+  public isInChamado(chamadoId: number): boolean {
+    const refs = this.chamadoRefs.get(chamadoId) ?? 0;
+    return refs > 0;
+  }
+
+  // metodo para teste - mostrar status completo
+  public showStatus() {
+    return {
+      socketId: this.socket?.id,
+      connected: this.socket?.connected,
+      chamadoRefs: Object.fromEntries(this.chamadoRefs),
+      listeners: Object.fromEntries(
+        Array.from(this.listeners.entries()).map(([key, set]) => [key, set.size])
+      ),
+    };
   }
 
   //sair do chamado (específico)
@@ -236,7 +228,6 @@ class SocketManager {
   private emitToListeners(event: string, data: any): void {
     const listeners = this.listeners.get(event);
     if (listeners) {
-      console.log(`[SOCKET LISTENERS] Emitindo '${event}' para ${listeners.size} listener(s).`);
       listeners.forEach((callback) => {
         try {
           callback(data);
@@ -244,8 +235,6 @@ class SocketManager {
           console.error(`Erro no listener para ${event}:`, error);
         }
       });
-    } else {
-      console.warn(`[SOCKET LISTENERS] Nenhum listener registrado para o evento '${event}'!`);
     }
   }
 
@@ -260,3 +249,8 @@ class SocketManager {
 }
 
 export default SocketManager;
+
+//exportar globalmente para debugging no console
+if (typeof window !== 'undefined') {
+  (window as any).SocketManager = SocketManager;
+}

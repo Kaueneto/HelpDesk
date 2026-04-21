@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 import { MdEmail } from 'react-icons/md';
 import { useRouter } from 'next/navigation';
@@ -142,6 +142,21 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
   const listenersRegistradosRef = useRef(false);
   const socketRef = useRef<any>(null);
 
+  // fazer scroll automático SEMPRE que mensagens mudam
+  useEffect(() => {
+    console.log(`[MENSAGENS ATUALIZADAS] Total: ${mensagens.length} mensagens`);
+    // Usar requestAnimationFrame para garantir que a DOM foi atualizada
+    const scrollTimer = requestAnimationFrame(() => {
+      const chatContainer = document.querySelector('.overflow-y-auto.max-h-125');
+      if (chatContainer) {
+        const container = chatContainer as HTMLElement;
+        console.log(`[SCROLL AUTO] Scrollando para o fim. ScrollHeight: ${container.scrollHeight}, ScrollTop: ${container.scrollTop}`);
+        container.scrollTop = container.scrollHeight;
+      }
+    });
+    return () => cancelAnimationFrame(scrollTimer);
+  }, [mensagens]); // reage SEMPRE que mensagens mudam
+
   useEffect(() => {
     // só  carregar dados se estiver autenticado
     if (authLoading) return;
@@ -151,57 +166,68 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
     carregarUsuarioLogado();
   }, [chamadoId, isAuthenticated, authLoading]);
 
+  // merge inteligente - add apenas mensagens novas (sem refetch total)
+  const adicionarMensagemDoWebSocket = useCallback((novaMensagem: any) => {
+    setMensagens(prev => {
+      // verificar se já existe por ID (evita duplicatas do POST response)
+      const jaExiste = prev.some(m => m.id === novaMensagem.id);
+      if (jaExiste) {
+        return prev;
+      }
+      
+      return [...prev, novaMensagem];
+    });
+  }, []);
+
   // autto-atualização do chat via WebSocket (sem polling)
   useEffect(() => {
-    console.log('[WEBSOCKET] Setup iniciado', { chamadoId, isAuthenticated });
-    
     if (!isAuthenticated || !chamadoId) {
-      console.log('[WEBSOCKET] Saindo cedo');
       return;
     }
 
     const socketManager = SocketManager.getInstance();
-    const status = socketManager.getStatus();
-    console.log('[WEBSOCKET] Status atual do socket:', status);
     
-    // entrar na sala via manager (ele trata reconexão automaticamente)
-    socketManager.joinChamado(Number(chamadoId));
-    console.log('[WEBSOCKET] joinChamado chamado');
+    // usar Promise para garantir que entrou na sala ANTES de registrar listeners
+    socketManager.joinChamado(Number(chamadoId))
+      .then(() => {
+        
+        // registrar listeners via manager (não direto no socket)
+        const unsubMsg = socketManager.on('msg-new', (data: any) => {
+          const mensagemDoEvento = data.mensagem || data;
+          adicionarMensagemDoWebSocket(mensagemDoEvento);
+          
+          // apenas refetch se houver anexos (para garantir signed URLs)
+          if (mensagemDoEvento.anexos && mensagemDoEvento.anexos.length > 0) {
+            carregarDados(true);
+          }
+        });
 
-    // registrar listeners via manager (não direto no socket)
-    const unsubMsg = socketManager.on('msg-new', (data: any) => {
-      console.log('[msg-new] Evento recebido via manager:', data);
-      
-      // sempre recarregar das APIs para garantir assinatura de anexos e sync perfeito
-      carregarDados(true);
-      
-      // rola o chat para o fim assim que a mensagem chegar
-      setTimeout(() => {
-        const chatContainer = document.querySelector('.overflow-y-auto.max-h-125');
-        if (chatContainer) chatContainer.scrollTop = chatContainer.scrollHeight;
-      }, 500);
-    });
+        const unsubHistorico = socketManager.on('history-new', (data: any) => {
+          console.log('[📜 history-new] Evento recebido via manager:', data);
+          carregarDados(true);
+        });
 
-    const unsubHistorico = socketManager.on('history-new', (data: any) => {
-      console.log('[📜 history-new] Evento recebido via manager:', data);
-      carregarDados(true);
-    });
+        // listener de teste para diagnosticar
+        const unsubTest = socketManager.on('test-event', (data: any) => {
+          console.log('[🧪 test-event] Evento de teste recebido! Sistema de WebSocket está funcionando:', data);
+        });
 
-    // listener de teste para diagnosticar
-    const unsubTest = socketManager.on('test-event', (data: any) => {
-      console.log('[🧪 test-event] Evento de teste recebido! Sistema de WebSocket está funcionando:', data);
-    });
+        // cleanup
+        return () => {
+          console.log('[CLEANUP] Saindo da sala e removendo listeners:', chamadoId);
+          unsubMsg();
+          unsubHistorico();
+          unsubTest();
+          socketManager.leaveChamado(Number(chamadoId));
+        };
+      })
+      .catch((error) => {
+        console.error('[WEBSOCKET] erro ao entrar na sala:', error);
+      });
 
-    console.log('[WEBSOCKET] Listeners registrados (msg-new, history-new, test-event)');
-
-    return () => {
-      console.log('[CLEANUP] Saindo da sala e removendo listeners:', chamadoId);
-      unsubMsg();
-      unsubHistorico();
-      unsubTest();
-      socketManager.leaveChamado(Number(chamadoId));
-    };
-  }, [chamadoId, isAuthenticated]);
+    // retornar cleanup vazio aqui (listeners já cuidam da limpeza)
+    return () => {};
+  }, [chamadoId, isAuthenticated, adicionarMensagemDoWebSocket]);
 
   const carregarUsuarioLogado = () => {
     // obter id do usuário do contexto de autenticação
@@ -373,7 +399,8 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
 
       // add a mensagem imediatamente após o servidor confirmar
       if (responseMensagem.data) {
-        const novaMsg = responseMensagem.data.mensagem || responseMensagem.data;
+        // usar o objeto completo da resposta, não apenas a string de texto
+        const novaMsg = responseMensagem.data;
         setMensagens(prev => {
           if (prev.some(m => m.id === novaMsg.id)) return prev;
           return [...prev, novaMsg];
@@ -1332,23 +1359,32 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
 
                 {/* Lista de Mensagens */}
                 <div className="p-5 space-y-4 max-h-125 overflow-y-auto" style={{ backgroundColor: theme.background.pagina }}>
-                  {mensagens.map((msg) => {
-                    const isUsuarioChamado = msg.usuario.id === chamado.usuario.id;
+                  {mensagens.map((msg, index) => {
+                    if (!msg.id) {
+                      console.warn(`⚠️⚠️⚠️ mensagem sem ID no índice ${index}:`, msg);
+                    }
+                    
+                    // usar optional chaining para evitar erro se usuario for undefined
+                    const isUsuarioLogado = msg.usuario?.id === usuarioLogadoId;
                     const enviadoPorEmail = msg.enviadoPorEmail === true;
+                    
+                    // usar msg.id como key, ou se não existir, usar index + timestamp como fallback
+                    const uniqueKey = msg.id ? `msg-${msg.id}` : `msg-temp-${index}-${Date.now()}`;
+                    
                     return (
                       <div
-                        key={msg.id}
-                        className={`flex ${isUsuarioChamado ? 'justify-start' : 'justify-end'}`}
+                        key={uniqueKey}
+                        className={`flex ${isUsuarioLogado ? 'justify-end' : 'justify-start'}`}
                       >
                         <div
                           className="max-w-[70%] rounded-lg p-4"
                           style={{
-                            backgroundColor: isUsuarioChamado ? theme.detalhesChamado.BalaoMsgusuario : theme.detalhesChamado.BalaoMsgSuporte
+                            backgroundColor: isUsuarioLogado ? theme.detalhesChamado.BalaoMsgSuporte : theme.detalhesChamado.BalaoMsgusuario
                           }}
                         >
                           <div className="flex items-center gap-2 mb-1">
                             <span className="font-semibold text-base" style={{ color: theme.detalhesChamado.txtNomeUsuarios }}>
-                              {msg.usuario.name}
+                              {msg.usuario?.name || 'Usuário Desconhecido'}
                             </span>
                             <span className="text-xs" style={{ color: theme.text.secondary }}>{formatarData(msg.dataEnvio)}</span>
 

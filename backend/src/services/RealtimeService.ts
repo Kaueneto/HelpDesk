@@ -95,14 +95,6 @@ export class RealtimeService {
 
       //entrar em sala de um chamado pra receber msgs em tempo real
       socket.on("join-chamado", (chamadoId: number, ack: (response: any) => void) => {
-        console.log(`\n`);
-        console.log(`🔌 ═══════════════════════════════════════════════════`);
-        console.log(`🔌 EVENTO: join-chamado`);
-        console.log(`🔌 ═══════════════════════════════════════════════════`);
-        console.log(`   Socket ID: ${socket.id}`);
-        console.log(`   Chamado ID: ${chamadoId}`);
-        console.log(`   ACK presente? ${typeof ack === 'function' ? 'SIM ✅✅✅' : 'NÃO ❌❌❌'}`);
-        
         const room = `chamado-${chamadoId}`;
         
         // se estava observando outro chamado, sair primeiro
@@ -114,8 +106,6 @@ export class RealtimeService {
           if (this.chamadoRooms.has(oldRoom)) {
             this.chamadoRooms.get(oldRoom)?.delete(socket.id);
           }
-          
-          console.log(`   → Cliente saiu de ${oldRoom}`);
           
           // notificar se users saiu
           this.io.to(oldRoom).emit("user-left-chamado", {
@@ -136,23 +126,12 @@ export class RealtimeService {
         }
         this.chamadoRooms.get(room)?.add(socket.id);
         
-        console.log(`✅ Socket adicionado à sala: ${room}`);
-        console.log(`   Total na sala: ${this.chamadoRooms.get(room)?.size}`);
-        
         // CHAMAR ACK (acknowledgement) para confirmar entrada
-        try {
-          if (typeof ack === 'function') {
-            console.log(`Enviando ACK de sucesso...`);
-            ack({ success: true, room, socketId: socket.id });
-            console.log(`✅✅✅✅ ACK enviado com sucesso!`);
-          } else {
-            console.warn(`⚠️ ACK não é função!`);
-          }
-        } catch (err) {
-          console.error(`❌❌❌ Erro ao chamar ACK:`, err);
+        if (typeof ack === 'function') {
+          ack({ success: true, room, socketId: socket.id });
         }
         
-        // notificar outros clientes //teste 
+        // notificar outros clientes
         this.io.to(room).emit("user-joined-chamado", {
           socketId: socket.id,
           chamadoId,
@@ -160,17 +139,13 @@ export class RealtimeService {
           timestamp: new Date(),
         });
 
-        //  emitir um evento de teste 2 segundos depois para validar comunicação
+        // emitir um evento de teste 2 segundos depois para validar comunicação
         setTimeout(() => {
-          console.log(`\n🧪 TEST: Enviando evento de teste para a sala ${room}`);
           this.io.to(room).emit("test-event", {
             message: "Este é um evento de teste para validar que eventos customizados funcionam",
             timestamp: new Date(),
           });
-          console.log(`✅✅✅✅ TEST: Evento de teste enviado\n`);
         }, 2000);
-        
-        console.log(`🔌 ═══════════════════════════════════════════════════\n`);
       });
 
     //sair da sala de um chamado
@@ -242,27 +217,9 @@ export class RealtimeService {
     });
   }
 
-//notificar uma nova mensagem no chamado
+  //notificar uma nova mensagem no chamado
   public notifyNovaMsg(chamadoId: number, mensagem: any) {
     const room = `chamado-${chamadoId}`;
-    const roomClients = this.io.sockets.adapter.rooms.get(room);
-    const clientCount = roomClients ? roomClients.size : 0;
-    
-    console.log(`\n`);
-    console.log(`💬 ═══════════════════════════════════════════════════`);
-    console.log(`💬 EMITINDO NOVA MENSAGEM`);
-    console.log(`💬 ═══════════════════════════════════════════════════`);
-    console.log(`   Sala: ${room}`);
-    console.log(`   Mensagem ID: ${mensagem.id}`);
-    console.log(`   Texto: "${mensagem.mensagem}"`);
-    console.log(`   Usuário: ${mensagem.usuario?.name || 'Desconhecido'}`);
-    console.log(`   Clientes na sala: ${clientCount}`);
-    
-    if (clientCount > 0) {
-      console.log(`   Socket IDs: ${Array.from(roomClients!).join(', ')}`);
-    } else {
-      console.warn(`   ⚠️ ATENÇÃO: Nenhum cliente na sala!`);
-    }
     
     const eventData = {
       mensagem,
@@ -270,36 +227,18 @@ export class RealtimeService {
       timestamp: new Date(),
     };
     
-    console.log(`📤 Emitindo para ${clientCount} cliente(s)...`);
-    console.log(`   Dados do evento:`, JSON.stringify(eventData, null, 2));
-    
     this.io.to(room).emit("msg-new", eventData);
-    
-    console.log(`✅ Evento 'msg-new' emitido com sucesso para sala ${room}`);
-    console.log(`💬 ═══════════════════════════════════════════════════\n`);
   }
 
  //notificar novo historico no chamdo
   public notifyNovoHistorico(chamadoId: number, historico: any) {
     const room = `chamado-${chamadoId}`;
-    const roomClients = this.io.sockets.adapter.rooms.get(room);
-    const clientCount = roomClients ? roomClients.size : 0;
-    
-    console.log(`📝 Notificando novo histórico na sala ${room}`);
-    console.log(`   Histórico ID: ${historico.id}`);
-    console.log(`   Clientes conectados: ${clientCount}`);
-    
-    if (clientCount > 0) {
-      console.log(`   IDs: ${Array.from(roomClients!).join(', ')}`);
-    }
     
     this.io.to(room).emit("history-new", {
       historico,
       chamadoId,
       timestamp: new Date(),
     });
-    
-    console.log(`✅✅✅ evento 'history-new' emitido para ${clientCount} clientes`);
   }
 
   private getUsuariosNaChamado(chamadoId: number): string[] {

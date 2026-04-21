@@ -8,6 +8,8 @@ import { Users } from "../entities/Users";
 import { supabase, SUPABASE_BUCKET } from "../config/supabase";
 import { verifyToken } from "../Middleware/AuthMiddleware";
 import RealtimeService from "../services/RealtimeService";
+import * as fs from "fs";
+import * as path from "path";
 
 interface AuthenticatedRequest extends Request {
   user?: Users;
@@ -18,6 +20,8 @@ interface AuthenticatedRequest extends Request {
 
 
 const router = Router();
+
+
 
 
 router.post("/chamados/:id/mensagens", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
@@ -66,9 +70,6 @@ router.post("/chamados/:id/mensagens", verifyToken, async (req: AuthenticatedReq
       .where("mensagem.id = :id", { id: novaMensagem.id })
       .getOne();
 
-    console.log(`✅ [POST MSG] Mensagem salva - ID: ${novaMensagem.id}, Chamado: ${id}`);
-    console.log(`✅ [POST MSG] Mensagem com usuário:`, mensagemComUsuario);
-
     // Criar histórico
     const novoHistorico = await historicoRepository.save({
       chamado: { id: Number(id) },
@@ -85,55 +86,19 @@ router.post("/chamados/:id/mensagens", verifyToken, async (req: AuthenticatedReq
       .where("historico.id = :id", { id: novoHistorico.id })
       .getOne();
 
-    console.log(`✅ [POST MSG] Histórico salvo - ID: ${novoHistorico.id}`);
-    console.log(`✅ [POST MSG] Histórico com usuário:`, historicoComUsuario);
-
     // emitir eventos WebSocket para todos os clientes na sala do chamado
     try {
       const realtimeService = RealtimeService.getInstance();
-      console.log(`\n`);
-      console.log(`📡 ═══════════════════════════════════════════════════`);
-      console.log(`📡 [POST MSG] Emitindo eventos WebSocket`);
-      console.log(`📡 ═══════════════════════════════════════════════════`);
-      console.log(`   Chamado ID: ${id}`);
-      console.log(`   Mensagem ID: ${novaMensagem.id}`);
-      console.log(`   RealtimeService obtido`);
-      
-      // TEST: Emitir para todos os clients PRIMEIRO para confirmar comunicação
-      console.log(`TEST: Emitindo broadcast-test para TODOS os clients...`);
-      const io = realtimeService['io']; // Acessar a instância do Socket.io
-      if (io) {
-        io.emit('broadcast-test', { 
-          message: 'Sistema testando conexão',
-          timestamp: new Date() 
-        });
-        console.log(`TEST: broadcast-test emitido para todos`);
-      }
       
       if (mensagemComUsuario) {
-        console.log(`Emitindo 'msg-new' para sala chamado-${id}`);
-        
-        // TEST: Adicionar delay para garantir que o cliente está realmente na sala
-        console.log(`TEST: Aguardando 500ms para garantir que o cliente está na sala...`);
-        setTimeout(() => {
-          console.log(`TEST: Delay finalizado, emitindo agora...`);
-          realtimeService.notifyNovaMsg(Number(id), mensagemComUsuario);
-          console.log(`'msg-new' emitido`);
-        }, 500);
-      } else {
-        console.warn(`⚠️⚠️⚠️ Mensagem com usuário é nula!`);
+        realtimeService.notifyNovaMsg(Number(id), mensagemComUsuario);
       }
       
       if (historicoComUsuario) {
-        console.log(` Emitindo 'history-new' para sala chamado-${id}`);
         realtimeService.notifyNovoHistorico(Number(id), historicoComUsuario);
-        console.log(`✅✅✅ 'history-new' emitido`);
-      } else {
-        console.warn(`⚠️⚠️⚠️ Histórico com usuário é nula!`);
       }
-      console.log(`📡 ═══════════════════════════════════════════════════\n`);
     } catch (wsError) {
-      console.error("❌❌❌ Erro ao emitir eventos WebSocket:", wsError);
+      console.error("❌ Erro ao emitir eventos WebSocket:", wsError);
       // nao falha a requisição se WebSocket falhar
     }
 

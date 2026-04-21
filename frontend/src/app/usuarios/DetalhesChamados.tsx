@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import api from '@/services/api';
 import SocketManager from '@/services/socketManager';
+import { useAuth } from '@/contexts/AuthContext';
 import ModalEditarChamadoUsuario from './ModalEditarChamadoUsuario';
 import ModalConfirmarReabertura from './ModalConfirmarReabertura';
 
@@ -12,6 +13,8 @@ interface DetalhesChamadosProps {
 }
 
 export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamadosProps) {
+  const { user } = useAuth();
+  
   const [mensagens, setMensagens] = useState<any[]>([]);
   const [historico, setHistorico] = useState<any[]>([]);
   const [loadingMensagens, setLoadingMensagens] = useState(false);
@@ -28,6 +31,21 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
 
   const listenersRegistradosRef = useRef(false);
 
+  // fazer scroll automático SEMPRE que mensagens mudam
+  useEffect(() => {
+    console.log(`[MENSAGENS ATUALIZADAS] Total: ${mensagens.length} mensagens`);
+    // usar requestAnimationFrame para garantir que a DOM foi atualizada
+    const scrollTimer = requestAnimationFrame(() => {
+      const chatContainer = document.getElementById('chat-messages-container');
+      if (chatContainer) {
+        console.log(`[SCROLL AUTO] Scrollando para o fim. ScrollHeight: ${chatContainer.scrollHeight}, ScrollTop: ${chatContainer.scrollTop}`);
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+        console.log(`[SCROLL AUTO] ✅ Após scroll - ScrollTop: ${chatContainer.scrollTop}`);
+      }
+    });
+    return () => cancelAnimationFrame(scrollTimer);
+  }, [mensagens]); // ✅ Reage SEMPRE que mensagens mudam
+
   useEffect(() => {
     buscarMensagens(chamado.id);
     buscarHistorico(chamado.id);
@@ -35,63 +53,76 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
     carregarAnexosDescricao(chamado.id);
   }, [chamado.id]);
 
+  // merge inteligente - adiciona apenas mensagens novas (sem refetch total)
+  const adicionarMensagemDoWebSocket = useCallback((novaMensagem: any) => {
+    setMensagens(prev => {
+      // verificar se já existe por ID (evita duplicatas do POST response)
+      const jaExiste = prev.some(m => m.id === novaMensagem.id);
+      if (jaExiste) {
+        return prev;
+      }
+      
+      return [...prev, novaMensagem];
+    });
+  }, []);
+
   // auto-atualização do chat via WebSocket (sem polling)
   useEffect(() => {
-    console.log('[WEBSOCKET] Setup iniciado', { chamadoId: chamado?.id });
-    
     if (!chamado?.id) {
-      console.log('[WEBSOCKET] Saindo cedo');
       return;
     }
 
     const socketManager = SocketManager.getInstance();
-    const status = socketManager.getStatus();
-    console.log('[WEBSOCKET] Status atual do socket:', status);
     
-    // entrar na sala via manager (ele trata reconexão automaticamente)
-    socketManager.joinChamado(Number(chamado.id));
-    console.log('[WEBSOCKET] joinChamado chamado');
+    // usar Promise para garantir que entrou na sala ANTES de registrar listeners
+    socketManager.joinChamado(Number(chamado.id))
+      .then(() => {
+        
+        // registrar listeners via manager (não direto no socket)
+        const unsubMsg = socketManager.on('msg-new', (data: any) => {
+          const mensagemDoEvento = data.mensagem || data;
+          adicionarMensagemDoWebSocket(mensagemDoEvento);
+          
+          // usar apenas refetch se houver anexos (para garantir signed URLs)
+          if (mensagemDoEvento.anexos && mensagemDoEvento.anexos.length > 0) {
+            buscarMensagens(chamado.id, true);
+          }
+        });
 
-    // registrar listeners via manager (não direto no socket)
-    const unsubMsg = socketManager.on('msg-new', (data: any) => {
-      console.log('[✉️ msg-new] Evento recebido via manager:', data);
-      // Sempre recarregar das APIs para garantir assinatura de anexos e sync perfeito
-      buscarMensagens(chamado.id, true);
-      
-      // rola o chat para o fim assim que a mensagem chegar
-      setTimeout(() => {
-        const chatContainer = document.getElementById('chat-messages-container') || document.querySelector('.overflow-y-auto');
-        if (chatContainer) chatContainer.scrollTop = chatContainer.scrollHeight;
-      }, 500);
-    });
+        const unsubHistorico = socketManager.on('history-new', (data: any) => {
+          buscarHistorico(chamado.id);
+        });
 
-    const unsubHistorico = socketManager.on('history-new', (data: any) => {
-      console.log('[📜 history-new] Evento recebido via manager:', data);
-      buscarHistorico(chamado.id);
-    });
+        // Listener de teste para diagnosticar
+        const unsubTest = socketManager.on('test-event', (data: any) => {
+          // evento de teste ignorado silenciosamente
+        });
 
-    // Listener de teste para diagnosticar
-    const unsubTest = socketManager.on('test-event', (data: any) => {
-      console.log('[🧪 test-event] Evento de teste recebido! Sistema de WebSocket está funcionando:', data);
-    });
+        // Cleanup
+        return () => {
+          console.log('[CLEANUP] Saindo da sala e removendo listeners:', chamado.id);
+          unsubMsg();
+          unsubHistorico();
+          unsubTest();
+          socketManager.leaveChamado(Number(chamado.id));
+        };
+      })
+      .catch((error) => {
+        console.error('[WEBSOCKET] Erro ao entrar na sala:', error);
+      });
 
-    console.log('[WEBSOCKET]✅✅✅✅Listeners registrados (msg-new, history-new, test-event)');
-
-    return () => {
-      console.log('[CLEANUP] Saindo da sala e removendo listeners:', chamado.id);
-      unsubMsg();
-      unsubHistorico();
-      unsubTest();
-      socketManager.leaveChamado(Number(chamado.id));
-    };
-  }, [chamado?.id]);
+    // retornar cleanup vazio aqui (listeners já cuidam da limpeza)
+    return () => {};
+  }, [chamado?.id, adicionarMensagemDoWebSocket]);
   const buscarMensagens = async (chamadoId: number, silent = false) => {
     if (!silent) setLoadingMensagens(true);
     try {
+      console.log(`[BUSCAR MENSAGENS] Carregando mensagens do chamado ${chamadoId}...`);
       const response = await api.get(`/chamados/${chamadoId}/mensagens`);
+      console.log(`[BUSCAR MENSAGENS] ✅✅✅ recebidas ${response.data.length} mensagens`);
       setMensagens(response.data);
     } catch (error) {
-    
+      console.error(`❌❌❌erro:`, error);
     } finally {
       if (!silent) setLoadingMensagens(false);
     }
@@ -102,7 +133,7 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
       const response = await api.get(`/chamados/${chamadoId}/historico`);
       setHistorico(response.data);
     } catch (error) {
-      
+      console.error(`❌❌❌erro:`, error);
     }
   };
 
@@ -157,7 +188,8 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
       
       // Adiciona a mensagem imediatamente após o servidor confirmar (mesmo que websocket falhe para o dono)
       if (response.data) {
-        const novaMsg = response.data.mensagem || response.data;
+        // usar o objeto completo da resposta, não apenas a string de texto
+        const novaMsg = response.data;
         setMensagens(prev => {
           if (prev.some(m => m.id === novaMsg.id)) return prev;
           return [...prev, novaMsg];
@@ -453,24 +485,33 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
                   </div>
 
                   {/* Mensagens subsequentes */}
-                  {mensagens.map((msg) => {
-                    const isUsuarioChamado = msg.usuario?.id === chamado.usuario?.id;
+                  {mensagens.map((msg, index) => {
+                    // log para verificar msg.id
+                    if (!msg.id) {
+                      console.warn(`⚠️⚠️⚠️ mensagem sem ID no índice ${index}:`, msg);
+                    }
+                    
+                    // comparar com o user LOGADO atual (não com o criador do chamado)
+                    const isUsuarioLogado = msg.usuario?.id === user?.id;
+                    
+                    // usar msg.id como key, ou se não existir, usar index + timestamp como fallback
+                    const uniqueKey = msg.id ? `msg-${msg.id}` : `msg-temp-${index}-${Date.now()}`;
                     
                     return (
                       <div
-                        key={msg.id}
-                        className={`flex ${isUsuarioChamado ? 'justify-end' : 'justify-start'}`}
+                        key={uniqueKey}
+                        className={`flex ${isUsuarioLogado ? 'justify-end' : 'justify-start'}`}
                       >
                         <div
                           className={`max-w-[85%] sm:max-w-[75%] md:max-w-[70%] ${
-                            isUsuarioChamado 
-                              ? 'bg-green-50 border-r-4 border-green-500' 
+                            isUsuarioLogado 
+                              ? 'bg-blue-50 border-r-4 border-blue-500' 
                               : 'bg-gray-100 border-l-4 border-gray-500'
                           } rounded-lg p-2 sm:p-3 md:p-4 shadow-sm`}
                         >
                           <div className="flex items-center gap-1 sm:gap-2 mb-1 sm:mb-2">
                             <span className="font-semibold text-gray-900 text-xs sm:text-sm md:text-base">
-                              {msg.usuario?.name}
+                              {msg.usuario?.name || 'Usuário Desconhecido'}
                             </span>
                             <span className="text-[10px] sm:text-xs text-gray-500">
                               {formatarDataBrasilia(msg.dataEnvio)}
