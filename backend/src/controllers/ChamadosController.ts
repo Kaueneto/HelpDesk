@@ -2206,6 +2206,7 @@ router.patch("/chamados/:id/move", verifyToken, async (req: AuthenticatedRequest
 
     // Verificar se chamado existe
     const chamadoRepository = AppDataSource.getRepository(Chamados);
+    const kanbanPositionRepository = AppDataSource.getRepository(KanbanPositions);
     const chamado = await chamadoRepository.findOne({ where: { id: chamadoId } });
 
     if (!chamado) {
@@ -2215,20 +2216,15 @@ router.patch("/chamados/:id/move", verifyToken, async (req: AuthenticatedRequest
       });
     }
 
-    // SALVAR POSIÇÃO APENAS PARA EXIBIÇÕES PERSONALIZADAS
-    if (groupBy === "personalizada") {
-      const kanbanPositionRepository = AppDataSource.getRepository(KanbanPositions);
-
-      //BUSCAR POSIÇÃO EXISTTENTE PRA ESTE GROUPBY ESPECIFICO
+    const persistKanbanPosition = async () => {
       let position_record = await kanbanPositionRepository.findOne({
         where: { 
           idChamado: chamadoId,
-          groupBy: groupBy  // filtrar pelo groupBy específico
+          groupBy: groupBy
         },
       });
 
       if (!position_record) {
-        // Criar novo registro
         position_record = kanbanPositionRepository.create({
           idChamado: chamadoId,
           columnValue: columnValue === null ? null : String(columnValue),
@@ -2237,7 +2233,6 @@ router.patch("/chamados/:id/move", verifyToken, async (req: AuthenticatedRequest
           updatedBy: (req as AuthenticatedRequest).userId || null,
         });
       } else {
-        // Atualizar registro existente
         position_record.columnValue = columnValue === null ? null : String(columnValue);
         position_record.position = Number(position);
         position_record.groupBy = groupBy;
@@ -2245,6 +2240,11 @@ router.patch("/chamados/:id/move", verifyToken, async (req: AuthenticatedRequest
       }
 
       await kanbanPositionRepository.save(position_record);
+    };
+
+    // SALVAR POSIÇÃO PARA TODOS OS TIPOS DE AGRUPAMENTO
+    if (groupBy === "personalizada") {
+      await persistKanbanPosition();
 
       console.log(
         `✅ Chamado ${chamadoId} movido em "${groupBy}" para coluna ${columnValue} na posição ${position}`
@@ -2298,6 +2298,7 @@ router.patch("/chamados/:id/move", verifyToken, async (req: AuthenticatedRequest
       }
 
       await chamadoRepository.save(chamado);
+      await persistKanbanPosition();
       
       console.log(
         `Chamado ${chamadoId} atualizado no agrupamento "${groupBy}"`

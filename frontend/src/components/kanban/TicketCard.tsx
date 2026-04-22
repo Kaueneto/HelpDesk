@@ -109,8 +109,8 @@ const TicketCard = memo(({ chamado, onClick, isDragging = false, onSelect, isSel
   });
 
   const style = {
-    transform: CSS.Translate.toString(transform), // Translate no lugar de Transform resolve bugs de resize
-    transition,
+    transform: 'none',
+    transition: transition || 'none',
     pointerEvents: sortableIsDragging || isDragging ? 'none' : 'auto' as 'none' | 'auto',
   };
 

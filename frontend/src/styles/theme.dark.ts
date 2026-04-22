@@ -181,6 +181,19 @@ export const darkTheme: Theme = {
     
   },
 
+  corBordamsg: {
+     border: '#10B981',  
+   },
+
+  // Histórico de Eventos
+  historicoEvento: {
+    default: {
+      bg: 'rgba(26, 37, 63, 0.3)',
+      text: '#A8AEBF',
+      border: 'rgba(26, 37, 63, 0.3)',
+    },
+  },
+
     detalhesChamado: {
     label: '#F1F5F9',        // Quase branco para labels (invertido)
     labelActive: '#60A5FA',   // Azul claro para labels ativas (invertido)

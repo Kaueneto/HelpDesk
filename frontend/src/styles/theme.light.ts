@@ -318,4 +318,17 @@ export const lightTheme: Theme = {
     text: '#FFFFFF',
     border: '#2563EB',
   },
+
+    corBordamsg: {
+     border: '#00B515',  
+   },
+
+  // Histórico de Eventos
+  historicoEvento: {
+  default: {
+    bg: 'rgba(169, 172, 180, 0.2)', 
+    text: '#353535',
+    border: 'rgba(169, 172, 180, 0.2)', 
+    },
+  },
 };

@@ -714,9 +714,15 @@ export default function GerenciarChamados() {
     }
   };
 
-  const handleTicketUpdate = (ticketId: number, updatedTickets: any) => {
+  const handleTicketUpdate = (ticketId: number, updateFn: any) => {
     // Atualizar tickets localmente SEM fazer refetch
-    setChamados(updatedTickets);
+    // O updateFn é uma função que recebe o estado anterior e retorna o novo estado
+    if (typeof updateFn === 'function') {
+      setChamados(updateFn);
+    } else {
+      // Se for dados diretos, usar como está
+      setChamados(updateFn);
+    }
   };
 
   const handleTicketClick = (ticket: Chamado) => {
@@ -1022,7 +1028,7 @@ export default function GerenciarChamados() {
   return (
     <div className={pageSliding ? 'slideOutLeft' : ''} style={{ backgroundColor: theme.background.pagina }}>
       <div className="px-6 py-3" style={{ backgroundColor: theme.brand.primary }}>
-        <h2 className="text-white text-2xl font-semibold font-segoe">Painel de Chamados</h2>
+        <h2 className="text-white text-2xl font-semibold font-segoe">Painel de Tickets</h2>
       </div>
 
       <div className="px-2 min-h-screen" style={{ backgroundColor: theme.background.pagina }}>

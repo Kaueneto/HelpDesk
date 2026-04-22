@@ -323,4 +323,16 @@ export type Theme = {
     };
   };
 
+    corBordamsg: {
+     border: string;  
+   },
+
+  historicoEvento: {
+    default: {
+      bg: string;
+      text: string;
+      border: string;
+    };
+  };
+
 };

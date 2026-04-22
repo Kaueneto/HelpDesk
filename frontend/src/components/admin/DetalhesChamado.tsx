@@ -13,6 +13,7 @@ import ModalMarcarResolvido from '@/app/admin/Modal/MarcarResolvido';
 import ModalImprimirChamado from '@/app/admin/Modal/ModalImprimirChamado';
 import ModalEnviarAttPorEmail from '@/app/admin/Modal/EnviarAttPorEmail';
 import ModalEditarChamadoAdmin from '@/app/admin/Modal/ModalEditarChamadoAdmin';
+import HistoricoEventItem from './HistoricoEventItem';
 import { Toaster, toast } from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -112,6 +113,7 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
   const [chamado, setChamado] = useState<Chamado | null>(null);
   const [mensagens, setMensagens] = useState<Mensagem[]>([]);
   const [historico, setHistorico] = useState<Historico[]>([]);
+  const [prioridades, setPrioridades] = useState<Array<{ id: number; nome: string; cor: string }>>([]);
   const [novaMensagem, setNovaMensagem] = useState('');
   const [abaAtiva, setAbaAtiva] = useState<'detalhes' | 'historico'>('detalhes');
   const [loading, setLoading] = useState(true);
@@ -236,20 +238,57 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
     }
   };
 
+  // Combinar mensagens e histórico em um array único ordenado por data
+  const itemsCombinados = useCallback(() => {
+    const items: Array<{
+      type: 'mensagem' | 'historico';
+      data: Mensagem | Historico;
+      dataSorting: string;
+    }> = [];
+
+    // add mensagens
+    mensagens.forEach((msg) => {
+      items.push({
+        type: 'mensagem',
+        data: msg,
+        dataSorting: msg.dataEnvio,
+      });
+    });
+
+    // add histórico 
+    historico.forEach((hist) => {
+      if (hist.acao.toLowerCase() !== 'mensagem enviada') {
+        items.push({
+          type: 'historico',
+          data: hist,
+          dataSorting: hist.dataMov,
+        });
+      }
+    });
+
+    // ordernar por data
+    return items.sort(
+      (a, b) =>
+        new Date(a.dataSorting).getTime() - new Date(b.dataSorting).getTime()
+    );
+  }, [mensagens, historico]);
+
   const carregarDados = async (silent = false) => {
     if (!isAuthenticated) return; // protecao adicional
     
     if (!silent) setLoading(true);
     try {
-      const [chamadoRes, mensagensRes, historicoRes] = await Promise.all([
+      const [chamadoRes, mensagensRes, historicoRes, prioridadesRes] = await Promise.all([
         api.get(`/chamados/${chamadoId}`),
         api.get(`/chamados/${chamadoId}/mensagens`),
         api.get(`/chamados/${chamadoId}/historico`),
+        api.get('/tipo_prioridade'),
       ]);
 
       setChamado(chamadoRes.data);
       setMensagens(mensagensRes.data);
       setHistorico(historicoRes.data);
+      setPrioridades(prioridadesRes.data);
     } catch (error) {
   
       toast.error('Erro ao carregar chamado', {
@@ -1359,7 +1398,26 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
 
                 {/* Lista de Mensagens */}
                 <div className="p-5 space-y-4 max-h-125 overflow-y-auto" style={{ backgroundColor: theme.background.pagina }}>
-                  {mensagens.map((msg, index) => {
+                  {itemsCombinados().map((item, index) => {
+                    // Renderizar histórico
+                    if (item.type === 'historico') {
+                      const hist = item.data as Historico;
+                      return (
+                        <div key={`hist-${hist.id}`}>
+                          <HistoricoEventItem
+                            acao={hist.acao}
+                            usuario={hist.usuario}
+                            dataMov={hist.dataMov}
+                            theme={theme}
+                            prioridades={prioridades}
+                          />
+                        </div>
+                      );
+                    }
+
+                    //renderizar mensagem
+                    const msg = item.data as Mensagem;
+                    
                     if (!msg.id) {
                       console.warn(`⚠️⚠️⚠️ mensagem sem ID no índice ${index}:`, msg);
                     }
@@ -1463,9 +1521,15 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
                   <textarea
                     value={novaMensagem}
                     onChange={(e) => setNovaMensagem(e.target.value)}
+                     onFocus={(e) => {
+                        e.currentTarget.style.borderColor = theme.corBordamsg.border;
+                      }}
+                     onBlur={(e) => {
+                      e.currentTarget.style.borderColor = theme.corBordamsg.border;
+                    }}
                     placeholder="Digite sua mensagem..."
                     rows={4}
-                    className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-1 resize-none"
+                    className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-0 resize-none"
                     style={{
                       backgroundColor: theme.detalhesChamado.bgBranco,
                       borderColor: theme.border.primary,

@@ -301,7 +301,7 @@ const ModalEnviarAttPorEmail: React.FC<ModalEnviarAttPorEmailProps> = ({
   };
 
   return (
-    <div   className="fixed inset-0 flex items-center justify-center z-50 px-4">
+    <div   className="fixed inset-0 flex items-center justify-center z-50 px-4 bg-black/50">
       <div className="rounded-2xl w-full max-w-2xl max-h-[90vh] border flex flex-col" style={{ backgroundColor: theme.modalEnviarEmail.background, borderColor: theme.modalEnviarEmail.border }}>
         {/* Header */}
         <div className="p-8 pb-4">

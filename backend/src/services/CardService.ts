@@ -57,6 +57,7 @@ export class CardService {
     if (dto.columnId) {
       coluna = await this.columnRepository.findOne({
         where: { id: dto.columnId },
+        relations: ["board"],
       });
 
       if (!coluna || coluna.board.id !== dto.boardId) {
@@ -120,6 +121,7 @@ export class CardService {
     if (dto.novaColumnId) {
       novaColuna = await this.columnRepository.findOne({
         where: { id: dto.novaColumnId },
+        relations: ["board"],
       });
 
       if (!novaColuna || novaColuna.board.id !== dto.boardId) {

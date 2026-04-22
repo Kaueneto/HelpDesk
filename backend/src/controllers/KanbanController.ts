@@ -38,7 +38,7 @@ router.patch("/chamados/:id/move", verifyToken, async (req: AuthenticatedRequest
     }
 
     // validar tipos de agrupamento permitidos
-    const allowedGroupBy = ['status', 'prioridade', 'responsavel', 'departamento', 'topico'];
+    const allowedGroupBy = ['status', 'prioridade', 'responsavel', 'departamento', 'topico', 'personalizada'];
     if (!allowedGroupBy.includes(groupBy)) {
    
       return res.status(400).json({
@@ -183,6 +183,11 @@ router.patch("/chamados/:id/move", verifyToken, async (req: AuthenticatedRequest
           descricaoHistorico = `Tópico alterado para "${novoTopico.nome}" via Kanban`;
         }
         break;
+
+        case 'personalizada':
+          descricaoHistorico = 'Card movido no quadro personalizado (Kanban)';
+           break;
+      
     }
 
     // iniciar transação para consistência

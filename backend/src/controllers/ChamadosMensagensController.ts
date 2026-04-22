@@ -32,7 +32,6 @@ router.post("/chamados/:id/mensagens", verifyToken, async (req: AuthenticatedReq
     const roleId = req.userRoleId;
 
     const mensagensRepository = AppDataSource.getRepository(ChamadoMensagens);
-    const historicoRepository = AppDataSource.getRepository(ChamadoHistorico);
     const chamadosRepository = AppDataSource.getRepository(Chamados);
 
     // Buscar o chamado para verificar se tem um userResponsavel atribuído
@@ -70,32 +69,12 @@ router.post("/chamados/:id/mensagens", verifyToken, async (req: AuthenticatedReq
       .where("mensagem.id = :id", { id: novaMensagem.id })
       .getOne();
 
-    // Criar histórico
-    const novoHistorico = await historicoRepository.save({
-      chamado: { id: Number(id) },
-      usuario: { id: usuarioId },
-      acao: "Mensagem enviada",
-      status: "MENSAGEM",
-      dataMov: new Date(),
-    });
-
-    // buscar histórico completo com dados do usuário
-    const historicoComUsuario = await AppDataSource.getRepository(ChamadoHistorico)
-      .createQueryBuilder("historico")
-      .leftJoinAndSelect("historico.usuario", "usuario")
-      .where("historico.id = :id", { id: novoHistorico.id })
-      .getOne();
-
     // emitir eventos WebSocket para todos os clientes na sala do chamado
     try {
       const realtimeService = RealtimeService.getInstance();
       
       if (mensagemComUsuario) {
         realtimeService.notifyNovaMsg(Number(id), mensagemComUsuario);
-      }
-      
-      if (historicoComUsuario) {
-        realtimeService.notifyNovoHistorico(Number(id), historicoComUsuario);
       }
     } catch (wsError) {
       console.error("❌ Erro ao emitir eventos WebSocket:", wsError);
