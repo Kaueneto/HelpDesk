@@ -29,12 +29,42 @@ export interface Column {
 export interface Card {
   id: number;
   boardId: number;
-  columnId: number;
+  columnId: number | null;
   idChamado: number;
   posicao: number;
   criadoEm: string;
   atualizadoEm: string;
+  board?: {
+    id: number;
+  };
+  column?: {
+    id: number;
+  } | null;
+  chamado?: {
+    id: number;
+  };
 }
+
+const toNumberOrUndefined = (value: unknown): number | undefined => {
+  if (value === null || value === undefined || value === '') {
+    return undefined;
+  }
+
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
+};
+
+const normalizeCard = (card: any): Card => ({
+  ...card,
+  id: Number(card.id),
+  boardId: toNumberOrUndefined(card.boardId ?? card.board?.id) ?? 0,
+  columnId:
+    card.columnId === null
+      ? null
+      : toNumberOrUndefined(card.columnId ?? card.column?.id) ?? null,
+  idChamado: toNumberOrUndefined(card.idChamado ?? card.chamado?.id) ?? 0,
+  posicao: Number(card.posicao ?? 1000),
+});
 
 interface UseBoardDataReturn {
   boards: Board[];
@@ -58,8 +88,8 @@ interface UseBoardDataReturn {
   reorderColumns: (columnIds: number[]) => Promise<void>;
   
   // Card operations
-  addCardToColumn: (columnId: number, chamadoId: number) => Promise<Card | null>;
-  moveCard: (cardId: number, columnId: number, posicao: number) => Promise<void>;
+  addCardToColumn: (columnId: number | null, chamadoId: number, posicao?: number) => Promise<Card | null>;
+  moveCard: (cardId: number, columnId: number | null, posicao: number) => Promise<void>;
   removeCard: (cardId: number) => Promise<void>;
 }
 
@@ -115,9 +145,12 @@ export const useBoardData = (idDepartamento: number): UseBoardDataReturn => {
   // Carregar cards do board selecionado
   const loadCards = useCallback(async (boardId: number) => {
     try {
-      const response = await api.get(`/boards/${boardId}/cards`);
-      setCards(response.data.data);
-      return response.data.data;
+        const response = await api.get(`/boards/${boardId}/cards`);
+        const normalizedCards = response.data.data
+          .map(normalizeCard)
+          .filter((card: Card) => card.id > 0 && card.idChamado > 0);
+        setCards(normalizedCards);
+        return normalizedCards;
     } catch (err: any) {
       console.error('Erro ao carregar cards:', err);
       return [];
@@ -372,7 +405,7 @@ export const useBoardData = (idDepartamento: number): UseBoardDataReturn => {
 
   // Adicionar card à coluna
   const addCardToColumn = useCallback(
-    async (columnId: number, chamadoId: number): Promise<Card | null> => {
+    async (columnId: number | null, chamadoId: number, posicao: number = 1000): Promise<Card | null> => {
       if (!selectedBoard) {
         toast.error('Nenhum board selecionado');
         return null;
@@ -384,58 +417,77 @@ export const useBoardData = (idDepartamento: number): UseBoardDataReturn => {
 
         const payload = {
           columnId,
-          idChamado: chamadoId,
-          posicao: 1000,
+          chamadoId,
+          posicao,
         };
 
         const response = await api.post(
           `/boards/${selectedBoard.id}/cards`,
           payload
         );
-        const newCard = response.data.data;
+        const newCard = normalizeCard(response.data.data);
 
         setCards((prev) => [...prev, newCard]);
+        await loadCards(selectedBoard.id);
         toast.success('Card adicionado!');
         return newCard;
       } catch (err: any) {
         const errorMsg = err.response?.data?.message || 'Erro ao adicionar card';
         setError(errorMsg);
         toast.error(errorMsg);
-        return null;
+        throw err;
       } finally {
         setLoading(false);
       }
     },
-    [selectedBoard]
+    [selectedBoard, loadCards]
   );
 
   // Mover card
   const moveCard = useCallback(
-    async (cardId: number, columnId: number, posicao: number) => {
+    async (cardId: number, columnId: number | null, posicao: number) => {
+      if (!selectedBoard) {
+        toast.error('Nenhum board selecionado');
+        return;
+      }
+
       try {
         setLoading(true);
         setError(null);
 
         const payload = {
-          columnId,
-          posicao,
+          boardId: selectedBoard.id,
+          novaColumnId: columnId,
+          novaPosition: posicao,
         };
 
         const response = await api.patch(`/cards/${cardId}/move`, payload);
-        const updatedCard = response.data.data;
+        const updatedCard = normalizeCard(response.data.data);
 
         setCards((prev) =>
-          prev.map((c) => (c.id === cardId ? updatedCard : c))
+          prev.map((c) =>
+            c.id === cardId
+              ? {
+                  ...c,
+                  ...updatedCard,
+                  boardId: selectedBoard.id,
+                  columnId,
+                  idChamado: updatedCard.idChamado ?? c.idChamado,
+                }
+              : c
+          )
         );
+        await loadCards(selectedBoard.id);
       } catch (err: any) {
         const errorMsg = err.response?.data?.message || 'Erro ao mover card';
         setError(errorMsg);
         toast.error(errorMsg);
+        throw err;
       } finally {
         setLoading(false);
       }
     },
-    []
+    [selectedBoard, loadCards]
   );
 
   // Remover card

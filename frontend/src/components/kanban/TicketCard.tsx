@@ -101,7 +101,7 @@ const TicketCard = memo(({ chamado, onClick, isDragging = false, onSelect, isSel
     transition,
     isDragging: sortableIsDragging,
   } = useSortable({
-    id: chamado.id,
+    id: chamado.id.toString(),
     data: {
       type: 'ticket',
       ticket: chamado,
@@ -109,9 +109,10 @@ const TicketCard = memo(({ chamado, onClick, isDragging = false, onSelect, isSel
   });
 
   const style = {
-    transform: 'none',
-    transition: transition || 'none',
+    transform: CSS.Transform.toString(transform),
+    transition: transition || undefined,
     pointerEvents: sortableIsDragging || isDragging ? 'none' : 'auto' as 'none' | 'auto',
+    zIndex: sortableIsDragging || isDragging ? 50 : undefined,
   };
 
   const formatDate = (dateString: string) => {

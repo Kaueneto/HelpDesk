@@ -1746,8 +1746,8 @@ router.patch("/chamados/editar-multiplos", verifyToken, async (req: Authenticate
 
           const mensagensExtras: Record<number, string> = {
             4: "Algo não saiu como o esperado. Estamos trabalhando para resolver sua demanda o mais rápido possível.",
-            7: "Estamos aguardando retorno externo para continuar a análise desta solicitação.",
-            6: "Estamos aguardando novas informações para continuar a solicitação."
+            7: "Aguardando retorno externo para continuar a análise desta solicitação.",
+            6: "Aguardando aguardando novas informações para continuar a solicitação."
           };
 
           // Salvar histórico de status
