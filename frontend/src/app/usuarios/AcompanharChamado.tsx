@@ -268,6 +268,9 @@ export default function AcompanharChamado({ onChamadoClick }: AcompanharChamadoP
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-40">
                     Data Criação
                   </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-50">
+                    Data Última Interação
+                  </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-44">
                     Tópico ajuda
                   </th>
@@ -302,10 +305,37 @@ export default function AcompanharChamado({ onChamadoClick }: AcompanharChamadoP
                         <span className="text-gray-900">{chamado.tipoPrioridade?.nome}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 w-40">
-                      {formatarDataBrasilia(chamado.dataAbertura)}
-                    </td>
-                    <td className="px-4 py-3  text-sm text-gray-700 w-20">
+                  <td className="px-4 py-3 text-sm text-gray-700 w-40">
+                    <div className="flex flex-col">
+                      <span>
+                        {new Date(chamado.dataAbertura).toLocaleDateString('pt-BR')}
+                      </span>
+                      <span className="text-gray-500 text-xs">
+                        {new Date(chamado.dataAbertura).toLocaleTimeString('pt-BR', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-sm text-blue-700 w-40">
+                        {chamado.ultimaInteracao ? (
+                          <div className="flex flex-col">
+                            <span>
+                              {new Date(chamado.ultimaInteracao.data).toLocaleDateString('pt-BR')}
+                            </span>
+                            <span className="text-blue-700 text-xs">
+                              {new Date(chamado.ultimaInteracao.data).toLocaleTimeString('pt-BR', {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="italic opacity-50">Sem interação</span>
+                        )}
+                      </td>
+                    <td className="px-4 py-3  text-sm text-gray-700 w-25">
                       {chamado.topicoAjuda?.nome}
                     </td>
                     <td className="px-4 py-3  text-sm text-gray-700 w-25">

@@ -21,9 +21,9 @@ export class ChamadoHistorico {
   @Column({ type: "varchar", length: 255 })
   acao!: string;
 
-  @ManyToOne(() => Users)
+  @ManyToOne(() => Users, { nullable: true })
   @JoinColumn({ name: "usuario_id" })
-  usuario!: Users;
+  usuario?: Users | null;
 
   @Column({ name: "data_mov", type: "timestamp" })
   dataMov!: Date;

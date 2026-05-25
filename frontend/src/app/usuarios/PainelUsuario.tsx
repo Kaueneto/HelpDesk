@@ -67,7 +67,7 @@ export default function PainelUsuario() {
         <div className="bg-[#f8fafc] rounded-lg shadow-lg overflow-hidden h-full flex flex-col">
           {/* Header */}
           <div className="bg-[#f8fafc] border-b border-gray-200 px-8 py-5 flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-gray-900">Central de chamados</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Central de Tickets</h1>
             <div className="relative">
               <button
                 onClick={() => setUserDropdownOpen(!userDropdownOpen)}

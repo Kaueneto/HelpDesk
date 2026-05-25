@@ -51,6 +51,12 @@ interface Chamado {
     id: number;
     nome: string;
   };
+  ultimaInteracao?: {
+    data: string;
+    usuarioId: number;
+    usuarioNome: string;
+    mensagem: string;
+  } | null;
 }
 
 interface Departamento {
@@ -171,7 +177,7 @@ export default function GerenciarChamados() {
   const [originalPageSize, setOriginalPageSize] = useState(20); // guardar paginação original antes de mudar para kanban
 
   // ordenação
-  const [ordenarPor, setOrdenarPor] = useState<'numeroChamado' | 'prioridade' | 'topico' | 'departamento' | 'status' | 'dataAbertura' | 'dataFechamento' | 'usuario' | 'responsavel' | 'resumo' | null>(null);
+  const [ordenarPor, setOrdenarPor] = useState<'numeroChamado' | 'prioridade' | 'topico' | 'departamento' | 'status' | 'dataAbertura' | 'dataFechamento' | 'usuario' | 'responsavel' | 'resumo' | 'ultimaInteracao' | null>(null);
   const [direcaoOrdem, setDirecaoOrdem] = useState<'asc' | 'desc'>('asc');
 
   // modal de edicao multipla
@@ -393,7 +399,7 @@ export default function GerenciarChamados() {
     localStorage.setItem('filtrosChamados', JSON.stringify(filtrosAtuais));
   }, [dataAberturaInicio, dataAberturaFim, dataFechamentoInicio, dataFechamentoFim, departamentoId, topicoAjudaId, prioridadeId, statusId, assunto, nomeUsuario, nomeResponsavel]);
 
-  const handleOrdenar = (coluna: 'numeroChamado' | 'prioridade' | 'topico' | 'departamento' | 'status' | 'dataAbertura' | 'dataFechamento' | 'usuario' | 'responsavel' | 'resumo') => {
+  const handleOrdenar = (coluna: 'numeroChamado' | 'prioridade' | 'topico' | 'departamento' | 'status' | 'dataAbertura' | 'dataFechamento' | 'usuario' | 'responsavel' | 'resumo' | 'ultimaInteracao') => {
     if (ordenarPor === coluna) {
       if (direcaoOrdem === 'asc') {
         setDirecaoOrdem('desc');
@@ -472,6 +478,10 @@ export default function GerenciarChamados() {
             valorA = a.resumoChamado?.toLowerCase() || '';
             valorB = b.resumoChamado?.toLowerCase() || '';
             break;
+          case 'ultimaInteracao':
+            valorA = a.ultimaInteracao?.data ? new Date(a.ultimaInteracao.data).getTime() : 0;
+            valorB = b.ultimaInteracao?.data ? new Date(b.ultimaInteracao.data).getTime() : 0;
+            break;  
           default:
             return 0;
         }
@@ -1708,6 +1718,22 @@ export default function GerenciarChamados() {
                             )}
                           </div>
                         </th>
+                      <th 
+                        className="px-2 py-2 text-left text-xs font-semibold cursor-pointer transition-colors select-none min-w-60"
+                        style={{ 
+                          color: theme.text.primary, 
+                          backgroundColor: theme.background.tabelaEscuro, 
+                          whiteSpace: 'nowrap' 
+                        }}
+                        onClick={() => handleOrdenar('ultimaInteracao')}
+                      >
+                        <div className="flex items-center gap-1">
+                          Última Interação
+                          {ordenarPor === 'ultimaInteracao' && (
+                            <span>{direcaoOrdem === 'asc' ? '↑' : '↓'}</span>
+                          )}
+                        </div>
+                      </th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1818,7 +1844,30 @@ export default function GerenciarChamados() {
                        
                               </div>
                             ) : (
-                              <span className="italic" style={{ color: theme.text.secondary }}>Não atribuído</span>
+                              <span className="italic opacity-50" style={{ color: theme.text.secondary }}>Não atribuído</span>
+                            )}
+                          </td>
+                          {/* Última Interação */}
+                          <td className="px-2 py-2 text-xs" style={{ color: theme.text.primary }}>
+                            {chamado.ultimaInteracao ? (
+                              <div className="flex flex-col gap-1">
+                                <span className="font-medium">
+                                  {new Date(chamado.ultimaInteracao.data).toLocaleDateString('pt-BR', {
+                                    year: 'numeric',
+                                    month: '2-digit',
+                                    day: '2-digit'
+                                  })} {new Date(chamado.ultimaInteracao.data).toLocaleTimeString('pt-BR', {
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                    second: '2-digit'
+                                  })}
+                                </span>
+                                <span className="text-xs opacity-75" title={chamado.ultimaInteracao.usuarioNome}>
+                                  por {chamado.ultimaInteracao.usuarioNome}
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="italic opacity-50" style={{ color: theme.text.secondary }}>Sem mensagens</span>
                             )}
                           </td>
                         </tr>))}
@@ -1919,6 +1968,26 @@ export default function GerenciarChamados() {
                           {chamado.status?.nome || 'Desconhecido'}
                         </span>
                       </div>
+
+                      {/* Última Interação */}
+                      {chamado.ultimaInteracao && (
+                        <div className="mb-3 p-2 rounded" style={{ backgroundColor: theme.background.surface }}>
+                          <div className="text-xs mb-1" style={{ color: theme.text.secondary }}>Última interação:</div>
+                          <div className="text-xs font-medium" style={{ color: theme.text.primary }}>
+                            {new Date(chamado.ultimaInteracao.data).toLocaleDateString('pt-BR', {
+                              year: 'numeric',
+                              month: '2-digit',
+                              day: '2-digit'
+                            })} {new Date(chamado.ultimaInteracao.data).toLocaleTimeString('pt-BR', {
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </div>
+                          <div className="text-xs opacity-75" style={{ color: theme.text.secondary }}>
+                            por {chamado.ultimaInteracao.usuarioNome}
+                          </div>
+                        </div>
+                      )}
 
                       {/* footer data de Abertura */}
                       <div className="flex items-center justify-between text-xs pt-2" style={{

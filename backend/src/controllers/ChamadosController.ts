@@ -15,6 +15,7 @@ import { verifyToken } from "../Middleware/AuthMiddleware";
 import { supabase, SUPABASE_BUCKET } from "../config/supabase";
 import * as EmailService from "../services/EmailService";
 import { KanbanPositions } from "../entities/KanbanPositions";
+import { KanbanCard } from "../entities/KanbanCard";
 
 interface AuthenticatedRequest extends Request {
   userId?: number;
@@ -809,6 +810,42 @@ router.get("/chamados", verifyToken, async (req: AuthenticatedRequest, res: Resp
       });
     });
 
+    // buscar ult mensagem de cada chamado
+    const ultimasMensagensRepo = AppDataSource.getRepository(ChamadoMensagens);
+    const todasMensagens = chamadoIds.length > 0
+      ? await ultimasMensagensRepo
+          .createQueryBuilder("mensagem")
+          .select("mensagem.id", "id")
+          .addSelect("mensagem.chamado_id", "chamadoId")
+          .addSelect("mensagem.data_envio", "dataEnvio")
+          .addSelect("mensagem.mensagem", "mensagem")
+          .addSelect("usuario.id", "usuarioId")
+          .addSelect("usuario.name", "usuarioNome")
+          .leftJoin("mensagem.usuario", "usuario")
+          .where("mensagem.chamado_id IN (:...chamadoIds)", { chamadoIds })
+          .orderBy("mensagem.chamado_id", "ASC")
+          .addOrderBy("mensagem.data_envio", "DESC")
+          .getRawMany()
+      : [];
+
+    // criar um mapa com a ult msg por chamado (primeira = ult por estar ordenada desc)
+    const ultimaMensagemPorChamado: { [key: number]: any } = {};
+    const chamadoIdProcessados = new Set<number>();
+    
+    todasMensagens.forEach((msg: any) => {
+      // msg.chamadoId vem do select alias
+      const idChamado = msg.chamadoId;
+      if (idChamado && !chamadoIdProcessados.has(idChamado)) {
+        ultimaMensagemPorChamado[idChamado] = {
+          data: msg.dataEnvio,
+          usuarioId: msg.usuarioId,
+          usuarioNome: msg.usuarioNome,
+          mensagem: msg.mensagem?.substring(0, 50) + (msg.mensagem?.length > 50 ? '...' : '')
+        };
+        chamadoIdProcessados.add(idChamado);
+      }
+    });
+
     // Formatar resposta com signed URLs para avatares
     const chamadosFormatados = await Promise.all(chamados.map(async (chamado: any) => {
       // Se tiver múltiplas posições, retornar um array; senão retornar null ou a primeira
@@ -863,6 +900,7 @@ router.get("/chamados", verifyToken, async (req: AuthenticatedRequest, res: Resp
         status: chamado.status,
         userResponsavel: userResponsavelFormatado,
         userFechamento: chamado.userFechamento ? { id: chamado.userFechamento.id, name: chamado.userFechamento.name } : null,
+        ultimaInteracao: ultimaMensagemPorChamado[chamado.id] || null,
         // Retornar array de todas as posições para o frontend escolher a correta
         kanbanPositions: posicoesDoCard.length > 0 ? posicoesDoCard : null,
       };
@@ -2244,12 +2282,104 @@ router.patch("/chamados/:id/move", verifyToken, async (req: AuthenticatedRequest
 
     // SALVAR POSIÇÃO PARA TODOS OS TIPOS DE AGRUPAMENTO
     if (groupBy === "personalizada") {
+      // sincronizar KanbanCard quando em modo personalizado
+      if (boardId) {
+        const kanbanCardRepository = AppDataSource.getRepository(KanbanCard);
+        
+        let card = await kanbanCardRepository.findOne({
+          where: {
+            board: { id: boardId },
+            chamado: { id: chamadoId }
+          },
+          relations: ["board", "column", "chamado"]
+        });
+
+        const columnId = columnValue === null || columnValue === 'unassigned' 
+          ? null 
+          : Number(columnValue);
+
+        if (card) {
+          // atualizar card existente
+          card.column = columnId ? { id: columnId } as any : null;
+          card.posicao = Number(position);
+          card.atualizadoEm = new Date();
+          
+          await kanbanCardRepository.save(card);
+        } else {
+          // criar novo card se não existir (ticket vindo de "unassigned")          
+          const novoCard = kanbanCardRepository.create({
+            board: { id: boardId } as any,
+            chamado: { id: chamadoId } as any,
+            column: columnId ? { id: columnId } as any : null,
+            posicao: Number(position),
+            criadoEm: new Date(),
+            atualizadoEm: new Date(),
+          });
+          
+          const cardCriado = await kanbanCardRepository.save(novoCard);
+        }
+      }
+
+      //  BUSCAR POSIÇÃO ANTERIOR ANTES DE ATUALIZAR PRA SALVCAR NO HISTORICO
+      const posicaoAnteriorAuditoria = await kanbanPositionRepository.findOne({
+        where: { 
+          idChamado: chamadoId,
+          groupBy: groupBy
+        }
+      });
+      
+      const colunaAnteriorAuditoria = posicaoAnteriorAuditoria?.columnValue || 'Sem coluna';
+
       await persistKanbanPosition();
 
-      console.log(
-        `✅ Chamado ${chamadoId} movido em "${groupBy}" para coluna ${columnValue} na posição ${position}`
-      );
+      
 
+      //SALVAR AUDITORIA DA MOVIMENTAÇÃO
+      try {
+        const historicoRepository = AppDataSource.getRepository(ChamadoHistorico);
+        const userRepository = AppDataSource.getRepository(require("../entities/Users").Users);
+        
+        const userId = (req as AuthenticatedRequest).userId;
+        const usuario = await userRepository.findOne({ where: { id: userId } });
+        const usuarioNome = usuario?.name || 'Sistema';
+        
+        // formatar nomes das colunas
+        let nomeColunaNova = String(columnValue);
+        let nomeClinaAnterior = String(colunaAnteriorAuditoria);
+        
+        if (groupBy === 'personalizada') {
+          // para modo personalizado, buscar nome da coluna
+          const kanbanColumnRepository = AppDataSource.getRepository(require("../entities/KanbanColumn").KanbanColumn);
+          if (columnValue !== null && columnValue !== 'unassigned') {
+            const colNova = await kanbanColumnRepository.findOne({ where: { id: Number(columnValue) } });
+            nomeColunaNova = colNova?.nome || String(columnValue);
+          }
+          if (colunaAnteriorAuditoria && colunaAnteriorAuditoria !== 'unassigned') {
+            const colAnterior = await kanbanColumnRepository.findOne({ where: { id: Number(colunaAnteriorAuditoria) } });
+            nomeClinaAnterior = colAnterior?.nome || colunaAnteriorAuditoria;
+          }
+        }
+        
+        const agora = new Date();
+        const dataFormatada = agora.toLocaleDateString('pt-BR', { year: 'numeric', month: '2-digit', day: '2-digit' });
+        const horaFormatada = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        
+        const acaoAuditoria = `${usuarioNome} moveu este ticket de '${nomeClinaAnterior}' para '${nomeColunaNova}' em ${dataFormatada} as ${horaFormatada}`;
+        
+        // salvar com usuario_id nullable se não encontrar usuário
+        const registro = historicoRepository.create({
+          chamado: { id: chamadoId } as any,
+          acao: acaoAuditoria,
+          usuario: usuario ? { id: usuario.id } as any : null, // NULL se usuário não existir
+          dataMov: new Date(),
+        });
+        
+        await historicoRepository.save(registro);
+       
+      } catch (auditError: any) {
+        // não interrompe o fluxo - a movimentação já foi feita com sucesso
+      }
+        
       // 🔌 Notificar em tempo real via WebSocket
       if (boardId && (global as any).RealtimeService) {
         (global as any).RealtimeService.notifyCardMoved(boardId, {
@@ -2260,6 +2390,8 @@ router.patch("/chamados/:id/move", verifyToken, async (req: AuthenticatedRequest
           moveId, // ✅ ID único para deduplicação no frontend
           timestamp: new Date(),
         });
+      } else {
+        console.warn(`⚠️⚠️⚠️ [WEBSOCKET] Não foi possível notificar: boardId=${boardId}, RealtimeService=${(global as any).RealtimeService ? 'OK' : 'NULL'}`);
       }
     } else {
       // ATT ENTIDADE CHAMADO DIRETAMENTE PARA OUTROS MODOS DE AGRUPAMENTO
