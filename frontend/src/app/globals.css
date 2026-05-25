@@ -283,7 +283,7 @@ select {
   --text-disabled: 156 163 175; /* #9CA3AF - Texto desabilitado */
 
   /* Checkbox - Tema Claro */
-  --checkbox-border: 59 130 246; /* #3B82F6 - Azul mais escuro para contraste */
+  --checkbox-border: 53 74 110; /* #354a6e - Azul mais escuro para contraste */
   --checkbox-bg: 255 255 255; /* #FFFFFF - Fundo branco */
   --checkbox-checked-bg: 30 58 138; /* #1E3A8A - Azul mais escuro quando checado */
   --checkbox-checked-border: 30 58 138; /* #1E3A8A - Azul mais escuro border */
@@ -309,7 +309,7 @@ select {
 
 /* DARK THEME */
 html.dark {
-
+  
   --select-border: 75 85 99; /* #4B5563 - cinza médio escuro */
 
   /* Backgrounds */
@@ -372,9 +372,9 @@ html.dark {
   --cor-card-total-fim: 17 24 39; /* #111827 - Preto com cinza */
 
   /* Checkbox - Tema Escuro */
-  --checkbox-border: 96 165 250; /* #60A5FA - Azul brilhante para máximo contraste */
-  --checkbox-bg: 31 41 55; /* #1F2937 - Fundo cinza escuro */
-  --checkbox-checked-bg: 96 165 250; /* #60A5FA - Azul luminoso quando checado */
+  --checkbox-border: 31 71 135; /* #60A5FA - Azul brilhante para máximo contraste */
+  --checkbox-bg: 0 0 0 / 0%; /* #1F2937 - fundo preto transparente */
+  --checkbox-checked-bg: 0 94 255; /* #60A5FA - Azul luminoso quando checado */
   --checkbox-checked-border: 96 165 250; /* #60A5FA - Azul luminoso para borda */
 
   /* Input/DatePicker - Tema Escuro */

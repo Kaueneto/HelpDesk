@@ -18,7 +18,6 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
   const [mensagens, setMensagens] = useState<any[]>([]);
   const [historico, setHistorico] = useState<any[]>([]);
   const [loadingMensagens, setLoadingMensagens] = useState(false);
-  const [detalheTab, setDetalheTab] = useState<'detalhes' | 'historico'>('detalhes');
   const [novaMensagem, setNovaMensagem] = useState('');
   const [anexosResposta, setAnexosResposta] = useState<File[]>([]);
   const [isDraggingResposta, setIsDraggingResposta] = useState(false);
@@ -385,45 +384,17 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
           </div>
         </div>
         
-        {/* Tabs Detalhes/Histórico */}
-        <div className="flex gap-2 sm:gap-4 mt-2 sm:mt-4 md:mt-6 border-b border-gray-300">
-          <button
-            onClick={() => setDetalheTab('detalhes')}
-            className={`px-3 sm:px-4 md:px-6 py-1.5 sm:py-2 text-sm sm:text-base font-medium transition-all ${
-              detalheTab === 'detalhes'
-                ? 'border-b-2 border-gray-600 text-gray-900'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Detalhes
-          </button>
-          <button
-            onClick={() => setDetalheTab('historico')}
-            className={`px-3 sm:px-4 md:px-6 py-1.5 sm:py-2 text-sm sm:text-base font-medium transition-all ${
-              detalheTab === 'historico'
-                ? 'border-b-2 border-gray-600 text-gray-900'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Histórico
-          </button>
-        </div>
+        {/* Sem mais abas - tudo integrado */}
       </div>
 
-      {/* Conteúdo das tabs */}
-     <div className="flex-1 overflow-hidden">
-        <div
-          className="flex transition-transform duration-300 ease-in-out h-full"
-          style={{ transform: detalheTab === 'detalhes' ? 'translateX(0)' : 'translateX(-100%)' }}
-        >
-          {/* Tab Detalhes */}
-         <div className="w-full shrink-0 flex flex-col h-full min-h-125 sm:min-h-150">
-            {loadingMensagens ? (
-              <div className="text-center py-8 text-gray-600">Carregando mensagens...</div>
-            ) : (
-              <>
-                {/* container de mensagens com scroll */}
-               <div id="chat-messages-container" className="flex-[1_0_200px] overflow-y-auto px-2 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-3 md:py-4 space-y-3 sm:space-y-4 bg-gray-50">
+      {/* Conteúdo - Chat integrado com histórico */}
+     <div className="flex-1 overflow-hidden flex flex-col h-full">
+        {loadingMensagens ? (
+          <div className="text-center py-8 text-gray-600">Carregando mensagens...</div>
+        ) : (
+          <>
+            {/* container de mensagens + histórico com scroll */}
+            <div id="chat-messages-container" className="flex-[1_0_200px] overflow-y-auto px-2 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-3 md:py-4 space-y-3 sm:space-y-4 bg-gray-50">
                   {/* 1° mensagem do usuário */}
                   <div className="flex justify-end">
                     <div className="max-w-[85%] sm:max-w-[75%] md:max-w-[65%] bg-blue-50 border-r-4 border-blue-500 rounded-lg p-2 sm:p-3 md:p-4 shadow-sm">
@@ -484,81 +455,113 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
                     </div>
                   </div>
 
-                  {/* Mensagens subsequentes */}
-                  {mensagens.map((msg, index) => {
-                    // log para verificar msg.id
-                    if (!msg.id) {
-                      console.warn(`⚠️⚠️⚠️ mensagem sem ID no índice ${index}:`, msg);
-                    }
-                    
-                    // comparar com o user LOGADO atual (não com o criador do chamado)
-                    const isUsuarioLogado = msg.usuario?.id === user?.id;
-                    
-                    // usar msg.id como key, ou se não existir, usar index + timestamp como fallback
-                    const uniqueKey = msg.id ? `msg-${msg.id}` : `msg-temp-${index}-${Date.now()}`;
-                    
-                    return (
-                      <div
-                        key={uniqueKey}
-                        className={`flex ${isUsuarioLogado ? 'justify-end' : 'justify-start'}`}
-                      >
-                        <div
-                          className={`max-w-[85%] sm:max-w-[75%] md:max-w-[70%] ${
-                            isUsuarioLogado 
-                              ? 'bg-blue-50 border-r-4 border-blue-500' 
-                              : 'bg-gray-100 border-l-4 border-gray-500'
-                          } rounded-lg p-2 sm:p-3 md:p-4 shadow-sm`}
-                        >
-                          <div className="flex items-center gap-1 sm:gap-2 mb-1 sm:mb-2">
-                            <span className="font-semibold text-gray-900 text-xs sm:text-sm md:text-base">
-                              {msg.usuario?.name || 'Usuário Desconhecido'}
-                            </span>
-                            <span className="text-[10px] sm:text-xs text-gray-500">
-                              {formatarDataBrasilia(msg.dataEnvio)}
-                            </span>
-                          </div>
-                          <p className="text-gray-800 whitespace-pre-wrap text-xs sm:text-sm">{msg.mensagem}</p>
-                          
-                          {/* Anexos da mensagem */}
-                          {msg.anexos && msg.anexos.length > 0 && (
-                            <div className="mt-2 sm:mt-3 space-y-1.5 sm:space-y-2">
-                              <p className="text-xs sm:text-sm font-medium text-gray-600">Anexos:</p>
-                              {msg.anexos.map((anexo: any) => {
-                                const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(anexo.filename);
-                                const fileUrl = anexo.signedUrl || '#';
-                                
-                                return (
-                                  <a
-                                    key={anexo.id}
-                                    href={fileUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 bg-white border border-gray-300 rounded hover:bg-gray-50 hover:border-gray-400 transition text-xs sm:text-sm group"
-                                  >
-                                    {isImage ? (
-                                      <svg className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                      </svg>
-                                    ) : (
-                                      <svg className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                      </svg>
-                                    )}
-                                    <span className="text-gray-700 group-hover:text-blue-700 truncate flex-1">
-                                      {anexo.filename}
-                                    </span>
-                                    <svg className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-gray-400 group-hover:text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                                    </svg>
-                                  </a>
-                                );
-                              })}
+                  {/* Mensagens + Eventos de Histórico Integrados */}
+                  {(() => {
+                    // mesclar mensagens e histórico cronologicamente
+                    const itensIntegrados = [
+                      ...mensagens.map(msg => ({ tipo: 'mensagem', data: msg.dataEnvio, conteudo: msg })),
+                      ...historico.map(evt => ({ tipo: 'historico', data: evt.dataMov, conteudo: evt }))
+                    ].sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
+
+                    return itensIntegrados.map((item, idx) => {
+                      if (item.tipo === 'mensagem') {
+                        const msg = item.conteudo;
+                        const isUsuarioLogado = msg.usuario?.id === user?.id;
+                        const uniqueKey = msg.id ? `msg-${msg.id}` : `msg-temp-${idx}-${Date.now()}`;
+                        
+                        return (
+                          <div
+                            key={uniqueKey}
+                            className={`flex ${isUsuarioLogado ? 'justify-end' : 'justify-start'}`}
+                          >
+                            <div
+                              className={`max-w-[85%] sm:max-w-[75%] md:max-w-[70%] ${
+                                isUsuarioLogado 
+                                  ? 'bg-blue-50 border-r-4 border-blue-500' 
+                                  : 'bg-gray-100 border-l-4 border-gray-500'
+                              } rounded-lg p-2 sm:p-3 md:p-4 shadow-sm`}
+                            >
+                              <div className="flex items-center gap-1 sm:gap-2 mb-1 sm:mb-2">
+                                <span className="font-semibold text-gray-900 text-xs sm:text-sm md:text-base">
+                                  {msg.usuario?.name || 'Usuário Desconhecido'}
+                                </span>
+                                <span className="text-[10px] sm:text-xs text-gray-500">
+                                  {formatarDataBrasilia(msg.dataEnvio)}
+                                </span>
+                              </div>
+                              <p className="text-gray-800 whitespace-pre-wrap text-xs sm:text-sm">{msg.mensagem}</p>
+                              
+                              {/* Anexos da mensagem */}
+                              {msg.anexos && msg.anexos.length > 0 && (
+                                <div className="mt-2 sm:mt-3 space-y-1.5 sm:space-y-2">
+                                  <p className="text-xs sm:text-sm font-medium text-gray-600">Anexos:</p>
+                                  {msg.anexos.map((anexo: any) => {
+                                    const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(anexo.filename);
+                                    const fileUrl = anexo.signedUrl || '#';
+                                    
+                                    return (
+                                      <a
+                                        key={anexo.id}
+                                        href={fileUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 bg-white border border-gray-300 rounded hover:bg-gray-50 hover:border-gray-400 transition text-xs sm:text-sm group"
+                                      >
+                                        {isImage ? (
+                                          <svg className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                          </svg>
+                                        ) : (
+                                          <svg className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                          </svg>
+                                        )}
+                                        <span className="text-gray-700 group-hover:text-blue-700 truncate flex-1">
+                                          {anexo.filename}
+                                        </span>
+                                        <svg className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-gray-400 group-hover:text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                        </svg>
+                                      </a>
+                                    );
+                                  })}
+                                </div>
+                              )}
                             </div>
+                          </div>
+                        );
+                      } else {
+                        // renderizar evento de histórico centralizado
+                        const evento = item.conteudo;
+                   return (
+                    <div key={`hist-${evento.id}`} className="flex justify-center py-2 sm:py-3">
+                      <div className="relative w-full max-w-[96%] sm:max-w-[92%] md:max-w-[860px] overflow-hidden rounded-2xl border border-gray-200 bg-white px-4 py-4 sm:px-5 shadow-sm">
+                        <div className="absolute left-0 top-0 h-full w-1 bg-gray-300" />
+
+                        <div className="pl-2">
+                          <p className="font-segoe text-sm font-semibold text-gray-800 text-center">
+                            {evento.acao}
+                          </p>
+
+                          <div className="mt-2 flex flex-wrap items-center justify-center gap-2 text-[11px] sm:text-xs text-gray-500">
+                            <span className="rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-gray-700">
+                              {evento.usuario?.name || 'Sistema'}
+                            </span>
+                            <span>{formatarDataBrasilia(evento.dataMov).replace(',', ' às ')}</span>
+                          </div>
+
+                          {evento.observacao && (
+                            <p className="mt-3 text-center text-xs sm:text-sm italic text-gray-500">
+                              {evento.observacao}
+                            </p>
                           )}
                         </div>
                       </div>
-                    );
-                  })}
+                    </div>
+                  );
+                      }
+                    });
+                  })()}
                 </div>
 
                 {/* campo pra poder escrever resposta - fixo na parte inferior */}
@@ -669,42 +672,6 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
                 </div>
               </>
             )}
-          </div>
-
-          {/* Tab Histórico */}
-          <div className="w-full shrink-0 h-full overflow-y-auto px-2 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-3 md:py-4">
-            <div className="bg-[#f8fafc] rounded-lg border border-gray-300 p-3 sm:p-4 md:p-6">
-              <h3 className="text-sm sm:text-base md:text-lg font-semibold text-gray-900 mb-3 sm:mb-4 pb-2 sm:pb-3 border-b border-gray-400">
-                Histórico do Chamado
-              </h3>
-              {historico.length === 0 ? (
-                <div className="text-center py-8 text-gray-600">
-                  Nenhum histórico disponível para este chamado.
-                </div>
-              ) : (
-                <div className="space-y-3 sm:space-y-4">
-                  {historico.map((evento) => (
-                    <div key={evento.id} className="flex gap-2 sm:gap-3 md:gap-4 pb-3 sm:pb-4 border-b border-gray-200 last:border-0">
-                      <div className="shrink-0 w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-blue-600 mt-1.5 sm:mt-2" />
-                      <div className="flex-1">
-                        <p className="text-gray-900 font-medium text-xs sm:text-sm md:text-base">{evento.acao}</p>
-                        <div className="flex items-center gap-1.5 sm:gap-2 mt-1">
-                          <span className="text-xs sm:text-sm text-gray-600">{evento.usuario?.name || 'Sistema'}</span>
-                          <span className="text-xs sm:text-sm text-gray-500">• {formatarDataBrasilia(evento.dataMov)}</span>
-                        </div>
-                        {evento.observacao && (
-                          <p className="text-xs sm:text-sm text-gray-500 italic mt-1.5 sm:mt-2">
-                            Observação: {evento.observacao}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Modal de Edição */}

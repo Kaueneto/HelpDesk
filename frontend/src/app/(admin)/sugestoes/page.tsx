@@ -344,7 +344,7 @@ export default function NosAjudeAMelhorar() {
                     <div className="grid md:grid-cols-2 gap-4">
                       {/* Opção Pública */}
                       <motion.button
-                        whileHover={{ scale: 1.02 }}
+                        whileHover={{ scale: 1.01 }}
                         onClick={() => handleSelecionarTipo(false)}
                         className="p-6 rounded-lg border transition-all text-left cursor-pointer"
                         style={{
@@ -372,7 +372,7 @@ export default function NosAjudeAMelhorar() {
 
                       {/* Opção Privada */}
                       <motion.button
-                        whileHover={{ scale: 1.02 }}
+                        whileHover={{ scale: 1.01 }}
                         onClick={() => handleSelecionarTipo(true)}
                         className="p-6 rounded-lg border transition-all text-left cursor-pointer"
                         style={{
@@ -415,6 +415,7 @@ export default function NosAjudeAMelhorar() {
                       layoutId="tipo-badge"
                     >
                       <div
+                      
                         className="px-3 py-1.5 rounded-full text-sm font-medium flex items-center gap-2"
                         style={{
                           backgroundColor: privado ? `#ff000015` : `${theme.brand.primary}15`,
@@ -427,7 +428,7 @@ export default function NosAjudeAMelhorar() {
                       </div>
                       <button
                         onClick={() => setEtapaCriacao('tipo')}
-                        className="text-xs px-2 py-1 rounded hover:opacity-70 transition-all"
+                        className="text-xs px-2 py-1 rounded-full hover:opacity-70 transition-all"
                         style={{ backgroundColor: theme.background.surface, color: theme.text.secondary }}
                       >
                         Alterar
