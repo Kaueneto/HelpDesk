@@ -47,7 +47,7 @@ export const lightTheme: Theme = {
     emAtendimento: {
       bg: '#DBEAFE',         // Azul claro (status 2)
       text: '#0C4A6E',       // Azul escuro
-      border: '#0EA5E9',     // Azul
+      border: '#0C4A6E',     // Azul
     },
     encerrado: {
       bg: '#DCFCE7',         // Verde claro (status 3)
@@ -115,7 +115,7 @@ export const lightTheme: Theme = {
 
   // Componente Kanban
   kanban: {
-    columnBg: '#F9FAFB',     // Cinza muito claro
+    columnBg: '#f1f1f1',     // Cinza muito claro
     columnBorder: '#E5E7EB', // Cinza
     cardBg: '#FFFFFF',      // Branco para cards
     textPrimary: '#1F2937',  // Cinza escuro

@@ -123,8 +123,8 @@ export const darkTheme: Theme = {
   // Componente Kanban
   kanban: {
     columnBg: '#000000',     // Cinza escuro
-    columnBorder: '#1E1E1E', // Cinza médio
-    cardBg: '#1E1E1E',      // Cinza escuro para cards
+    columnBorder: '#000000', // Cinza médio
+    cardBg: '#262626',      // Cinza escuro para cards
     textPrimary: '#F1F5F9',  // Quase branco
     textSecondary: '#CBD5E1', // Cinza claro
   },
@@ -195,7 +195,7 @@ export const darkTheme: Theme = {
   },
 
     detalhesChamado: {
-    label: '#F1F5F9',        // Quase branco para labels (invertido)
+    label: '#d6d6d6',        // Quase branco para labels (invertido)
     labelActive: '#60A5FA',   // Azul claro para labels ativas (invertido)
     value: '#CBD5E1',        // Cinza claro para valores (invertido)
     border: '#475569',       // Cinza escuro para bordas (invertido)
