@@ -1,32 +1,23 @@
+
 "use client";
-
-import { useMemo, useCallback, useState } from 'react';
-import {
-  DndContext,
-  DragOverlay,
-  closestCorners,
-} from '@dnd-kit/core';
-import { motion, AnimatePresence } from 'framer-motion';
-import toast from 'react-hot-toast';
-import { useTheme } from '@/contexts/ThemeContext';
-import { useBoardData } from '@/hooks/useBoardData';
-import { useRealtimeBoard } from '@/hooks/useRealtimeBoard';
-
-import { useKanbanGrouping } from './hooks/useKanbanGrouping';
-import { useKanbanDragDrop } from './hooks/useKanbanDragDrop';
-import { useKanbanColumnManagement } from './hooks/useKanbanColumnManagement';
-import { useKanbanFiltering } from './hooks/useKanbanFiltering';
-
-import { moveTicket as moveTicketService } from './services/ticketMovementService';
-import { getColumnValueForGroupBy } from './services/ticketMovementService';
-
-import KanbanColumn from './KanbanColumn';
-import TicketCard from './TicketCard';
-import CreateBoardModal from './CreateBoardModal';
-import EmptyBoardState from './EmptyBoardState';
-import KanbanHeader from './components/KanbanHeader';
-
-import type { Chamado, KanbanViewProps } from './utils/kanbanTypes';
+import { useMemo, useCallback, useState } from "react";
+import { DndContext, DragOverlay, pointerWithin, rectIntersection } from "@dnd-kit/core";
+import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "react-hot-toast";
+import { useTheme } from "../../contexts/ThemeContext";
+import { useBoardData } from "../../hooks/useBoardData";
+import { useRealtimeBoard } from "../../hooks/useRealtimeBoard";
+import { useKanbanGrouping } from "./hooks/useKanbanGrouping";
+import { useKanbanDragDrop } from "./hooks/useKanbanDragDrop";
+import { useKanbanColumnManagement } from "./hooks/useKanbanColumnManagement";
+import { useKanbanFiltering } from "./hooks/useKanbanFiltering";
+import { moveTicket as moveTicketService, getColumnValueForGroupBy } from "./services/ticketMovementService";
+import KanbanColumn from "./KanbanColumn";
+import TicketCard from "./TicketCard";
+import CreateBoardModal from "./CreateBoardModal";
+import EmptyBoardState from "./EmptyBoardState";
+import KanbanHeader from "./components/KanbanHeader";
+import type { Chamado, KanbanViewProps } from "./utils/kanbanTypes";
 
 export default function KanbanView({
   tickets,
@@ -41,10 +32,22 @@ export default function KanbanView({
   departamentoId = 1,
 }: KanbanViewProps) {
   const { theme } = useTheme();
-
-  
   const [isCreateBoardModalOpen, setIsCreateBoardModalOpen] = useState(false);
+  const [selectedTickets, setSelectedTickets] = useState<Set<number>>(new Set());
 
+  // handler para selecionar/desselecionar tickets
+  const handleSelectTicket = useCallback((ticketId: number, selected: boolean) => {
+    setSelectedTickets((prev) => {
+      const newSet = new Set(prev);
+      if (selected) {
+        newSet.add(ticketId);
+      } else {
+        newSet.delete(ticketId);
+      }
+      console.log(`📋 [SELECT] Total selecionados: ${newSet.size}`);
+      return newSet;
+    });
+  }, []);
 
   const {
     boards,
@@ -56,20 +59,13 @@ export default function KanbanView({
     createBoard,
     createColumn,
     deleteColumn,
-    removeColumnLocal,
     addCardToColumn,
     moveCard,
+    removeColumnLocal,
   } = useBoardData(departamentoId);
 
-  const {
-    groupBy,
-    selectedBoardId,
-    somenteAbertos,
-    allGroupByOptions,
-    handleGroupByChange,
-    setGroupBy,
-    setSomenteAbertos,
-  } = useKanbanFiltering({ boards, selectBoard });
+  const { groupBy, selectedBoardId, somenteAbertos, allGroupByOptions, handleGroupByChange, setGroupBy, setSomenteAbertos } =
+    useKanbanFiltering({ boards, selectBoard });
 
   const {
     isAddingColumn,
@@ -84,13 +80,10 @@ export default function KanbanView({
     handleCancelColumnEdit,
     setIsAddingColumn,
     setNewColumnName,
-  } = useKanbanColumnManagement({ departamentoId, onRefresh });
+  } = useKanbanColumnManagement({ departamentoId, onRefresh, createColumn, deleteColumn, removeColumnLocal });
 
-  const {
-    groupedTickets: groupedTicketsBase,
-    ticketsByColumn: ticketsByColumnBase,
-    calcPositionBetweenTickets,
-  } = useKanbanGrouping({
+  //  dragOverInfo começa null — o grouping base é calculado SEM ele
+  const { groupedTickets, ticketsByColumn } = useKanbanGrouping({
     tickets,
     groupBy,
     columns,
@@ -101,173 +94,219 @@ export default function KanbanView({
     topicosAjuda,
     somenteAbertos,
     theme,
-    dragOverInfo: null, 
+    dragOverInfo: null, // preview é aplicado dentro do hook separadamente via estado
   });
 
+  // expoxto para o DragDrop hook controlar o preview
+  const [dragOverInfoState, setDragOverInfoState] = useState<any>(null);
 
-  const {
-    activeTicket,
-    dragOverInfo,
-    sensors,
-    handleDragStart,
-    handleDragOver,
-    handleDragEnd: baseDragEnd,
-  } = useKanbanDragDrop({
+  // grouping COM preview visual (apenas clona o resultado base + reordena)
+  const { groupedTickets: groupedWithDrag, ticketsByColumn: ticketsByColumnWithDrag } = useKanbanGrouping({
+    tickets,
+    groupBy,
+    columns,
+    cards,
+    statusList,
+    prioridades,
+    departamentos,
+    topicosAjuda,
+    somenteAbertos,
+    theme,
+    dragOverInfo: dragOverInfoState,
+  });
+
+  const getCustomTicketPosition = useCallback(
+    (ticket: Chamado) => {
+      const card = cards.find((c: any) => (c as any).idChamado === ticket.id);
+      return card ? Number((card as any).posicao) : 999999;
+    },
+    [cards]
+  );
+  const onMoveTicket = useCallback(
+    async (ticketId: number, targetColumn: string, newPosition: number, fromColumnId: string) => {
+           
+      onTicketUpdate?.(ticketId, (prev: Chamado[]) => prev.map((t: Chamado) => 
+        t.id === ticketId ? { 
+          ...t, 
+          kanbanPositions: { groupBy: "personalizada", columnValue: targetColumn, position: newPosition } 
+        } : t
+      ));
+
+      try {
+        const columnValue = getColumnValueForGroupBy(targetColumn, groupBy);
+        
+        if (groupBy === "personalizada" && selectedBoardId) {
+          const existingCard = cards.find((c) => (c as any).idChamado === ticketId);
+          const targetColumnId = targetColumn === "unassigned" ? null : Number(targetColumn);
+          
+          if (existingCard) {
+            await moveCard((existingCard as any).id, targetColumnId, newPosition);
+          } else {
+            await addCardToColumn(targetColumnId, ticketId, newPosition);
+          }
+        }
+        
+        await moveTicketService(
+          ticketId, targetColumn, newPosition, groupBy,
+          columnValue ?? null,
+          groupBy === "personalizada" ? selectedBoardId ?? undefined : undefined,
+          tickets, statusList, prioridades, departamentos, topicosAjuda, usuarios, onTicketUpdate
+        );
+       // console.log("Movimentação concluída!");
+      } catch (error) {
+        console.error("ERRO:", error);
+        onRefresh?.();
+      }
+    },
+    [groupBy, selectedBoardId, cards, moveCard, addCardToColumn, onTicketUpdate, onRefresh, tickets, statusList, prioridades, departamentos, topicosAjuda, usuarios]
+  );
+
+  // mover todos os cards selecionados para uma coluna
+  const handleMoveSelectedCards = useCallback(
+    async (targetColumnId: string) => {
+      if (selectedTickets.size === 0) {
+        toast.error("Nenhum card selecionado");
+        return;
+      }
+
+      //console.log(`Movendo ${selectedTickets.size} cards selecionados para coluna ${targetColumnId}`);
+      
+      const selectedTicketsArray = Array.from(selectedTickets);
+      
+      // mopve em sequência, cada um na primeira posição
+      for (let i = 0; i < selectedTicketsArray.length; i++) {
+        const ticketId = selectedTicketsArray[i];
+        const position = 1000 + i * 100; // Spread them out: 1000, 1100, 1200, etc
+        
+        try {
+          await onMoveTicket(ticketId, targetColumnId, position, "");
+        } catch (error) {
+          console.error(`ERRO AO MOVER TICKET ${ticketId}:`, error);
+        }
+      }
+      
+      // limpar seleção após mover
+      setSelectedTickets(new Set());
+      toast.success(`${selectedTicketsArray.length} card(s) movido(s)!`);
+    },
+    [selectedTickets, onMoveTicket]
+  );
+
+  const handleCardMovedRealtime = useCallback((data: any) => {
+
+    const isDraggingThisCard = dragOverInfoState?.ticketId === data.chamadoId;
+    
+
+    //console.log(`[REALTIME] Atualizando card em tempo real: ${data.chamadoId}`);
+    onTicketUpdate?.(data.chamadoId, (prev: Chamado[]) =>
+      prev.map((t: Chamado) =>
+        t.id !== data.chamadoId ? t : {
+          ...t,
+          kanbanPositions: { groupBy: data.groupBy || "personalizada", columnValue: data.columnValue?.toString() ?? null, position: data.position },
+        }
+      )
+    );
+  }, [onTicketUpdate, dragOverInfoState]);
+
+  const { activeTicket, sensors, handleDragStart, handleDragOver, handleDragEnd } = useKanbanDragDrop({
     tickets,
     groupBy,
     columns: columns as any,
-    ticketsByColumn: ticketsByColumnBase,
-    groupedTickets: groupedTicketsBase,
-    getCustomTicketPosition: (ticket) => {
-      const card = cards.find((boardCard) => boardCard.idChamado === ticket.id);
-      return card ? Number(card.posicao) : 999999;
-    },
-    onMoveTicket: async (ticketId, targetColumn, newPosition, fromColumnId) => {
-      const columnValue = getColumnValueForGroupBy(targetColumn, groupBy);
-
-      if (groupBy === 'personalizada' && selectedBoardId) {
-        const existingCard = cards.find((card) => card.idChamado === ticketId);
-        const targetColumnId = targetColumn === 'unassigned' ? null : Number(targetColumn);
-
-        if (targetColumn !== 'unassigned' && Number.isNaN(targetColumnId)) {
-          throw new Error(`Coluna personalizada inválida: ${targetColumn}`);
-        }
-
-        if (existingCard) {
-          await moveCard(existingCard.id, targetColumnId, newPosition);
-        } else {
-          await addCardToColumn(targetColumnId, ticketId, newPosition);
-        }
-      }
-
-      await moveTicketService(
-        ticketId,
-        targetColumn,
-        newPosition,
-        groupBy,
-        columnValue ?? null,
-        groupBy === 'personalizada' ? selectedBoardId ?? undefined : undefined,
-        tickets,
-        statusList,
-        prioridades,
-        departamentos,
-        topicosAjuda,
-        usuarios,
-        onTicketUpdate
-      );
-    },
+    ticketsByColumn,
+    groupedTickets,
+    getCustomTicketPosition,
+    onMoveTicket,
   });
 
-  const dragGrouping = useKanbanGrouping({
-    tickets,
-    groupBy,
-    columns,
-    cards,
-    statusList,
-    prioridades,
-    departamentos,
-    topicosAjuda,
-    somenteAbertos,
-    theme,
-    dragOverInfo,
-  });
-
-  const { groupedTickets: groupedTicketsWithDragOver, ticketsByColumn: ticketsByColumnWithDragOver } = useMemo(() => {
-    return {
-      groupedTickets: dragGrouping.groupedTickets,
-      ticketsByColumn: dragGrouping.ticketsByColumn,
-    };
-  }, [dragGrouping]);
-
-  
-
-  const handleCardMovedRealtime = useCallback(
-    (data: any) => {
-   
-      if (onTicketUpdate) {
-        onTicketUpdate(data.chamadoId, (prevTickets: Chamado[]) =>
-          prevTickets.map((ticket) => {
-            if (ticket.id !== data.chamadoId) return ticket;
-
-            return {
-              ...ticket,
-              kanbanPositions: {
-                groupBy: 'personalizada',
-                columnValue: data.columnValue?.toString() || null,
-                position: data.position,
-              },
-            };
-          })
-        );
-      }
+  // callback externo para atualizar preview durante drag
+  const handleDragOverCallback = useCallback(
+    (args: any) => {
+      handleDragOver(args);
+      // setDragOverInfoState é atualizado dentro de handleDragOver
     },
-    [onTicketUpdate]
+    [handleDragOver]
   );
 
+  const collisionDetection = useCallback((args: any) => {
+    const pointerIntersections = pointerWithin(args);
+    if (pointerIntersections.length > 0) return pointerIntersections;
+    return rectIntersection(args);
+  }, []);
+
+  // Realtime handlers
+ 
+
+
+
   const handleColumnCreatedRealtime = useCallback(() => {
-    if (groupBy === 'personalizada' && selectedBoardId) {
-      onRefresh?.();
-    }
+    if (groupBy === "personalizada" && selectedBoardId) onRefresh?.();
   }, [groupBy, selectedBoardId, onRefresh]);
 
   const handleColumnDeletedRealtime = useCallback(
     (columnId: number) => {
-      if (groupBy === 'personalizada' && selectedBoardId) {
-        removeColumnLocal(columnId);
-      }
+      if (groupBy === "personalizada" && selectedBoardId) removeColumnLocal(columnId);
     },
     [groupBy, selectedBoardId, removeColumnLocal]
   );
 
   useRealtimeBoard({
-    boardId: groupBy === 'personalizada' ? selectedBoardId : null,
-    enabled: groupBy === 'personalizada',
+    boardId: groupBy === "personalizada" ? selectedBoardId : null,
+    enabled: groupBy === "personalizada",
     onCardMoved: handleCardMovedRealtime,
     onColumnCreated: handleColumnCreatedRealtime,
     onColumnDeleted: handleColumnDeletedRealtime,
   });
 
-
   const handleCreateBoard = useCallback(
     async (nome: string) => {
       const newBoard = await createBoard(nome, departamentoId);
       if (newBoard) {
-        setGroupBy('personalizada');
-        localStorage.setItem('kanbanGroupBy', 'personalizada');
-        localStorage.setItem('kanbanSelectedBoard', newBoard.id.toString());
+        setGroupBy("personalizada");
+        localStorage.setItem("kanbanGroupBy", "personalizada");
+        localStorage.setItem("kanbanSelectedBoard", newBoard.id.toString());
         await selectBoard(newBoard.id);
       }
     },
     [createBoard, selectBoard, departamentoId, setGroupBy]
   );
 
+  // wrapper para abrir modal sem argumentos
+  const handleOpenCreateBoardModal = useCallback(() => {
+    setIsCreateBoardModalOpen(true);
+  }, []);
+
   const handleRefresh = useCallback(async () => {
     try {
-      if (onRefresh) {
-        await onRefresh();
-      }
-      toast.success('Chamados recarregados!');
-    } catch (error) {
-      toast.error('Erro ao recarregar chamados');
+      if (onRefresh) await onRefresh();
+      toast.success("Chamados recarregados!");
+    } catch {
+      toast.error("Erro ao recarregar chamados");
     }
   }, [onRefresh]);
 
-  const handleSelectAllCardsInColumn = useCallback(
-    (ticketIds: number[]) => {
-      // This functionality could be expanded in the future
-      toast.success(`${ticketIds.length} cards selecionados!`);
-    },
-    []
-  );
+  const handleSelectAllCardsInColumn = useCallback((ticketIds: number[]) => {    
+    setSelectedTickets((prev) => {
+      const newSet = new Set(prev);
+      ticketIds.forEach((id) => {
+        newSet.add(id);
+       
+      });
+      
+      return newSet;
+    });
+    
+    toast.success(`${ticketIds.length} card(s) selecionado(s)!`);
+  }, []);
 
-  const getColumnValue = (columnId: string): string | null => {
-    if (groupBy === 'responsavel') {
-      return columnId === 'sem-responsavel' ? null : columnId;
-    }
+  const getColumnValue = (columnId: string): string => {
+    if (groupBy === "responsavel") return columnId === "sem-responsavel" ? "sem-responsavel" : columnId;
     return columnId;
   };
 
-  // ==================== RENDER ====================
+  // decide qual snapshot usar para renderizar (com ou sem preview)
+  const displayGroupedTickets = dragOverInfoState ? groupedWithDrag : groupedTickets;
+  const displayTicketsByColumn = dragOverInfoState ? ticketsByColumnWithDrag : ticketsByColumn;
+
 
   return (
     <motion.div
@@ -276,7 +315,6 @@ export default function KanbanView({
       transition={{ duration: 0.4, ease: "easeOut" }}
       className="h-full"
     >
-      {/* Header with grouping selector and filters */}
       <KanbanHeader
         tickets={tickets}
         groupBy={groupBy}
@@ -291,75 +329,65 @@ export default function KanbanView({
         theme={theme}
       />
 
-      {/* Kanban Board */}
-      {groupBy === 'personalizada' ? (
-        // Custom board mode
+      {groupBy === "personalizada" ? (
         selectedBoard ? (
           <DndContext
             sensors={sensors}
-            collisionDetection={closestCorners}
+            collisionDetection={collisionDetection}
             onDragStart={handleDragStart}
-            onDragOver={handleDragOver}
-            onDragEnd={baseDragEnd}
+            onDragOver={handleDragOverCallback}
+            onDragEnd={handleDragEnd}
           >
             <div className="flex gap-4 overflow-x-auto pb-4 min-h-0">
-              <AnimatePresence>
-                {/* Unassigned column (if has tickets) */}
-                {ticketsByColumnWithDragOver['unassigned']?.length > 0 && (
+              <AnimatePresence initial={false}>
+                {displayTicketsByColumn["unassigned"]?.length > 0 && (
                   <div key="unassigned">
                     <KanbanColumn
                       id="unassigned"
                       title="Tickets sem coluna"
                       color={theme.border.secondary}
-                      tickets={ticketsByColumnWithDragOver['unassigned'] || []}
+                      tickets={displayTicketsByColumn["unassigned"]}
                       onTicketClick={onTicketClick}
                       groupBy="personalizada"
                       columnValue="unassigned"
-                      selectedTickets={new Set()}
-                      onTicketSelect={() => {}}
+                      selectedTickets={selectedTickets}
+                      onTicketSelect={handleSelectTicket}
                       onSelectAll={handleSelectAllCardsInColumn}
-                      onMoveAllCards={() => {}}
-                      availableColumns={columns.map((col) => ({
-                        id: col.id.toString(),
-                        title: col.nome, // Troque 'nome' por 'title'
-                      })) as any}
+                      onMoveAllCards={handleMoveSelectedCards}
+                      availableColumns={columns.map((col: any) => ({ id: col.id.toString(), nome: col.nome }))}
                       isSpecialColumn={true}
+                      dragOverInfo={dragOverInfoState}
                     />
                   </div>
                 )}
-
-                {/* Fixed columns */}
-                {columns.map((column) => (
-                  <div key={column.id}>
-                    <KanbanColumn
-                      id={column.id.toString()}
-                      title={column.nome}
-                      color={theme.brand.primary}
-                      tickets={ticketsByColumnWithDragOver[column.id.toString()] || []}
-                      onTicketClick={onTicketClick}
-                      groupBy="personalizada"
-                      columnValue={column.id.toString()}
-                      selectedTickets={new Set()}
-                      onTicketSelect={() => {}}
-                      onSelectAll={handleSelectAllCardsInColumn}
-                      onDeleteColumn={() => handleDeleteColumn(column.id.toString())}
-                      onRenameColumn={(newName) =>
-                        handleRenameColumn(column.id.toString(), newName)
-                      }
-                      onMoveAllCards={() => {}}
-                      availableColumns={columns
-                        .filter((c) => c.id !== column.id)
-                        .map((c) => ({ 
-                          id: c.id.toString(), 
-                          title: c.nome // Troque 'nome' por 'title' aqui também
-                        })) as any}
-                    />
-                  </div>
-                ))}
               </AnimatePresence>
 
-              {/* Add column button / input */}
-              <AnimatePresence mode="wait">
+              {columns.map((column: any) => (
+                <div key={column.id}>
+                  <KanbanColumn
+                    id={column.id.toString()}
+                    title={column.nome}
+                    color={theme.brand.primary}
+                    tickets={displayTicketsByColumn[column.id.toString()] ?? []}
+                    onTicketClick={onTicketClick}
+                    groupBy="personalizada"
+                    columnValue={column.id.toString()}
+                    selectedTickets={selectedTickets}
+                    onTicketSelect={handleSelectTicket}
+                    onSelectAll={handleSelectAllCardsInColumn}
+                    onDeleteColumn={() => handleDeleteColumn(column.id.toString())}
+                    onRenameColumn={(newName: string) => handleRenameColumn(column.id.toString(), newName)}
+                    onMoveAllCards={handleMoveSelectedCards}
+                    dragOverInfo={dragOverInfoState}
+                    availableColumns={columns
+                      .filter((c: any) => c.id !== column.id)
+                      .map((c: any) => ({ id: c.id.toString(), nome: c.nome }))}
+                  />
+                </div>
+              ))}
+
+              {/* bt / input nova coluna */}
+              <AnimatePresence mode="wait" initial={false}>
                 {!isAddingColumn ? (
                   <motion.button
                     key="add-button"
@@ -367,17 +395,16 @@ export default function KanbanView({
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.95 }}
                     transition={{ duration: 0.15 }}
-                    whileHover={{ scale: 1.0 }}
                     onClick={() => setIsAddingColumn(true)}
                     disabled={boardLoading}
                     className="min-w-80 h-fit px-5 py-3 rounded-lg border flex flex-col items-center justify-center gap-2 font-medium transition-all duration-200 disabled:opacity-50 shrink-0"
                     style={{
-                      borderColor: 'rgba(107, 114, 128, 0.3)',
+                      borderColor: "rgba(107,114,128,0.3)",
                       color: theme.text.tertiary,
-                      backgroundColor: 'rgba(107, 114, 128, 0.08)',
+                      backgroundColor: "rgba(107,114,128,0.08)",
                     }}
                   >
-                    <span className="text-sm">+ Nova coluna</span>
+                    <span className="text-sm">Nova coluna</span>
                   </motion.button>
                 ) : (
                   <motion.div
@@ -394,11 +421,8 @@ export default function KanbanView({
                       value={newColumnName}
                       onChange={(e) => setNewColumnName(e.target.value)}
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          handleCreateColumn(newColumnName);
-                        } else if (e.key === 'Escape') {
-                          handleCancelColumnEdit();
-                        }
+                        if (e.key === "Enter") handleCreateColumn(newColumnName);
+                        else if (e.key === "Escape") handleCancelColumnEdit();
                       }}
                       placeholder="Nome da coluna"
                       className="w-full px-3 py-2 rounded border transition-all duration-200 outline-none text-sm font-medium"
@@ -413,9 +437,7 @@ export default function KanbanView({
                         onClick={() => handleCreateColumn(newColumnName)}
                         disabled={!newColumnName.trim() || boardLoading}
                         className="flex-1 px-3 py-2 rounded font-medium text-sm text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                        style={{
-                          backgroundColor: theme.brand.primary,
-                        }}
+                        style={{ backgroundColor: theme.brand.primary }}
                       >
                         Criar
                       </button>
@@ -423,10 +445,7 @@ export default function KanbanView({
                         onClick={handleCancelColumnEdit}
                         disabled={boardLoading}
                         className="flex-1 px-3 py-2 rounded font-medium text-sm transition-all duration-200 border disabled:opacity-50 disabled:cursor-not-allowed"
-                        style={{
-                          borderColor: theme.border.secondary,
-                          color: theme.text.secondary,
-                        }}
+                        style={{ borderColor: theme.border.secondary, color: theme.text.secondary }}
                       >
                         Cancelar
                       </button>
@@ -436,84 +455,50 @@ export default function KanbanView({
               </AnimatePresence>
             </div>
 
-            <DragOverlay
-              dropAnimation={{
-                duration: 250,
-                easing: 'cubic-bezier(0.18, 0.67, 0.6, 1.22)',
-              }}
-            >
-              {activeTicket ? (
-                <div
-                  style={{
-                    transform: 'rotate(2deg) scale(1.03)',
-                    opacity: 0.95,
-                    boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.15)',
-                    borderRadius: '0.5rem',
-                    zIndex: 9999,
-                  }}
-                >
-                  <TicketCard chamado={activeTicket} isDragging={true} />
+            <DragOverlay dropAnimation={{ duration: 200, easing: "cubic-bezier(0.18,0.67,0.6,1.22)" }}>
+              {activeTicket && (
+                <div style={{ transform: "rotate(2deg) scale(1.03)", opacity: 0.95, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.15)", borderRadius: "0.5rem", zIndex: 9999 }}>
+                  <TicketCard chamado={activeTicket} isDragging={true} onSelect={() => {}} isSelected={false} />
                 </div>
-              ) : null}
+              )}
             </DragOverlay>
           </DndContext>
         ) : (
           <EmptyBoardState
             hasBoard={false}
             boardName=""
-            onCreateBoard={() => {}}
+            onCreateBoard={handleOpenCreateBoardModal}
             onCreateColumn={() => setIsAddingColumn(true)}
             isLoading={boardLoading}
           />
         )
       ) : (
-        // Standard grouping mode (status, priority, etc)
         <DndContext
           sensors={sensors}
-          collisionDetection={closestCorners}
+          collisionDetection={collisionDetection}
           onDragStart={handleDragStart}
-          onDragOver={handleDragOver}
-          onDragEnd={baseDragEnd}
+          onDragOver={handleDragOverCallback}
+          onDragEnd={handleDragEnd}
         >
           <div className="flex gap-4 overflow-x-auto pb-4 min-h-0">
-            <AnimatePresence>
-              {groupedTicketsWithDragOver.columns.map((column) => (
+            <AnimatePresence initial={false}>
+              {displayGroupedTickets.columns.map((column: any) => (
                 <KanbanColumn
                   key={column.id}
                   id={column.id}
                   title={column.title}
                   color={column.color}
-                  tickets={groupedTicketsWithDragOver.groups[column.id] || []}
+                  tickets={displayGroupedTickets.groups[column.id] ?? []}
                   onTicketClick={onTicketClick}
                   groupBy={groupBy}
-                  columnValue={getColumnValue(column.id) || ''}
-                  selectedTickets={new Set()}
-                  onTicketSelect={() => {}}
+                  columnValue={getColumnValue(column.id)}
+                  selectedTickets={selectedTickets}
+                  onTicketSelect={handleSelectTicket}
+                  dragOverInfo={dragOverInfoState}
                 />
               ))}
             </AnimatePresence>
           </div>
-
-          <DragOverlay
-            dropAnimation={{
-              duration: 250,
-              easing: 'cubic-bezier(0.18, 0.67, 0.6, 1.22)',
-            }}
-          >
-            {activeTicket ? (
-              <div
-                style={{
-                  transform: 'rotate(2deg) scale(1.03)',
-                  opacity: 0.95,
-                  boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.15)',
-                  borderRadius: '0.5rem',
-                  zIndex: 9999,
-                }}
-              >
-                <TicketCard chamado={activeTicket} isDragging={true} />
-              </div>
-            ) : null}
-          </DragOverlay>
 
           {tickets.length === 0 && (
             <motion.div
@@ -523,23 +508,25 @@ export default function KanbanView({
               className="text-center py-12"
             >
               <div style={{ color: theme.text.tertiary }}>
-                <div
-                  className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"
-                  style={{ backgroundColor: theme.background.surface }}
-                />
-                <h3 className="text-lg font-medium mb-2" style={{ color: theme.text.primary }}>
-                  Nenhum chamado encontrado
-                </h3>
-                <p style={{ color: theme.text.tertiary }}>
-                  use os filtros para buscar chamados ou crie um novo.
-                </p>
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ backgroundColor: theme.background.surface }}>
+                </div>
+                <h3 className="text-lg font-medium mb-2" style={{ color: theme.text.primary }}>Nenhum chamado encontrado</h3>
+                <p style={{ color: theme.text.tertiary }}>Use os filtros para buscar chamados ou crie um novo.</p>
               </div>
             </motion.div>
           )}
+
+          <DragOverlay dropAnimation={{ duration: 200, easing: "cubic-bezier(0.18,0.67,0.6,1.22)" }}>
+            {activeTicket && (
+              <div style={{ transform: "rotate(2deg) scale(1.03)", opacity: 0.95, boxShadow: "0 20px 25px -5px rgba(0,0,0,0.15)", borderRadius: "0.5rem", zIndex: 9999 }}>
+                <TicketCard chamado={activeTicket} isDragging={true} onSelect={() => {}} isSelected={false} />
+              </div>
+            )}
+          </DragOverlay>
         </DndContext>
       )}
 
-      {/* Delete column confirmation modal */}
+      {/* modal confirmar delete coluna */}
       <AnimatePresence>
         {deleteConfirmModal.isOpen && (
           <motion.div
@@ -547,7 +534,7 @@ export default function KanbanView({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 flex items-center justify-center z-50"
-            style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
+            style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
             onClick={handleCancelDelete}
           >
             <motion.div
@@ -558,30 +545,22 @@ export default function KanbanView({
               style={{ backgroundColor: theme.background.surface }}
               onClick={(e) => e.stopPropagation()}
             >
-              <h3 className="text-lg font-semibold mb-4" style={{ color: theme.text.primary }}>
-                Deletar coluna?
-              </h3>
+              <h3 className="text-lg font-semibold mb-4" style={{ color: theme.text.primary }}>Deletar coluna?</h3>
               <p className="mb-6 text-sm" style={{ color: theme.text.secondary }}>
-                Tem certeza que deseja deletar esta coluna? Caso tenha tickets nesta coluna,
-                eles serão movidos para "Tickets sem coluna".
+                Tem certeza que deseja deletar esta coluna? Caso tenha tickets nesta coluna, eles serão movidos para Tickets sem coluna.
               </p>
               <div className="flex gap-2">
                 <button
                   onClick={handleConfirmDelete}
                   className="flex-1 px-4 py-2 rounded font-medium text-sm text-white transition-all"
-                  style={{
-                    backgroundColor: '#EF4444',
-                  }}
+                  style={{ backgroundColor: "#EF4444" }}
                 >
                   Deletar
                 </button>
                 <button
                   onClick={handleCancelDelete}
                   className="flex-1 px-4 py-2 rounded font-medium text-sm transition-all border"
-                  style={{
-                    borderColor: theme.border.secondary,
-                    color: theme.text.secondary,
-                  }}
+                  style={{ borderColor: theme.border.secondary, color: theme.text.secondary }}
                 >
                   Cancelar
                 </button>
@@ -591,7 +570,6 @@ export default function KanbanView({
         )}
       </AnimatePresence>
 
-      {/* Create board modal */}
       <CreateBoardModal
         isOpen={isCreateBoardModalOpen}
         onClose={() => setIsCreateBoardModalOpen(false)}

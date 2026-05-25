@@ -1,21 +1,16 @@
-
-import { useCallback, useState } from 'react';
+import { useCallback, useState } from "react";
 import {
   DragEndEvent,
   DragOverEvent,
   DragStartEvent,
+  KeyboardSensor,
   PointerSensor,
   useSensor,
   useSensors,
-} from '@dnd-kit/core';
-import toast from 'react-hot-toast';
-import type { Chamado, DragOverInfo, UseKanbanDragDropReturn, KanbanColumn } from '../utils/kanbanTypes';
-
-
-import {
-  calcPositionBetweenTickets,
-  getPositionForGroupBy,
-} from '../utils/kanbanPositionCalculator';
+} from "@dnd-kit/core";
+import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
+import type { Chamado, DragOverInfo, UseKanbanDragDropReturn, KanbanColumn } from "../utils/kanbanTypes";
+import { calcPositionBetweenTickets, getPositionForGroupBy } from "../utils/kanbanPositionCalculator";
 
 interface UseKanbanDragDropProps {
   tickets: Chamado[];
@@ -24,12 +19,8 @@ interface UseKanbanDragDropProps {
   ticketsByColumn: Record<string, Chamado[]>;
   groupedTickets: any;
   getCustomTicketPosition?: (ticket: Chamado) => number;
-  onMoveTicket: (
-    ticketId: number,
-    targetColumn: string,
-    newPosition: number,
-    fromColumnId: string
-  ) => Promise<void>;
+  onMoveTicket: (ticketId: number, targetColumn: string, newPosition: number, fromColumnId: string) => Promise<void>;
+  onDragOverInfo?: (info: DragOverInfo | null) => void;
 }
 
 export function useKanbanDragDrop({
@@ -40,210 +31,281 @@ export function useKanbanDragDrop({
   groupedTickets,
   getCustomTicketPosition,
   onMoveTicket,
+  onDragOverInfo,
 }: UseKanbanDragDropProps): UseKanbanDragDropReturn {
   const [activeTicket, setActiveTicket] = useState<Chamado | null>(null);
   const [dragOverInfo, setDragOverInfo] = useState<DragOverInfo | null>(null);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    })
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-  const handleDragStart = useCallback((event: DragStartEvent) => {
-    const { active } = event;
-    const ticket = tickets.find((t) => t.id === Number(active.id));
-    setActiveTicket(ticket || null);
-    setDragOverInfo(null);
-  }, [tickets]);
+  const updateDragOverInfo = useCallback(
+    (info: DragOverInfo | null) => {
+      setDragOverInfo(info);
+      onDragOverInfo?.(info);
+    },
+    [onDragOverInfo]
+  );
 
-  const handleDragOver = useCallback((event: DragOverEvent) => {
-    const { active, over } = event;
+  const handleDragStart = useCallback(
+    (event: DragStartEvent) => {
+      const ticket = tickets.find((t) => t.id === Number(event.active.id));
+      setActiveTicket(ticket ?? null);
+      updateDragOverInfo(null);
+    },
+    [tickets, updateDragOverInfo]
+  );
 
-    if (!over) {
-      setDragOverInfo(null);
-      return;
-    }
+  const handleDragOver = useCallback(
+    (event: DragOverEvent) => {
+      const { active, over } = event;
+      if (!over) { 
+            updateDragOverInfo(null); 
+        return; 
+      }
 
-    const activeId = Number(active.id);
-    const overId = over.id;
+      const activeId = Number(active.id);
+      const overId = over.id;
+      if (activeId === Number(overId)) {
+        return;
+      }
 
-    if (activeId === overId) return;
+      const overData = over.data.current as any;
+      let targetColumnId: string | null = null;
+      let overIndex: number = 0;
+      let insertPosition: "above" | "below" = "below";
 
-    let targetColumnId: string | null = null;
-    const overData = over.data.current as any;
-
-    if (overData?.type === 'column') {
-      targetColumnId = String(overId);
-    } else if (overData?.sortable?.containerId) {
-      targetColumnId = String(overData.sortable.containerId);
-    } else if (overData?.columnValue !== undefined) {
-      targetColumnId = String(overData.columnValue);
-    }
-
-    if (targetColumnId) {
-      setDragOverInfo({
-        ticketId: activeId,
-        targetColumn: targetColumnId,
+      console.log(`📍 [DRAGOVER] Detecção:`, {
+        activeId,
         overId,
+        overType: overData?.type,
+        containerId: overData?.sortable?.containerId,
+        columnValue: overData?.columnValue,
       });
-    }
-  }, []);
+
+      if (overData?.type === "column") {
+        // Hovering sobre a zona vazia da coluna
+        targetColumnId = String(overId);
+        overIndex = 0;
+        insertPosition = "above";
+      } else if (overData?.sortable) {
+        // Hovering sobre um card — CORRIGIDO: não usar containerId, procurar em qual coluna o card está
+        const overTicketId = Number(overId);
+        
+        // Procurar em qual coluna está esse ticket no ticketsByColumn
+        let foundInColumn: string | null = null;
+        let foundIndex: number = 0;
+        
+        for (const [colId, tickets] of Object.entries(ticketsByColumn)) {
+          const idx = (tickets as any[]).findIndex((t) => t.id === overTicketId);
+          if (idx !== -1) {
+            foundInColumn = colId;
+            foundIndex = idx;
+            break;
+          }
+        }
+
+        if (foundInColumn) {
+          targetColumnId = foundInColumn;
+          overIndex = foundIndex;
+          
+          // determinar se coloca acima ou abaixo baseado em delta.y
+          const deltaY = event.delta.y ?? 0;
+          if (Math.abs(deltaY) > 2) {
+            insertPosition = deltaY < 0 ? "above" : "below";
+          } else {
+            insertPosition = "below";
+          }
+        } else {
+        }
+      } else if (overData?.columnValue !== undefined) {
+        // fllback para columnValue (alguns componentes podem usar isso)
+        targetColumnId = String(overData.columnValue);
+        overIndex = 0;
+        insertPosition = "above";
+      }
+
+      if (targetColumnId) {
+        const dragInfo = { 
+          ticketId: activeId, 
+          targetColumn: targetColumnId, 
+          overId,
+          overIndex,
+          insertPosition,
+        };
+        updateDragOverInfo(dragInfo);
+      } else {
+      }
+    },
+    [updateDragOverInfo, ticketsByColumn]
+  );
 
   const handleDragEnd = useCallback(
     async (event: DragEndEvent) => {
-      setDragOverInfo(null);
-
+      // nao limpar dragOverInfo ainda — manter visual fluido enquanto requisição processa
       const { active, over } = event;
       setActiveTicket(null);
 
-      if (!over) {
-        console.warn('⚠️ DROP WITHOUT VALID ZONE');
+      if (!over || active.id === over.id) {
+        // se cancelou o drag, limpar imediatamente
+        updateDragOverInfo(null);
         return;
       }
 
       const ticketId = Number(active.id);
       const ticket = tickets.find((t) => t.id === ticketId);
-
       if (!ticket) {
-        console.warn('⚠️ TICKET NAO ENCONTRADO:', ticketId);
+        updateDragOverInfo(null);
         return;
       }
 
-      if (groupBy === 'personalizada') {
+      const fromColumnId =
+        groupBy === "personalizada"
+          ? Object.keys(ticketsByColumn).find((colId) =>
+              ticketsByColumn[colId].some((t) => t.id === ticketId)
+            ) ?? ""
+          : Object.keys(groupedTickets.groups).find((colId) =>
+              (groupedTickets.groups[colId] as Chamado[]).some((t) => t.id === ticketId)
+            ) ?? "";
+
+      // ---------MODO PERSONALIZADA ---------------------------------------------------
+      if (groupBy === "personalizada") {
         let targetColumnId: string | null = null;
-        let newPosition: number = 1000;
+        let newPosition = 1000;
 
         const isValidColumn =
-          over.id === 'unassigned' || columns.some((col) => col.id.toString() === over.id);
+          over.id === "unassigned" || columns.some((col) => col.id.toString() === over.id);
 
         if (isValidColumn) {
+          // solto no container da coluna — vai para o final da lista
           targetColumnId = over.id as string;
-          const columnTickets = ticketsByColumn[targetColumnId] || [];
-          const filteredTickets = columnTickets.filter((t) => t.id !== ticketId);
+          const allColumnTickets = ticketsByColumn[targetColumnId] ?? [];
+          const columnTicketsWithoutActive = allColumnTickets.filter((t) => t.id !== ticketId);
 
-          if (filteredTickets.length === 0) {
+          if (columnTicketsWithoutActive.length === 0) {
             newPosition = 1000;
           } else {
-            const lastTicket = filteredTickets[filteredTickets.length - 1];
+            const lastTicket = columnTicketsWithoutActive[columnTicketsWithoutActive.length - 1];
             const lastPos = getCustomTicketPosition
               ? getCustomTicketPosition(lastTicket)
               : getPositionForGroupBy(lastTicket.kanbanPositions, groupBy);
-            const lastPositionValue =
-              lastPos !== 999999 ? lastPos : filteredTickets.length * 1000;
-            newPosition = lastPositionValue + 1000;
+            newPosition = (lastPos !== 999999 ? lastPos : columnTicketsWithoutActive.length * 1000) + 1000;
           }
         } else {
-          let foundTicket = false;
+          // solto sobre outro ticket — encontra a coluna e calcula a posição entre vizinhos
+          let found = false;
 
-          for (const col of columns as KanbanColumn[]) {
+          for (const col of columns) {
             const colId = col.id.toString();
-            const columnTickets = ticketsByColumn[colId] || [];
-const targetIndex = columnTickets.findIndex((t: Chamado) => t.id === over.id);
-            if (targetIndex !== -1) {
+            // array ORIGINAL (inclui o ativo) — necessário para calcPositionBetweenTickets
+            // determinar corretamente isMovingDown (cima ou baixo)
+            const allColumnTickets = ticketsByColumn[colId] ?? [];
+            const overIndexInOriginal = allColumnTickets.findIndex((t) => t.id === Number(over.id));
+
+            if (overIndexInOriginal !== -1) {
               targetColumnId = colId;
               newPosition = calcPositionBetweenTickets(
-                columnTickets,
-                targetIndex,
+                allColumnTickets,     
+                overIndexInOriginal,   
                 groupBy,
                 ticketId,
                 getCustomTicketPosition
               );
-              foundTicket = true;
+              found = true;
               break;
             }
           }
 
-          if (!foundTicket) {
-            const unassignedTickets = ticketsByColumn['unassigned'] || [];
-            const targetIndex = unassignedTickets.findIndex((t: Chamado) => t.id === over.id);
+          // verifica coluna unassigned
+          if (!found) {
+            const allUnassigned = ticketsByColumn["unassigned"] ?? [];
+            const overIndexInOriginal = allUnassigned.findIndex((t) => t.id === Number(over.id));
 
-            if (targetIndex !== -1) {
-              targetColumnId = 'unassigned';
+            if (overIndexInOriginal !== -1) {
+              targetColumnId = "unassigned";
               newPosition = calcPositionBetweenTickets(
-                unassignedTickets,
-                targetIndex,
+                allUnassigned,
+                overIndexInOriginal,
                 groupBy,
                 ticketId,
                 getCustomTicketPosition
               );
-              foundTicket = true;
+              found = true;
             }
           }
 
-          if (!foundTicket) {
-            console.warn('⚠️ Target ticket not found:', over.id);
+          if (!found) {
+            updateDragOverInfo(null);
             return;
           }
         }
 
-        if (!targetColumnId) return;
-        await onMoveTicket(ticketId, targetColumnId, newPosition, '');
+        if (!targetColumnId) {
+          updateDragOverInfo(null);
+          return;
+        }
+        
+        // manter dragOverInfo e executar move SEM bloquear visual
+        try {
+          await onMoveTicket(ticketId, targetColumnId, newPosition, fromColumnId);
+        } finally {
+          // limpar APÓS confirmação do servidor
+          updateDragOverInfo(null);
+        }
         return;
       }
 
+      // ---------------MODO PADRAO--------------------------------
       let targetColumnId: string | null = null;
-      let newPosition: number = 1000;
+      let newPosition = 1000;
 
       const isValidColumn = groupedTickets.columns.some((col: any) => col.id === over.id);
-      if (isValidColumn) {
-        targetColumnId = over.id as string;
-        const columnTickets = groupedTickets.groups[targetColumnId] || [];
-        const filteredTickets = columnTickets.filter((t: Chamado) => t.id !== ticketId);
 
-        if (filteredTickets.length === 0) {
+      if (isValidColumn) {
+        // solto no container da coluna — vai para o final
+        targetColumnId = over.id as string;
+        const allColumnTickets = (groupedTickets.groups[targetColumnId] ?? []) as Chamado[];
+        const columnTicketsWithoutActive = allColumnTickets.filter((t) => t.id !== ticketId);
+
+        if (columnTicketsWithoutActive.length === 0) {
           newPosition = 1000;
         } else {
-          const lastTicket = filteredTickets[filteredTickets.length - 1];
+          const lastTicket = columnTicketsWithoutActive[columnTicketsWithoutActive.length - 1];
           const lastPos = getPositionForGroupBy(lastTicket.kanbanPositions, groupBy);
-          const lastPositionValue =
-            lastPos !== 999999 ? lastPos : filteredTickets.length * 1000;
-          newPosition = lastPositionValue + 1000;
+          newPosition = (lastPos !== 999999 ? lastPos : columnTicketsWithoutActive.length * 1000) + 1000;
         }
       } else {
-        let foundTicket = false;
+        // solto sobre outro ticket
+        let found = false;
 
         for (const columnId of Object.keys(groupedTickets.groups)) {
-          const columnTickets = groupedTickets.groups[columnId];
-          const targetIndex = columnTickets.findIndex((t: Chamado) => t.id === over.id);
+          // array original para cálculo correto de isMovingDown
+          const allColumnTickets = groupedTickets.groups[columnId] as Chamado[];
+          const overIndexInOriginal = allColumnTickets.findIndex((t) => t.id === Number(over.id));
 
-          if (targetIndex !== -1 && over.id !== ticketId) {
+          if (overIndexInOriginal !== -1) {
             targetColumnId = columnId;
             newPosition = calcPositionBetweenTickets(
-              columnTickets,
-              targetIndex,
+              allColumnTickets,
+              overIndexInOriginal,
               groupBy,
               ticketId
             );
-            foundTicket = true;
+            found = true;
             break;
           }
         }
 
-        if (!foundTicket) {
-          console.warn('⚠️ TARGET TICKET  NAO ENCONTRADOR:', over.id);
-          return;
-        }
+        if (!found) return;
       }
 
-      if (!targetColumnId) {
-        console.warn('⚠️ TARGET COLUMN NAO ENCONTRADA');
-        return;
-      }
-
-      await onMoveTicket(ticketId, targetColumnId, newPosition, '');
+      if (!targetColumnId) return;
+      await onMoveTicket(ticketId, targetColumnId, newPosition, fromColumnId);
     },
-    [tickets, groupBy, columns, ticketsByColumn, groupedTickets, getCustomTicketPosition, onMoveTicket]
+    [tickets, groupBy, columns, ticketsByColumn, groupedTickets, getCustomTicketPosition, onMoveTicket, updateDragOverInfo]
   );
 
-  return {
-    activeTicket,
-    dragOverInfo,
-    sensors,
-    handleDragStart,
-    handleDragOver,
-    handleDragEnd,
-  };
+  return { activeTicket, dragOverInfo, sensors, handleDragStart, handleDragOver, handleDragEnd };
 }

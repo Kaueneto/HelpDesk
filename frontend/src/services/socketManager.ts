@@ -227,7 +227,8 @@ class SocketManager {
    // emitir para todos os listeners de um evento
   private emitToListeners(event: string, data: any): void {
     const listeners = this.listeners.get(event);
-    if (listeners) {
+    if (listeners && listeners.size > 0) {
+      console.log(`📢 [SOCKET] Emitindo '${event}' para ${listeners.size} listener(s):`, data);
       listeners.forEach((callback) => {
         try {
           callback(data);
@@ -235,6 +236,8 @@ class SocketManager {
           console.error(`Erro no listener para ${event}:`, error);
         }
       });
+    } else {
+      console.log(`📢 [SOCKET] Evento '${event}' recebido mas sem listeners registrados`, data);
     }
   }
 

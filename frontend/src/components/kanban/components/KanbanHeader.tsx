@@ -1,4 +1,3 @@
-
 import React from 'react';
 import Select from 'react-select';
 import { motion } from 'framer-motion';
@@ -11,10 +10,8 @@ export function KanbanHeader({
   groupBy,
   allGroupByOptions,
   selectedBoard,
-  somenteAbertos,
   isRefreshing,
   onGroupByChange,
-  onToggleSomenteAbertos,
   onRefresh,
   onCreateBoard,
   theme,
@@ -26,110 +23,122 @@ export function KanbanHeader({
 
   return (
     <div
-      className="mb-6 flex justify-between items-center gap-6"
+      className="mb-6 flex items-center justify-between gap-6"
       style={{
         paddingBottom: '12px',
-        borderBottomColor: theme.border.secondary,
-        borderBottomWidth: '1px',
+        borderBottom: `1px solid ${theme.border.secondary}`,
       }}
     >
       <div className="flex items-center gap-6">
         <div className="flex items-center gap-3">
-          <span className="text-sm font-medium" style={{ color: theme.text.secondary }}>
-            Exibir por
+          <span
+            className="text-[11px] font-medium uppercase tracking-[0.08em]"
+            style={{ color: theme.text.secondary }}
+          >
+            Quadro
           </span>
+
           <div className="flex items-center gap-2">
             <div className="w-56">
               <Select
                 value={currentSelectValue}
                 onChange={onGroupByChange}
                 options={allGroupByOptions}
-                placeholder="Selecionar..."
+                placeholder="Selecionar quadro..."
                 isSearchable={false}
                 styles={getSelectStyles(theme)}
+                menuPortalTarget={typeof document !== 'undefined' ? document.body : null}
+                menuPosition="fixed"
+                menuShouldScrollIntoView={true}
               />
             </div>
 
             <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.95 }}
+              type="button"
               onClick={onCreateBoard}
-              className="p-1.5 rounded-md transition-all duration-200 hover:opacity-80 flex items-center justify-center shadow-sm"
+              initial={false}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              transition={{ duration: 0.14 }}
+              className="flex h-9 w-9 items-center justify-center rounded-xl"
               style={{
-                backgroundColor: theme.background.hover,
+                backgroundColor: `${theme.brand.primary}12`,
+                border: `1px solid ${theme.brand.primary}35`,
                 color: theme.brand.primary,
+                boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
               }}
               title="Criar novo quadro"
             >
-              <FiPlus className="w-4.5 h-4.5" strokeWidth={3} />
+              <FiPlus className="h-4 w-4" strokeWidth={2.8} />
             </motion.button>
           </div>
         </div>
 
         <div
-          className="flex items-center gap-3 pl-6"
+          className="flex items-center gap-4 pl-6"
           style={{
-            borderLeftColor: theme.border.secondary,
-            borderLeftWidth: '1px',
+            borderLeft: `1px solid ${theme.border.secondary}`,
           }}
         >
-          <span className="text-sm" style={{ color: theme.text.secondary }}>
-            Não mostrar concluídos
-          </span>
-
-          <button
-            type="button"
-            onClick={onToggleSomenteAbertos}
-            className="relative w-11 h-6 rounded-full transition-all duration-200"
-            style={{
-              backgroundColor: somenteAbertos
-                ? theme.brand.primary
-                : theme.border.secondary,
-            }}
-          >
-            <span
-              className="absolute top-1 left-1 w-4 h-4 rounded-full shadow-sm transition-transform duration-200"
-              style={{
-                backgroundColor: 'white',
-                transform: somenteAbertos ? 'translateX(20px)' : 'translateX(0)',
-              }}
-            />
-          </button>
-
-          <div
-            className="border-l"
-            style={{
-              borderLeftColor: theme.border.secondary,
-              height: '24px',
-              margin: '0 8px',
-            }}
-          />
-
-          <button
+          <motion.button
             type="button"
             onClick={onRefresh}
             disabled={isRefreshing}
-            className="p-1.5 rounded-lg transition-all duration-200 hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed"
+            initial={false}
+            whileHover={isRefreshing ? undefined : { scale: 1.03 }}
+            whileTap={isRefreshing ? undefined : { scale: 0.97 }}
+            transition={{ duration: 0.14 }}
+            className="flex h-9 w-9 items-center justify-center rounded-xl disabled:cursor-not-allowed disabled:opacity-60"
             style={{
-              backgroundColor: isRefreshing ? theme.brand.primary : 'transparent',
-              color: isRefreshing ? 'white' : theme.text.secondary,
+              backgroundColor: isRefreshing
+                ? theme.brand.primary
+                : theme.background.surface,
+              border: `1px solid ${
+                isRefreshing ? theme.brand.primary : theme.border.secondary
+              }`,
+              color: isRefreshing ? '#ffffff' : theme.text.secondary,
+              boxShadow: isRefreshing
+                ? '0 4px 12px rgba(0,0,0,0.12)'
+                : '0 1px 3px rgba(0,0,0,0.08)',
             }}
             title="Recarregar chamados"
           >
-            <FiRefreshCw
-              className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`}
-              strokeWidth={2.5}
-            />
-          </button>
+            <motion.div
+              initial={false}
+              animate={isRefreshing ? { rotate: 360 } : { rotate: 0 }}
+              transition={
+                isRefreshing
+                  ? { repeat: Infinity, duration: 0.8, ease: 'linear' }
+                  : { duration: 0.2 }
+              }
+              style={{ willChange: 'transform' }}
+            >
+              <FiRefreshCw className="h-4 w-4" strokeWidth={2.2} />
+            </motion.div>
+          </motion.button>
         </div>
       </div>
 
       <div
-        className="flex items-center gap-2 text-sm"
-        style={{ color: theme.text.secondary }}
+        className="flex items-center gap-2 rounded-xl px-3 py-1.5"
+        style={{
+          backgroundColor: theme.background.surface,
+          border: `1px solid ${theme.border.secondary}`,
+          boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+        }}
       >
-        <span>{tickets.length}</span>
-        <span>Registros</span>
+        <span
+          className="text-sm font-semibold"
+          style={{ color: theme.brand.primary }}
+        >
+          {tickets.length}
+        </span>
+        <span
+          className="text-xs font-medium"
+          style={{ color: theme.text.secondary }}
+        >
+          Registros
+        </span>
       </div>
     </div>
   );

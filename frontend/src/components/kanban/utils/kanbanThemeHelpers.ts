@@ -52,20 +52,29 @@ export function getSelectStyles(theme: Theme): Record<string, any> {
   return {
     control: (base: any) => ({
       ...base,
-      minHeight: '32px',
-      height: '32px',
+      minHeight: '36px',
+      height: '36px',
       backgroundColor: theme.background.surface,
       borderColor: theme.border.secondary,
+      borderRadius: '8px',
       boxShadow: 'none',
-      padding: '0 4px',
+      padding: '0 8px',
+      border: `1px solid ${theme.border.secondary}`,
+      cursor: 'pointer',
+      transition: 'all 0.2s',
       '&:hover': {
         borderColor: theme.brand.primary,
+        boxShadow: `0 0 8px ${theme.brand.primary}20`,
       },
     }),
     menu: (base: any) => ({
       ...base,
       backgroundColor: theme.background.surface,
       borderColor: theme.border.secondary,
+      border: `1px solid ${theme.border.secondary}`,
+      borderRadius: '8px',
+      boxShadow: `0 8px 24px ${theme.background.surface === '#fff' ? 'rgba(0,0,0,0.12)' : 'rgba(0,0,0,0.3)'}`,
+      zIndex: 1000,
     }),
     menuList: (base: any) => ({
       ...base,
@@ -82,11 +91,14 @@ export function getSelectStyles(theme: Theme): Record<string, any> {
         : 'transparent',
       color: state.isSelected ? 'white' : theme.text.primary,
       cursor: 'pointer',
-      padding: '8px 12px',
+      padding: '10px 12px',
+      fontSize: '14px',
+      transition: 'background-color 0.15s',
     }),
     singleValue: (base: any) => ({
       ...base,
       color: theme.text.primary,
+      fontWeight: '500',
     }),
     input: (base: any) => ({
       ...base,
@@ -102,8 +114,9 @@ export function getSelectStyles(theme: Theme): Record<string, any> {
     dropdownIndicator: (base: any) => ({
       ...base,
       color: theme.text.primary,
+      padding: '4px 8px',
       '&:hover': {
-        color: theme.text.primary,
+        color: theme.brand.primary,
       },
     }),
   };

@@ -1,18 +1,12 @@
 "use client";
 
-import { memo, useState, useRef, useEffect } from 'react';
-import { useDroppable } from '@dnd-kit/core';
-import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useTheme } from '@/contexts/ThemeContext';
-import TicketCard from './TicketCard';
-import { Work_Sans } from "next/font/google";
-
-const workSans = Work_Sans({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
-  variable: "--font-worksans",
-});
+import { memo, useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { useDroppable } from "@dnd-kit/core";
+import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { motion, AnimatePresence } from "framer-motion";
+import { useTheme } from "@/contexts/ThemeContext";
+import TicketCard from "./TicketCard";
+import DropIndicator from "./DropIndicator";
 
 interface Chamado {
   id: number;
@@ -20,49 +14,17 @@ interface Chamado {
   dataAbertura: string;
   dataFechamento: string | null;
   resumoChamado: string;
-  usuario: {
-    id: number;
-    name: string;
-  };
-  userResponsavel: {
-    id: number;
-    name: string;
-  } | null;
-  tipoPrioridade: {
-    id: number;
-    nome: string;
-    cor: string;
-  };
-  topicoAjuda: {
-    id: number;
-    nome: string;
-  };
-  departamento: {
-    id: number;
-    nome: string;
-    name?: string;
-  };
-  status: {
-    id: number;
-    nome: string;
-  };
-  historico?: Array<{
-    id: number;
-    descricao: string;
-    dataHistorico: string;
-    usuario?: {
-      name: string;
-    };
-  }>;
-  kanbanPositions?: Array<{
-    groupBy: string;
-    columnValue: string | null;
-    position: number;
-  }> | {
-    groupBy: string;
-    columnValue: string | null;
-    position: number;
-  } | null;
+  usuario: { id: number; name: string };
+  userResponsavel: { id: number; name: string } | null;
+  tipoPrioridade: { id: number; nome: string; cor: string };
+  topicoAjuda: { id: number; nome: string };
+  departamento: { id: number; nome: string; name?: string };
+  status: { id: number; nome: string };
+  historico?: Array<{ id: number; descricao: string; dataHistorico: string; usuario?: { name: string } }>;
+  kanbanPositions?:
+    | Array<{ groupBy: string; columnValue: string | null; position: number }>
+    | { groupBy: string; columnValue: string | null; position: number }
+    | null;
 }
 
 interface KanbanColumnProps {
@@ -72,7 +34,7 @@ interface KanbanColumnProps {
   tickets: Chamado[];
   onTicketClick?: (ticket: Chamado) => void;
   groupBy: string;
-  columnValue: string;
+  columnValue: string | null;
   selectedTickets?: Set<number>;
   onTicketSelect?: (ticketId: number, selected: boolean) => void;
   onSelectAll?: (ticketIds: number[]) => void;
@@ -81,12 +43,13 @@ interface KanbanColumnProps {
   onMoveAllCards?: (targetColumnId: string) => void | Promise<void>;
   availableColumns?: Array<{ id: string; nome: string }>;
   isSpecialColumn?: boolean;
+  dragOverInfo?: any;
 }
 
-const KanbanColumn = memo(({
+const KanbanColumn = memo(function KanbanColumn({
   id,
   title,
-  color = '#3B82F6',
+  color = "#3B82F6",
   tickets,
   onTicketClick,
   groupBy,
@@ -98,90 +61,138 @@ const KanbanColumn = memo(({
   onRenameColumn,
   onMoveAllCards,
   availableColumns = [],
-  isSpecialColumn = false
-}: KanbanColumnProps) => {
+  isSpecialColumn = false,
+  dragOverInfo,
+}: KanbanColumnProps) {
   const { theme } = useTheme();
+
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
   const [newName, setNewName] = useState(title);
   const [isMoveSubmenuOpen, setIsMoveSubmenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const [submenuDirection, setSubmenuDirection] = useState<"right" | "bottom">("right");
 
-  const {
-    isOver,
-    setNodeRef
-  } = useDroppable({
-    id: id,
-    data: {
-      type: 'column',
-      groupBy,
-      columnValue,
-    },
+  const menuRef = useRef<HTMLDivElement>(null);
+  const submenuTriggerRef = useRef<HTMLButtonElement>(null);
+
+  const { isOver, setNodeRef } = useDroppable({
+    id,
+    data: { type: "column", groupBy, columnValue },
   });
 
-  // fechar menu ao clicar fora
+  useEffect(() => {
+    setNewName(title);
+  }, [title]);
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setIsMenuOpen(false);
+        setIsMoveSubmenuOpen(false);
       }
     }
 
     if (isMenuOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
     }
   }, [isMenuOpen]);
 
-  //memoizar lista de IDs de tickets para evitar re-ordenações desnecessárias
-  const ticketIds = tickets.map(t => t.id);
+  useEffect(() => {
+    if (!isMoveSubmenuOpen || !submenuTriggerRef.current) return;
 
-  // handlers para as ações do menu
-  const handleSelectAll = () => {
-    onSelectAll?.(ticketIds);
+    const rect = submenuTriggerRef.current.getBoundingClientRect();
+    const submenuWidth = 220;
+    const spaceRight = window.innerWidth - rect.right;
+    const spaceBottom = window.innerHeight - rect.top;
+
+    if (spaceRight >= submenuWidth + 16) {
+      setSubmenuDirection("right");
+    } else if (spaceBottom >= 220) {
+      setSubmenuDirection("bottom");
+    } else {
+      setSubmenuDirection("right");
+    }
+  }, [isMoveSubmenuOpen]);
+
+  const ticketIds = useMemo(() => tickets.map((t) => t.id.toString()), [tickets]);
+  const selectedCount = useMemo(
+    () => tickets.filter((ticket) => selectedTickets.has(ticket.id)).length,
+    [tickets, selectedTickets]
+  );
+  const hasSelectedInColumn = selectedCount > 0;
+
+  const handleSelectAll = useCallback(() => {
+    onSelectAll?.(tickets.map((t) => t.id));
     setIsMenuOpen(false);
-  };
+    setIsMoveSubmenuOpen(false);
+  }, [onSelectAll, tickets]);
 
-  const handleRename = () => {
-    if (newName.trim() && newName !== title) {
-      onRenameColumn?.(newName);
+  const handleClearAll = useCallback(() => {
+    tickets.forEach((ticket) => onTicketSelect?.(ticket.id, false));
+    setIsMenuOpen(false);
+    setIsMoveSubmenuOpen(false);
+  }, [tickets, onTicketSelect]);
+
+  const handleRename = useCallback(() => {
+    if (newName.trim() && newName.trim() !== title) {
+      onRenameColumn?.(newName.trim());
     }
     setIsRenaming(false);
-  };
+  }, [newName, title, onRenameColumn]);
 
-  const handleMoveToColumn = (targetColumnId: string) => {
-    onMoveAllCards?.(targetColumnId);
-    setIsMenuOpen(false);
-  };
+  const handleMoveToColumn = useCallback(
+    (targetColumnId: string) => {
+      onMoveAllCards?.(targetColumnId);
+      setIsMoveSubmenuOpen(false);
+      setIsMenuOpen(false);
+    },
+    [onMoveAllCards]
+  );
+
+  const menuPanelStyle = {
+    backgroundColor: theme.background.surface,
+    border: `1px solid ${theme.border.secondary}`,
+    boxShadow: `0 8px 24px rgba(0,0,0,0.08)`,
+  } as const;
+
+  const columnSurfaceStyle = {
+    backgroundColor: theme.kanban.columnBg,
+    border: `1px solid ${theme.kanban.columnBorder}`,
+  } as const;
+
+  const menuItemBaseStyle = {
+    color: theme.text.primary,
+    border: `1px solid transparent`,
+  } as const;
+
+  const menuHoverStyle = {
+    backgroundColor: `${theme.brand.primary}14`,
+    borderColor: `${theme.brand.primary}22`,
+  } as const;
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{
-        opacity: 1,
-        x: 0,
-        width: isCollapsed ? 'auto' : undefined
-      }}
-      transition={{ duration: 0.3, ease: "easeOut" }}
-      className={`flex ${isCollapsed ? 'flex-row' : 'flex-col'} h-full ${isCollapsed ? 'min-w-12' : 'min-w-80 max-w-80'}`}
+      initial={false}
+      animate={{ width: isCollapsed ? "auto" : undefined }}
+      transition={{ duration: 0.2, ease: "easeOut" }}
+      className={`flex ${isCollapsed ? "flex-row" : "flex-col"} h-full ${
+        isCollapsed ? "min-w-14" : "min-w-80 max-w-80"
+      }`}
     >
-      {isCollapsed ? (
-        /* cxoluna recolhida - vertical */
+        {isCollapsed ? (
         <div
-          className={`flex flex-col items-center justify-start p-2 rounded-lg transition-all duration-200 cursor-pointer ${
-            isOver ? 'shadow-lg' : ''
-          }`}
+          className="flex flex-col items-center justify-start p-2 rounded-lg transition-all duration-200 cursor-pointer"
           style={{
             backgroundColor: theme.kanban.columnBg,
             borderTop: `1px solid ${theme.kanban.columnBorder}`,
             borderRight: `1px solid ${theme.kanban.columnBorder}`,
             borderBottom: `1px solid ${theme.kanban.columnBorder}`,
-            borderLeft: `3px solid ${color}`
+            borderLeft: `3px solid ${color}`,
           }}
           onClick={() => setIsCollapsed(false)}
         >
-          {/* icone para expandir */}
           <button
             className="transition-colors mb-2"
             title="Expandir coluna"
@@ -192,63 +203,54 @@ const KanbanColumn = memo(({
             </svg>
           </button>
 
-          {/* contador de tickets */}
-          <span className={`text-xs font-medium px-2 py-1 rounded-full mb-2 transition-all`}
+          <span
+            className="text-xs font-medium px-2 py-1 rounded-full mb-2"
             style={{
-              backgroundColor: isOver ? theme.brand.primary : theme.kanban.columnBorder,
-              color: isOver ? '#FFFFFF' : theme.kanban.textSecondary
+              backgroundColor: theme.kanban.columnBorder,
+              color: theme.kanban.textSecondary,
             }}
           >
             {tickets.length}
           </span>
 
-          {/* titulo vertical */}
-          <div className={`${workSans.className} flex-1 flex items-center justify-center`}>
+          <div className="flex-1 flex items-center justify-center">
             <h3
-              className={`text-sm font-semibold whitespace-nowrap`}
+              className="text-sm font-semibold whitespace-nowrap"
               style={{
                 color: theme.kanban.textPrimary,
-                writingMode: 'vertical-rl',
-                textOrientation: 'mixed'
+                writingMode: "vertical-rl",
+                textOrientation: "mixed",
               }}
             >
               {title}
             </h3>
           </div>
 
-          {/* indicador de cor */}
-          <div
-            className="w-3 h-3 rounded-full mt-2"
-            style={{ backgroundColor: color }}
-          />
+          <div className="w-3 h-3 rounded-full mt-2" style={{ backgroundColor: color }} />
         </div>
       ) : (
-        /* coluna expandida - normal */
         <>
-          {/* header da Coluna */}
           <div
-            className={`flex items-center justify-between p-4 rounded-t-lg transition-all duration-200`}
+            className="flex items-center justify-between p-4 rounded-t-lg transition-all duration-200"
             style={{
               backgroundColor: theme.kanban.columnBg,
               borderTop: `4px solid ${color}`,
               borderRight: `1px solid ${theme.kanban.columnBorder}`,
-              borderBottom: '0px',
-              borderLeft: `1px solid ${theme.kanban.columnBorder}`
+              borderBottom: "0px",
+              borderLeft: `1px solid ${theme.kanban.columnBorder}`,
             }}
           >
             <div className="flex items-center space-x-2">
-              <div
-                className="w-3 h-3 rounded-full"
-                style={{ backgroundColor: color }}
-              />
-              <h3 className={`${workSans.className} text-sm font-semibold truncate`}
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
+              <h3
+                className="font-worksans text-sm font-semibold truncate"
                 style={{ color: theme.kanban.textPrimary }}
               >
                 {title}
               </h3>
             </div>
+
             <div className="flex items-center space-x-2">
-              {/* botao de recolher */}
               <button
                 onClick={() => setIsCollapsed(true)}
                 className="transition-colors p-1"
@@ -260,11 +262,13 @@ const KanbanColumn = memo(({
                 </svg>
               </button>
 
-              {/* menuzinho das colunas */}
               <div className="relative" ref={menuRef}>
                 <button
-                  onClick={() => setIsMenuOpen(!isMenuOpen)}
-                  className="transition-colors p-1 rounded hover:opacity-70"
+                  onClick={() => {
+                    setIsMenuOpen((prev) => !prev);
+                    if (isMenuOpen) setIsMoveSubmenuOpen(false);
+                  }}
+                  className="transition-colors p-1 rounded hover:opacity-70  focus:ring-1 "
                   style={{ color: theme.kanban.textSecondary }}
                   title="Opções da coluna"
                 >
@@ -278,170 +282,218 @@ const KanbanColumn = memo(({
                 <AnimatePresence>
                   {isMenuOpen && (
                     <motion.div
-                      initial={{ opacity: 0, scale: 0.95, y: -8 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.95, y: -8 }}
-                      transition={{ duration: 0.1 }}
-                      className="absolute right-0 mt-1 w-48 rounded-lg shadow-lg z-50 py-1"
-                      style={{
-                        backgroundColor: theme.background.surface,
-                        borderColor: theme.border.secondary,
-                        border: `1px solid ${theme.border.secondary}`
-                      }}
+                      initial={{ opacity: 0, y: -12, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -12, scale: 0.98 }}
+                      transition={{ duration: 0.16, ease: "easeOut" }}
+                      className="absolute right-0 top-full z-50 mt-2 w-56 rounded-lg p-2"
+                      style={menuPanelStyle}
                     >
-                      {/* sel. Todos */}
-                      <button
+                      <motion.button
+                        type="button"
                         onClick={handleSelectAll}
-                        className="w-full text-left px-4 py-2 text-sm transition-colors"
-                        style={{
-                          color: theme.text.primary,
-                          backgroundColor: 'transparent',
-                        }}
+                        whileHover={{ x: 2 }}
+                        whileTap={{ scale: 0.99 }}
+                        transition={{ duration: 0.12 }}
+                        className="mb-1 w-full rounded-xl px-3 py-2.5 text-left text-sm transition-colors"
+                        style={menuItemBaseStyle}
                         onMouseEnter={(e) => {
-                          (e.currentTarget as HTMLElement).style.backgroundColor = theme.background.hover;
+                          Object.assign(e.currentTarget.style, menuHoverStyle);
                         }}
                         onMouseLeave={(e) => {
-                          (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent';
+                          e.currentTarget.style.backgroundColor = "transparent";
+                          e.currentTarget.style.borderColor = "transparent";
                         }}
                       >
-                        Selecionar Todos
-                      </button>
+                        Selecionar todos
+                      </motion.button>
 
-                      {/* mudar nome da coluna - nao disponivel pra coluna especial (coluna que contem os tickets semcoluna) */}
+                      <motion.button
+                        type="button"
+                        onClick={handleClearAll}
+                        whileHover={{ x: 2 }}
+                        whileTap={{ scale: 0.99 }}
+                        transition={{ duration: 0.12 }}
+                        className="mb-1 w-full rounded-xl px-3 py-2.5 text-left text-sm transition-colors"
+                        style={{
+                          ...menuItemBaseStyle,
+                          opacity: hasSelectedInColumn ? 1 : 0.55,
+                        }}
+                        disabled={!hasSelectedInColumn}
+                        onMouseEnter={(e) => {
+                          if (!hasSelectedInColumn) return;
+                          Object.assign(e.currentTarget.style, menuHoverStyle);
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = "transparent";
+                          e.currentTarget.style.borderColor = "transparent";
+                        }}
+                      >
+                        Desmarcar todos
+                      </motion.button>
+
                       {!isSpecialColumn && (
-                        <button
+                        <motion.button
+                          type="button"
                           onClick={() => {
                             setIsRenaming(true);
                             setIsMenuOpen(false);
+                            setIsMoveSubmenuOpen(false);
                           }}
-                          className="w-full text-left px-4 py-2 text-sm transition-colors"
-                          style={{
-                            color: theme.text.primary,
-                            backgroundColor: 'transparent',
-                          }}
+                          whileHover={{ x: 2 }}
+                          whileTap={{ scale: 0.99 }}
+                          transition={{ duration: 0.12 }}
+                          className="mb-1 w-full rounded-xl px-3 py-2.5 text-left text-sm transition-colors"
+                          style={menuItemBaseStyle}
                           onMouseEnter={(e) => {
-                            (e.currentTarget as HTMLElement).style.backgroundColor = theme.background.hover;
+                            Object.assign(e.currentTarget.style, menuHoverStyle);
                           }}
                           onMouseLeave={(e) => {
-                            (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent';
+                            e.currentTarget.style.backgroundColor = "transparent";
+                            e.currentTarget.style.borderColor = "transparent";
                           }}
                         >
-                          Alterar Nome
-                        </button>
+                          Alterar nome
+                        </motion.button>
                       )}
 
                       {availableColumns.length > 0 && (
-                        <>
-                          <div className="border-t" style={{ borderColor: theme.border.secondary }} />
-                          <div className="relative">
-                            <button
-                              onClick={() => setIsMoveSubmenuOpen(!isMoveSubmenuOpen)}
-                              className="w-full text-left px-4 py-2 text-sm transition-colors flex items-center justify-between"
-                              style={{
-                                color: theme.text.primary,
-                                backgroundColor: isMoveSubmenuOpen ? theme.background.hover : 'transparent',
-                              }}
-                              onMouseEnter={(e) => {
-                                if (!isMoveSubmenuOpen) {
-                                  (e.currentTarget as HTMLElement).style.backgroundColor = theme.background.hover;
-                                }
-                              }}
-                              onMouseLeave={(e) => {
-                                if (!isMoveSubmenuOpen) {
-                                  (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent';
-                                }
-                              }}
-                            >
-                              <span>Mover Cards Para</span>
-                              <svg
-                                className={`w-4 h-4 transition-transform ${isMoveSubmenuOpen ? 'rotate-90' : ''}`}
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                              </svg>
-                            </button>
-
-                            <AnimatePresence>
-                              {isMoveSubmenuOpen && (
-                                <motion.div
-                                  initial={{ opacity: 0, x: -8 }}
-                                  animate={{ opacity: 1, x: 0 }}
-                                  exit={{ opacity: 0, x: -8 }}
-                                  transition={{ duration: 0.1 }}
-                                  className="absolute left-full top-0 mt-0 ml-1 w-40 rounded-lg shadow-lg z-50 bg-transparent"
-                                >
-                                  <div
-                                    className="rounded-lg py-1"
-                                    style={{
-                                      backgroundColor: theme.background.surface,
-                                      border: `1px solid ${theme.border.secondary}`
-                                    }}
-                                  >
-                                    {availableColumns.map((col) => (
-                                      <button
-                                        key={col.id}
-                                        onClick={() => {
-                                          handleMoveToColumn(col.id);
-                                          setIsMoveSubmenuOpen(false);
-                                        }}
-                                        className="w-full text-left px-4 py-2 text-sm transition-colors"
-                                        style={{
-                                          color: theme.text.primary,
-                                          backgroundColor: 'transparent',
-                                        }}
-                                        onMouseEnter={(e) => {
-                                          (e.currentTarget as HTMLElement).style.backgroundColor = theme.background.hover;
-                                        }}
-                                        onMouseLeave={(e) => {
-                                          (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent';
-                                        }}
-                                      >
-                                        {col.nome}
-                                      </button>
-                                    ))}
-                                  </div>
-                                </motion.div>
-                              )}
-                            </AnimatePresence>
-                          </div>
-                        </>
-                      )}
-                      {!isSpecialColumn && (
-                        <>
-                          <div className="border-t" style={{ borderColor: theme.border.secondary }} />
-                          <button
-                            onClick={() => {
-                              setIsMenuOpen(false);
-                              onDeleteColumn?.();
-                            }}
-                            className="w-full text-left px-4 py-2 text-sm transition-colors"
+                        <div
+                          className="relative mt-1 pt-2"
+                          style={{ borderTop: `1px solid ${theme.border.secondary}33` }}
+                        >
+                          <motion.button
+                            ref={submenuTriggerRef}
+                            type="button"
+                            onClick={() => setIsMoveSubmenuOpen((prev) => !prev)}
+                            whileHover={{ x: 2 }}
+                            whileTap={{ scale: 0.99 }}
+                            transition={{ duration: 0.12 }}
+                            className="w-full rounded-xl px-3 py-2.5 text-left text-sm transition-colors flex items-center justify-between"
                             style={{
-                              color: '#EF4444',
-                              backgroundColor: 'transparent',
+                              ...menuItemBaseStyle,
+                              backgroundColor: isMoveSubmenuOpen ? `${theme.brand.primary}14` : "transparent",
+                              borderColor: isMoveSubmenuOpen ? `${theme.brand.primary}22` : "transparent",
                             }}
+                            aria-expanded={isMoveSubmenuOpen}
                             onMouseEnter={(e) => {
-                              (e.currentTarget as HTMLElement).style.backgroundColor = `rgba(239, 68, 68, 0.1)`;
+                              if (!isMoveSubmenuOpen) Object.assign(e.currentTarget.style, menuHoverStyle);
                             }}
                             onMouseLeave={(e) => {
-                              (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent';
+                              if (!isMoveSubmenuOpen) {
+                                e.currentTarget.style.backgroundColor = "transparent";
+                                e.currentTarget.style.borderColor = "transparent";
+                              }
                             }}
                           >
-                            Excluir Coluna
-                          </button>
-                        </>
+                            <span>Mover cards para</span>
+
+                            <motion.svg
+                              animate={{ rotate: isMoveSubmenuOpen ? 90 : 0 }}
+                              transition={{ duration: 0.14 }}
+                              className="h-4 w-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </motion.svg>
+                          </motion.button>
+
+                          <AnimatePresence>
+                            {isMoveSubmenuOpen && (
+                              <motion.div
+                                initial={
+                                  submenuDirection === "right"
+                                    ? { opacity: 0, x: -8, scale: 0.98 }
+                                    : { opacity: 0, y: -8, scale: 0.98 }
+                                }
+                                animate={{ opacity: 1, x: 0, y: 0, scale: 1 }}
+                                exit={
+                                  submenuDirection === "right"
+                                    ? { opacity: 0, x: -8, scale: 0.98 }
+                                    : { opacity: 0, y: -8, scale: 0.98 }
+                                }
+                                transition={{ duration: 0.16, ease: "easeOut" }}
+                                className="absolute z-60 w-56 rounded-lg p-2"
+                                style={{
+                                  ...menuPanelStyle,
+                                  left: submenuDirection === "right" ? "calc(100% + 10px)" : 0,
+                                  top: submenuDirection === "right" ? -8 : "calc(100% + 10px)",
+                                }}
+                              >
+                                {availableColumns.map((col) => (
+                                  <motion.button
+                                    key={col.id}
+                                    type="button"
+                                    onClick={() => handleMoveToColumn(col.id)}
+                                    whileHover={{ x: 2 }}
+                                    whileTap={{ scale: 0.99 }}
+                                    transition={{ duration: 0.12 }}
+                                    className="mb-1 w-full rounded-xl px-3 py-2.5 text-left text-sm transition-colors last:mb-0 truncate"
+                                    style={menuItemBaseStyle}
+                                    title={col.nome}
+                                    onMouseEnter={(e) => {
+                                      Object.assign(e.currentTarget.style, menuHoverStyle);
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.currentTarget.style.backgroundColor = "transparent";
+                                      e.currentTarget.style.borderColor = "transparent";
+                                    }}
+                                  >
+                                    {col.nome}
+                                  </motion.button>
+                                ))}
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      )}
+
+                      {!isSpecialColumn && (
+                        <div
+                          className="mt-1 pt-2"
+                          style={{ borderTop: `1px solid ${theme.border.secondary}33` }}
+                        >
+                          <motion.button
+                            type="button"
+                            onClick={() => {
+                              setIsMenuOpen(false);
+                              setIsMoveSubmenuOpen(false);
+                              onDeleteColumn?.();
+                            }}
+                            whileHover={{ x: 2 }}
+                            whileTap={{ scale: 0.99 }}
+                            transition={{ duration: 0.12 }}
+                            className="w-full rounded-xl px-3 py-2.5 text-left text-sm transition-colors"
+                            style={{
+                              color: "#EF4444",
+                              border: "1px solid transparent",
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = "rgba(239,68,68,0.10)";
+                              e.currentTarget.style.borderColor = "rgba(239,68,68,0.18)";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = "transparent";
+                              e.currentTarget.style.borderColor = "transparent";
+                            }}
+                          >
+                            Excluir coluna
+                          </motion.button>
+                        </div>
                       )}
                     </motion.div>
                   )}
                 </AnimatePresence>
               </div>
 
-              {/* contador */}
-              <span className={`text-xs font-medium px-2 py-1 rounded-full transition-all`}
+              <span
+                className="rounded-full px-2 py-1 text-xs font-medium transition-all"
                 style={{
-                  backgroundColor: isOver ? theme.brand.primary : theme.kanban.columnBorder,
-                  color: isOver ? '#FFFFFF' : theme.kanban.textSecondary
+                  backgroundColor: isOver ? theme.brand.primary : `${color}16`,
+                  color: isOver ? "#FFFFFF" : color,
+                  border: `1px solid ${isOver ? theme.brand.primary : `${color}20`}`,
                 }}
               >
                 {tickets.length}
@@ -449,149 +501,178 @@ const KanbanColumn = memo(({
             </div>
           </div>
 
-          {/* zona de drop */}
           <div
             ref={setNodeRef}
-            className={`
-              flex-1 min-h-32 p-2 rounded-b-lg
-              max-h-[calc(100vh-220px)] overflow-y-auto custom-scrollbar
-              transition-all duration-150
-            `}
+            className="custom-scrollbar flex-1 min-h-32 overflow-y-auto rounded-b-2xl p-2 transition-all duration-150"
             style={{
-              backgroundColor: isOver ? `${theme.brand.primary}19` : theme.kanban.columnBg,
-              borderRight: `1px solid ${isOver ? theme.brand.primary : theme.kanban.columnBorder}`,
-              borderBottom: `1px solid ${isOver ? theme.brand.primary : theme.kanban.columnBorder}`,
-              borderLeft: `1px solid ${isOver ? theme.brand.primary : theme.kanban.columnBorder}`
+              maxHeight: "calc(100vh - 220px)",
+              background: `${theme.kanban.columnBg}`,
+              borderRight: `5px solid ${theme.kanban.columnBorder}`,
+              borderBottom: `1px solid ${theme.kanban.columnBorder}`,
+              borderLeft: `1px solid ${theme.kanban.columnBorder}`,
+              boxShadow: "0 10px 24px rgba(0,0,0,0.04)",
             }}
           >
-            {/* indicador de drop */}
-            {isOver && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                className="mb-2 p-2 border-2 border-dashed rounded-lg shrink-0"
-                style={{
-                  borderColor: theme.brand.primary,
-                  backgroundColor: `${theme.brand.primary}1a`
-                }}
-              >
-                <p className="text-xs font-medium text-center" style={{ color: theme.brand.primary }}>
-                  ↓ Solte o card aqui
-                </p>
-              </motion.div>
-            )}
+         <SortableContext items={ticketIds} strategy={verticalListSortingStrategy}>
+  {tickets.length > 0 ? (
+    <>
+      <DropIndicator
+        isVisible={
+          dragOverInfo?.targetColumn === id &&
+          dragOverInfo?.overIndex === 0 &&
+          dragOverInfo?.insertPosition === "above"
+        }
+      />
 
-            {/* lista de tickets */}
-            <SortableContext
-              id={id}
-              items={ticketIds}
-              strategy={verticalListSortingStrategy}
-            >
-              <div className="space-y-2 pr-1 min-h-25">
-                {tickets.length > 0 ? (
-                  tickets.map((ticket) => (
-                    <div key={ticket.id} className="mb-2">
-                      <TicketCard
-                        chamado={ticket}
-                        onClick={() => onTicketClick?.(ticket)}
-                        isSelected={selectedTickets.has(ticket.id)}
-                        onSelect={onTicketSelect}
-                      />
-                    </div>
-                  ))
-              ) : (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.2 }}
-                    className="text-center py-8"
-                  >
-                    <div style={{ color: theme.kanban.textSecondary }} className="text-sm">
-                      Arraste ticket's aqui
-                    </div>
-                  </motion.div>
-                )}
-              </div>
-            </SortableContext>
+      {tickets.map((ticket, index) => {
+        const showAbove =
+          dragOverInfo?.targetColumn === id &&
+          dragOverInfo?.overIndex === index &&
+          dragOverInfo?.insertPosition === "above";
+
+        const showBelow =
+          dragOverInfo?.targetColumn === id &&
+          dragOverInfo?.overIndex === index &&
+          dragOverInfo?.insertPosition === "below";
+
+        return (
+          <div key={ticket.id} className="relative">
+            {index > 0 && <DropIndicator isVisible={showAbove} />}
+
+            <TicketCard
+              chamado={ticket}
+              onClick={() => onTicketClick?.(ticket)}
+              isSelected={selectedTickets.has(ticket.id)}
+              onSelect={onTicketSelect}
+            />
+
+            <DropIndicator isVisible={showBelow} />
           </div>
+        );
+      })}
 
-          {/*modal pra renomear */}
-          <AnimatePresence>
-            {isRenaming && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 flex items-center justify-center z-50"
-                style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
-                onClick={() => setIsRenaming(false)}
-              >
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  className="rounded-lg p-6 w-96 shadow-xl"
-                  style={{ backgroundColor: theme.background.surface }}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <h3 className="text-lg font-semibold mb-4" style={{ color: theme.text.primary }}>
-                    Alterar Nome da Coluna
-                  </h3>
-                  <input
-                    type="text"
-                    value={newName}
-                    onChange={(e) => setNewName(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        handleRename();
-                      } else if (e.key === 'Escape') {
-                        setIsRenaming(false);
-                        setNewName(title);
-                      }
-                    }}
-                    autoFocus
-                    className="w-full px-3 py-2 rounded border mb-4 outline-none text-sm"
-                    style={{
-                      backgroundColor: theme.background.card,
-                      borderColor: theme.border.primary,
-                      color: theme.text.primary,
-                    }}
-                  />
-                  <div className="flex gap-2">
-                    <button
-                      onClick={handleRename}
-                      className="flex-1 px-4 py-2 rounded font-medium text-sm text-white transition-all"
-                      style={{
-                        backgroundColor: theme.brand.primary,
-                      }}
-                    >
-                      Salvar
-                    </button>
-                    <button
-                      onClick={() => {
-                        setIsRenaming(false);
-                        setNewName(title);
-                      }}
-                      className="flex-1 px-4 py-2 rounded font-medium text-sm transition-all border"
-                      style={{
-                        borderColor: theme.border.secondary,
-                        color: theme.text.secondary,
-                      }}
-                    >
-                      Cancelar
-                    </button>
-                  </div>
-                </motion.div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+      <DropIndicator
+        isVisible={
+          isOver &&
+          dragOverInfo?.targetColumn === id &&
+          dragOverInfo?.overIndex === tickets.length - 1 &&
+          dragOverInfo?.insertPosition === "below"
+        }
+      />
+    </>
+  ) : (
+    <div
+      className="rounded-xl border-2 border-dashed p-4 text-center text-sm"
+      style={{
+        borderColor: isOver ? theme.brand.primary : theme.border.secondary,
+        backgroundColor: isOver ? `${theme.brand.primary}14` : "transparent",
+        color: theme.text.secondary,
+        transition: "all 0.15s ease",
+      }}
+    >
+      <DropIndicator isVisible={isOver} />
+      Arraste tickets aqui
+    </div>
+  )}
+</SortableContext>
+          </div>
         </>
       )}
+
+      <AnimatePresence>
+        {isRenaming && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center"
+            style={{
+              backgroundColor: "rgba(10,10,12,0.32)",
+              backdropFilter: "blur(6px)",
+              WebkitBackdropFilter: "blur(6px)",
+            }}
+            onClick={() => {
+              setIsRenaming(false);
+              setNewName(title);
+            }}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 10, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.98 }}
+              transition={{ duration: 0.16 }}
+              className="w-96 rounded-3xl p-6 shadow-xl"
+              style={{
+                background: `linear-gradient(180deg, ${theme.background.surface}E6, ${theme.background.hover}D1)`,
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3
+                className="mb-4 text-lg font-semibold"
+                style={{ color: theme.text.primary }}
+              >
+                Alterar nome da coluna
+              </h3>
+
+              <input
+                type="text"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleRename();
+                  else if (e.key === "Escape") {
+                    setIsRenaming(false);
+                    setNewName(title);
+                  }
+                }}
+                autoFocus
+                className="mb-4 w-full rounded-2xl px-3 py-2.5 text-sm outline-none"
+                style={{
+                  backgroundColor: `${theme.background.card}C0`,
+                  color: theme.text.primary,
+                  border: `1px solid ${theme.border.primary}`,
+                  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06)",
+                }}
+              />
+
+              <div className="flex gap-2">
+                <motion.button
+                  type="button"
+                  onClick={handleRename}
+                  whileTap={{ scale: 0.98 }}
+                  className="flex-1 rounded-2xl px-4 py-2.5 text-sm font-medium text-white"
+                  style={{
+                    backgroundColor: theme.brand.primary,
+                    boxShadow: `0 10px 20px ${theme.brand.primary}30`,
+                  }}
+                >
+                  Salvar
+                </motion.button>
+
+                <motion.button
+                  type="button"
+                  onClick={() => {
+                    setIsRenaming(false);
+                    setNewName(title);
+                  }}
+                  whileTap={{ scale: 0.98 }}
+                  className="flex-1 rounded-2xl px-4 py-2.5 text-sm font-medium"
+                  style={{
+                    color: theme.text.secondary,
+                    border: `1px solid ${theme.border.secondary}`,
+                    backgroundColor: `${theme.background.surface}B0`,
+                  }}
+                >
+                  Cancelar
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 });
 
-KanbanColumn.displayName = 'KanbanColumn';
-
+KanbanColumn.displayName = "KanbanColumn";
 export default KanbanColumn;

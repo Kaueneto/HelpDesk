@@ -1,5 +1,4 @@
-
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import type { Board, GroupByOption, UseKanbanFilteringReturn } from '../utils/kanbanTypes';
 
 interface UseKanbanFilteringProps {
@@ -40,31 +39,49 @@ export function useKanbanFiltering({
 
   const [somenteAbertos, setSomenteAbertos] = useState(false);
 
+  // ref para evitar que selectBoard entre nas deps e cause loop infinito
+  const selectBoardRef = useRef(selectBoard);
   useEffect(() => {
-    if (groupBy === 'personalizada' && selectedBoard) {
-      setSelectedBoardIdState(selectedBoard.id);
-      localStorage.setItem(STORAGE_KEY_SELECTED_BOARD, selectedBoard.id.toString());
-    }
-  }, [selectedBoard, groupBy]);
+    selectBoardRef.current = selectBoard;
+  }, [selectBoard]);
 
+  // efeito 1: persiste o selectedBoardId no localStorage quando muda
+  // removida a chamada redundante a setSelectedBoardIdState (já está no estado)
   useEffect(() => {
-    if (groupBy === 'personalizada') {
-      const savedBoardId = localStorage.getItem(STORAGE_KEY_SELECTED_BOARD);
-      if (savedBoardId && boards.length > 0) {
-        const board = boards.find((b) => b.id === parseInt(savedBoardId));
-        if (board) {
-          selectBoard(board.id);
-        }
-      }
+    if (groupBy === 'personalizada' && selectedBoardId !== null) {
+      localStorage.setItem(STORAGE_KEY_SELECTED_BOARD, selectedBoardId.toString());
     }
-  }, [groupBy, boards, selectBoard]);
+  }, [selectedBoardId, groupBy]);
+
+  // efeito 2: restaura o board salvo ao trocar para modo personalizada
+  // Corrigido: só chama selectBoard se o board ainda não está selecionado
+  // e não inclui selectBoard nas deps para evitar re-renders infinitos
+  useEffect(() => {
+    if (groupBy !== 'personalizada') return;
+    if (boards.length === 0) return;
+
+    const savedBoardId = localStorage.getItem(STORAGE_KEY_SELECTED_BOARD);
+    if (!savedBoardId) return;
+
+    const boardId = parseInt(savedBoardId);
+
+    // guard: só chama se for um board diferente do atual
+    if (boardId === selectedBoardId) return;
+
+    const board = boards.find((b) => b.id === boardId);
+    if (board) {
+      setSelectedBoardIdState(boardId);
+      selectBoardRef.current(boardId);
+    }
+  // guard: selectBoard e selectedBoardId fora das deps propositalmente
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [groupBy, boards]);
 
   const allGroupByOptions = useMemo(() => {
     const boardOptions = boards.map((board) => ({
       value: `board_${board.id}`,
       label: board.nome,
     }));
-
     return [...BASE_GROUP_BY_OPTIONS, ...boardOptions];
   }, [boards]);
 
@@ -90,15 +107,16 @@ export function useKanbanFiltering({
         const boardId = parseInt(option.value.replace('board_', ''));
         setGroupBy('personalizada');
         setSelectedBoardId(boardId);
-        selectBoard(boardId);
+        selectBoardRef.current(boardId);
       } else {
-        // Standard grouping selected
+        // ao trocar para agrupamento padrão, limpa o board selecionado
         setGroupBy(option.value);
         setSelectedBoardId(null);
         localStorage.removeItem(STORAGE_KEY_SELECTED_BOARD);
       }
     },
-    [setGroupBy, setSelectedBoardId, selectBoard]
+    [setGroupBy, setSelectedBoardId]
+    // selectBoard removido das deps — usamos a ref para evitar loop
   );
 
   return {

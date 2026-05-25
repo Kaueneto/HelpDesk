@@ -84,6 +84,8 @@ export interface DragOverInfo {
   ticketId: number;
   targetColumn: string;
   overId: string | number;
+  overIndex?: number;  // 🎯 Índice exato onde o card vai encaixar
+  insertPosition?: "above" | "below";  // 🎯 Posição em relação ao card
 }
 
 export interface Board {
@@ -177,35 +179,24 @@ export interface UseKanbanDragDropReturn {
   handleDragEnd: (event: any) => void;
 }
 
+// ✅ Substitua a interface UseKanbanColumnManagementReturn inteira por esta:
 export interface UseKanbanColumnManagementReturn {
   isAddingColumn: boolean;
   newColumnName: string;
   columnInputRef: React.RefObject<HTMLInputElement | null>;
-  
   deleteConfirmModal: {
     isOpen: boolean;
     columnId: number | null;
   };
-
-  handleColumnSubmit: () => void; 
+  handleColumnSubmit: () => void;
   handleCreateColumn: (nome: string) => Promise<void>;
   handleDeleteColumn: (columnId: string) => void;
   handleConfirmDelete: () => Promise<void>;
   handleCancelDelete: () => void;
   handleRenameColumn: (columnId: string, newName: string) => Promise<void>;
   handleCancelColumnEdit: () => void;
-  
   setIsAddingColumn: (value: boolean) => void;
   setNewColumnName: (value: string) => void;
-  boards: Board[];
-  selectedBoard: Board | null;
-  columns: Column[]; 
-  boardLoading: boolean;
-  selectBoard: (boardId: number) => void;
-  createBoard: (nome: string, departamentoId: number) => Promise<Board | null>;
-  createColumn: (nome: string) => Promise<void>;
-  deleteColumn: (columnId: number) => Promise<void>;
-  removeColumnLocal: (columnId: number) => void;
 }
 
 export interface UseKanbanFilteringReturn {

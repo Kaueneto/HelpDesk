@@ -1,4 +1,5 @@
 import { AppDataSource } from "../data-source";
+import { Not } from "typeorm";
 import { KanbanCard } from "../entities/KanbanCard";
 import { KanbanBoard } from "../entities/KanbanBoard";
 import { KanbanColumn } from "../entities/KanbanColumn";
@@ -105,7 +106,7 @@ export class CardService {
     ): Promise<KanbanCard> {
         const card = await this.cardRepository.findOne({
         where: { id: cardId },
-        relations: ["board", "column"],
+        relations: ["board", "column", "chamado"],
         });
 
     if (!card) {
@@ -116,7 +117,7 @@ export class CardService {
       throw new Error("Card não pertence a este board");
     }
 
-    // validar nova coluna
+    // validar nova coluna se fornecida
     let novaColuna: KanbanColumn | null = null;
     if (dto.novaColumnId) {
       novaColuna = await this.columnRepository.findOne({
@@ -125,15 +126,36 @@ export class CardService {
       });
 
       if (!novaColuna || novaColuna.board.id !== dto.boardId) {
-        throw new Error("Coluna de destino inválida");
+        throw new Error("Coluna de destino inválida para este board");
       }
     }
 
+    // verificar se o chamado já existe em outra coluna do mesmo board
+    // se existir, remover o duplicado (evita dois cards do mesmo chamado)
+    const outrosCardsDoMesmoChamado = await this.cardRepository.find({
+      where: {
+        board: { id: dto.boardId },
+        chamado: { id: card.chamado.id },
+        id: Not(cardId), // Ignorar este card
+      },
+    });
+
+    if (outrosCardsDoMesmoChamado.length > 0) {
+      console.warn(
+        `⚠️  Removendo ${outrosCardsDoMesmoChamado.length} card(s) duplicado(s) para o chamado ${card.chamado.id}`
+      );
+      for (const duplicado of outrosCardsDoMesmoChamado) {
+        await this.cardRepository.delete(duplicado.id);
+      }
+    }
+
+    // atualizar card
     card.column = novaColuna;
     card.posicao = dto.novaPosition;
     card.atualizadoEm = new Date();
 
-    return this.cardRepository.save(card);
+    const cardAtualizado = await this.cardRepository.save(card);
+    return cardAtualizado;
   }
 
  //obter cards de um board ou coluna

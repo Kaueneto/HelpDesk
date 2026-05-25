@@ -34,22 +34,13 @@ export interface Card {
   posicao: number;
   criadoEm: string;
   atualizadoEm: string;
-  board?: {
-    id: number;
-  };
-  column?: {
-    id: number;
-  } | null;
-  chamado?: {
-    id: number;
-  };
+  board?: { id: number };
+  column?: { id: number } | null;
+  chamado?: { id: number };
 }
 
 const toNumberOrUndefined = (value: unknown): number | undefined => {
-  if (value === null || value === undefined || value === '') {
-    return undefined;
-  }
-
+  if (value === null || value === undefined || value === '') return undefined;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : undefined;
 };
@@ -73,21 +64,15 @@ interface UseBoardDataReturn {
   cards: Card[];
   loading: boolean;
   error: string | null;
-  
-  // Board operations
   createBoard: (nome: string, idDepartamento: number) => Promise<Board | null>;
   selectBoard: (boardId: number) => Promise<void>;
   deleteBoard: (boardId: number) => Promise<void>;
   updateBoard: (boardId: number, updates: Partial<Board>) => Promise<void>;
-  
-  // Column operations
   createColumn: (nome: string) => Promise<Column | null>;
   updateColumn: (columnId: number, nome: string) => Promise<void>;
   deleteColumn: (columnId: number) => Promise<void>;
   removeColumnLocal: (columnId: number) => void;
   reorderColumns: (columnIds: number[]) => Promise<void>;
-  
-  // Card operations
   addCardToColumn: (columnId: number | null, chamadoId: number, posicao?: number) => Promise<Card | null>;
   moveCard: (cardId: number, columnId: number | null, posicao: number) => Promise<void>;
   removeCard: (cardId: number) => Promise<void>;
@@ -101,16 +86,29 @@ export const useBoardData = (idDepartamento: number): UseBoardDataReturn => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Carregar boards do departamento
+  // 🔑 Chave para localStorage baseada no departamento
+  const storageKey = `selectedBoard_dept_${idDepartamento}`;
+
+  // ⚡ Restaurar selectedBoardId do localStorage ao carregar o hook
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedBoardId = localStorage.getItem(storageKey);
+      if (savedBoardId) {
+        const boardId = parseInt(savedBoardId, 10);
+        console.log(`🔄 [STORAGE] Restaurando board ${boardId} do localStorage`);
+        // Será carregado após loadBoards
+      }
+    }
+  }, [storageKey]);
+
+
   const loadBoards = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      
       const response = await api.get(`/boards/departamento/${idDepartamento}`);
       const customBoards = response.data.data.filter((b: Board) => b.tipo === 'custom');
       setBoards(customBoards);
-      
       return customBoards;
     } catch (err: any) {
       const errorMsg = err.response?.data?.message || 'Erro ao carregar boards';
@@ -122,15 +120,12 @@ export const useBoardData = (idDepartamento: number): UseBoardDataReturn => {
     }
   }, [idDepartamento]);
 
-  // Carregar colunas do board selecionado
   const loadColumns = useCallback(async (boardId: number) => {
     try {
       setLoading(true);
       setError(null);
-      
       const response = await api.get(`/boards/${boardId}/columns`);
       setColumns(response.data.data);
-      
       return response.data.data;
     } catch (err: any) {
       const errorMsg = err.response?.data?.message || 'Erro ao carregar colunas';
@@ -142,44 +137,41 @@ export const useBoardData = (idDepartamento: number): UseBoardDataReturn => {
     }
   }, []);
 
-  // Carregar cards do board selecionado
   const loadCards = useCallback(async (boardId: number) => {
     try {
-        const response = await api.get(`/boards/${boardId}/cards`);
-        const normalizedCards = response.data.data
-          .map(normalizeCard)
-          .filter((card: Card) => card.id > 0 && card.idChamado > 0);
-        setCards(normalizedCards);
-        return normalizedCards;
+      const response = await api.get(`/boards/${boardId}/cards`);
+      const normalizedCards = response.data.data
+        .map(normalizeCard)
+        .filter((card: Card) => card.id > 0 && card.idChamado > 0);
+      setCards(normalizedCards);
+      return normalizedCards;
     } catch (err: any) {
       console.error('Erro ao carregar cards:', err);
       return [];
     }
   }, []);
 
-  // Criar novo board customizado
   const createBoard = useCallback(
     async (nome: string, departamentoId?: number): Promise<Board | null> => {
       try {
         setLoading(true);
         setError(null);
-
         const payload = {
           nome,
           idDepartamento: departamentoId || idDepartamento,
           tipo: 'custom' as const,
         };
-
         const response = await api.post('/boards', payload);
-        const newBoard = response.data.data;  // Acessa o campo "data" da resposta
-
+        const newBoard = response.data.data;
         setBoards((prev) => [...prev, newBoard]);
         setSelectedBoard(newBoard);
-        
-        // Carregar colunas e cards vazios
+        // 💾 Salvar novo board no localStorage
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(storageKey, newBoard.id.toString());
+          console.log(`💾 [STORAGE] Novo board criado e selecionado: ${newBoard.nome}`);
+        }
         await loadColumns(newBoard.id);
         await loadCards(newBoard.id);
-
         toast.success(`Board "${nome}" criado com sucesso!`);
         return newBoard;
       } catch (err: any) {
@@ -194,19 +186,33 @@ export const useBoardData = (idDepartamento: number): UseBoardDataReturn => {
     [idDepartamento, loadColumns, loadCards]
   );
 
-  // Selecionar board
+  // ✅ Corrigido: busca o board na API se não estiver no estado local ainda
   const selectBoard = useCallback(
     async (boardId: number) => {
       try {
         setLoading(true);
         setError(null);
 
-        const board = boards.find((b) => b.id === boardId);
+        let board = boards.find((b) => b.id === boardId) || null;
+
         if (!board) {
-          throw new Error('Board não encontrado');
+          const response = await api.get(`/boards/${boardId}`);
+          board = response.data.data;
+          if (board) {
+            setBoards((prev) =>
+              prev.some((b) => b.id === boardId) ? prev : [...prev, board!]
+            );
+          }
         }
 
+        if (!board) throw new Error('Board não encontrado');
+
         setSelectedBoard(board);
+        // 💾 Salvar boardId no localStorage para persistência
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(storageKey, board.id.toString());
+          console.log(`💾 [STORAGE] Board selecionado salvo: ${board.nome} (ID: ${board.id})`);
+        }
         await loadColumns(boardId);
         await loadCards(boardId);
       } catch (err: any) {
@@ -220,22 +226,23 @@ export const useBoardData = (idDepartamento: number): UseBoardDataReturn => {
     [boards, loadColumns, loadCards]
   );
 
-  // Deletar board
   const deleteBoard = useCallback(
     async (boardId: number) => {
       try {
         setLoading(true);
         setError(null);
-
         await api.delete(`/boards/${boardId}`);
-
         setBoards((prev) => prev.filter((b) => b.id !== boardId));
         if (selectedBoard?.id === boardId) {
           setSelectedBoard(null);
           setColumns([]);
           setCards([]);
+          // 💾 Limpar localStorage quando o board selecionado é deletado
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem(storageKey);
+            console.log(`🗑️ [STORAGE] Board deletado e removido do localStorage`);
+          }
         }
-
         toast.success('Board deletado com sucesso!');
       } catch (err: any) {
         const errorMsg = err.response?.data?.message || 'Erro ao deletar board';
@@ -248,23 +255,15 @@ export const useBoardData = (idDepartamento: number): UseBoardDataReturn => {
     [selectedBoard]
   );
 
-  // Atualizar board
   const updateBoard = useCallback(
     async (boardId: number, updates: Partial<Board>) => {
       try {
         setLoading(true);
         setError(null);
-
         const response = await api.patch(`/boards/${boardId}`, updates);
         const updatedBoard = response.data.data;
-
-        setBoards((prev) =>
-          prev.map((b) => (b.id === boardId ? updatedBoard : b))
-        );
-        if (selectedBoard?.id === boardId) {
-          setSelectedBoard(updatedBoard);
-        }
-
+        setBoards((prev) => prev.map((b) => (b.id === boardId ? updatedBoard : b)));
+        if (selectedBoard?.id === boardId) setSelectedBoard(updatedBoard);
         toast.success('Board atualizado!');
       } catch (err: any) {
         const errorMsg = err.response?.data?.message || 'Erro ao atualizar board';
@@ -277,29 +276,18 @@ export const useBoardData = (idDepartamento: number): UseBoardDataReturn => {
     [selectedBoard]
   );
 
-  // Criar coluna
   const createColumn = useCallback(
     async (nome: string): Promise<Column | null> => {
       if (!selectedBoard) {
         toast.error('Nenhum board selecionado');
         return null;
       }
-
       try {
         setLoading(true);
         setError(null);
-
-        const payload = {
-          nome,
-          ordem: columns.length + 1,
-        };
-
-        const response = await api.post(
-          `/boards/${selectedBoard.id}/columns`,
-          payload
-        );
+        const payload = { nome, ordem: columns.length + 1 };
+        const response = await api.post(`/boards/${selectedBoard.id}/columns`, payload);
         const newColumn = response.data.data;
-
         setColumns((prev) => [...prev, newColumn]);
         toast.success(`Coluna "${nome}" criada!`);
         return newColumn;
@@ -315,82 +303,50 @@ export const useBoardData = (idDepartamento: number): UseBoardDataReturn => {
     [selectedBoard, columns.length]
   );
 
-  // Atualizar coluna
-  const updateColumn = useCallback(
-    async (columnId: number, nome: string) => {
-      try {
-        setLoading(true);
-        setError(null);
+  const updateColumn = useCallback(async (columnId: number, nome: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await api.patch(`/columns/${columnId}`, { nome });
+      const updatedColumn = response.data.data;
+      setColumns((prev) => prev.map((c) => (c.id === columnId ? updatedColumn : c)));
+      toast.success('Coluna atualizada!');
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.message || 'Erro ao atualizar coluna';
+      setError(errorMsg);
+      toast.error(errorMsg);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-        const response = await api.patch(`/columns/${columnId}`, { nome });
-        const updatedColumn = response.data.data;
+  const deleteColumn = useCallback(async (columnId: number) => {
+    try {
+      setLoading(true);
+      setError(null);
+      await api.delete(`/columns/${columnId}`);
+      setColumns((prev) => prev.filter((c) => c.id !== columnId));
+      setCards((prev) => prev.filter((card) => card.columnId !== columnId));
+      toast.success('Coluna deletada!');
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.message || 'Erro ao deletar coluna';
+      setError(errorMsg);
+      toast.error(errorMsg);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-        setColumns((prev) =>
-          prev.map((c) => (c.id === columnId ? updatedColumn : c))
-        );
-
-        toast.success('Coluna atualizada!');
-      } catch (err: any) {
-        const errorMsg = err.response?.data?.message || 'Erro ao atualizar coluna';
-        setError(errorMsg);
-        toast.error(errorMsg);
-      } finally {
-        setLoading(false);
-      }
-    },
-    []
-  );
-
-  // Deletar coluna
-  const deleteColumn = useCallback(
-    async (columnId: number) => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        await api.delete(`/columns/${columnId}`);
-        setColumns((prev) => prev.filter((c) => c.id !== columnId));
-        setCards((prev) =>
-          prev.filter((card) => card.columnId !== columnId)
-        );
-
-        toast.success('Coluna deletada!');
-      } catch (err: any) {
-        const errorMsg = err.response?.data?.message || 'Erro ao deletar coluna';
-        setError(errorMsg);
-        toast.error(errorMsg);
-      } finally {
-        setLoading(false);
-      }
-    },
-    []
-  );
-
-  // Reordenar colunas
   const reorderColumns = useCallback(
     async (columnIds: number[]) => {
       if (!selectedBoard) return;
-
       try {
         setLoading(true);
         setError(null);
-
-        const payload = {
-          columnIds,
-        };
-
-        await api.post(
-          `/boards/${selectedBoard.id}/columns/reorder`,
-          payload
-        );
-
-        // Atualizar localmente a ordem
-        const updatedColumns = columns.map((col, idx) => ({
-          ...col,
-          ordem: idx + 1,
-        }));
+        // ✅ Corrigido: era 'columnIds', o backend espera 'colunaIds'
+        await api.post(`/boards/${selectedBoard.id}/columns/reorder`, { colunaIds: columnIds });
+        const updatedColumns = columns.map((col, idx) => ({ ...col, ordem: idx + 1 }));
         setColumns(updatedColumns);
-
         toast.success('Colunas reordenadas!');
       } catch (err: any) {
         const errorMsg = err.response?.data?.message || 'Erro ao reordenar colunas';
@@ -402,130 +358,124 @@ export const useBoardData = (idDepartamento: number): UseBoardDataReturn => {
     },
     [selectedBoard, columns]
   );
+const moveCard = useCallback(
+  async (cardId: number, columnId: number | null, posicao: number) => {
+    if (!selectedBoard) return;
 
-  // Adicionar card à coluna
-  const addCardToColumn = useCallback(
-    async (columnId: number | null, chamadoId: number, posicao: number = 1000): Promise<Card | null> => {
-      if (!selectedBoard) {
-        toast.error('Nenhum board selecionado');
-        return null;
-      }
+    // ⚡ Otimista antes da API
+    setCards((prev) =>
+      prev.map((c) => (c.id === cardId ? { ...c, columnId, posicao } : c))
+    );
 
-      try {
-        setLoading(true);
-        setError(null);
+    try {
+      const payload = {
+        boardId: selectedBoard.id,
+        novaColumnId: columnId,
+        novaPosition: posicao,
+      };
+      console.log("🔍 Payload do MOVE sendo enviado:", JSON.stringify(payload));
 
-        const payload = {
-          columnId,
-          chamadoId,
-          posicao,
-        };
+      const response = await api.patch(`/cards/${cardId}/move`, payload);
+      const updatedCard = normalizeCard(response.data.data);
 
-        const response = await api.post(
-          `/boards/${selectedBoard.id}/cards`,
-          payload
-        );
-        const newCard = normalizeCard(response.data.data);
+      setCards((prev) =>
+        prev.map((c) => (c.id === cardId ? { ...c, ...updatedCard, columnId } : c))
+      );
 
-        setCards((prev) => [...prev, newCard]);
-        await loadCards(selectedBoard.id);
-        toast.success('Card adicionado!');
-        return newCard;
-      } catch (err: any) {
-        const errorMsg = err.response?.data?.message || 'Erro ao adicionar card';
-        setError(errorMsg);
-        toast.error(errorMsg);
-        throw err;
-      } finally {
-        setLoading(false);
-      }
-    },
-    [selectedBoard, loadCards]
-  );
+      console.log("✅ Card movido com sucesso:", { cardId, columnId, posicao });
+    } catch (err: any) {
+      console.error("❌ moveCard falhou, recarregando cards:", err);
+      await loadCards(selectedBoard.id);
+      toast.error("Erro ao mover card");
+      throw err;
+    }
+  },
+  [selectedBoard, loadCards]
+);
 
-  // Mover card
-  const moveCard = useCallback(
-    async (cardId: number, columnId: number | null, posicao: number) => {
-      if (!selectedBoard) {
-        toast.error('Nenhum board selecionado');
-        return;
-      }
+const addCardToColumn = useCallback(
+  async (columnId: number | null, chamadoId: number, posicao: number = 1000): Promise<Card | null> => {
+    if (!selectedBoard) return null;
 
-      try {
-        setLoading(true);
-        setError(null);
+    const existingCard = cards.find((c) => c.idChamado === chamadoId);
+    if (existingCard) {
+      console.log("🔍 Card já existe, movendo em vez de criar:", existingCard.id);
+      await moveCard(existingCard.id, columnId, posicao);
+      return { ...existingCard, columnId, posicao };
+    }
 
-        const payload = {
-          boardId: selectedBoard.id,
-          novaColumnId: columnId,
-          novaPosition: posicao,
-        };
+    try {
+      const payload = { columnId, chamadoId, posicao };
+      console.log("🔍 addCardToColumn payload:", JSON.stringify(payload));
+      console.log("🔍 URL:", `/boards/${selectedBoard.id}/cards`);
 
-        const response = await api.patch(`/cards/${cardId}/move`, payload);
-        const updatedCard = normalizeCard(response.data.data);
+      const response = await api.post(`/boards/${selectedBoard.id}/cards`, payload);
+      const newCard = normalizeCard(response.data.data);
 
-        setCards((prev) =>
-          prev.map((c) =>
-            c.id === cardId
-              ? {
-                  ...c,
-                  ...updatedCard,
-                  boardId: selectedBoard.id,
-                  columnId,
-                  idChamado: updatedCard.idChamado ?? c.idChamado,
-                }
-              : c
-          )
-        );
-        await loadCards(selectedBoard.id);
-      } catch (err: any) {
-        const errorMsg = err.response?.data?.message || 'Erro ao mover card';
-        setError(errorMsg);
-        toast.error(errorMsg);
-        throw err;
-      } finally {
-        setLoading(false);
-      }
-    },
-    [selectedBoard, loadCards]
-  );
+      setCards((prev) => {
+        const exists = prev.some((c) => c.id === newCard.id);
+        return exists
+          ? prev.map((c) => (c.id === newCard.id ? newCard : c))
+          : [...prev, newCard];
+      });
+      return newCard;
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Erro ao adicionar card');
+      throw err;
+    }
+  },
+  [selectedBoard, cards, moveCard] // ⚡ cards e moveCard nas deps
+);
 
-  // Remover card
-  const removeCard = useCallback(
-    async (cardId: number) => {
-      try {
-        setLoading(true);
-        setError(null);
+  const removeCard = useCallback(async (cardId: number) => {
+    try {
+      setLoading(true);
+      setError(null);
+      await api.delete(`/cards/${cardId}`);
+      setCards((prev) => prev.filter((c) => c.id !== cardId));
+      toast.success('Card removido!');
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.message || 'Erro ao remover card';
+      setError(errorMsg);
+      toast.error(errorMsg);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-        await api.delete(`/cards/${cardId}`);
-        setCards((prev) => prev.filter((c) => c.id !== cardId));
+  const removeColumnLocal = useCallback((columnId: number) => {
+    setColumns((prev) => prev.filter((c) => c.id !== columnId));
+    setCards((prev) => prev.filter((card) => card.columnId !== columnId));
+  }, []);
 
-        toast.success('Card removido!');
-      } catch (err: any) {
-        const errorMsg = err.response?.data?.message || 'Erro ao remover card';
-        setError(errorMsg);
-        toast.error(errorMsg);
-      } finally {
-        setLoading(false);
-      }
-    },
-    []
-  );
-
-  // remover coluna do estado local (sem chamada à API) - usado para WebSocket
-  const removeColumnLocal = useCallback(
-    (columnId: number) => {
-      console.log(`removendo coluna ${columnId} do estado local (WebSocket)`);
-      setColumns((prev) => prev.filter((c) => c.id !== columnId));
-      setCards((prev) => prev.filter((card) => card.columnId !== columnId));
-    },
-    []
-  );
-
-  // Carregar boards ao montar
   useEffect(() => {
     loadBoards();
   }, [loadBoards]);
+
+  // 🔄 Após carregar boards, restaurar o board selecionado do localStorage
+  useEffect(() => {
+    if (boards.length > 0 && !selectedBoard) {
+      if (typeof window !== 'undefined') {
+        const savedBoardId = localStorage.getItem(storageKey);
+        if (savedBoardId) {
+          const boardId = parseInt(savedBoardId, 10);
+          const savedBoard = boards.find((b) => b.id === boardId);
+          if (savedBoard) {
+            console.log(`✅ [STORAGE] Restaurando board selecionado: ${savedBoard.nome} (ID: ${boardId})`);
+            setSelectedBoard(savedBoard);
+            loadColumns(boardId);
+            loadCards(boardId);
+            return;
+          }
+        }
+      }
+      // Se não houver board salvo, seleciona o primeiro
+      console.log(`📌 [STORAGE] Primeiro acesso ou board não encontrado, selecionando: ${boards[0].nome}`);
+      setSelectedBoard(boards[0]);
+      loadColumns(boards[0].id);
+      loadCards(boards[0].id);
+    }
+  }, [boards, selectedBoard, storageKey]);
 
   return {
     boards,

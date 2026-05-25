@@ -1,41 +1,23 @@
-/**
- * useKanbanColumnManagement Hook
- *
- * Encapsulates all logic for managing custom board columns.
- * Integrates with useBoardData hook.
- *
- * Manages:
- * - Creating new columns inline
- * - Deleting columns with confirmation
- * - Renaming columns
- * - UI state (input field, modals)
- */
-
 import { useState, useCallback, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
-import { useBoardData } from '@/hooks/useBoardData';
+import type { Column } from '@/hooks/useBoardData';
 import type { UseKanbanColumnManagementReturn } from '../utils/kanbanTypes';
 
 interface UseKanbanColumnManagementProps {
   departamentoId: number;
   onRefresh?: () => void;
+  createColumn: (nome: string) => Promise<Column | null>;
+  deleteColumn: (columnId: number) => Promise<void>;
+  removeColumnLocal: (columnId: number) => void;
 }
 
 export function useKanbanColumnManagement({
   departamentoId,
   onRefresh,
+  createColumn,
+  deleteColumn,
+  removeColumnLocal,
 }: UseKanbanColumnManagementProps): UseKanbanColumnManagementReturn {
-  const {
-    boards,
-    selectedBoard,
-    columns,
-    loading: boardLoading,
-    selectBoard,
-    createBoard,
-    createColumn,
-    deleteColumn,
-    removeColumnLocal,
-  } = useBoardData(departamentoId);
 
   const [isAddingColumn, setIsAddingColumn] = useState(false);
   const [newColumnName, setNewColumnName] = useState('');
@@ -48,7 +30,7 @@ export function useKanbanColumnManagement({
 
   useEffect(() => {
     if (isAddingColumn && columnInputRef.current) {
-      columnInputRef.current?.focus();
+      columnInputRef.current.focus();
     }
   }, [isAddingColumn]);
 
@@ -77,6 +59,7 @@ export function useKanbanColumnManagement({
       try {
         await createColumn(nome);
         setNewColumnName('');
+        setIsAddingColumn(false);
         toast.success('Coluna criada com sucesso!');
       } catch (error) {
         toast.error('Erro ao criar coluna');
@@ -94,32 +77,25 @@ export function useKanbanColumnManagement({
     setNewColumnName('');
   }, []);
 
-const handleDeleteColumn = useCallback((columnId: string) => {
-  setDeleteConfirmModal({ isOpen: true, columnId: Number(columnId) });
-}, []);
+  const handleDeleteColumn = useCallback((columnId: string) => {
+    setDeleteConfirmModal({ isOpen: true, columnId: Number(columnId) });
+  }, []);
 
   const handleConfirmDelete = useCallback(async () => {
+    if (!deleteConfirmModal.columnId) return;
     try {
-      if (!deleteConfirmModal.columnId) return;
-
       const numColumnId = deleteConfirmModal.columnId;
-      console.log(`deleting column ${numColumnId}...`);
-
       await deleteColumn(numColumnId);
-
-      console.log(`Column ${numColumnId} deleted successfully!`);
       setDeleteConfirmModal({ isOpen: false, columnId: null });
     } catch (error: any) {
-      console.error('❌ error deleting column:', error);
-      
+      console.error('ERRO AO DELETAR COLUNA:', error);
+      toast.error('Erro ao deletar coluna');
     }
   }, [deleteConfirmModal.columnId, deleteColumn]);
 
-  // Handler: Cancel deletion
   const handleCancelDelete = useCallback(() => {
     setDeleteConfirmModal({ isOpen: false, columnId: null });
   }, []);
-
 
   const handleRenameColumn = useCallback(
     async (columnId: string, newName: string) => {
@@ -133,12 +109,11 @@ const handleDeleteColumn = useCallback((columnId: string) => {
     [onRefresh]
   );
 
- return {
-    
+  return {
     isAddingColumn,
     newColumnName,
     columnInputRef,
-    deleteConfirmModal, 
+    deleteConfirmModal,
 
     handleCreateColumn,
     handleDeleteColumn,
@@ -148,21 +123,9 @@ const handleDeleteColumn = useCallback((columnId: string) => {
     handleCancelColumnEdit,
     handleColumnSubmit: handleColumnInputSubmit,
 
-   
     setIsAddingColumn,
     setNewColumnName,
 
-    
-    boards,
-    selectedBoard,
-    columns,
-    boardLoading,
-    selectBoard,
-    createBoard,
-    createColumn: async (nome: string) => {
-       await createColumn(nome);
-    },
-    deleteColumn,
-    removeColumnLocal,
+  
   };
 }
