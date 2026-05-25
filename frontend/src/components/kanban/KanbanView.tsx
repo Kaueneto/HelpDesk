@@ -58,6 +58,7 @@ export default function KanbanView({
     selectBoard,
     createBoard,
     createColumn,
+    updateColumn,
     deleteColumn,
     addCardToColumn,
     moveCard,
@@ -80,7 +81,7 @@ export default function KanbanView({
     handleCancelColumnEdit,
     setIsAddingColumn,
     setNewColumnName,
-  } = useKanbanColumnManagement({ departamentoId, onRefresh, createColumn, deleteColumn, removeColumnLocal });
+  } = useKanbanColumnManagement({ departamentoId, onRefresh, createColumn, deleteColumn, removeColumnLocal, updateColumn });
 
   //  dragOverInfo começa null — o grouping base é calculado SEM ele
   const { groupedTickets, ticketsByColumn } = useKanbanGrouping({

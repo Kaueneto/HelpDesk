@@ -9,6 +9,7 @@ interface UseKanbanColumnManagementProps {
   createColumn: (nome: string) => Promise<Column | null>;
   deleteColumn: (columnId: number) => Promise<void>;
   removeColumnLocal: (columnId: number) => void;
+  updateColumn?: (columnId: number, nome: string) => Promise<void>;
 }
 
 export function useKanbanColumnManagement({
@@ -17,6 +18,7 @@ export function useKanbanColumnManagement({
   createColumn,
   deleteColumn,
   removeColumnLocal,
+  updateColumn,
 }: UseKanbanColumnManagementProps): UseKanbanColumnManagementReturn {
 
   const [isAddingColumn, setIsAddingColumn] = useState(false);
@@ -99,14 +101,21 @@ export function useKanbanColumnManagement({
 
   const handleRenameColumn = useCallback(
     async (columnId: string, newName: string) => {
+      if (!newName.trim()) {
+        toast.error('Nome da coluna não pode estar vazio');
+        return;
+      }
       try {
-        toast.success('Coluna renomeada com sucesso!');
+        const id = Number(columnId);
+        if (updateColumn) {
+          await updateColumn(id, newName.trim());
+        }
         onRefresh?.();
       } catch (error) {
         toast.error('Erro ao renomear coluna');
       }
     },
-    [onRefresh]
+    [updateColumn, onRefresh]
   );
 
   return {
