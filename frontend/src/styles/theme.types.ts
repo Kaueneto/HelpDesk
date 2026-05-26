@@ -75,6 +75,7 @@ export interface KanbanColors {
   textPrimary: string;
   textSecondary: string;
   cardBg: string;
+  novaColuna: string;
 }
 
 export interface DashboardColors {
