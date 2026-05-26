@@ -2,7 +2,9 @@
 
 import { memo, useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useDroppable } from "@dnd-kit/core";
+import { useSortable } from "@dnd-kit/sortable";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "@/contexts/ThemeContext";
 import TicketCard from "./TicketCard";
@@ -44,6 +46,8 @@ interface KanbanColumnProps {
   availableColumns?: Array<{ id: string; nome: string }>;
   isSpecialColumn?: boolean;
   dragOverInfo?: any;
+  columnId?: number;
+  isColumnDragging?: boolean;
 }
 
 const KanbanColumn = memo(function KanbanColumn({
@@ -63,8 +67,38 @@ const KanbanColumn = memo(function KanbanColumn({
   availableColumns = [],
   isSpecialColumn = false,
   dragOverInfo,
+  columnId,
+  isColumnDragging = false,
 }: KanbanColumnProps) {
   const { theme } = useTheme();
+
+  // setup drag e drop para reordenar colunas
+// DEPOIS
+const sortableId = columnId != null && !isNaN(columnId) ? columnId : id; // usa o id string se não tiver número válido
+const sortable = useSortable({
+  id: sortableId,
+  data: {
+    type: "column",
+    columnId: sortableId,
+    groupBy,
+    columnValue,
+  },
+});
+console.log("COLUMN SORTABLE id usado:", sortableId); // usa a variável correta
+
+// area droppable da coluna (para destacar quando há card sobre ela)
+const { isOver, setNodeRef: setDropRef } = useDroppable({
+  id: `column-drop-${id}`,
+  data: { type: "column-drop", columnId, groupBy, columnValue },
+});
+
+const { attributes, listeners, setNodeRef, transform, isDragging } = sortable as any;
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition: isDragging ? "none" : "transform 200ms cubic-bezier(0.2, 0.0, 0.38, 0.9)",
+    opacity: isDragging ? 0.5 : 1,
+  };
 
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -72,18 +106,24 @@ const KanbanColumn = memo(function KanbanColumn({
   const [newName, setNewName] = useState(title);
   const [isMoveSubmenuOpen, setIsMoveSubmenuOpen] = useState(false);
   const [submenuDirection, setSubmenuDirection] = useState<"right" | "bottom">("right");
+  const [isInlineEditing, setIsInlineEditing] = useState(false);
+  const [inlineEditValue, setInlineEditValue] = useState(title);
 
   const menuRef = useRef<HTMLDivElement>(null);
   const submenuTriggerRef = useRef<HTMLButtonElement>(null);
-
-  const { isOver, setNodeRef } = useDroppable({
-    id,
-    data: { type: "column", groupBy, columnValue },
-  });
+  const titleInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setNewName(title);
+    setInlineEditValue(title);
   }, [title]);
+
+  useEffect(() => {
+    if (isInlineEditing && titleInputRef.current) {
+      titleInputRef.current.focus();
+      titleInputRef.current.select();
+    }
+  }, [isInlineEditing]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -142,6 +182,26 @@ const KanbanColumn = memo(function KanbanColumn({
     setIsRenaming(false);
   }, [newName, title, onRenameColumn]);
 
+  const handleInlineEditStart = useCallback(() => {
+    setIsInlineEditing(true);
+    setInlineEditValue(title);
+    setIsMenuOpen(false);
+    setIsMoveSubmenuOpen(false);
+  }, [title]);
+
+  const handleInlineEditSave = useCallback(() => {
+    if (inlineEditValue.trim() && inlineEditValue.trim() !== title) {
+      onRenameColumn?.(inlineEditValue.trim());
+    }
+    setIsInlineEditing(false);
+    setInlineEditValue(title);
+  }, [inlineEditValue, title, onRenameColumn]);
+
+  const handleInlineEditCancel = useCallback(() => {
+    setIsInlineEditing(false);
+    setInlineEditValue(title);
+  }, [title]);
+
   const handleMoveToColumn = useCallback(
     (targetColumnId: string) => {
       onMoveAllCards?.(targetColumnId);
@@ -174,12 +234,17 @@ const KanbanColumn = memo(function KanbanColumn({
 
   return (
     <motion.div
+      ref={setNodeRef}
+       {...attributes} 
       initial={false}
       animate={{ width: isCollapsed ? "auto" : undefined }}
       transition={{ duration: 0.2, ease: "easeOut" }}
       className={`flex ${isCollapsed ? "flex-row" : "flex-col"} h-full ${
         isCollapsed ? "min-w-14" : "min-w-80 max-w-80"
       }`}
+      style={{
+        ...style,
+      }}
     >
         {isCollapsed ? (
         <div
@@ -231,7 +296,7 @@ const KanbanColumn = memo(function KanbanColumn({
       ) : (
         <>
           <div
-            className="flex items-center justify-between p-4 rounded-t-lg transition-all duration-200"
+            className="flex items-center justify-between p-4 rounded-t-lg transition-all duration-200 gap-2"
             style={{
               backgroundColor: theme.kanban.columnBg,
               borderTop: `4px solid ${color}`,
@@ -240,20 +305,56 @@ const KanbanColumn = memo(function KanbanColumn({
               borderLeft: `1px solid ${theme.kanban.columnBorder}`,
             }}
           >
-            <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
-              <h3
-                className="font-worksans text-sm font-semibold truncate"
-                style={{ color: theme.kanban.textPrimary }}
-              >
-                {title}
-              </h3>
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              {/* drag handle para reordenar coluna */}
+              {!isSpecialColumn && (
+                <button
+                  {...listeners}
+                  className="cursor-grab active:cursor-grabbing p-1 rounded hover:opacity-70 transition-opacity shrink-0 flex items-center justify-center"
+                  style={{ color: theme.kanban.textSecondary }}
+                  title="Arraste para reordenar"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M9 3h2v2H9V3zm4 0h2v2h-2V3zm4 0h2v2h-2V3zM9 7h2v2H9V7zm4 0h2v2h-2V7zm4 0h2v2h-2V7zM9 11h2v2H9v-2zm4 0h2v2h-2v-2zm4 0h2v2h-2v-2z" />
+                  </svg>
+                </button>
+              )}
+              
+              <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: color }} />
+
+              {isInlineEditing ? (
+                <input
+                  ref={titleInputRef}
+                  type="text"
+                  value={inlineEditValue}
+                  onChange={(e) => setInlineEditValue(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleInlineEditSave();
+                    else if (e.key === "Escape") handleInlineEditCancel();
+                  }}
+                  onBlur={handleInlineEditSave}
+                  className="font-segoe text-sm font-semibold outline-none bg-transparent px-2 py-1 w-full min-w-0 border border-transparent rounded focus:border-blue-500" 
+                  style={{ color: theme.kanban.textPrimary }}
+                  autoComplete="off"
+                />
+              ) : (
+                
+                <h3
+                  onDoubleClick={handleInlineEditStart}
+                  title={title}
+                  className="font-segoe text-sm font-semibold truncate cursor-text hover:opacity-80 transition-opacity flex-1 border border-transparent hover:border-white/30 rounded"
+                  style={{ color: theme.kanban.textPrimary }}
+                >
+                  {title}
+                </h3>
+              )}
             </div>
 
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center gap-2 shrink-0">
               <button
                 onClick={() => setIsCollapsed(true)}
-                className="transition-colors p-1"
+                className="transition-colors p-1 shrink-0"
                 style={{ color: theme.kanban.textSecondary }}
                 title="Recolher coluna"
               >
@@ -262,13 +363,13 @@ const KanbanColumn = memo(function KanbanColumn({
                 </svg>
               </button>
 
-              <div className="relative" ref={menuRef}>
+              <div className="relative shrink-0" ref={menuRef}>
                 <button
                   onClick={() => {
                     setIsMenuOpen((prev) => !prev);
                     if (isMenuOpen) setIsMoveSubmenuOpen(false);
                   }}
-                  className="transition-colors p-1 rounded hover:opacity-70  focus:ring-1 "
+                  className="transition-colors p-1 rounded hover:opacity-70 focus:ring-1 shrink-0"
                   style={{ color: theme.kanban.textSecondary }}
                   title="Opções da coluna"
                 >
@@ -336,9 +437,7 @@ const KanbanColumn = memo(function KanbanColumn({
                         <motion.button
                           type="button"
                           onClick={() => {
-                            setIsRenaming(true);
-                            setIsMenuOpen(false);
-                            setIsMoveSubmenuOpen(false);
+                            handleInlineEditStart();
                           }}
                           whileHover={{ x: 2 }}
                           whileTap={{ scale: 0.99 }}
@@ -489,7 +588,7 @@ const KanbanColumn = memo(function KanbanColumn({
               </div>
 
               <span
-                className="rounded-full px-2 py-1 text-xs font-medium transition-all"
+                className="rounded-full px-2 py-1 text-xs font-medium transition-all shrink-0"
                 style={{
                   backgroundColor: isOver ? theme.brand.primary : `${color}16`,
                   color: isOver ? "#FFFFFF" : color,
@@ -502,7 +601,7 @@ const KanbanColumn = memo(function KanbanColumn({
           </div>
 
           <div
-            ref={setNodeRef}
+            ref={setDropRef}
             className="custom-scrollbar flex-1 min-h-32 overflow-y-auto rounded-b-2xl p-2 transition-all duration-150"
             style={{
               maxHeight: "calc(100vh - 220px)",
@@ -578,98 +677,6 @@ const KanbanColumn = memo(function KanbanColumn({
           </div>
         </>
       )}
-
-      <AnimatePresence>
-        {isRenaming && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center"
-            style={{
-              backgroundColor: "rgba(10,10,12,0.32)",
-              backdropFilter: "blur(6px)",
-              WebkitBackdropFilter: "blur(6px)",
-            }}
-            onClick={() => {
-              setIsRenaming(false);
-              setNewName(title);
-            }}
-          >
-            <motion.div
-              initial={{ opacity: 0, y: 10, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 10, scale: 0.98 }}
-              transition={{ duration: 0.16 }}
-              className="w-96 rounded-3xl p-6 shadow-xl"
-              style={{
-                background: `linear-gradient(180deg, ${theme.background.surface}E6, ${theme.background.hover}D1)`,
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h3
-                className="mb-4 text-lg font-semibold"
-                style={{ color: theme.text.primary }}
-              >
-                Alterar nome da coluna
-              </h3>
-
-              <input
-                type="text"
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleRename();
-                  else if (e.key === "Escape") {
-                    setIsRenaming(false);
-                    setNewName(title);
-                  }
-                }}
-                autoFocus
-                className="mb-4 w-full rounded-2xl px-3 py-2.5 text-sm outline-none"
-                style={{
-                  backgroundColor: `${theme.background.card}C0`,
-                  color: theme.text.primary,
-                  border: `1px solid ${theme.border.primary}`,
-                  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06)",
-                }}
-              />
-
-              <div className="flex gap-2">
-                <motion.button
-                  type="button"
-                  onClick={handleRename}
-                  whileTap={{ scale: 0.98 }}
-                  className="flex-1 rounded-2xl px-4 py-2.5 text-sm font-medium text-white"
-                  style={{
-                    backgroundColor: theme.brand.primary,
-                    boxShadow: `0 10px 20px ${theme.brand.primary}30`,
-                  }}
-                >
-                  Salvar
-                </motion.button>
-
-                <motion.button
-                  type="button"
-                  onClick={() => {
-                    setIsRenaming(false);
-                    setNewName(title);
-                  }}
-                  whileTap={{ scale: 0.98 }}
-                  className="flex-1 rounded-2xl px-4 py-2.5 text-sm font-medium"
-                  style={{
-                    color: theme.text.secondary,
-                    border: `1px solid ${theme.border.secondary}`,
-                    backgroundColor: `${theme.background.surface}B0`,
-                  }}
-                >
-                  Cancelar
-                </motion.button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </motion.div>
   );
 });

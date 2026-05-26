@@ -345,7 +345,14 @@ export const useBoardData = (idDepartamento: number): UseBoardDataReturn => {
         setError(null);
         // ✅ Corrigido: era 'columnIds', o backend espera 'colunaIds'
         await api.post(`/boards/${selectedBoard.id}/columns/reorder`, { colunaIds: columnIds });
-        const updatedColumns = columns.map((col, idx) => ({ ...col, ordem: idx + 1 }));
+        // atualizar localmente a ordem baseada no novo array columnIds
+        const updatedColumns = columns.map((col) => {
+          const newIndex = columnIds.indexOf(col.id);
+          return {
+            ...col,
+            ordem: newIndex !== -1 ? (newIndex + 1) * 1000 : col.ordem,
+          };
+        });
         setColumns(updatedColumns);
         toast.success('Colunas reordenadas!');
       } catch (err: any) {
@@ -404,6 +411,20 @@ const addCardToColumn = useCallback(
       return { ...existingCard, columnId, posicao };
     }
 
+    // otimismo: cria um card fake imediatamente para evitar flickers
+    const tempId = -Math.floor(Math.random() * 1000000);
+    const tempCard: Card = {
+      id: tempId,
+      boardId: selectedBoard.id,
+      columnId,
+      idChamado: chamadoId,
+      posicao,
+      criadoEm: new Date().toISOString(),
+      atualizadoEm: new Date().toISOString()
+    };
+
+    setCards((prev) => [...prev, tempCard]);
+
     try {
       const payload = { columnId, chamadoId, posicao };
       console.log("🔍 addCardToColumn payload:", JSON.stringify(payload));
@@ -413,13 +434,15 @@ const addCardToColumn = useCallback(
       const newCard = normalizeCard(response.data.data);
 
       setCards((prev) => {
-        const exists = prev.some((c) => c.id === newCard.id);
+        const removedTemp = prev.filter((c) => c.id !== tempId);
+        const exists = removedTemp.some((c) => c.id === newCard.id);
         return exists
-          ? prev.map((c) => (c.id === newCard.id ? newCard : c))
-          : [...prev, newCard];
+          ? removedTemp.map((c) => (c.id === newCard.id ? newCard : c))
+          : [...removedTemp, newCard];
       });
       return newCard;
     } catch (err: any) {
+      setCards((prev) => prev.filter((c) => c.id !== tempId));
       toast.error(err.response?.data?.message || 'Erro ao adicionar card');
       throw err;
     }

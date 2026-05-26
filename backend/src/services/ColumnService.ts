@@ -121,7 +121,7 @@ export class ColumnService {
     await this.columnRepository.delete(columnId);
   }
 
-   // reordenar colunas
+   // reordenar colunas com intervalos de 1000
   
   async reorderColumns(boardId: number, dto: ReorderColumnsDTO): Promise<void> {
     const queryRunner = AppDataSource.createQueryRunner();
@@ -129,13 +129,14 @@ export class ColumnService {
     await queryRunner.startTransaction();
 
     try {
+      // usar espaçamento de 1000 para reordenar, assim evitamos atualizar múltiplas linhas
       for (let i = 0; i < dto.colunaIds.length; i++) {
         const columnId = dto.colunaIds[i];
         await queryRunner.manager.update(
           KanbanColumn,
           columnId,
           {
-            ordem: i + 1,
+            ordem: (i + 1) * 1000,
             atualizadoEm: new Date(),
           }
         );

@@ -127,6 +127,8 @@ export const darkTheme: Theme = {
     cardBg: '#262626',      // Cinza escuro para cards
     textPrimary: '#F1F5F9',  // Quase branco
     textSecondary: '#CBD5E1', // Cinza claro
+    novaColuna: '##11121c', // Cinza escuro para nova coluna
+     
   },
 
   // Dashboard - Cores Específicas para o Painel

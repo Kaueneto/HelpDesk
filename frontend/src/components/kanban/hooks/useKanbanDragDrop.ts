@@ -86,8 +86,13 @@ export function useKanbanDragDrop({
       });
 
       if (overData?.type === "column") {
-        // Hovering sobre a zona vazia da coluna
+        //hovering sobre o header/corpo principal da coluna
         targetColumnId = String(overId);
+        overIndex = 0;
+        insertPosition = "above";
+      } else if (overData?.type === "column-drop") {
+        // hovering sobre a zona droppable (vazia) da coluna
+        targetColumnId = String(overData.columnId ?? overData.columnValue);
         overIndex = 0;
         insertPosition = "above";
       } else if (overData?.sortable) {
@@ -175,12 +180,15 @@ export function useKanbanDragDrop({
         let targetColumnId: string | null = null;
         let newPosition = 1000;
 
+        const overData = over.data.current as any;
+        const mappedOverId = String(overData?.type === "column-drop" ? overData.columnId ?? overData.columnValue : over.id);
+
         const isValidColumn =
-          over.id === "unassigned" || columns.some((col) => col.id.toString() === over.id);
+          mappedOverId === "unassigned" || columns.some((col) => col.id.toString() === mappedOverId);
 
         if (isValidColumn) {
           // solto no container da coluna — vai para o final da lista
-          targetColumnId = over.id as string;
+          targetColumnId = mappedOverId as string;
           const allColumnTickets = ticketsByColumn[targetColumnId] ?? [];
           const columnTicketsWithoutActive = allColumnTickets.filter((t) => t.id !== ticketId);
 
@@ -247,13 +255,10 @@ export function useKanbanDragDrop({
           return;
         }
         
-        // manter dragOverInfo e executar move SEM bloquear visual
-        try {
-          await onMoveTicket(ticketId, targetColumnId, newPosition, fromColumnId);
-        } finally {
-          // limpar APÓS confirmação do servidor
-          updateDragOverInfo(null);
-        }
+        // executa a requisição assíncrona (fire and forget) e limpa imediatamente
+        // o preview porque nossos hooks possuem atualizações otimistas da UI.
+        onMoveTicket(ticketId, targetColumnId, newPosition, fromColumnId).catch(console.error);
+        updateDragOverInfo(null);
         return;
       }
 
@@ -261,11 +266,14 @@ export function useKanbanDragDrop({
       let targetColumnId: string | null = null;
       let newPosition = 1000;
 
-      const isValidColumn = groupedTickets.columns.some((col: any) => col.id === over.id);
+      const overDataStd = over.data.current as any;
+      const mappedOverIdStd = String(overDataStd?.type === "column-drop" ? overDataStd.columnValue : over.id);
+
+      const isValidColumn = groupedTickets.columns.some((col: any) => String(col.id) === mappedOverIdStd);
 
       if (isValidColumn) {
         // solto no container da coluna — vai para o final
-        targetColumnId = over.id as string;
+        targetColumnId = mappedOverIdStd;
         const allColumnTickets = (groupedTickets.groups[targetColumnId] ?? []) as Chamado[];
         const columnTicketsWithoutActive = allColumnTickets.filter((t) => t.id !== ticketId);
 
@@ -301,8 +309,13 @@ export function useKanbanDragDrop({
         if (!found) return;
       }
 
-      if (!targetColumnId) return;
-      await onMoveTicket(ticketId, targetColumnId, newPosition, fromColumnId);
+      if (!targetColumnId) {
+        updateDragOverInfo(null);
+        return;
+      }
+      
+      onMoveTicket(ticketId, targetColumnId, newPosition, fromColumnId).catch(console.error);
+      updateDragOverInfo(null);
     },
     [tickets, groupBy, columns, ticketsByColumn, groupedTickets, getCustomTicketPosition, onMoveTicket, updateDragOverInfo]
   );

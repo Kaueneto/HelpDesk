@@ -118,7 +118,7 @@ export function useKanbanGrouping(
   // MODO PADRÃO — base sem dragOverInfo
   const groupedTicketsBase = useMemo(() => {
     const groups: Record<string, Chamado[]> = {};
-    const columnsList: KanbanColumn[] = [];
+    const columnsList: any[] = [];
 
     switch (groupBy) {
       case "status": {

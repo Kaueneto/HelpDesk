@@ -206,7 +206,7 @@ const TicketCard = memo(
                   e.stopPropagation();
                   handleCheckboxClick(e);
                 }}
-                onPointerDown={(e) => e.stopPropagation()}
+                
                 className={`w-5 h-5 rounded-lg border-3 flex items-center justify-center cursor-pointer
                   transition-all duration-100
                   ${isSelected ? "opacity-100 scale-100" : "opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100"}`}
