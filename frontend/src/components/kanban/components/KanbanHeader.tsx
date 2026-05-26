@@ -32,14 +32,14 @@ export function KanbanHeader({
       <div className="flex items-center gap-6">
         <div className="flex items-center gap-3">
           <span
-            className="text-[11px] font-medium uppercase tracking-[0.08em]"
+            className="text-[12px] font-medium uppercase tracking-[0.08em]"
             style={{ color: theme.text.secondary }}
           >
-            Quadro
+            Quadros
           </span>
 
           <div className="flex items-center gap-2">
-            <div className="w-56">
+            <div className="w-70">
               <Select
                 value={currentSelectValue}
                 onChange={onGroupByChange}

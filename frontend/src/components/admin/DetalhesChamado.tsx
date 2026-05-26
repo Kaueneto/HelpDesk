@@ -103,9 +103,10 @@ interface Usuario {
 
 interface DetalhesChamadoProps {
   chamadoId: string;
+  onVoltar?: () => void;
 }
 
-export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
+export default function DetalhesChamado({ chamadoId, onVoltar }: DetalhesChamadoProps) {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { theme } = useTheme();
@@ -1023,7 +1024,11 @@ export default function DetalhesChamado({ chamadoId }: DetalhesChamadoProps) {
     // usar slideOutRight visual
     setAnimandoSaida(true);
     setTimeout(() => {
-      router.back();
+      if (onVoltar) {
+        onVoltar();
+      } else {
+        router.back();
+      }
     }, 260); // aguarda slideOutRight (220ms) + folga
   };
 

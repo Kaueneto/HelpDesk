@@ -13,6 +13,7 @@ import ModalEditarChamadoAdmin from '@/app/admin/Modal/ModalEditarChamadoAdmin';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiGrid, FiList, FiFilter, FiPlus } from 'react-icons/fi';
 import KanbanView from '../kanban/KanbanView';
+import DetalhesChamado from './DetalhesChamado';
 import Avatar from '@/components/Avatar';
 import { HiOutlineChevronDown } from 'react-icons/hi';
 
@@ -94,6 +95,7 @@ interface User {
 export default function GerenciarChamados() {
     const [linhaAnimando, setLinhaAnimando] = useState<number | null>(null);
     const [pageSliding, setPageSliding] = useState(false);
+    const [chamadoSelecionadoId, setChamadoSelecionadoId] = useState<string | null>(null);
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { theme } = useTheme();
@@ -736,7 +738,7 @@ export default function GerenciarChamados() {
   };
 
   const handleTicketClick = (ticket: Chamado) => {
-    router.push(`/chamado/${ticket.id}`);
+    setChamadoSelecionadoId(ticket.id.toString());
   };
 
 
@@ -1036,7 +1038,16 @@ export default function GerenciarChamados() {
   };
 
   return (
-    <div className={pageSliding ? 'slideOutLeft' : ''} style={{ backgroundColor: theme.background.pagina }}>
+    <>
+      {chamadoSelecionadoId && (
+        <div style={{ display: 'block' }}>
+          <DetalhesChamado 
+            chamadoId={chamadoSelecionadoId} 
+            onVoltar={() => setChamadoSelecionadoId(null)} 
+          />
+        </div>
+      )}
+      <div className={pageSliding ? 'slideOutLeft' : ''} style={{ backgroundColor: theme.background.pagina, display: chamadoSelecionadoId ? 'none' : 'block' }}>
       <div className="px-6 py-3" style={{ backgroundColor: theme.brand.primary }}>
         <h2 className="text-white text-2xl font-semibold font-segoe">Painel de Tickets</h2>
       </div>
@@ -1752,9 +1763,9 @@ export default function GerenciarChamados() {
                               // ignore
                             }
                             setLinhaAnimando(chamado.id);
-                            setPageSliding(true);
                             setTimeout(() => {
-                              router.push(`/chamado/${chamado.id}`);
+                              setChamadoSelecionadoId(chamado.id.toString());
+                              setLinhaAnimando(null);
                             }, 240); // aguarda animação slideOutLeft (220ms)
                           }}
                           className={`transition-colors cursor-pointer ${linhaAnimando === chamado.id ? 'slideOutLeft' : ''}`}
@@ -1892,9 +1903,9 @@ export default function GerenciarChamados() {
                           // ignore
                         }
                         setLinhaAnimando(chamado.id);
-                        setPageSliding(true);
                         setTimeout(() => {
-                          router.push(`/chamado/${chamado.id}`);
+                          setChamadoSelecionadoId(chamado.id.toString());
+                          setLinhaAnimando(null);
                         }, 240);
                       }}
                       className={`rounded-lg p-4 shadow-sm hover:shadow-md transition-all cursor-pointer ${
@@ -2329,5 +2340,6 @@ export default function GerenciarChamados() {
 
       />
     </div>
+    </>
   );
 }

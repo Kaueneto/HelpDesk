@@ -120,6 +120,7 @@ export const lightTheme: Theme = {
     cardBg: '#FFFFFF',      // Branco para cards
     textPrimary: '#1F2937',  // Cinza escuro
     textSecondary: '#6B7280', // Cinza médio
+    novaColuna: '#686868',      // Cinza para nova coluna
   },
 
 

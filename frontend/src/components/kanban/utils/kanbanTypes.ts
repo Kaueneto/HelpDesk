@@ -69,9 +69,10 @@ export interface KanbanViewProps {
 }
 
 export interface KanbanColumn {
-  id: string;
+  id: number;
   title: string;
   color: string;
+  ordem: number;    
 }
 
 export interface KanbanPosition {

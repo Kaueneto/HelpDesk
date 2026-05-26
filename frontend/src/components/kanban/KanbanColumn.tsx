@@ -2,7 +2,9 @@
 
 import { memo, useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useDroppable } from "@dnd-kit/core";
+import { useSortable } from "@dnd-kit/sortable";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "@/contexts/ThemeContext";
 import TicketCard from "./TicketCard";
@@ -44,6 +46,8 @@ interface KanbanColumnProps {
   availableColumns?: Array<{ id: string; nome: string }>;
   isSpecialColumn?: boolean;
   dragOverInfo?: any;
+  columnId?: number;
+  isColumnDragging?: boolean;
 }
 
 const KanbanColumn = memo(function KanbanColumn({
@@ -63,8 +67,38 @@ const KanbanColumn = memo(function KanbanColumn({
   availableColumns = [],
   isSpecialColumn = false,
   dragOverInfo,
+  columnId,
+  isColumnDragging = false,
 }: KanbanColumnProps) {
   const { theme } = useTheme();
+
+  // setup drag e drop para reordenar colunas
+// DEPOIS
+const sortableId = columnId != null && !isNaN(columnId) ? columnId : id; // usa o id string se não tiver número válido
+const sortable = useSortable({
+  id: sortableId,
+  data: {
+    type: "column",
+    columnId: sortableId,
+    groupBy,
+    columnValue,
+  },
+});
+console.log("COLUMN SORTABLE id usado:", sortableId); // usa a variável correta
+
+// area droppable da coluna (para destacar quando há card sobre ela)
+const { isOver, setNodeRef: setDropRef } = useDroppable({
+  id: `column-drop-${id}`,
+  data: { type: "column-drop", columnId, groupBy, columnValue },
+});
+
+const { attributes, listeners, setNodeRef, transform, isDragging } = sortable as any;
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition: isDragging ? "none" : "transform 200ms cubic-bezier(0.2, 0.0, 0.38, 0.9)",
+    opacity: isDragging ? 0.5 : 1,
+  };
 
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -78,11 +112,6 @@ const KanbanColumn = memo(function KanbanColumn({
   const menuRef = useRef<HTMLDivElement>(null);
   const submenuTriggerRef = useRef<HTMLButtonElement>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
-
-  const { isOver, setNodeRef } = useDroppable({
-    id,
-    data: { type: "column", groupBy, columnValue },
-  });
 
   useEffect(() => {
     setNewName(title);
@@ -205,12 +234,17 @@ const KanbanColumn = memo(function KanbanColumn({
 
   return (
     <motion.div
+      ref={setNodeRef}
+       {...attributes} 
       initial={false}
       animate={{ width: isCollapsed ? "auto" : undefined }}
       transition={{ duration: 0.2, ease: "easeOut" }}
       className={`flex ${isCollapsed ? "flex-row" : "flex-col"} h-full ${
         isCollapsed ? "min-w-14" : "min-w-80 max-w-80"
       }`}
+      style={{
+        ...style,
+      }}
     >
         {isCollapsed ? (
         <div
@@ -272,6 +306,21 @@ const KanbanColumn = memo(function KanbanColumn({
             }}
           >
             <div className="flex items-center gap-2 min-w-0 flex-1">
+              {/* drag handle para reordenar coluna */}
+              {!isSpecialColumn && (
+                <button
+                  {...listeners}
+                  className="cursor-grab active:cursor-grabbing p-1 rounded hover:opacity-70 transition-opacity shrink-0 flex items-center justify-center"
+                  style={{ color: theme.kanban.textSecondary }}
+                  title="Arraste para reordenar"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M9 3h2v2H9V3zm4 0h2v2h-2V3zm4 0h2v2h-2V3zM9 7h2v2H9V7zm4 0h2v2h-2V7zm4 0h2v2h-2V7zM9 11h2v2H9v-2zm4 0h2v2h-2v-2zm4 0h2v2h-2v-2z" />
+                  </svg>
+                </button>
+              )}
+              
               <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: color }} />
 
               {isInlineEditing ? (
@@ -552,7 +601,7 @@ const KanbanColumn = memo(function KanbanColumn({
           </div>
 
           <div
-            ref={setNodeRef}
+            ref={setDropRef}
             className="custom-scrollbar flex-1 min-h-32 overflow-y-auto rounded-b-2xl p-2 transition-all duration-150"
             style={{
               maxHeight: "calc(100vh - 220px)",
