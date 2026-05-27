@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Select from 'react-select';
 import api from '@/services/api';
@@ -16,7 +16,6 @@ import KanbanView from '../kanban/KanbanView';
 import DetalhesChamado from './DetalhesChamado';
 import Avatar from '@/components/Avatar';
 import { HiOutlineChevronDown } from 'react-icons/hi';
-
 
 
 interface Chamado {
@@ -1037,6 +1036,37 @@ export default function GerenciarChamados() {
     });
   };
 
+
+  // refs para controlar o container e a ação de arrastar
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const isDragging = useRef(false);
+  const startX = useRef(0);
+  const scrollLeft = useRef(0);
+
+  // funções que criam o efeito de "clicar e arrastar"
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!scrollRef.current) return;
+    isDragging.current = true;
+    startX.current = e.pageX - scrollRef.current.offsetLeft;
+    scrollLeft.current = scrollRef.current.scrollLeft;
+  };
+
+  const handleMouseLeave = () => {
+    isDragging.current = false;
+  };
+
+  const handleMouseUp = () => {
+    isDragging.current = false;
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isDragging.current || !scrollRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - scrollRef.current.offsetLeft;
+    const walk = (x - startX.current) * 1.5; // O "1.5" é a velocidade do arrasto
+    scrollRef.current.scrollLeft = scrollLeft.current - walk;
+  };
+
   return (
     <>
       {chamadoSelecionadoId && (
@@ -1300,51 +1330,55 @@ export default function GerenciarChamados() {
                   }}
                 />
               </div>
+{/* prioridade - botões visuais */}
+<div className="min-w-0 w-full">
+  <label className="block text-sm font-medium mb-2" style={{ color: theme.text.primary }}>
+    Nível de prioridade
+  </label>
+  
+  {/* container Flexível Arrastável e sem Barra de Rolagem */}
+  <div 
+    ref={scrollRef}
+    onMouseDown={handleMouseDown}
+    onMouseLeave={handleMouseLeave}
+    onMouseUp={handleMouseUp}
+    onMouseMove={handleMouseMove}
+    className="flex flex-row overflow-x-auto gap-2 w-full hide-scrollbar cursor-grab active:cursor-grabbing"
+  >
+    {/* botão TODOS */}
+    <button
+      type="button"
+      onClick={() => setPrioridadeId('')}
+      className="flex items-center justify-center text-xs font-medium transition-all shrink-0 px-4 h-10 rounded-lg shadow-sm hover:opacity-90 pointer-events-auto"
+      style={{
+        backgroundColor: prioridadeId === '' ? theme.brand.primary : theme.background.hover,
+        color: prioridadeId === '' ? '#FFFFFF' : theme.text.primary,
+        border: `1px solid ${prioridadeId === '' ? theme.brand.primary : theme.border.primary}`,
+        outline: 'none'
+      }}
+    >
+      <span>TODOS</span>
+    </button>
 
-              {/* prioridade - botões visuais */}
-              <div className="min-w-0">
-                <label className="block text-sm  mb-1" style={{ color: theme.text.primary }}>
-                  Nível de prioridade
-                </label>
-                <div className="grid grid-cols-5 h-10 rounded-lg overflow-hidden" style={{
-                  borderWidth: '1px',
-                  borderColor: theme.border.primary
-                }}>
-                  {/* botao TODOS */}
-                  <button
-                    type="button"
-                    onClick={() => setPrioridadeId('')}
-                    className="flex items-center justify-center text-xs font-medium transition-all min-w-0"
-                    style={{
-                      backgroundColor: prioridadeId === '' ? theme.brand.primary : theme.background.hover,
-                      color: prioridadeId === '' ? 'white' : theme.text.primary,
-                    
-                      border: 'none',
-                      outline: 'none'
-                    }}
-                  >
-                    <span className="truncate px-1">TODOS</span>
-                  </button>
-                  {/* botoes de prioridade */}
-                  {prioridades.map((prioridade) => (
-                    <button
-                      key={prioridade.id}
-                      type="button"
-                      onClick={() => setPrioridadeId(String(prioridade.id))}
-                      className="flex items-center justify-center text-xs font-medium transition-all min-w-0"
-                      style={{
-                        backgroundColor: prioridadeId === String(prioridade.id) ? prioridade.cor : theme.background.hover,
-                        color: prioridadeId === String(prioridade.id) ? '#FFFFFF' : theme.text.primary,
-              
-                        border: 'none',
-                        outline: 'none'
-                      }}
-                    >
-                      <span className="truncate px-1">{prioridade.nome}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
+    {/* botões de prioridade */}
+    {prioridades.map((prioridade) => (
+      <button
+        key={prioridade.id}
+        type="button"
+        onClick={() => setPrioridadeId(String(prioridade.id))}
+        className="flex items-center justify-center text-xs font-medium transition-all shrink-0 px-4 h-10 rounded-lg shadow-sm hover:opacity-90 pointer-events-auto"
+        style={{
+          backgroundColor: prioridadeId === String(prioridade.id) ? prioridade.cor : theme.background.hover,
+          color: prioridadeId === String(prioridade.id) ? '#FFFFFF' : theme.text.primary,
+          border: `1px solid ${prioridadeId === String(prioridade.id) ? prioridade.cor : theme.border.primary}`,
+          outline: 'none'
+        }}
+      >
+        <span>{prioridade.nome}</span>
+      </button>
+    ))}
+  </div>
+</div>
            </div>
 
               <div className="flex items-end gap-6 mt-4">

@@ -1100,8 +1100,8 @@ export default function DetalhesChamado({ chamadoId, onVoltar }: DetalhesChamado
       </div>
 
       {/* Action Buttons */}
-      <div className="border-b px-4 md:px-6 py-3" style={{ backgroundColor: theme.detalhesChamado.bgBranco, borderColor: theme.border.primary }}>
-        <div className="flex gap-2 md:gap-3 overflow-x-auto action-buttons-scroll pb-1 md:pb-0 -mb-1 md:mb-0">
+      <div className="border-b px-4 md:px-10 py-3" style={{ backgroundColor: theme.detalhesChamado.bgBranco, borderColor: theme.border.primary }}>
+        <div className="flex gap-2 md:gap-3  action-buttons-scroll pb-1 md:pb-0 -mb-1 md:mb-0">
           <button
             onClick={() => setModalResolvidoAberto(true)}
             disabled={chamado.status.id === 3}
