@@ -7,10 +7,25 @@ import * as yup from "yup";
 import { Not } from "typeorm";
 const router = express.Router();
 import bcrypt from "bcryptjs"
+import multer from "multer";
 import { verifyToken } from "../Middleware/AuthMiddleware";
 import { AuthService } from "../services/AuthService";
 import { SecurityUtils } from "../utils/SecurityUtils";
 import { supabase, SUPABASE_BUCKET } from "../config/supabase";
+
+// multer para upload de avatar (apenas imagens, máx 5MB)
+const avatarUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const tiposPermitidos = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+    if (tiposPermitidos.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Tipo de arquivo não suportado. Use JPG, PNG, GIF ou WebP"));
+    }
+  },
+});
 
 interface AuthenticatedRequest extends Request {
   userId?: number;
@@ -686,7 +701,7 @@ router.put("/users/:id",  verifyToken,  async (req: Request, res: Response) => {
 });
 
 // upload de avatar
-router.post("/users/upload-avatar/:id", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
+router.post("/users/upload-avatar/:id", verifyToken, avatarUpload.single("avatar"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
     const file = req.file;

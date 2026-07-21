@@ -90,6 +90,8 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
 
         const unsubHistorico = socketManager.on('history-new', (data: any) => {
           buscarHistorico(chamado.id);
+          // atualizar dados do chamado (status, responsável etc.) em tempo real
+          buscarChamadoAtualizado(chamado.id);
         });
 
         // Listener de teste para diagnosticar
@@ -133,6 +135,23 @@ export default function DetalhesChamados({ chamado, onVoltar }: DetalhesChamados
       setHistorico(response.data);
     } catch (error) {
       console.error(`❌❌❌erro:`, error);
+    }
+  };
+
+  // atualiza os dados do chamado (status, responsável etc.) sem recarregar a página
+  const buscarChamadoAtualizado = async (chamadoId: number) => {
+    try {
+      const response = await api.get(`/chamados/${chamadoId}`);
+      if (response.data) {
+        setChamadoAtualizado((prev: any) => ({
+          ...prev,
+          ...response.data,
+          // preservar anexos já carregados com signed URLs para não piscar
+          anexos: prev.anexos?.length ? prev.anexos : response.data.anexos,
+        }));
+      }
+    } catch (error) {
+      console.error('[CHAMADO ATUALIZADO] Erro ao buscar dados atualizados:', error);
     }
   };
 

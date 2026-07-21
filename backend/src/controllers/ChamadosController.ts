@@ -16,6 +16,7 @@ import { supabase, SUPABASE_BUCKET } from "../config/supabase";
 import * as EmailService from "../services/EmailService";
 import { KanbanPositions } from "../entities/KanbanPositions";
 import { KanbanCard } from "../entities/KanbanCard";
+import RealtimeService from "../services/RealtimeService";
 
 interface AuthenticatedRequest extends Request {
   userId?: number;
@@ -1060,6 +1061,18 @@ router.put("/chamados/:id/atribuir", verifyToken, async (req: AuthenticatedReque
 
     const resposta = chamadoAtualizado ? { ...chamadoAtualizado, userResponsavel: userResponsavelFormatado } : chamado;
 
+    // emitir evento WebSocket para atualizar status em tempo real para todos na sala
+    try {
+      const realtimeService = RealtimeService.getInstance();
+      realtimeService.notifyNovoHistorico(Number(id), {
+        acao: `Chamado redirecionado para ${nomeResponsavel} por ${nomeQuemAtribuiu}`,
+        statusNovo: chamado.status,
+        dataMov: new Date(),
+      });
+    } catch (wsError) {
+      // não-fatal
+    }
+
     return res.status(200).json({
       mensagem: "Chamado atribuído com sucesso!",
       chamado: resposta,
@@ -1174,6 +1187,18 @@ router.put("/chamados/:id/assumir", verifyToken, async (req: AuthenticatedReques
 
     const resposta = chamadoAtualizado ? { ...chamadoAtualizado, userResponsavel: userResponsavelFormatado } : null;
 
+    // emitir evento WebSocket para atualizar status em tempo real para todos na sala
+    try {
+      const realtimeService = RealtimeService.getInstance();
+      realtimeService.notifyNovoHistorico(Number(id), {
+        acao: `Este chamado foi atribuído por ${nomeUsuario}`,
+        statusNovo: chamado.status,
+        dataMov: new Date(),
+      });
+    } catch (wsError) {
+      // não-fatal: continua mesmo se WebSocket falhar
+    }
+
     return res.status(200).json({
       mensagem: "Chamado atribuido com sucesso!",
       chamado: resposta,
@@ -1255,12 +1280,23 @@ router.put("/chamados/:id/reabrir", verifyToken, async (req: AuthenticatedReques
       ],
     });
 
+    // emitir evento WebSocket para atualizar status em tempo real para todos na sala
+    try {
+      const realtimeService = RealtimeService.getInstance();
+      realtimeService.notifyNovoHistorico(Number(id), {
+        acao: `${nomeUsuario} reabriu este chamado`,
+        statusNovo: { id: 5 },
+        dataMov: new Date(),
+      });
+    } catch (wsError) {
+      // não-fatal
+    }
+
     return res.status(200).json({
       mensagem: "Chamado reaberto com sucesso!",
       chamado: chamadoAtualizado,
     });
   } catch (error) {
-
     return res.status(500).json({
       mensagem: "Erro ao reabrir chamado",
       error: error instanceof Error ? error.message : "Erro desconhecido",
@@ -1592,6 +1628,18 @@ router.put("/chamados/:id/encerrar", verifyToken, async (req: AuthenticatedReque
       userResponsavel: chamadoCompleto?.userResponsavel ? { id: chamadoCompleto.userResponsavel.id, name: chamadoCompleto.userResponsavel.name } : null,
       userFechamento: chamadoCompleto?.userFechamento ? { id: chamadoCompleto.userFechamento.id, name: chamadoCompleto.userFechamento.name } : null,
     };
+
+    // emitir evento WebSocket para atualizar status em tempo real para todos na sala
+    try {
+      const realtimeService = RealtimeService.getInstance();
+      realtimeService.notifyNovoHistorico(Number(id), {
+        acao: "Chamado encerrado",
+        statusNovo: { id: 3 },
+        dataMov: new Date(),
+      });
+    } catch (wsError) {
+      // não-fatal
+    }
 
     return res.status(200).json({
       mensagem: "Chamado encerrado com sucesso!",
