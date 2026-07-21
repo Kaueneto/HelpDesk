@@ -10,6 +10,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import DatePicker from 'react-datepicker';
 import ModalNovoChamado from '@/app/admin/Modal/ModalNovoChamado';
 import ModalEditarChamadoAdmin from '@/app/admin/Modal/ModalEditarChamadoAdmin';
+import ModalMarcarResolvido from '@/app/admin/Modal/MarcarResolvido';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiGrid, FiList, FiFilter, FiPlus } from 'react-icons/fi';
 import KanbanView from '../kanban/KanbanView';
@@ -95,6 +96,7 @@ export default function GerenciarChamados() {
     const [linhaAnimando, setLinhaAnimando] = useState<number | null>(null);
     const [pageSliding, setPageSliding] = useState(false);
     const [chamadoSelecionadoId, setChamadoSelecionadoId] = useState<string | null>(null);
+    const [modalResolvidoAberto, setModalResolvidoAberto] = useState(false);
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { theme } = useTheme();
@@ -769,20 +771,19 @@ export default function GerenciarChamados() {
       alert('Selecione ao menos um chamado');
       return;
     }
+    setModalResolvidoAberto(true);
+  };
 
-    if (!confirm(`Deseja marcar ${chamadosSelecionados.length} chamado(s) como resolvido?`)) {
-      return;
-    }
-
+  const confirmarResolucao = async (enviarEmail: boolean) => {
     try {
       await api.patch('/chamados/resolver-multiplos', {
         chamadosIds: chamadosSelecionados,
+        enviarEmail,
       });
-
-      alert('Chamados marcados como resolvidos!');
+      setModalResolvidoAberto(false);
       await pesquisarChamados(1, ocultarConcluidos, getEffectivePageSize());
     } catch (error) {
-
+      setModalResolvidoAberto(false);
       alert('Erro ao marcar chamados como resolvidos');
     }
   };
@@ -1515,7 +1516,7 @@ export default function GerenciarChamados() {
                   opacity: chamadosSelecionados.length === 0 ? 0.5 : 1
                 }}
               >
-                Editar Múltiplos
+                Editar Tickets
               </button>
               <button
                 onClick={atribuirAMim}
@@ -2371,7 +2372,13 @@ export default function GerenciarChamados() {
           const sizeForSearch = viewModeFromStorage === 'kanban' ? 10000 : pageSize;
           pesquisarChamados(1, ocultarConcluidos, sizeForSearch);
         }}
+      />
 
+      {/* modal de marcar como resolvido multiplos chamados */}
+      <ModalMarcarResolvido
+        isOpen={modalResolvidoAberto}
+        onConfirm={confirmarResolucao}
+        onClose={() => setModalResolvidoAberto(false)}
       />
     </div>
     </>

@@ -1562,6 +1562,8 @@ router.put("/chamados/:id/encerrar", verifyToken, async (req: AuthenticatedReque
   try {
     const { id } = req.params;
     const usuarioId = req.userId; // Admin que está encerrando
+    // enviarEmail: true por padrão para manter compatibilidade com chamadas sem o campo
+    const enviarEmail: boolean = req.body.enviarEmail !== false;
 
     const chamadoRepository = AppDataSource.getRepository(Chamados);
     const historicoRepository = AppDataSource.getRepository(ChamadoHistorico);
@@ -1621,15 +1623,13 @@ router.put("/chamados/:id/encerrar", verifyToken, async (req: AuthenticatedReque
     ]);
 
     // enviar email de conclusão para o usuário que abriu o chamado
-    if (usuarioChamado) {
-      
+    // apenas se enviarEmail=true E o usuário tiver a preferência de notificação ativa
+    if (enviarEmail && usuarioChamado) {
       try {
         const preferenciasUsuario = await EmailService.verificarPreferenciasUsuario(usuarioChamado.id);
-        
         if (preferenciasUsuario.includes(3)) {
           await EmailService.enviarEmailConclusaoUsuario(usuarioChamado, chamadoCompleto!, adminResponsavel);
         }
-    
       } catch (emailError) {
         // Erro silencioso para não quebrar o fluxo
       }
@@ -2054,7 +2054,9 @@ router.patch("/chamados/editar-multiplos", verifyToken, async (req: Authenticate
 // resolver múltiplos chamados (marcar como resolvido)
 router.patch("/chamados/resolver-multiplos", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { chamadosIds } = req.body;
+    const { chamadosIds, enviarEmail } = req.body;
+    // enviarEmail: true por padrão para manter compatibilidade com chamadas sem o campo
+    const deveEnviarEmail: boolean = enviarEmail !== false;
     const usuarioId = req.userId;
 
     if (!chamadosIds || !Array.isArray(chamadosIds) || chamadosIds.length === 0) {
@@ -2124,7 +2126,7 @@ router.patch("/chamados/resolver-multiplos", verifyToken, async (req: Authentica
         });
 
         // buscar dados do usuário do chamado para email
-        if (chamado.usuario?.id) {
+        if (deveEnviarEmail && chamado.usuario?.id) {
           const usuarioChamado = await userRepository.findOne({
             where: { id: chamado.usuario.id },
             select: ["id", "name", "email"]

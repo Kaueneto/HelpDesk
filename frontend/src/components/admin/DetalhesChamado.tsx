@@ -543,26 +543,30 @@ export default function DetalhesChamado({ chamadoId, onVoltar }: DetalhesChamado
     }
   };
 
-  const marcarComoResolvido = async () => {
+  const marcarComoResolvido = async (enviarEmail: boolean) => {
     try {
-      await api.put(`/chamados/${chamadoId}/encerrar`);
-      toast.success('Chamado marcado como resolvido!', {
-        style: {
-          background: '#fff',
-          color: '#16a34a',
-          fontWeight: 'bold',
-          fontSize: '1rem',
-          borderRadius: '0.75rem',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-        },
-        iconTheme: {
-          primary: '#16a34a',
-          secondary: '#fff',
-        },
-      });
+      await api.put(`/chamados/${chamadoId}/encerrar`, { enviarEmail });
+      toast.success(
+        enviarEmail
+          ? 'Chamado resolvido e email enviado ao usuário!'
+          : 'Chamado marcado como resolvido!',
+        {
+          style: {
+            background: '#fff',
+            color: '#16a34a',
+            fontWeight: 'bold',
+            fontSize: '1rem',
+            borderRadius: '0.75rem',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+          },
+          iconTheme: {
+            primary: '#16a34a',
+            secondary: '#fff',
+          },
+        }
+      );
       await carregarDados();
     } catch (error) {
- 
       toast.error('Erro ao resolver chamado');
     } finally {
       setModalResolvidoAberto(false);
