@@ -154,6 +154,20 @@ router.post(
           ],
         });
 
+        // emitir WebSocket se houve mudança de status
+        if (alterouStatus) {
+          try {
+            const realtimeService = RealtimeService.getInstance();
+            realtimeService.notifyNovoHistorico(chamadoId, {
+              acao: acaoHistorico,
+              statusNovo: statusNovo,
+              dataMov: new Date(),
+            });
+          } catch (wsError) {
+            // não-fatal
+          }
+        }
+
         return res.status(200).json({ 
           message: 'Email enviado com sucesso.',
           chamado: chamadoAtualizado 
