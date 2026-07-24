@@ -2535,4 +2535,91 @@ router.patch("/chamados/:id/move", verifyToken, async (req: AuthenticatedRequest
   }
 });
   
+// estatísticas dos chamados do próprio usuário (para dashboard na Central de Tickets)
+router.get("/chamados/meus/stats", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const usuarioId = req.userId;
+    const uid = Number(usuarioId);
+
+    const repo = AppDataSource.getRepository(Chamados);
+
+    // contadores por status
+    const totais = await repo
+      .createQueryBuilder("c")
+      .select("c.id_status", "statusId")
+      .addSelect("COUNT(*)", "total")
+      .where("c.id_user = :uid", { uid })
+      .groupBy("c.id_status")
+      .getRawMany();
+
+    const contagemPorStatus: Record<number, number> = {};
+    for (const row of totais) {
+      contagemPorStatus[Number(row.statusId)] = Number(row.total);
+    }
+
+    // contadores por prioridade (com nome e cor)
+    const prioridadesRaw = await repo
+      .createQueryBuilder("c")
+      .select("c.id_prioridade", "prioridadeId")
+      .addSelect("COUNT(*)", "total")
+      .addSelect("tp.nome", "nome")
+      .addSelect("tp.cor", "cor")
+      .innerJoin("tipo_prioridade", "tp", "tp.id = c.id_prioridade")
+      .where("c.id_user = :uid", { uid })
+      .groupBy("c.id_prioridade")
+      .addGroupBy("tp.nome")
+      .addGroupBy("tp.cor")
+      .orderBy("COUNT(*)", "DESC")
+      .getRawMany();
+
+    const prioridades = prioridadesRaw.map((r: any) => ({
+      id:    Number(r.prioridadeId),
+      nome:  r.nome as string,
+      cor:   r.cor  as string,
+      total: Number(r.total),
+    }));
+
+    // linha do tempo — apenas meses com chamados - utlmos 12
+    const dozeAtras = new Date();
+    dozeAtras.setMonth(dozeAtras.getMonth() - 11);
+    dozeAtras.setDate(1);
+    dozeAtras.setHours(0, 0, 0, 0);
+
+    const mesesAbrev = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+
+    const porMes = await repo
+      .createQueryBuilder("c")
+      .select("TO_CHAR(c.data_abertura, 'YYYY-MM')", "mes")
+      .addSelect("COUNT(*)", "total")
+      .where("c.id_user = :uid", { uid })
+      .andWhere("c.data_abertura >= :dozeAtras", { dozeAtras })
+      .groupBy("TO_CHAR(c.data_abertura, 'YYYY-MM')")
+      .orderBy("mes", "ASC")
+      .getRawMany();
+
+  
+    const linhaDoTempo = porMes.map((r: any) => {
+      const [ano, mes] = (r.mes as string).split('-');
+      return {
+        mes:   r.mes as string,
+        label: `${mesesAbrev[Number(mes) - 1]}/${ano.slice(2)}`,
+        total: Number(r.total),
+      };
+    });
+
+    return res.json({
+      aberto:        contagemPorStatus[1] || 0,
+      emAtendimento: contagemPorStatus[2] || 0,
+      encerrado:     contagemPorStatus[3] || 0,
+      aguardando:    (contagemPorStatus[6] || 0) + (contagemPorStatus[7] || 0),
+      total:         Object.values(contagemPorStatus).reduce((s, v) => s + v, 0),
+      prioridades,
+      linhaDoTempo,
+    });
+  } catch (error) {
+    console.error('[STATS] Erro ao buscar estatísticas do usuário:', error);
+    return res.status(500).json({ mensagem: "Erro ao buscar estatísticas" });
+  }
+});
+
 export default router;

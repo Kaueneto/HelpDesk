@@ -94,6 +94,7 @@ import KanbanController from "./controllers/KanbanController";
 import KanbanNewController from "./controllers/KanbanNewController";
 import SugestoesController from "./controllers/SugestoesController";
 import { RealtimeService } from "./services/RealtimeService";
+import { seedPreferencias } from "./utils/seedPreferencias";
 
 // registrar rotas
 app.use("/", TestConnectionController);
@@ -116,8 +117,11 @@ app.use(rolesRouter);
 
 // inicializar banco ANTES de subir o servidor
 AppDataSource.initialize()
-  .then(() => {
+  .then(async () => {
     console.log("Banco de dados conectado com sucesso!");
+
+    // garantir que as preferências padrão existam no banco
+    await seedPreferencias();
 
     // criar servidor HTTP para WebSocket
     const server = http.createServer(app);

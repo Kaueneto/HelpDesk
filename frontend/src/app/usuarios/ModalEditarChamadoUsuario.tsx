@@ -262,8 +262,8 @@ export default function ModalEditarChamadoUsuario({
         style={{ animation: 'slideUp 0.2s ease-out' }}
       >
         {/* Header */}
-        <div className="bg-linear-to-r from-[#001933] to-[#004287] px-6 py-5 rounded-t-2xl">
-          <h3 className="text-xl font-bold text-white">
+        <div className="bg-linear-to-r px-6 py-5 rounded-t-1xl">
+          <h3 className="text-xl font-bold text-slate-700">
             Editando o chamado
           </h3>
           <button
@@ -389,8 +389,8 @@ export default function ModalEditarChamadoUsuario({
                     disabled={submitting}
                     className={`flex-1 px-4 py-2.5 rounded-lg font-medium text-sm transition-all ${
                       prioridadeId === prioridade.id
-                        ? 'shadow-lg scale-105 border-2'
-                        : 'border-2 border-gray-300 hover:border-gray-400 hover:scale-102'
+                        ? 'shadow-lg scale-105 border-1'
+                        : 'border-1 border-gray-300 hover:border-gray-400 hover:scale-102'
                     }`}
                     style={{
                       backgroundColor: prioridadeId === prioridade.id ? prioridade.cor : 'transparent',
@@ -443,7 +443,7 @@ export default function ModalEditarChamadoUsuario({
               </label>
               
               <div
-                className={`border-2 border-dashed rounded-lg p-4 text-center transition ${
+                className={`border-1 border-dashed rounded-lg p-4 text-center transition ${
                   isDragging
                     ? 'border-blue-500 bg-blue-50'
                     : 'border-gray-300 bg-gray-50'
@@ -509,7 +509,7 @@ export default function ModalEditarChamadoUsuario({
             <button
               onClick={handleClose}
               disabled={submitting}
-              className="px-6 py-2.5 bg-white border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-6 py-2.5 bg-white border-1 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Fechar
             </button>

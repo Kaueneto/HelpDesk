@@ -743,7 +743,7 @@ export default function GerenciarUsuarios() {
                     <th 
                       className="px-2 py-2 text-left text-xs font-semibold cursor-pointer transition-colors select-none"
                       onClick={() => handleOrdenar('id')}
-                      style={{ color: theme.text.primary, backgroundColor: theme.background.hover, whiteSpace: 'nowrap' }}
+                      style={{ color: theme.text.primary, backgroundColor: theme.background.tabelaEscuro, whiteSpace: 'nowrap' }}
                     >
                       <div className="flex items-center gap-1">
                         ID
@@ -755,7 +755,7 @@ export default function GerenciarUsuarios() {
                     <th 
                       className="px-2 py-2 text-left text-xs font-semibold cursor-pointer transition-colors select-none"
                       onClick={() => handleOrdenar('name')}
-                      style={{ color: theme.text.primary, backgroundColor: theme.background.hover }}
+                      style={{ color: theme.text.primary, backgroundColor: theme.background.tabelaEscuro }}
                     >
                       <div className="flex items-center gap-1">
                         Nome
@@ -767,7 +767,7 @@ export default function GerenciarUsuarios() {
                     <th 
                       className="px-2 py-2 text-left text-xs font-semibold cursor-pointer transition-colors select-none"
                       onClick={() => handleOrdenar('email')}
-                      style={{ color: theme.text.primary, backgroundColor: theme.background.hover, whiteSpace: 'nowrap' }}
+                      style={{ color: theme.text.primary, backgroundColor: theme.background.tabelaEscuro, whiteSpace: 'nowrap' }}
                     >
                       <div className="flex items-center gap-1">
                         Email
@@ -779,7 +779,7 @@ export default function GerenciarUsuarios() {
                     <th 
                       className="px-2 py-2 text-left text-xs font-semibold cursor-pointer transition-colors select-none"
                       onClick={() => handleOrdenar('role')}
-                      style={{ color: theme.text.primary, backgroundColor: theme.background.hover, whiteSpace: 'nowrap' }}
+                      style={{ color: theme.text.primary, backgroundColor: theme.background.tabelaEscuro, whiteSpace: 'nowrap' }}
                     >
                       <div className="flex items-center gap-1">
                         Tipo
@@ -791,7 +791,7 @@ export default function GerenciarUsuarios() {
                     <th 
                       className="px-2 py-2 text-left text-xs font-semibold cursor-pointer transition-colors select-none"
                       onClick={() => handleOrdenar('situationUser')}
-                      style={{ color: theme.text.primary, backgroundColor: theme.background.hover, whiteSpace: 'nowrap' }}
+                      style={{ color: theme.text.primary, backgroundColor: theme.background.tabelaEscuro, whiteSpace: 'nowrap' }}
                     >
                       <div className="flex items-center gap-1">
                         Situação
@@ -802,14 +802,14 @@ export default function GerenciarUsuarios() {
                     </th>
                     <th 
                       className="px-2 py-2 text-left text-xs font-semibold"
-                      style={{ color: theme.text.primary, backgroundColor: theme.background.hover, whiteSpace: 'nowrap' }}
+                      style={{ color: theme.text.primary, backgroundColor: theme.background.tabelaEscuro, whiteSpace: 'nowrap' }}
                     >
                       Departamento
                     </th>
                     <th 
                       className="px-2 py-2 text-left text-xs font-semibold cursor-pointer transition-colors select-none"
                       onClick={() => handleOrdenar('createdAt')}
-                      style={{ color: theme.text.primary, backgroundColor: theme.background.hover, whiteSpace: 'nowrap' }}
+                      style={{ color: theme.text.primary, backgroundColor: theme.background.tabelaEscuro, whiteSpace: 'nowrap' }}
                     >
                       <div className="flex items-center gap-1">
                         Criado
@@ -821,7 +821,7 @@ export default function GerenciarUsuarios() {
                     <th 
                       className="px-2 py-2 text-left text-xs font-semibold cursor-pointer transition-colors select-none"
                       onClick={() => handleOrdenar('updatedAt')}
-                      style={{ color: theme.text.primary, backgroundColor: theme.background.hover, whiteSpace: 'nowrap' }}
+                      style={{ color: theme.text.primary, backgroundColor: theme.background.tabelaEscuro, whiteSpace: 'nowrap' }}
                     >
                       <div className="flex items-center gap-1">
                         Atualizado
@@ -832,19 +832,19 @@ export default function GerenciarUsuarios() {
                     </th>
                     <th 
                       className="px-2 py-2 text-left text-xs font-semibold" 
-                      style={{ color: theme.text.primary, backgroundColor: theme.background.hover, whiteSpace: 'nowrap' }}
+                      style={{ color: theme.text.primary, backgroundColor: theme.background.tabelaEscuro, whiteSpace: 'nowrap' }}
                     >
                       Tent. Login
                     </th>
                     <th 
                       className="px-2 py-2 text-left text-xs font-semibold" 
-                      style={{ color: theme.text.primary, backgroundColor: theme.background.hover, whiteSpace: 'nowrap' }}
+                      style={{ color: theme.text.primary, backgroundColor: theme.background.tabelaEscuro, whiteSpace: 'nowrap' }}
                     >
                       Data Inativ.
                     </th>
                     <th 
                       className="px-2 py-2 text-left text-xs font-semibold" 
-                      style={{ color: theme.text.primary, backgroundColor: theme.background.hover, whiteSpace: 'nowrap' }}
+                      style={{ color: theme.text.primary, backgroundColor: theme.background.tabelaEscuro, whiteSpace: 'nowrap' }}
                     >
                       Motivo
                     </th>
@@ -857,7 +857,7 @@ export default function GerenciarUsuarios() {
                       className="border-b transition-colors"
                       style={{
                         borderColor: theme.border.secondary,
-                        backgroundColor: mode === 'dark' ? '#1a1a1a' : (index % 2 === 0 ? theme.background.card : theme.background.surface),
+                        backgroundColor: mode === 'dark' ? '#10182b' : (index % 2 === 0 ? theme.background.card : theme.background.surface),
                         color: mode === 'dark' ? '#F1F1F1' : theme.text.primary,
                       }}
                     >
@@ -894,6 +894,7 @@ export default function GerenciarUsuarios() {
                             style={{
                               backgroundColor: usuario.situationUser.nomeSituacao.toLowerCase() === 'ativo' ? '#15803D' : '#7F1D1D',
                               color: usuario.situationUser.nomeSituacao.toLowerCase() === 'ativo' ? '#DCFCE7' : '#FEE2E2',
+                              border: `1px solid ${usuario.situationUser.nomeSituacao.toLowerCase() === 'ativo' ? '#36d470' : '#af0505'}`,
                               whiteSpace: 'nowrap',
                             }}
                           >
@@ -984,24 +985,24 @@ export default function GerenciarUsuarios() {
       {/* Modal de Cadastro de Usuário */}
       {modalCadastroAberto && (
         <div 
-          className="fixed inset-0 bg-black/60 bg-opacity-30 flex items-center justify-center z-50 animate-fadeIn"
+          className="fixed inset-0 bg-black/60 bg-opacity-30 flex items-center justify-center z-50 animate-fadeIn backdrop-blur-sm"
           onClick={fecharModalCadastro}
         >
           <div 
-            className="rounded-lg shadow-2xl w-full max-w-2xl mx-4 animate-slideUp"
+            className="rounded-lg shadow-2xl w-full max-w-2xl mx-4 animate-slideUp "
             style={{ backgroundColor: theme.background.card }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Cabeçalho */}
-            <div className="border-b px-6 py-4" style={{ borderColor: theme.border.primary }}>
+            <div className="border-b px-6 py-4 rounded-md" style={{ borderColor: theme.border.primary, background: theme.background.pagina }}>
               <h3 className="text-xl font-semibold text-center" style={{ color: theme.text.primary }}>
                 Cadastrar Usuário
               </h3>
             </div>
 
             {/* Corpo do Modal */}
-            <div className="p-6" style={{ backgroundColor: theme.background.card }}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="p-6 " style={{ backgroundColor: theme.background.pagina }}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 ">
                 {/* Nome */}
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium mb-2" style={{ color: theme.text.primary }}>

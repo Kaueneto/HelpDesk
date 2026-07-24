@@ -7,15 +7,37 @@ import AbrirChamado from './AbrirChamado';
 import AcompanharChamado from './AcompanharChamado';
 import DetalhesChamados from './DetalhesChamados';
 import Configuracoes from './Configuracoes';
+import SugestoesList from '@/components/sugestoes/SugestoesList';
+import SugestaoDetalhe from '@/components/sugestoes/SugestaoDetalhe';
+import DashboardUsuario from './DashboardUsuario';
+
 const baseUrl = process.env.NEXT_PUBLIC_FRONTEND_URL;
 
 export default function PainelUsuario() {
   const { user, isAuthenticated, isLoading, logout } = useAuth();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'home' | 'novo' | 'acompanhar'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'novo' | 'acompanhar' | 'sugestoes'>('home');
   const [chamadoSelecionado, setChamadoSelecionado] = useState<any>(null);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [showConfiguracoes, setShowConfiguracoes] = useState(false);
+  const [sugestaoDetalheId, setSugestaoDetalheId] = useState<number | null>(null);
+
+
+
+  // funcao para obter saudação baseado na hora do dia
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    const firstName = user?.name?.split(' ')[0] || 'Usuário';
+    
+    if (hour >= 6 && hour < 12) {
+      return `Bom dia, ${firstName}`;
+    } else if (hour >= 12 && hour < 18) {
+      return `Boa tarde, ${firstName}`;
+    } else {
+      return `Boa noite, ${firstName}`;
+    }
+  };
+
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -62,12 +84,25 @@ export default function PainelUsuario() {
     <>
    
       <div className="min-h-screen bg-gray-100 flex flex-col">
-        {/* Container principal */}
-        <div className="flex-1 max-w-7xl mx-auto w-full p-8">
-        <div className="bg-[#f8fafc] rounded-lg shadow-lg overflow-hidden h-full flex flex-col">
+        {/* Container principal — altura fixa baseada na viewport para não variar entre abas */}
+        <div className="flex-1 max-w-7xl mx-auto w-full p-8 flex flex-col">
+        <div className={`bg-[#f8fafc] rounded-lg shadow-lg flex-1 flex flex-col min-h-0 ${activeTab === 'sugestoes' ? 'overflow-visible' : 'overflow-hidden'}`}>
           {/* Header */}
           <div className="bg-[#f8fafc] border-b border-gray-200 px-8 py-5 flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-gray-900">Central de Tickets</h1>
+            <div className="flex items-center gap-4">
+                <img
+                  src="/logo.png"
+                  alt="Logo"
+                  className="w-24 h-8 object-contain"
+                />
+
+                <div className="h-8 w-px bg-gray-300"></div>
+
+                <h1 className="text-1xl font-bold text-gray-900">
+                  Central de Tickets
+                </h1>
+            </div>
+
             <div className="relative">
               <button
                 onClick={() => setUserDropdownOpen(!userDropdownOpen)}
@@ -123,15 +158,13 @@ export default function PainelUsuario() {
 
           {/* Tabs de Navegação */}
           <div className="px-8 py-4">
-            <div className="items-center justify-center rounded-md bg-gray-200/70 p-1 text-gray-500 grid w-full grid-cols-3" role="tablist">
+            <div className="items-center justify-center rounded-md bg-gray-200/70 p-1 text-gray-500 grid w-full grid-cols-4" role="tablist">
               <button
                 type="button"
                 role="tab"
                 onClick={() => setActiveTab('home')}
                 className={`inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-base font-medium transition-all duration-200 ${
-                  activeTab === 'home'
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
+                  activeTab === 'home' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
                 <img src="/icons/iconhome.svg" alt="Home" className="w-5 h-5 sm:w-4 sm:h-4 sm:mr-2" />
@@ -142,12 +175,10 @@ export default function PainelUsuario() {
                 role="tab"
                 onClick={() => setActiveTab('novo')}
                 className={`inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-base font-medium transition-all duration-200 ${
-                  activeTab === 'novo'
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
+                  activeTab === 'novo' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                <img src="/icons/iconabrirnovochamado.svg" alt="Abrir Chamado" className="w-5 h-5 sm:w-4 sm:h-4 sm:mr-2" />
+                <img src="/icons/iconabrirnovochamado.svg" alt="Abrir Chamado" className="w-5 h-5 sm:w-4 sm:h-4 sm:mr-2 " />
                 <span className="hidden sm:inline">Abrir novo Chamado</span>
               </button>
               <button
@@ -155,42 +186,78 @@ export default function PainelUsuario() {
                 role="tab"
                 onClick={() => setActiveTab('acompanhar')}
                 className={`inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-base font-medium transition-all duration-200 ${
-                  activeTab === 'acompanhar'
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
+                  activeTab === 'acompanhar' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
                 <img src="/icons/iconacompanhar.svg" alt="Acompanhar" className="w-5 h-5 sm:w-4 sm:h-4 sm:mr-2" />
                 <span className="hidden sm:inline">Acompanhar Chamado</span>
               </button>
+              <button
+                type="button"
+                role="tab"
+                onClick={() => { setActiveTab('sugestoes'); setSugestaoDetalheId(null); }}
+                className={`inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-base font-medium transition-all duration-200 ${
+                  activeTab === 'sugestoes' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <img
+                  src="/icons/sugest.svg"
+                  alt="Sugestões"
+                  className="w-5 h-5 sm:w-4 sm:h-4 sm:mr-2 object-contain"
+                />
+                <span className="hidden sm:inline">Sugestões</span>
+              </button>
             </div>
           </div>
 
-          {/* Conteúdo Principal */}
-          <div className="flex-1 px-8 py-6 flex-col overflow-y-auto">
+          {/* Conteúdo Principal — altura fixa, scroll interno */}
+          <div className="flex-1 min-h-0 px-8 py-6 overflow-y-auto">
             {activeTab === 'home' && (
               <div className="flex flex-col h-full">
-                <div className="mb-12">
-                  <h2 className="text-3xl font-bold text-gray-900 mb-2">Bem vindo!</h2>
-                  <p className="text-xl text-gray-700">Escolha uma opção</p>
+                <div className="mb-5">
+                  <h2 className="text-2xl font-semibold font-segoe text-gray-900 mb-1">
+                     {getGreeting()}!
+                  </h2>
+                  <p className="text-1xl font-segoe text-gray-700">Como podemos ajudar hoje?</p>
                 </div>
 
-                <div className="flex-1 flex flex-col items-end gap-7 max-w-md ml-auto w-full pr-12">
-                  <button
-                    onClick={() => setActiveTab('novo')}
-                    className="w-full px-12 py-7 bg-blue-500 hover:bg-blue-600 text-white text-lg font-semibold rounded-lg shadow-md transition flex items-center justify-center gap-3"
-                  >
-                    <span className="text-2xl">+</span>
-                    <span>Abrir novo chamado</span>
-                  </button>
+                {/* Layout lado a lado: botões à direita, dashboard à esquerda */}
+                <div className="flex-1 flex gap-6 items-start">
 
-                  <button
-                    onClick={() => setActiveTab('acompanhar')}
-                    className="w-full px-12 py-7 bg-green-800 hover:bg-green-900 text-white text-lg font-semibold rounded-lg shadow-md transition"
-                  >
-                    <div>Verificar andamento</div>
-                    <div>do chamado</div>
-                  </button>
+                  {/* Dashboard compacto — ocupa o espaço à esquerda */}
+               <div className="flex-[1.4]  pl-8 min-w-0 hidden sm:flex">
+                    <div className="w-full ">
+                      <DashboardUsuario />
+                    </div>
+                  </div>
+
+                  {/* Botões de ação — coluna à direita */}
+                  <div className="flex flex-col gap-5 w-full max-w-md ml-auto pr-4 sm:pr-12">
+                    <button
+                      onClick={() => setActiveTab('novo')}
+                     className="w-full px-12 py-7 bg-blue-500 hover:bg-blue-600 text-white text-lg font-semibold rounded-lg shadow-md hover:shadow-2xl hover:shadow-blue-500/30 transition-all duration-300 ease-out transform hover:scale-105 hover:-translate-y-1 flex items-center justify-center gap-3"
+                    >
+                      <span className="text-2xl">+</span>
+                      <span>Abrir novo chamado</span>
+                    </button>
+
+                    <button
+                      onClick={() => setActiveTab('acompanhar')}
+                      className="w-full px-12 py-7 bg-green-800 hover:bg-green-900 text-white text-lg font-semibold rounded-lg hover:shadow-2xl hover:shadow-blue-500/30 transition-all duration-300 ease-out transform hover:scale-105 hover:-translate-y-1 flex items-center justify-center gap-3"
+                    >
+                      <div>Verificar andamento do chamado</div>
+                    
+                    </button>
+
+                    <button
+                      onClick={() => { setActiveTab('sugestoes'); setSugestaoDetalheId(null); }}
+                      className="w-full px-12 py-7 text-white text-lg font-semibold rounded-lg shadow-md transition-all duration-300 ease-out transform hover:scale-105 hover:-translate-y-1"
+                      style={{ backgroundColor: '#ff0066' }}
+                    >
+                      <div>Sugestões</div>
+                      <div className="text-sm font-normal opacity-90 mt-1">Queremos ouvir você</div>
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
@@ -212,6 +279,23 @@ export default function PainelUsuario() {
                   <DetalhesChamados
                     chamado={chamadoSelecionado}
                     onVoltar={handleVoltarLista}
+                  />
+                )}
+              </div>
+            )}
+
+            {activeTab === 'sugestoes' && (
+              <div className="-mx-8 -my-6">
+                {sugestaoDetalheId === null ? (
+                  <SugestoesList
+                    onVerDetalhe={(id) => setSugestaoDetalheId(id)}
+                    hideHeader
+                  />
+                ) : (
+                  <SugestaoDetalhe
+                    sugestaoId={sugestaoDetalheId}
+                    onVoltar={() => setSugestaoDetalheId(null)}
+                    inlineLayout
                   />
                 )}
               </div>

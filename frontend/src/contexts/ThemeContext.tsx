@@ -24,9 +24,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     setIsMounted(true);
     const storedMode = localStorage.getItem('theme-mode') as ThemeMode | null;
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
 
-    const initialMode = storedMode || (prefersDark ? 'dark' : 'light');
+    // se o usuário já escolheu um tema, respeitar. Caso contrário, padrão é sempre claro.
+    const initialMode = storedMode ?? 'light';
     setMode(initialMode);
     applyTheme(initialMode);
   }, []);

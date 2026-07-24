@@ -195,10 +195,17 @@ router.post("/users", async (req: Request, res: Response) => {
     }
 
     const userRepository = AppDataSource.getRepository(Users);
+
+    // validar duplicidade do nome
     const existingUserName = await userRepository.findOne({
       where: { name: data.name },
     });
- 
+    if (existingUserName) {
+      return res.status(400).json({
+        mensagem: "Já existe um usuário cadastrado com este NOME. Por favor, utilize um NOME diferente.",
+      });
+    }
+
     // valida duplicidade do email
     const existingUserEmail = await userRepository.findOne({
       where: { email: data.email },
@@ -663,6 +670,20 @@ router.put("/users/:id",  verifyToken,  async (req: Request, res: Response) => {
     if (emailExistente) {
       return res.status(400).json({
         mensagem: "Já existe outro usuário com este e-mail.",
+      });
+    }
+
+    // verificar duplicidade do nome (excluindo o próprio usuário)
+    const nomeExistente = await userRepository.findOne({
+      where: {
+        name,
+        id: Not(Number(id)),
+      },
+    });
+
+    if (nomeExistente) {
+      return res.status(400).json({
+        mensagem: "Já existe outro usuário cadastrado com este nome. Por favor, utilize um nome diferente.",
       });
     }
 

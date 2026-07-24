@@ -7,6 +7,30 @@ import { Users } from "../entities/Users";
 import { Chamados } from "../entities/Chamados";
 import { PrefUsers } from "../entities/PrefUsers";
 
+// ─── Transporter singleton ────────────────────────────────────────────────────
+// Criado uma única vez ao iniciar o servidor e reutilizado por todas as funções.
+// Evita o handshake SMTP repetido a cada email, reduzindo latência.
+let _transporter: nodemailer.Transporter | null = null;
+
+function getTransporter(): nodemailer.Transporter {
+  if (!_transporter) {
+    _transporter = nodemailer.createTransport({
+      host: process.env.EMAIL_HOST,
+      port: Number(process.env.EMAIL_PORT),
+      secure: false,
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+      pool: true,          // mantém conexões abertas para reutilização
+      maxConnections: 3,   // até 3 conexões simultâneas
+      rateDelta: 1000,     // intervalo mínimo entre envios (ms)
+      rateLimit: 5,        // máximo 5 emails por rateDelta
+    } as any);
+  }
+  return _transporter;
+}
+
 //enviar atualizacao de chamado por email 
 export async function enviarAtualizacaoChamadoPorEmail({ chamado, usuario, destinatario, mensagem, nomeRemetente, cc, cco, incluirTopico }: {
   chamado: any,
@@ -19,15 +43,7 @@ export async function enviarAtualizacaoChamadoPorEmail({ chamado, usuario, desti
   incluirTopico?: boolean,
 }) {
   try {
-    const transporter = require('nodemailer').createTransport({
-      host: process.env.EMAIL_HOST,
-      port: Number(process.env.EMAIL_PORT),
-      secure: false,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
+    const transporter = getTransporter();
 const mailOptions: any = {
   from: process.env.EMAIL_FROM,
   to: destinatario,
@@ -133,15 +149,7 @@ export async function verificarPreferenciasUsuario(userId: number): Promise<numb
 //  enviar email quando o chamado está aguardando resposta do usuário
 export async function enviarEmailEsperandoUsuario(usuario: Users, chamado: Chamados): Promise<void> {
   try {
-    const transporter = nodemailer.createTransport({
-      host: process.env.EMAIL_HOST,
-      port: Number(process.env.EMAIL_PORT),
-      secure: false,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
+    const transporter = getTransporter();
 
     const mailOptions = {
       from: process.env.EMAIL_FROM,
@@ -199,15 +207,7 @@ export async function enviarEmailEsperandoUsuario(usuario: Users, chamado: Chama
 //  enviar email quando o chamado está aguardando retorno de terceiros
 export async function enviarEmailAguardandoTerceiros(usuario: Users, chamado: Chamados): Promise<void> {
   try {
-    const transporter = nodemailer.createTransport({
-      host: process.env.EMAIL_HOST,
-      port: Number(process.env.EMAIL_PORT),
-      secure: false,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
+    const transporter = getTransporter();
 
     const mailOptions = {
       from: process.env.EMAIL_FROM,
@@ -270,15 +270,7 @@ export async function enviarEmailAguardandoTerceiros(usuario: Users, chamado: Ch
 //  email de notificação para administradores sobre novo chamado
 export async function enviarEmailNotificacaoAdmin(admin: Users, usuario: Users, chamado: Chamados): Promise<void> {
   try {
-    const transporter = nodemailer.createTransport({
-      host: process.env.EMAIL_HOST,
-      port: Number(process.env.EMAIL_PORT),
-      secure: false,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
+    const transporter = getTransporter();
 
     const mailOptions = {
       from: process.env.EMAIL_FROM,
@@ -311,15 +303,7 @@ export async function enviarEmailNotificacaoAdmin(admin: Users, usuario: Users, 
 //  enviar email de confirmação para o usuário que abriu o chamado
 export async function enviarEmailConfirmacaoUsuario(usuario: Users, chamado: Chamados): Promise<void> {
   try {
-    const transporter = nodemailer.createTransport({
-      host: process.env.EMAIL_HOST,
-      port: Number(process.env.EMAIL_PORT),
-      secure: false,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
+    const transporter = getTransporter();
 
     const mailOptions = {
       from: process.env.EMAIL_FROM,
@@ -393,15 +377,7 @@ export async function enviarEmailRedirecionamento(
       return;
     }
 
-    const transporter = nodemailer.createTransport({
-      host: process.env.EMAIL_HOST,
-      port: Number(process.env.EMAIL_PORT),
-      secure: false,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
+    const transporter = getTransporter();
 
     // testar conexão do transporter
     try {
@@ -467,15 +443,7 @@ export async function enviarEmailConclusaoUsuario(
   adminResponsavel: Users | null
 ): Promise<void> {
   try {
-    const transporter = nodemailer.createTransport({
-      host: process.env.EMAIL_HOST,
-      port: Number(process.env.EMAIL_PORT),
-      secure: false,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
+    const transporter = getTransporter();
 
     const nomeResponsavel = adminResponsavel?.name || "Nossa equipe";
     const dataFechamento = chamado.dataFechamento 
@@ -563,15 +531,7 @@ export async function enviarEmailChamadoCriadoPorAdmin(
       return;
     }
 
-    const transporter = nodemailer.createTransport({
-      host: process.env.EMAIL_HOST,
-      port: Number(process.env.EMAIL_PORT),
-      secure: false,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
+    const transporter = getTransporter();
 
     const mailOptions = {
       from: process.env.EMAIL_FROM,
@@ -624,3 +584,68 @@ export async function enviarEmailChamadoCriadoPorAdmin(
 }
 
 
+
+// notificar administradores/usuários com preferência 4 sobre nova sugestão criada
+export async function enviarEmailNovaSugestao(
+  destinatario: Users,
+  criador: Users,
+  sugestao: { titulo: string; descricao: string; privado: boolean; escopo: string }
+): Promise<void> {
+  try {
+    if (!process.env.EMAIL_HOST || !process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+      console.warn('[EMAIL SUGESTAO] Variáveis de ambiente de email não configuradas');
+      return;
+    }
+
+    const transporter = getTransporter();
+
+    const escopoLabel = sugestao.escopo === 'global' ? 'Global' : 'Departamento';
+    const privadoLabel = sugestao.privado ? 'Privada' : 'Pública';
+
+    await transporter.sendMail({
+      from: process.env.EMAIL_FROM,
+      to: destinatario.email,
+      subject: `💡 Nova sugestão criada por ${criador.name}`,
+      html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f6f8;">
+        <div style="background-color: #ffffff; padding: 24px 28px; border-radius: 8px; border: 1px solid #e5e7eb;">
+
+          <h2 style="color: #2563eb; margin-bottom: 4px;">💡 Nova sugestão enviada</h2>
+          <p style="font-size: 13px; color: #6b7280; margin-top: 0 ; margin-bottom: 20px;">
+            Uma nova sugestão foi criada no sistema HelpDesk.
+          </p>
+
+    <div style="background-color: #f0f7ff; padding: 16px 18px; border-radius: 6px; border-left: 4px solid #2563eb; margin-bottom: 20px;">
+      <p style="margin: 0 0 8px 0; font-size: 15px; font-weight: 600; color: #111827;">
+        ${sugestao.titulo}
+      </p>
+      <p style="margin: 0; font-size: 13px; color: #4b5563; line-height: 1.6;">
+        ${sugestao.descricao.length > 200 ? sugestao.descricao.substring(0, 200) + '...' : sugestao.descricao}
+      </p>
+    </div>
+
+    <table style="width: 100%; font-size: 13px; border-collapse: collapse; margin-bottom: 20px;">
+      <tr>
+        <td style="padding: 6px 0; color: #6b7280; width: 110px;">Criado por:</td>
+        <td style="padding: 6px 0; color: #111827; font-weight: 500;">${criador.name} &lt;${criador.email}&gt;</td>
+      </tr>
+      <tr>
+        <td style="padding: 6px 0; color: #6b7280;">Visibilidade:</td>
+        <td style="padding: 6px 0; color: #111827;">${privadoLabel} · ${escopoLabel}</td>
+      </tr>
+    </table>
+
+    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
+    <p style="font-size: 12px; color: #9ca3af; margin: 0;">
+      Acesse o sistema para visualizar a sugestão completa e interagir. Este é um email automático, não responda.
+    </p>
+  </div>
+</div>
+      `,
+    });
+  } catch (error) {
+    
+    console.error(`falha ao enviar email de sugestao ${destinatario.email}:`, error);
+    // falha silenciosa — email não deve bloquear operações
+  }
+}
