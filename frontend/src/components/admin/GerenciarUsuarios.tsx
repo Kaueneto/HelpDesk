@@ -89,6 +89,11 @@ export default function GerenciarUsuarios() {
   const [novoUsuarioDepartamentId, setNovoUsuarioDepartamentId] = useState(''); // ID do departamento
   const [submittingCadastro, setSubmittingCadastro] = useState(false);
 
+  // modal de aprovação de pendentes
+  const [modalAprovacaoAberto, setModalAprovacaoAberto] = useState(false);
+  const [aprovacaoDepartamentId, setAprovacaoDepartamentId] = useState('');
+  const [submittingAprovacao, setSubmittingAprovacao] = useState(false);
+
   // Modal de edição
   const [modalEdicaoAberto, setModalEdicaoAberto] = useState(false);
   const [editandoUsuarioId, setEditandoUsuarioId] = useState<number | null>(null);
@@ -356,28 +361,81 @@ export default function GerenciarUsuarios() {
       return;
     }
 
-    if (!confirm(`Deseja ativar ${usuariosSelecionados.length} usuário(s)? `)) {
+    // verificar se algum selecionado está pendente (sem departamento)
+    const pendentes = usuarios.filter(
+      u => usuariosSelecionados.includes(u.id) &&
+           u.situationUser?.nomeSituacao?.toLowerCase() === 'pendente'
+    );
+
+    if (pendentes.length > 0) {
+      // abrir modal de aprovação para definir departamento
+      setAprovacaoDepartamentId('');
+      setModalAprovacaoAberto(true);
       return;
     }
 
-    //buscar id da situacao 'ativo'
+    // nenhum pendente — ativar direto
+    if (!confirm(`Deseja ativar ${usuariosSelecionados.length} usuário(s)?`)) return;
+
     const situacaoAtiva = situacoes.find(s => s.nomeSituacao.toLowerCase() === 'ativo');
-    if (!situacaoAtiva) {
-      alert('Situação "ativo" não encontrada. Cadastre-a primeiro.');
-      return;
-    }
+    if (!situacaoAtiva) { alert('Situação "ativo" não encontrada.'); return; }
 
     try {
       await api.patch('/users/ativar-multiplos', {
         usuariosIds: usuariosSelecionados,
         situationUserId: situacaoAtiva.id,
       });
-
       alert('Usuários ativados com sucesso!');
       await carregarUsuarios();
-    } catch (error) {
+    } catch { alert('Erro ao ativar usuários'); }
+  };
 
-      alert('Erro ao ativar usuários');
+  const confirmarAprovacao = async () => {
+    if (!aprovacaoDepartamentId) {
+      alert('Selecione um departamento para os usuários pendentes.');
+      return;
+    }
+
+    const situacaoAtiva = situacoes.find(s => s.nomeSituacao.toLowerCase() === 'ativo');
+    if (!situacaoAtiva) { alert('Situação "ativo" não encontrada.'); return; }
+
+    setSubmittingAprovacao(true);
+    try {
+      // 1. Atualizar cada usuário pendente selecionado com o departamento escolhido
+      const pendentes = usuarios.filter(
+        u => usuariosSelecionados.includes(u.id) &&
+             u.situationUser?.nomeSituacao?.toLowerCase() === 'pendente'
+      );
+      const naoMaisPendentes = usuariosSelecionados.filter(
+        id => !pendentes.some(p => p.id === id)
+      );
+
+      for (const u of pendentes) {
+        await api.put(`/users/${u.id}`, {
+          name: u.name,
+          email: u.email,
+          situationUserId: situacaoAtiva.id,
+          roleId: u.roleId,
+          id_departament: aprovacaoDepartamentId,
+        });
+      }
+
+      // 2. Ativar os não-pendentes selecionados (se houver)
+      if (naoMaisPendentes.length > 0) {
+        await api.patch('/users/ativar-multiplos', {
+          usuariosIds: naoMaisPendentes,
+          situationUserId: situacaoAtiva.id,
+        });
+      }
+
+      setModalAprovacaoAberto(false);
+      setAprovacaoDepartamentId('');
+      alert(`${usuariosSelecionados.length} usuário(s) aprovado(s) com sucesso!`);
+      await carregarUsuarios();
+    } catch (error: any) {
+      alert(error.response?.data?.mensagem || 'Erro ao aprovar usuários');
+    } finally {
+      setSubmittingAprovacao(false);
     }
   };
 
@@ -892,9 +950,19 @@ export default function GerenciarUsuarios() {
                           <span
                             className="px-2 py-1 rounded-full text-xs font-medium"
                             style={{
-                              backgroundColor: usuario.situationUser.nomeSituacao.toLowerCase() === 'ativo' ? '#15803D' : '#7F1D1D',
-                              color: usuario.situationUser.nomeSituacao.toLowerCase() === 'ativo' ? '#DCFCE7' : '#FEE2E2',
-                              border: `1px solid ${usuario.situationUser.nomeSituacao.toLowerCase() === 'ativo' ? '#36d470' : '#af0505'}`,
+                              backgroundColor:
+                                usuario.situationUser.nomeSituacao.toLowerCase() === 'ativo'    ? '#15803D' :
+                                usuario.situationUser.nomeSituacao.toLowerCase() === 'pendente' ? '#92400e' :
+                                '#7F1D1D',
+                              color:
+                                usuario.situationUser.nomeSituacao.toLowerCase() === 'ativo'    ? '#DCFCE7' :
+                                usuario.situationUser.nomeSituacao.toLowerCase() === 'pendente' ? '#fef3c7' :
+                                '#FEE2E2',
+                              border: `1px solid ${
+                                usuario.situationUser.nomeSituacao.toLowerCase() === 'ativo'    ? '#36d470' :
+                                usuario.situationUser.nomeSituacao.toLowerCase() === 'pendente' ? '#f59e0b' :
+                                '#af0505'
+                              }`,
                               whiteSpace: 'nowrap',
                             }}
                           >
@@ -981,6 +1049,110 @@ export default function GerenciarUsuarios() {
           )}
         </div>
       </div>
+
+      {modalAprovacaoAberto && (
+        <div
+          className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 backdrop-blur-sm"
+          onClick={() => !submittingAprovacao && setModalAprovacaoAberto(false)}
+        >
+          <div
+            className="rounded-xl shadow-2xl w-full max-w-md mx-4"
+            style={{ backgroundColor: theme.background.modal }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="px-6 py-4 rounded-t-xl" style={{ backgroundColor: theme.brand.primary }}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-bold text-white">Aprovar usuários pendentes</h3>
+                  <p className="text-sm text-white/80 mt-0.5">
+                    {usuarios.filter(u => usuariosSelecionados.includes(u.id) && u.situationUser?.nomeSituacao?.toLowerCase() === 'pendente').length} usuário(s) aguardando aprovação
+                  </p>
+                </div>
+                <button
+                  onClick={() => setModalAprovacaoAberto(false)}
+                  disabled={submittingAprovacao}
+                  className="text-white/70 hover:text-white transition-colors p-1 rounded"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <p className="text-sm" style={{ color: theme.text.secondary }}>
+                Os usuários pendentes precisam de um departamento para ser ativados. Selecione o departamento abaixo:
+              </p>
+
+              <div className="rounded-lg border divide-y text-sm" style={{ borderColor: theme.border.secondary }}>
+                {usuarios
+                  .filter(u => usuariosSelecionados.includes(u.id) && u.situationUser?.nomeSituacao?.toLowerCase() === 'pendente')
+                  .map(u => (
+                    <div key={u.id} className="px-3 py-2 flex items-center gap-2" style={{ backgroundColor: theme.background.surface }}>
+                      <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
+                        style={{ backgroundColor: theme.brand.primary }}>
+                        {u.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-medium truncate" style={{ color: theme.text.primary }}>{u.name}</p>
+                        <p className="text-xs truncate" style={{ color: theme.text.tertiary }}>{u.email}</p>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-1.5" style={{ color: theme.text.primary }}>
+                  Departamento *
+                </label>
+                <select
+                  value={aprovacaoDepartamentId}
+                  onChange={e => setAprovacaoDepartamentId(e.target.value)}
+                  disabled={submittingAprovacao}
+                  className="w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none focus:ring-2 disabled:opacity-50"
+                  style={{
+                    backgroundColor: theme.background.surface,
+                    borderColor: aprovacaoDepartamentId ? theme.brand.primary : theme.border.secondary,
+                    color: theme.text.primary,
+                  }}
+                >
+                  <option value="">Selecione o departamento...</option>
+                  {departamentos
+                    .filter((d: any) => d.ativo !== false)
+                    .sort((a: any, b: any) => a.name.localeCompare(b.name))
+                    .map((d: any) => (
+                      <option key={d.id} value={d.id}>{d.name}</option>
+                    ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="px-6 pb-6 flex gap-3 justify-end">
+              <button
+                onClick={() => setModalAprovacaoAberto(false)}
+                disabled={submittingAprovacao}
+                className="px-4 py-2 text-sm rounded-lg font-medium transition-colors disabled:opacity-50"
+                style={{ backgroundColor: theme.background.hover, color: theme.text.primary }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmarAprovacao}
+                disabled={submittingAprovacao || !aprovacaoDepartamentId}
+                className="px-5 py-2 text-sm rounded-lg font-semibold text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                style={{ backgroundColor: '#059669' }}
+              >
+                {submittingAprovacao ? (
+                  <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Aprovando...</>
+                ) : (
+                  <><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>Aprovar e ativar</>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal de Cadastro de Usuário */}
       {modalCadastroAberto && (

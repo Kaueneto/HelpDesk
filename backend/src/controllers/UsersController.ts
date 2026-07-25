@@ -164,7 +164,11 @@ router.post("/users", async (req: Request, res: Response) => {
   try {
     const data = req.body;
 
-    const schema = yup.object().shape({
+    // Se vem do auto-cadastro (sem token), não exige departamento.
+    // Se vem do admin (com id_departament no body), valida.
+    const isAdminCreating = !!data.id_departament;
+
+    const schemaBase = {
       name: yup
         .string()
         .required("O nome do usuário é obrigatório!")
@@ -177,10 +181,14 @@ router.post("/users", async (req: Request, res: Response) => {
         .string()
         .required("A senha do usuário é obrigatória!")
         .min(6, "A senha deve conter pelo menos 6 caracteres."),
-      id_departament: yup
-        .string()
-        .required("O departamento é obrigatório!"),
-    });
+    };
+
+    const schema = isAdminCreating
+      ? yup.object().shape({
+          ...schemaBase,
+          id_departament: yup.string().required("O departamento é obrigatório!"),
+        })
+      : yup.object().shape(schemaBase);
 
     await schema.validate(data, { abortEarly: false });
 
@@ -197,19 +205,15 @@ router.post("/users", async (req: Request, res: Response) => {
     const userRepository = AppDataSource.getRepository(Users);
 
     // validar duplicidade do nome
-    const existingUserName = await userRepository.findOne({
-      where: { name: data.name },
-    });
+    const existingUserName = await userRepository.findOne({ where: { name: data.name } });
     if (existingUserName) {
       return res.status(400).json({
-        mensagem: "Já existe um usuário cadastrado com este NOME. Por favor, utilize um NOME diferente.",
+        mensagem: "Já existe um usuário cadastrado com este nome. Por favor, utilize um nome diferente.",
       });
     }
 
-    // valida duplicidade do email
-    const existingUserEmail = await userRepository.findOne({
-      where: { email: data.email },
-    });
+    // validar duplicidade do email
+    const existingUserEmail = await userRepository.findOne({ where: { email: data.email } });
     if (existingUserEmail) {
       return res.status(400).json({
         mensagem: "Este e-mail já está cadastrado para outro usuário. Se você esqueceu sua senha, utilize a opção de recuperação de senha.",
@@ -219,23 +223,25 @@ router.post("/users", async (req: Request, res: Response) => {
     // criptografar senha antes de salvar
     data.password = await bcrypt.hash(data.password, 10);
 
-    // cria o usuário com situação padrão (1 = ativo)
+    // Auto-cadastro: status pendente (3), sem departamento
+    // Admin criando: status ativo (1) ou o que ele definir, com departamento
     const newUser = userRepository.create({
       ...data,
-      situationUserId: data.situationUserId || 1, // Padrão: ativo
-      id_departament: data.id_departament,
+      situationUserId: isAdminCreating ? (data.situationUserId || 1) : 3,
+      id_departament:  isAdminCreating ? data.id_departament : null,
+      roleId:          data.roleId || 2,
     });
 
     await userRepository.save(newUser);
 
-    return res
-      .status(201)
-      .json({ mensagem: "Usuário criado com sucesso!", user: newUser });
+    const mensagem = isAdminCreating
+      ? "Usuário criado com sucesso!"
+      : "Cadastro realizado! Aguarde a aprovação de um administrador para acessar o sistema.";
+
+    return res.status(201).json({ mensagem, user: newUser });
   } catch (error) {
     if (error instanceof yup.ValidationError) {
-      return res.status(400).json({
-        mensagem: error.errors,
-      });
+      return res.status(400).json({ mensagem: error.errors });
     }
 
     return res.status(500).json({ mensagem: "Erro ao criar usuário" });

@@ -41,7 +41,7 @@ export default function Cadastrarse({ onLoginClick, onSuccess }: CadastrarseProp
     setCadastroLoading(true);
 
     try {
-      await api.post('/users', {
+      const response = await api.post('/users', {
         name: cadastroName,
         email: cadastroEmail,
         password: cadastroPassword,
@@ -54,7 +54,8 @@ export default function Cadastrarse({ onLoginClick, onSuccess }: CadastrarseProp
       setCadastroPassword('');
       setCadastroConfirmPassword('');
       
-      alert('Cadastro realizado com sucesso! Faça login para continuar.');
+      const mensagem = response.data?.mensagem || 'Cadastro realizado! Aguarde a aprovação de um administrador.';
+      alert(mensagem);
       onSuccess();
     } catch (err: any) {
       setCadastroError(err.response?.data?.mensagem || 'Erro ao criar conta. Tente novamente.');

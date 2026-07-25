@@ -32,6 +32,10 @@ export class AuthService {
 
     // Verificar se o usuário está ativo (situação = "ativo")
     if (!user.situationUser || user.situationUser.nomeSituacao.toLowerCase() !== "ativo") {
+      const situacao = user.situationUser?.nomeSituacao?.toLowerCase();
+      if (situacao === "pendente") {
+        throw new Error("Sua conta está aguardando aprovação de um administrador. Você será notificado quando for liberada.");
+      }
       throw new Error("Usuário inativo. Entre em contato com o administrador.");
     }
 
