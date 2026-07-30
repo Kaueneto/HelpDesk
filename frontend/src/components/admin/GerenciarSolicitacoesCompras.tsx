@@ -6,7 +6,6 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { useRouter } from 'next/navigation';
 import {
   FiPlus,
-  FiChevronDown,
   FiChevronRight,
   FiEye,
   FiX,
@@ -43,38 +42,35 @@ interface Solicitacao {
 }
 
 // ─── helpers de cor ─────────────────────────────────────────
-const STATUS_CHAMADO_COLOR: Record<number, string> = {
-  1: 'bg-yellow-400 text-yellow-900',
-  2: 'bg-blue-500 text-white',
-  3: 'bg-green-500 text-white',
-  4: 'bg-red-500 text-white',
-  5: 'bg-orange-400 text-white',
+// bgLight/bgDark adaptativos — texto sempre legível em ambos os temas
+const STATUS_CHAMADO_STYLE: Record<number, {
+  bgLight: string; bgDark: string; textLight: string; textDark: string; dot: string; label: string;
+}> = {
+  1: { bgLight:'#fef3c7', bgDark:'#451a03', textLight:'#92400e', textDark:'#fcd34d', dot:'#f59e0b', label:'Aberto'        },
+  2: { bgLight:'#dbeafe', bgDark:'#1e3a5f', textLight:'#1d4ed8', textDark:'#93c5fd', dot:'#3b82f6', label:'Em Análise'    },
+  3: { bgLight:'#dcfce7', bgDark:'#14532d', textLight:'#15803d', textDark:'#86efac', dot:'#22c55e', label:'Encerrado'     },
+  4: { bgLight:'#fee2e2', bgDark:'#450a0a', textLight:'#b91c1c', textDark:'#fca5a5', dot:'#ef4444', label:'Cancelado'     },
+  5: { bgLight:'#ffedd5', bgDark:'#431407', textLight:'#c2410c', textDark:'#fdba74', dot:'#f97316', label:'Reaberto'      },
+  6: { bgLight:'#ede9fe', bgDark:'#2e1065', textLight:'#7c3aed', textDark:'#c4b5fd', dot:'#8b5cf6', label:'Pend. Usuário' },
+  7: { bgLight:'#e0f2fe', bgDark:'#0c4a6e', textLight:'#0369a1', textDark:'#7dd3fc', dot:'#0ea5e9', label:'Pend. Terceiros'},
 };
 
-const STATUS_COTACAO_COLOR: Record<string, string> = {
-  EM_ANDAMENTO:        'bg-blue-500 text-white',
-  AGUARDANDO_APROVACAO:'bg-yellow-400 text-yellow-900',
-  APROVADA:            'bg-green-500 text-white',
-  EM_COMPRA:           'bg-purple-500 text-white',
-  FINALIZADA:          'bg-gray-400 text-white',
-  CANCELADA:           'bg-red-500 text-white',
+const STATUS_COTACAO_STYLE: Record<string, { bgLight:string; bgDark:string; textLight:string; textDark:string; label:string }> = {
+  EM_ANDAMENTO:        { bgLight:'#dbeafe', bgDark:'#1e3a5f', textLight:'#1d4ed8', textDark:'#93c5fd', label:'Em Andamento'  },
+  AGUARDANDO_APROVACAO:{ bgLight:'#fef3c7', bgDark:'#451a03', textLight:'#92400e', textDark:'#fcd34d', label:'Ag. Aprovação' },
+  APROVADA:            { bgLight:'#dcfce7', bgDark:'#14532d', textLight:'#15803d', textDark:'#86efac', label:'Aprovada'       },
+  EM_COMPRA:           { bgLight:'#f3e8ff', bgDark:'#2e1065', textLight:'#7c3aed', textDark:'#c4b5fd', label:'Em Compra'      },
+  FINALIZADA:          { bgLight:'#f1f5f9', bgDark:'#1e293b', textLight:'#475569', textDark:'#94a3b8', label:'Finalizada'     },
+  CANCELADA:           { bgLight:'#fee2e2', bgDark:'#450a0a', textLight:'#b91c1c', textDark:'#fca5a5', label:'Cancelada'      },
 };
 
-const STATUS_COTACAO_LABEL: Record<string, string> = {
-  EM_ANDAMENTO:        'Em Andamento',
-  AGUARDANDO_APROVACAO:'Aguardando Aprovação',
-  APROVADA:            'Aprovada',
-  EM_COMPRA:           'Em Compra',
-  FINALIZADA:          'Finalizada',
-  CANCELADA:           'Cancelada',
-};
-
-const PRIORIDADE_COLOR: Record<string, string> = {
-  BAIXA:  'bg-gray-100 text-gray-600',
-  MÉDIA:  'bg-yellow-100 text-yellow-700',
-  MEDIA:  'bg-yellow-100 text-yellow-700',
-  ALTA:   'bg-orange-100 text-orange-700',
-  URGENTE:'bg-red-100 text-red-700',
+const PRIORIDADE_STYLE: Record<string, { dot: string; label: string }> = {
+  BAIXA:  { dot:'#22c55e', label:'Baixa'   },
+  MEDIA:  { dot:'#3b82f6', label:'Média'   },
+  MÉDIA:  { dot:'#3b82f6', label:'Média'   },
+  ALTO:   { dot:'#f97316', label:'Alta'    },
+  ALTA:   { dot:'#f97316', label:'Alta'    },
+  URGENTE:{ dot:'#ef4444', label:'Urgente' },
 };
 
 function fmtData(d: string) {
@@ -203,7 +199,7 @@ export default function GerenciarSolicitacoesCompras() {
           {[
             { label: 'Total de Solicitações', value: metricas.total,        color: 'from-blue-500 to-blue-600'   },
             { label: 'Abertas',               value: metricas.abertas,      color: 'from-yellow-400 to-yellow-500'},
-            { label: 'Em Análise',            value: metricas.emAnalise,    color: 'from-blue-400 to-blue-500'   },
+            { label: 'Em Análise',            value: metricas.emAnalise,    color: 'from-red-400 to-red-500'   },
             { label: 'Encerradas',            value: metricas.encerradas,   color: 'from-green-500 to-green-600' },
             { label: 'Cotações Criadas',      value: metricas.totalCotacoes,color: 'from-purple-500 to-purple-600'},
           ].map((m) => (
@@ -247,7 +243,7 @@ export default function GerenciarSolicitacoesCompras() {
           </div>
         </div>
 
-        {/* lista das coliticacoes */}
+        {/* lista das solicitações */}
         <div className="space-y-3">
           {filtradas.length === 0 ? (
             <div className="text-center py-16 rounded-xl" style={{ backgroundColor: card, color: text }}>
@@ -258,134 +254,224 @@ export default function GerenciarSolicitacoesCompras() {
             const isExpanded = expandedIds.has(sol.id);
             const det        = detalhes[sol.id];
             const prioKey    = sol.tipoPrioridade.nome.toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-            const prioCls    = PRIORIDADE_COLOR[prioKey] ?? 'bg-gray-100 text-gray-600';
+            const prio       = PRIORIDADE_STYLE[prioKey] ?? { dot: '#94a3b8', label: sol.tipoPrioridade.nome };
+            const statusSt   = STATUS_CHAMADO_STYLE[sol.status.id] ?? {
+              bgLight:'#f1f5f9', bgDark:'#1e293b', textLight:'#475569', textDark:'#94a3b8', dot:'#94a3b8', label: sol.status.nome,
+            };
+            const statusBg   = mode === 'dark' ? statusSt.bgDark   : statusSt.bgLight;
+            const statusText = mode === 'dark' ? statusSt.textDark  : statusSt.textLight;
+            const accent     = statusSt.dot;
+
+            // card: borda superior colorida no topo — 3px, mais elegante que lateral
+            const cardBase: React.CSSProperties = {
+              backgroundColor: card,
+              borderRadius: '12px',
+              overflow: 'hidden',
+              border: `1px solid ${mode === 'dark' ? '#334155' : '#e2e8f0'}`,
+              borderTop: `3px solid ${accent}`,
+              transition: 'box-shadow 200ms ease, transform 200ms ease',
+            };
 
             return (
               <div
                 key={sol.id}
-                className="rounded-xl overflow-hidden shadow-sm"
-                style={{ backgroundColor: card, border: `1px solid ${border}` }}
+                style={cardBase}
+                onMouseEnter={e => {
+                  const el = e.currentTarget as HTMLDivElement;
+                  el.style.transform = 'translateY(-2px)';
+                  el.style.boxShadow = mode === 'dark'
+                    ? `0 8px 32px rgba(0,0,0,0.45), 0 0 0 1px ${accent}40`
+                    : `0 8px 24px rgba(0,0,0,0.10), 0 0 0 1px ${accent}30`;
+                }}
+                onMouseLeave={e => {
+                  const el = e.currentTarget as HTMLDivElement;
+                  el.style.transform = 'translateY(0)';
+                  el.style.boxShadow = isExpanded
+                    ? (mode === 'dark' ? '0 4px 20px rgba(0,0,0,0.4)' : '0 4px 16px rgba(0,0,0,0.08)')
+                    : 'none';
+                }}
               >
-                {/* Linha principal */}
+                {/* ── linha principal ── */}
                 <div
-                  className="flex items-center gap-3 px-5 py-4 cursor-pointer hover:bg-opacity-80 transition-colors"
-                  style={{ backgroundColor: card }}
+                  className="flex items-center gap-3 px-5 py-4 cursor-pointer select-none"
                   onClick={() => toggleExpand(sol.id)}
                 >
-                  {/* chevron */}
-                  <span style={{ color: text }}>
-                    {isExpanded ? <FiChevronDown className="text-xl" /> : <FiChevronRight className="text-xl" />}
+                  {/* chevron animado */}
+                  <span
+                    className="inline-flex items-center justify-center w-5 h-5 rounded-full shrink-0"
+                    style={{
+                      color: isExpanded ? accent : (mode === 'dark' ? '#64748b' : '#94a3b8'),
+                      transition: 'transform 220ms cubic-bezier(0.4,0,0.2,1), color 180ms ease',
+                      transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
+                    }}
+                  >
+                    <FiChevronRight size={15} />
                   </span>
 
-                  {/* número */}
-                  <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-blue-500 text-white shrink-0">
+                  {/* número mono */}
+                  <span
+                    className="text-[11px] font-mono font-bold shrink-0 px-2 py-0.5 rounded"
+                    style={{ color: accent, backgroundColor: `${accent}15` }}
+                  >
                     #{sol.numeroChamado}
                   </span>
 
                   {/* título */}
-                  <span className="font-semibold flex-1 truncate" style={{ color: text }}>
+                  <span className="font-medium flex-1 truncate text-sm" style={{ color: text }}>
                     {sol.resumoChamado}
                   </span>
 
-                  {/* badges */}
-                  <div className="hidden md:flex items-center gap-2 shrink-0">
-                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${STATUS_CHAMADO_COLOR[sol.status.id] ?? 'bg-gray-300 text-gray-700'}`}>
-                      {sol.status.nome}
+                  {/* metadados — desktop */}
+                  <div className="hidden md:flex items-center gap-4 shrink-0 text-xs" style={{ color: text }}>
+
+                    {/* prioridade como texto colorido — sem badge */}
+                    <span className="font-semibold tracking-wide uppercase text-[10px]" style={{ color: prio.dot }}>
+                      {prio.label}
                     </span>
-                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${prioCls}`}>
-                      {sol.tipoPrioridade.nome}
+
+                    {/* solicitante */}
+                    <span className="opacity-55 hidden lg:block max-w-[130px] truncate">
+                      {sol.usuario.name}
                     </span>
-                    <span className="text-xs opacity-50 hidden lg:block" style={{ color: text }}>
+
+                    {/* departamento */}
+                    <span className="opacity-45 hidden xl:block max-w-[120px] truncate">
                       {sol.departamento.name}
                     </span>
-                    <span className="text-xs opacity-50 hidden lg:block" style={{ color: text }}>
+
+                    {/* data */}
+                    <span className="opacity-35 hidden xl:block tabular-nums">
                       {fmtData(sol.dataAbertura)}
                     </span>
                   </div>
 
                   {/* ações */}
-                  <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex items-center gap-0.5 shrink-0" onClick={e => e.stopPropagation()}>
                     <button
                       onClick={() => criarCotacao(sol.id)}
                       title="Nova cotação"
-                      className="p-2 rounded-lg text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900 transition-colors"
+                      className="p-1.5 rounded-lg text-sm transition-all duration-150"
+                      style={{ color: accent }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = `${accent}18`; }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent'; }}
                     >
-                      <FiPlus />
+                      <FiPlus size={14} />
                     </button>
                     <button
                       onClick={() => router.push(`/chamado/${sol.id}`)}
                       title="Ver chamado"
-                      className="p-2 rounded-lg opacity-50 hover:opacity-100 transition-opacity"
+                      className="p-1.5 rounded-lg transition-all duration-150 opacity-40 hover:opacity-80"
                       style={{ color: text }}
                     >
-                      <FiEye />
+                      <FiEye size={14} />
                     </button>
                   </div>
                 </div>
 
-                {/* info extra mobile */}
-                <div className="md:hidden flex flex-wrap gap-2 px-5 pb-3" onClick={() => toggleExpand(sol.id)}>
-                  <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${STATUS_CHAMADO_COLOR[sol.status.id] ?? 'bg-gray-300'}`}>
-                    {sol.status.nome}
+                {/* metadados mobile */}
+                <div
+                  className="md:hidden flex flex-wrap items-center gap-3 px-5 pb-3 text-xs"
+                  style={{ color: text }}
+                  onClick={() => toggleExpand(sol.id)}
+                >
+                  <span className="font-semibold tracking-wide uppercase text-[10px]" style={{ color: prio.dot }}>
+                    {prio.label}
                   </span>
-                  <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${prioCls}`}>
-                    {sol.tipoPrioridade.nome}
-                  </span>
-                  <span className="text-xs opacity-50" style={{ color: text }}>{sol.departamento.name}</span>
+                  <span className="opacity-50">{sol.usuario.name}</span>
+                  <span className="opacity-40">{sol.departamento.name}</span>
                 </div>
 
-                {/* ── Accordion: cotações ── */}
-                {isExpanded && (
-                  <div style={{ backgroundColor: subBg, borderTop: `1px solid ${border}` }}>
+                {/* ── accordion ── */}
+                <div
+                  style={{
+                    maxHeight: isExpanded ? '1000px' : '0',
+                    overflow: 'hidden',
+                    transition: 'max-height 320ms cubic-bezier(0.4,0,0.2,1)',
+                  }}
+                >
+                  <div style={{ borderTop: `1px solid ${mode === 'dark' ? '#334155' : '#e2e8f0'}`, backgroundColor: subBg }}>
+                    {/* contexto */}
+                    <div className="px-6 py-3 flex flex-wrap gap-x-5 gap-y-1 text-xs border-b"
+                      style={{ borderColor: mode === 'dark' ? '#334155' : '#e2e8f0', color: mode === 'dark' ? '#94a3b8' : '#64748b' }}>
+                      <span>Solicitante: <strong style={{ color: text }}>{sol.usuario.name}</strong></span>
+                      <span>Departamento: <strong style={{ color: text }}>{sol.departamento.name}</strong></span>
+                      <span>Aberto em: <strong style={{ color: text }}>{fmtData(sol.dataAbertura)}</strong></span>
+                      {sol.userResponsavel && (
+                        <span>Responsável: <strong style={{ color: text }}>{sol.userResponsavel.name}</strong></span>
+                      )}
+                    </div>
+
+                    {/* cotações */}
                     {!det ? (
-                      <p className="px-6 py-4 text-sm opacity-50" style={{ color: text }}>Carregando...</p>
+                      <p className="px-6 py-4 text-sm opacity-40" style={{ color: text }}>Carregando...</p>
                     ) : !det.cotacoes || det.cotacoes.length === 0 ? (
                       <div className="px-6 py-6 text-center">
-                        <p className="text-sm opacity-50 mb-3" style={{ color: text }}>
+                        <p className="text-sm opacity-40 mb-3" style={{ color: text }}>
                           Nenhuma cotação criada para esta solicitação
                         </p>
-                        <button
-                          onClick={() => criarCotacao(sol.id)}
-                          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm font-medium flex items-center gap-2 mx-auto"
-                        >
+                        <button onClick={() => criarCotacao(sol.id)}
+                          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm font-medium flex items-center gap-2 mx-auto transition-colors">
                           <FiPlus /> Criar Cotação
                         </button>
                       </div>
                     ) : (
-                      <div className="px-6 py-4 space-y-3">
-                        {det.cotacoes.map((cot) => (
-                          <div
-                            key={cot.id}
-                            className="flex items-center justify-between px-4 py-3 rounded-lg cursor-pointer hover:shadow-md transition-shadow"
-                            style={{ backgroundColor: card, border: `1px solid ${border}` }}
-                            onClick={() => router.push(`/compras/cotacoes/${cot.id}`)}
-                          >
-                            <div className="flex items-center gap-3">
-                              <FiFileText className="text-blue-500" />
-                              <span className="font-medium text-sm" style={{ color: text }}>
-                                Cotação #{cot.id}
-                              </span>
-                              <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${STATUS_COTACAO_COLOR[cot.status] ?? 'bg-gray-300'}`}>
-                                {STATUS_COTACAO_LABEL[cot.status] ?? cot.status}
-                              </span>
-                              {cot.itens?.length > 0 && (
-                                <span className="text-xs opacity-50" style={{ color: text }}>
-                                  {cot.itens.length} {cot.itens.length === 1 ? 'item' : 'itens'}
-                                </span>
-                              )}
+                      <div className="px-6 py-4 space-y-2">
+                        {det.cotacoes.map((cot) => {
+                          const cs   = STATUS_COTACAO_STYLE[cot.status];
+                          const cbg  = cs ? (mode === 'dark' ? cs.bgDark   : cs.bgLight)  : (mode === 'dark' ? '#1e293b' : '#f1f5f9');
+                          const ctxt = cs ? (mode === 'dark' ? cs.textDark : cs.textLight) : '#94a3b8';
+
+                          return (
+                            <div key={cot.id}
+                              className="flex items-center justify-between px-4 py-3 rounded-xl cursor-pointer"
+                              style={{
+                                backgroundColor: card,
+                                border: `1px solid ${mode === 'dark' ? '#334155' : '#e2e8f0'}`,
+                                transition: 'box-shadow 150ms ease, transform 150ms ease',
+                              }}
+                              onMouseEnter={e => {
+                                const el = e.currentTarget as HTMLDivElement;
+                                el.style.transform = 'translateX(2px)';
+                                el.style.boxShadow = mode === 'dark' ? '0 4px 16px rgba(0,0,0,0.4)' : '0 4px 12px rgba(0,0,0,0.09)';
+                              }}
+                              onMouseLeave={e => {
+                                const el = e.currentTarget as HTMLDivElement;
+                                el.style.transform = 'translateX(0)';
+                                el.style.boxShadow = 'none';
+                              }}
+                              onClick={() => router.push(`/compras/cotacoes/${cot.id}`)}
+                            >
+                              <div className="flex items-center gap-3 text-sm">
+                                <FiFileText size={14} style={{ color: mode === 'dark' ? '#64748b' : '#94a3b8' }} />
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="font-medium" style={{ color: text }}>Cotação #{cot.id}</span>
+                                    {/* status da cotação — o que interessa aqui */}
+                                    <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold"
+                                      style={{ backgroundColor: cbg, color: ctxt }}>
+                                      {cs?.label ?? cot.status}
+                                    </span>
+                                  </div>
+                                  {/* preview dos itens */}
+                                  {cot.itens?.length > 0 && (
+                                    <p className="text-[11px] mt-0.5 truncate max-w-xs" style={{ color: mode === 'dark' ? '#64748b' : '#94a3b8' }}>
+                                      {cot.itens.length} {cot.itens.length === 1 ? 'item' : 'itens'}
+                                      {(cot.itens[0] as any)?.descricao ? ` · ${(cot.itens[0] as any).descricao}` : ''}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 text-xs opacity-40" style={{ color: text }}>
+                                <span className="hidden sm:block">{cot.criadoPor.name} · {fmtData(cot.createdAt)}</span>
+                                <FiChevronRight size={13} />
+                              </div>
                             </div>
-                            <div className="flex items-center gap-3">
-                              <span className="text-xs opacity-40 hidden sm:block" style={{ color: text }}>
-                                por {cot.criadoPor.name} em {fmtData(cot.createdAt)}
-                              </span>
-                              <FiChevronRight className="opacity-40" style={{ color: text }} />
-                            </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
                   </div>
-                )}
+                </div>
               </div>
             );
           })}

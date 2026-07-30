@@ -150,6 +150,30 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
     }
   };
 
+  // salva  o item e mantém o formulário aberto com foco na descrição para entrada contínua
+  const adicionarItemEContinuar = async () => {
+    if (!novoItemDescricao.trim() || novoItemQuantidade <= 0) return;
+    try {
+      await api.post(`/compras/cotacoes/${cotacaoId}/itens`, {
+        descricao: novoItemDescricao.trim(),
+        quantidade: novoItemQuantidade,
+        observacao: novoItemObservacao.trim() || null,
+      });
+      // limpa mas mantém formulário aberto
+      setNovoItemDescricao('');
+      setNovoItemQuantidade(1);
+      setNovoItemObservacao('');
+      carregarCotacao();
+      // devolve foco ao campo de descrição
+      setTimeout(() => {
+        const input = document.querySelector<HTMLInputElement>('[data-novo-item-descricao]');
+        input?.focus();
+      }, 50);
+    } catch (error) {
+      alert('Erro ao adicionar item');
+    }
+  };
+
   const adicionarOpcao = async (itemId: number) => {
     const { fornecedor, descricao_produto, valor_unitario } = novaOpcao;
     if (!fornecedor.trim() || !descricao_produto.trim() || valor_unitario <= 0) {
@@ -169,6 +193,33 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
       setAdicionandoOpcaoParaItem(null);
       setNovaOpcao({ descricao_produto: '', fornecedor: '', valor_unitario: 0, prazo_entrega: '', link_produto: '', observacao: '' });
       carregarCotacao();
+    } catch (error) {
+      alert('Erro ao adicionar opção');
+    }
+  };
+
+  // salva a opção e reposiciona o foco na descrição para entrada contínua
+  const adicionarOpcaoEContinuar = async (itemId: number) => {
+    const { fornecedor, descricao_produto, valor_unitario } = novaOpcao;
+    if (!fornecedor.trim() || !descricao_produto.trim() || valor_unitario <= 0) {
+      alert('Preencha descrição, loja e preço');
+      return;
+    }
+    try {
+      await api.post(`/compras/itens/${itemId}/opcoes`, {
+        fornecedor,
+        descricao_produto,
+        link_produto: novaOpcao.link_produto || null,
+        quantidade: 1,
+        valor_unitario,
+        prazo_entrega: novaOpcao.prazo_entrega || null,
+        observacao: novaOpcao.observacao || null,
+      });
+      // limpa campos mas mantém o formulário aberto com foco na descrição
+      setNovaOpcao({ descricao_produto: '', fornecedor: '', valor_unitario: 0, prazo_entrega: '', link_produto: '', observacao: '' });
+      carregarCotacao();
+      // reposiciona foco após re-render
+      setTimeout(() => { refDescricao.current?.focus(); }, 50);
     } catch (error) {
       alert('Erro ao adicionar opção');
     }
@@ -272,8 +323,8 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
   const thead  = mode === 'dark' ? '#0f172a' : '#e2e8f0';
   const itemHd = mode === 'dark' ? '#1e293b' : '#f1f5f9';
 
-  // Input transparente reutilizável
-  const inputCls = "w-full bg-transparent outline-none border-b border-transparent focus:border-blue-500 transition-colors py-0.5 placeholder-gray-400";
+  // Input fluido — sem borda, sem fundo separado, somente placeholder
+  const inputCls = "w-full bg-transparent outline-none py-0.5 placeholder-gray-400";
 
   if (loading) {
     return (
@@ -316,7 +367,7 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
         </div>
 
         {/* Badges */}
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-3">
           {editandoStatus ? (
             <div className="flex items-center gap-1.5">
               <select
@@ -338,16 +389,33 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
               {getStatusLabel(cotacao.status)} <FiEdit2 className="text-[10px]" />
             </button>
           )}
-          <span className="px-3 py-1.5 rounded-full text-xs font-semibold" style={{ backgroundColor: mode === 'dark' ? '#334155' : '#E2E8F0', color: text }}>
+
+          {/* separador */}
+          <span className="opacity-20 text-lg select-none" style={{ color: text }}>|</span>
+
+          {/* departamento — texto simples */}
+          <span className="text-xs font-medium opacity-70" style={{ color: text }}>
             🏢 {cotacao.chamado.departamento.name}
           </span>
-          <span className="px-3 py-1.5 rounded-full text-xs font-semibold bg-orange-100 text-orange-700">
-            ⚡ {cotacao.chamado.tipoPrioridade.nome}
-          </span>
-          <span className="px-3 py-1.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-700">
-            📋 {cotacao.chamado.status.nome}
-          </span>
-          <span className="px-3 py-1.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
+
+          {/* prioridade — texto colorido sem badge */}
+          {(() => {
+            const prioKey = cotacao.chamado.tipoPrioridade.nome.toUpperCase()
+              .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            const prioColors: Record<string, string> = {
+              BAIXA: '#22c55e', MEDIA: '#3b82f6', MÉDIA: '#3b82f6',
+              ALTA: '#f97316', ALTO: '#f97316', URGENTE: '#ef4444',
+            };
+            const cor = prioColors[prioKey] ?? '#94a3b8';
+            return (
+              <span className="text-[11px] font-bold uppercase tracking-wide" style={{ color: cor }}>
+               Prioridade: {cotacao.chamado.tipoPrioridade.nome}
+              </span>
+            );
+          })()}
+
+          {/* solicitante — texto simples */}
+          <span className="text-xs font-medium opacity-60" style={{ color: text }}>
             👤 {cotacao.chamado.usuario.name}
           </span>
         </div>
@@ -397,7 +465,6 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
                           {isExpanded
                             ? <FiChevronDown  className="text-lg shrink-0 text-blue-400" />
                             : <FiChevronRight className="text-lg shrink-0 opacity-40" style={{ color: text }} />}
-                          <FiPackage className="text-base shrink-0 text-blue-500" />
                           <span className="font-bold" style={{ color: text }}>{item.descricao}</span>
                           <span className="text-xs opacity-40 italic" style={{ color: text }}>
                             — {item.quantidade} un.{item.observacao && ` · ${item.observacao}`}
@@ -469,9 +536,9 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
                       </tr>
                     ))}
 
-                    {/* ── edicao inline ── */}
+                    {/* ── edição inline de opção ── */}
                     {isExpanded && adicionandoOpcaoParaItem === item.id && (
-                      <tr style={{ backgroundColor: card, borderBottom: `2px solid #3b82f6` }}>
+                      <tr style={{ backgroundColor: card, borderBottom: `1px solid ${border}` }}>
                         <td className="px-4 py-2 pl-12">
                           <input ref={refDescricao} autoFocus type="text" value={novaOpcao.descricao_produto}
                             onChange={(e) => setNovaOpcao((p) => ({ ...p, descricao_produto: e.target.value }))}
@@ -506,12 +573,19 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
                         <td className="px-4 py-2">
                           <input ref={refObs} type="text" value={novaOpcao.observacao}
                             onChange={(e) => setNovaOpcao((p) => ({ ...p, observacao: e.target.value }))}
-                            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); adicionarOpcao(item.id); } if (e.key === 'Escape') setAdicionandoOpcaoParaItem(null); }}
-                            placeholder="Obs. ↵ salva" className={inputCls} style={{ color: text }} />
+                            onKeyDown={(e) => {
+                              if (e.key === 'Escape') { setAdicionandoOpcaoParaItem(null); return; }
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                // salva e reposiciona foco para descrição (fluxo contínuo)
+                                adicionarOpcaoEContinuar(item.id);
+                              }
+                            }}
+                            placeholder="Obs. ↵ salva e continua" className={inputCls} style={{ color: text }} />
                         </td>
                         <td className="px-4 py-2">
                           <div className="flex items-center justify-end gap-1.5">
-                            <button onClick={() => adicionarOpcao(item.id)} className="p-1.5 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"><FiCheck className="text-xs" /></button>
+                            <button onClick={() => adicionarOpcaoEContinuar(item.id)} className="p-1.5 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"><FiCheck className="text-xs" /></button>
                             <button onClick={() => setAdicionandoOpcaoParaItem(null)} className="p-1.5 opacity-40 hover:opacity-100 hover:text-red-500 transition-all" style={{ color: text }}><FiX className="text-xs" /></button>
                           </div>
                         </td>
@@ -535,32 +609,41 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
           </table>
         </div>
 
-        {/* ── + novvo item ── */}
+        {/* ── novo item ── */}
         <div className="px-8 pt-3">
           {adicionandoItem ? (
-            <div className="flex items-center gap-3 py-3" style={{ borderTop: `2px solid #3b82f6` }}>
+            <div className="flex items-center gap-3 py-3" style={{ borderTop: `1px solid ${border}` }}>
               <FiPackage className="text-base text-blue-500 shrink-0" />
-              <input autoFocus type="text" value={novoItemDescricao}
+              <input autoFocus data-novo-item-descricao type="text" value={novoItemDescricao}
                 onChange={(e) => setNovoItemDescricao(e.target.value)}
                 onKeyDown={(e) => {
+                  if (e.key === 'Escape') { setAdicionandoItem(false); return; }
                   if (e.key === 'Enter') { e.preventDefault(); (e.currentTarget.nextElementSibling as HTMLInputElement)?.focus(); }
-                  if (e.key === 'Escape') setAdicionandoItem(false);
                 }}
-                placeholder="Nome do item (ex: MEMÓRIA RAM — DDR4 16GB 4200MHZ)"
-                className="flex-1 px-1 font-bold border-b border-transparent focus:border-blue-500 outline-none transition-colors bg-transparent"
+                placeholder="Nome do item (ex: MEMÓRIA RAM — DDR4 16GB)"
+                className="flex-1 px-1 font-bold outline-none bg-transparent"
                 style={{ color: text }} />
               <input type="number" min="1" value={novoItemQuantidade}
                 onChange={(e) => setNovoItemQuantidade(Number(e.target.value))}
-                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); (e.currentTarget.nextElementSibling as HTMLInputElement)?.focus(); } }}
-                placeholder="Qtd" className="w-16 text-center border-b border-transparent focus:border-blue-500 outline-none transition-colors bg-transparent"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') { e.preventDefault(); (e.currentTarget.nextElementSibling as HTMLInputElement)?.focus(); }
+                }}
+                placeholder="Qtd" className="w-16 text-center outline-none bg-transparent"
                 style={{ color: text }} />
               <input type="text" value={novoItemObservacao}
                 onChange={(e) => setNovoItemObservacao(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); adicionarItem(); } }}
-                placeholder="Observação (Enter salva)"
-                className="w-44 px-1 border-b border-transparent focus:border-blue-500 outline-none transition-colors bg-transparent text-sm"
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') { setAdicionandoItem(false); return; }
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    // salva e reposiciona para adicionar mais itens
+                    adicionarItemEContinuar();
+                  }
+                }}
+                placeholder="Observação opcional · ↵ salva"
+                className="w-48 px-1 outline-none bg-transparent text-sm"
                 style={{ color: text }} />
-              <button onClick={adicionarItem} className="px-3 py-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm font-medium transition-colors shrink-0">Salvar</button>
+              <button onClick={() => adicionarItemEContinuar()} className="px-3 py-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm font-medium transition-colors shrink-0">Salvar</button>
               <button onClick={() => setAdicionandoItem(false)} className="opacity-40 hover:opacity-100 transition-opacity shrink-0" style={{ color: text }}><FiX /></button>
             </div>
           ) : (
