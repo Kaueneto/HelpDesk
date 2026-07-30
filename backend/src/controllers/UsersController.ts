@@ -7,10 +7,25 @@ import * as yup from "yup";
 import { Not } from "typeorm";
 const router = express.Router();
 import bcrypt from "bcryptjs"
+import multer from "multer";
 import { verifyToken } from "../Middleware/AuthMiddleware";
 import { AuthService } from "../services/AuthService";
 import { SecurityUtils } from "../utils/SecurityUtils";
 import { supabase, SUPABASE_BUCKET } from "../config/supabase";
+
+// multer para upload de avatar (apenas imagens, máx 5MB)
+const avatarUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const tiposPermitidos = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+    if (tiposPermitidos.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Tipo de arquivo não suportado. Use JPG, PNG, GIF ou WebP"));
+    }
+  },
+});
 
 interface AuthenticatedRequest extends Request {
   userId?: number;
@@ -149,7 +164,11 @@ router.post("/users", async (req: Request, res: Response) => {
   try {
     const data = req.body;
 
-    const schema = yup.object().shape({
+    // Se vem do auto-cadastro (sem token), não exige departamento.
+    // Se vem do admin (com id_departament no body), valida.
+    const isAdminCreating = !!data.id_departament;
+
+    const schemaBase = {
       name: yup
         .string()
         .required("O nome do usuário é obrigatório!")
@@ -162,10 +181,14 @@ router.post("/users", async (req: Request, res: Response) => {
         .string()
         .required("A senha do usuário é obrigatória!")
         .min(6, "A senha deve conter pelo menos 6 caracteres."),
-      id_departament: yup
-        .string()
-        .required("O departamento é obrigatório!"),
-    });
+    };
+
+    const schema = isAdminCreating
+      ? yup.object().shape({
+          ...schemaBase,
+          id_departament: yup.string().required("O departamento é obrigatório!"),
+        })
+      : yup.object().shape(schemaBase);
 
     await schema.validate(data, { abortEarly: false });
 
@@ -180,14 +203,17 @@ router.post("/users", async (req: Request, res: Response) => {
     }
 
     const userRepository = AppDataSource.getRepository(Users);
-    const existingUserName = await userRepository.findOne({
-      where: { name: data.name },
-    });
- 
-    // valida duplicidade do email
-    const existingUserEmail = await userRepository.findOne({
-      where: { email: data.email },
-    });
+
+    // validar duplicidade do nome
+    const existingUserName = await userRepository.findOne({ where: { name: data.name } });
+    if (existingUserName) {
+      return res.status(400).json({
+        mensagem: "Já existe um usuário cadastrado com este nome. Por favor, utilize um nome diferente.",
+      });
+    }
+
+    // validar duplicidade do email
+    const existingUserEmail = await userRepository.findOne({ where: { email: data.email } });
     if (existingUserEmail) {
       return res.status(400).json({
         mensagem: "Este e-mail já está cadastrado para outro usuário. Se você esqueceu sua senha, utilize a opção de recuperação de senha.",
@@ -197,23 +223,25 @@ router.post("/users", async (req: Request, res: Response) => {
     // criptografar senha antes de salvar
     data.password = await bcrypt.hash(data.password, 10);
 
-    // cria o usuário com situação padrão (1 = ativo)
+    // Auto-cadastro: status pendente (3), sem departamento
+    // Admin criando: status ativo (1) ou o que ele definir, com departamento
     const newUser = userRepository.create({
       ...data,
-      situationUserId: data.situationUserId || 1, // Padrão: ativo
-      id_departament: data.id_departament,
+      situationUserId: isAdminCreating ? (data.situationUserId || 1) : 3,
+      id_departament:  isAdminCreating ? data.id_departament : null,
+      roleId:          data.roleId || 2,
     });
 
     await userRepository.save(newUser);
 
-    return res
-      .status(201)
-      .json({ mensagem: "Usuário criado com sucesso!", user: newUser });
+    const mensagem = isAdminCreating
+      ? "Usuário criado com sucesso!"
+      : "Cadastro realizado! Aguarde a aprovação de um administrador para acessar o sistema.";
+
+    return res.status(201).json({ mensagem, user: newUser });
   } catch (error) {
     if (error instanceof yup.ValidationError) {
-      return res.status(400).json({
-        mensagem: error.errors,
-      });
+      return res.status(400).json({ mensagem: error.errors });
     }
 
     return res.status(500).json({ mensagem: "Erro ao criar usuário" });
@@ -651,6 +679,20 @@ router.put("/users/:id",  verifyToken,  async (req: Request, res: Response) => {
       });
     }
 
+    // verificar duplicidade do nome (excluindo o próprio usuário)
+    const nomeExistente = await userRepository.findOne({
+      where: {
+        name,
+        id: Not(Number(id)),
+      },
+    });
+
+    if (nomeExistente) {
+      return res.status(400).json({
+        mensagem: "Já existe outro usuário cadastrado com este nome. Por favor, utilize um nome diferente.",
+      });
+    }
+
     // preparar dados para atualização (update parcial)
     const updateData: Partial<Users> = {
       name,
@@ -686,7 +728,7 @@ router.put("/users/:id",  verifyToken,  async (req: Request, res: Response) => {
 });
 
 // upload de avatar
-router.post("/users/upload-avatar/:id", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
+router.post("/users/upload-avatar/:id", verifyToken, avatarUpload.single("avatar"), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
     const file = req.file;

@@ -9,6 +9,7 @@ interface ConfiguracoesProps {
     id: number;
     name: string;
     email: string;
+    roleId?: number;
   };
   onClose: () => void;
 }
@@ -42,8 +43,11 @@ function Configuracoes({ user, onClose }: ConfiguracoesProps) {
   // Estados para preferências
   const [preferenciasChamadoAberto, setPreferenciasChamadoAberto] = useState(false);
   const [preferenciasChamadoConcluido, setPreferenciasChamadoConcluido] = useState(false);
+  const [preferenciasNovaSugestao, setPreferenciasNovaSugestao] = useState(false);
   const [carregandoPreferencias, setCarregandoPreferencias] = useState(true);
   const [salvandoPreferencias, setSalvandoPreferencias] = useState(false);
+
+  const isAdmin = user.roleId === 1 || user.roleId === 3;
 
   const handleAlterarSenha = async () => {
     setErrorSenha('');
@@ -134,11 +138,12 @@ const carregarPreferencias = async () => {
     
     const preferencias = response.data.prefUsers || [];
     
-    // ID 2 = chamado aberto, ID 3 = chamado concluído
+    // ID 2 = chamado aberto, ID 3 = chamado concluído, ID 4 = nova sugestão (só admin)
     setPreferenciasChamadoAberto(preferencias.some(p => p.preferencia.id === 2));
     setPreferenciasChamadoConcluido(preferencias.some(p => p.preferencia.id === 3));
+    setPreferenciasNovaSugestao(preferencias.some(p => p.preferencia.id === 4));
   } catch (error) {
-
+    // silencioso
   } finally {
     setCarregandoPreferencias(false);
   }
@@ -328,7 +333,7 @@ useEffect(() => {
               {/* Seção de Preferências */}
               <div className="bg-white border border-gray-300 rounded-lg overflow-hidden">
                 <div className="w-full px-6 py-4 bg-green-500 text-white">
-                  <h3 className="font-semibold">Preferências de Email</h3>
+                  <h3 className="font-semibold">Preferências de Notificações por Email</h3>
                   <p className="text-sm opacity-90">Configure quando deseja receber notificações por email</p>
                 </div>
 
@@ -375,6 +380,26 @@ useEffect(() => {
                           <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
                         </label>
                       </div>
+
+                      {/* preferencia por email  apenas para administradores */}
+                      {isAdmin && (
+                        <div className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg">
+                          <div className="flex-1">
+                            <h4 className="font-medium text-gray-900">Nova Sugestão</h4>
+                            <p className="text-sm text-gray-600">Receber email quando novas sugestões forem criadas</p>
+                          </div>
+                          <label className="relative inline-flex items-center cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={preferenciasNovaSugestao}
+                              onChange={(e) => salvarPreferencia(4, e.target.checked)}
+                              disabled={salvandoPreferencias}
+                              className="sr-only peer"
+                            />
+                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                          </label>
+                        </div>
+                      )}
 
                       {salvandoPreferencias && (
                         <div className="text-center py-2">

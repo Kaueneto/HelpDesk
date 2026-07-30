@@ -3,6 +3,11 @@ import { Sugestoes } from '../entities/Sugestoes';
 import { SugestoesVotos } from '../entities/SugestoesVotos';
 import { SugestoesInteracoes } from '../entities/SugestoesInteracoes';
 import { Users } from '../entities/Users';
+import { PrefUsers } from '../entities/PrefUsers';
+import * as EmailService from './EmailService';
+
+// id da preferência "Receber email de nova sugestão" — deve existir na tabela `preferencias`
+const PREF_NOVA_SUGESTAO = 4;
 
 export class SugestoesService {
   private static readonly ROLE_ADMIN = 1;
@@ -28,7 +33,64 @@ export class SugestoesService {
       status: 'aberta',
     });
 
-    return await this.sugestoesRepository.save(sugestao);
+    const sugestaoSalva = await this.sugestoesRepository.save(sugestao);
+
+    // notificar em background — não bloqueia a resposta ao frontend
+    this.notificarNovaSugestao(sugestaoSalva, dados).catch(() => {});
+
+    return sugestaoSalva;
+  }
+
+  //envia email de nova sugestão para todos com preferência PREF_NOVA_SUGESTAO ativa
+  private async notificarNovaSugestao(
+    sugestao: Sugestoes,
+    dados: { titulo: string; descricao: string; privado: boolean; escopo: string; usuarioCriacaoId: number }
+  ): Promise<void> {
+    try {
+      const prefUsersRepository = AppDataSource.getRepository(PrefUsers);
+
+      // buscar todos os usuários que têm a preferência 4 ativa
+      const prefsAtivas = await prefUsersRepository.find({
+        where: { preferencia_id: PREF_NOVA_SUGESTAO },
+        relations: ['user'],
+      });
+
+      console.log(`[SUGESTAO EMAIL] Sugestão "${dados.titulo}" criada. Destinatários com pref ${PREF_NOVA_SUGESTAO}: ${prefsAtivas.length}`);
+
+      if (prefsAtivas.length === 0) return;
+
+      // bsuscar o criador da sugestão para incluir no email
+      const criador = await this.usersRepository.findOne({
+        where: { id: dados.usuarioCriacaoId },
+        select: ['id', 'name', 'email'],
+      });
+
+      if (!criador) {
+        console.warn(`[SUGESTAO EMAIL] Criador ID ${dados.usuarioCriacaoId} não encontrado, abortando envio`);
+        return;
+      }
+
+      let enviados = 0;
+      for (const pref of prefsAtivas) {
+        if (!pref.user) {
+          console.warn(`[SUGESTAO EMAIL] pref_usuario ID ${pref.id} sem user carregado, pulando`);
+          continue;
+        }
+        if (pref.user.id === dados.usuarioCriacaoId) continue; // não envia para o próprio criador
+
+        console.log(`[SUGESTAO EMAIL] Enviando para ${pref.user.email}...`);
+        await EmailService.enviarEmailNovaSugestao(pref.user, criador, {
+          titulo: dados.titulo,
+          descricao: dados.descricao,
+          privado: dados.privado,
+          escopo: dados.escopo,
+        });
+        enviados++;
+      }
+      console.log(`[SUGESTAO EMAIL] Envios concluídos: ${enviados}/${prefsAtivas.length}`);
+    } catch (error) {
+      console.error('[SUGESTAO EMAIL] Erro ao notificar nova sugestão:', error);
+    }
   }
 
   // listar sugestões com filtros
@@ -72,39 +134,29 @@ export class SugestoesService {
         .leftJoinAndSelect('interacoes.usuario', 'usuarioInteracao');
 
       // LÓGICA DE VISIBILIDADE BASEADA NO ROLE
-      if (roleId === SugestoesService.ROLE_ADMIN) {
+      // Converter roleId para número para garantir comparação correta (JWT pode retornar string)
+      const roleIdNum = Number(roleId);
+
+      if (roleIdNum === SugestoesService.ROLE_ADMIN) {
         // ADMIN - pode ver TUDO, incluindo sugestões privadas
-      
-        //SEM where clause aplicado admin ve todas as sugestoes
         console.log(`[ADMIN] User ${usuarioId} - sem filtros, pode ver sugestões privadas`);
-      } else if (roleId === SugestoesService.ROLE_USUARIO_PRO) {
-        // SUPERVISOR - ve sugestões públicas globais + sugestões do seu departamento + suas proprias privadas
-        // MAS NÃO vê sugestões privadas de outros usuários
+      } else if (roleIdNum === SugestoesService.ROLE_USUARIO_PRO) {
+        // SUPERVISOR - ve globais públicas + departamento público + suas próprias privadas
         const whereClause = `(
           (s.privado = false AND s.escopo = 'global')
           OR (s.privado = false AND s.escopo = 'departamento' AND s.departamento_id = :deptId)
           OR (s.privado = true AND s.usuario_criacao_id = :uid)
         )`;
-
-        query.where(whereClause, {
-          uid: usuarioId,
-          deptId: userDepartamentoId,
-        });
-
+        query.where(whereClause, { uid: Number(usuarioId), deptId: userDepartamentoId });
         console.log(`[SUPERVISOR] User ${usuarioId} (dept ${userDepartamentoId}) - filtro aplicado`);
       } else {
-      
+        // USUÁRIO COMUM - ve globais públicas + departamento público + APENAS suas próprias privadas
         const whereClause = `(
           (s.privado = false AND s.escopo = 'global')
-          OR (s.privado = true AND s.usuario_criacao_id = :uid)
           OR (s.privado = false AND s.escopo = 'departamento' AND s.departamento_id = :deptId)
+          OR (s.privado = true AND s.usuario_criacao_id = :uid)
         )`;
-
-        query.where(whereClause, {
-          uid: usuarioId,
-          deptId: userDepartamentoId,
-        });
-
+        query.where(whereClause, { uid: Number(usuarioId), deptId: userDepartamentoId });
         console.log(`[USER] User ${usuarioId} (dept ${userDepartamentoId}) - filtro aplicado`);
       }
 
@@ -119,6 +171,15 @@ export class SugestoesService {
 
       // Ordenação - fazer em memória para votos
       let resultados = await query.getMany();
+
+      // Filtro de segurança pós-query: garante que sugestões privadas de outros nunca vazem
+      // mesmo se o SQL tiver algum comportamento inesperado com eager loading
+      if (roleIdNum !== SugestoesService.ROLE_ADMIN) {
+        resultados = resultados.filter(s => {
+          if (!s.privado) return true;                           // pública: sempre ok
+          return s.usuarioCriacaoId === Number(usuarioId);      // privada: só do próprio usuário
+        });
+      }
 
       console.log(`[RESULT] User ${usuarioId} (dept ${userDepartamentoId}) vê ${resultados.length} sugestões`);
       resultados.forEach(s => {
@@ -177,7 +238,21 @@ export class SugestoesService {
       throw new Error('Sem permissão para visualizar esta sugestão');
     }
 
-    return sugestao;
+    // sanitizar campos sensíveis antes de retornar 
+    return {
+      ...sugestao,
+      usuarioCriacao: sugestao.usuarioCriacao
+        ? { id: sugestao.usuarioCriacao.id, name: sugestao.usuarioCriacao.name, email: sugestao.usuarioCriacao.email }
+        : null,
+      votos: sugestao.votos?.map(v => ({
+        ...v,
+        usuario: v.usuario ? { id: v.usuario.id, name: v.usuario.name } : null,
+      })),
+      interacoes: sugestao.interacoes?.map(i => ({
+        ...i,
+        usuario: i.usuario ? { id: i.usuario.id, name: i.usuario.name } : null,
+      })),
+    };
   }
 
   // Votar em uma sugestão

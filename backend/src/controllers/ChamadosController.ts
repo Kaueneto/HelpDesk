@@ -16,6 +16,7 @@ import { supabase, SUPABASE_BUCKET } from "../config/supabase";
 import * as EmailService from "../services/EmailService";
 import { KanbanPositions } from "../entities/KanbanPositions";
 import { KanbanCard } from "../entities/KanbanCard";
+import RealtimeService from "../services/RealtimeService";
 
 interface AuthenticatedRequest extends Request {
   userId?: number;
@@ -152,6 +153,20 @@ router.post(
             "status",
           ],
         });
+
+        // emitir WebSocket se houve mudança de status
+        if (alterouStatus) {
+          try {
+            const realtimeService = RealtimeService.getInstance();
+            realtimeService.notifyNovoHistorico(chamadoId, {
+              acao: acaoHistorico,
+              statusNovo: statusNovo,
+              dataMov: new Date(),
+            });
+          } catch (wsError) {
+            // não-fatal
+          }
+        }
 
         return res.status(200).json({ 
           message: 'Email enviado com sucesso.',
@@ -1060,6 +1075,18 @@ router.put("/chamados/:id/atribuir", verifyToken, async (req: AuthenticatedReque
 
     const resposta = chamadoAtualizado ? { ...chamadoAtualizado, userResponsavel: userResponsavelFormatado } : chamado;
 
+    // emitir evento WebSocket para atualizar status em tempo real para todos na sala
+    try {
+      const realtimeService = RealtimeService.getInstance();
+      realtimeService.notifyNovoHistorico(Number(id), {
+        acao: `Chamado redirecionado para ${nomeResponsavel} por ${nomeQuemAtribuiu}`,
+        statusNovo: chamado.status,
+        dataMov: new Date(),
+      });
+    } catch (wsError) {
+      // não-fatal
+    }
+
     return res.status(200).json({
       mensagem: "Chamado atribuído com sucesso!",
       chamado: resposta,
@@ -1174,6 +1201,18 @@ router.put("/chamados/:id/assumir", verifyToken, async (req: AuthenticatedReques
 
     const resposta = chamadoAtualizado ? { ...chamadoAtualizado, userResponsavel: userResponsavelFormatado } : null;
 
+    // emitir evento WebSocket para atualizar status em tempo real para todos na sala
+    try {
+      const realtimeService = RealtimeService.getInstance();
+      realtimeService.notifyNovoHistorico(Number(id), {
+        acao: `Este chamado foi atribuído por ${nomeUsuario}`,
+        statusNovo: chamado.status,
+        dataMov: new Date(),
+      });
+    } catch (wsError) {
+      // não-fatal: continua mesmo se WebSocket falhar
+    }
+
     return res.status(200).json({
       mensagem: "Chamado atribuido com sucesso!",
       chamado: resposta,
@@ -1255,12 +1294,23 @@ router.put("/chamados/:id/reabrir", verifyToken, async (req: AuthenticatedReques
       ],
     });
 
+    // emitir evento WebSocket para atualizar status em tempo real para todos na sala
+    try {
+      const realtimeService = RealtimeService.getInstance();
+      realtimeService.notifyNovoHistorico(Number(id), {
+        acao: `${nomeUsuario} reabriu este chamado`,
+        statusNovo: { id: 5 },
+        dataMov: new Date(),
+      });
+    } catch (wsError) {
+      // não-fatal
+    }
+
     return res.status(200).json({
       mensagem: "Chamado reaberto com sucesso!",
       chamado: chamadoAtualizado,
     });
   } catch (error) {
-
     return res.status(500).json({
       mensagem: "Erro ao reabrir chamado",
       error: error instanceof Error ? error.message : "Erro desconhecido",
@@ -1512,6 +1562,8 @@ router.put("/chamados/:id/encerrar", verifyToken, async (req: AuthenticatedReque
   try {
     const { id } = req.params;
     const usuarioId = req.userId; // Admin que está encerrando
+    // enviarEmail: true por padrão para manter compatibilidade com chamadas sem o campo
+    const enviarEmail: boolean = req.body.enviarEmail !== false;
 
     const chamadoRepository = AppDataSource.getRepository(Chamados);
     const historicoRepository = AppDataSource.getRepository(ChamadoHistorico);
@@ -1571,15 +1623,13 @@ router.put("/chamados/:id/encerrar", verifyToken, async (req: AuthenticatedReque
     ]);
 
     // enviar email de conclusão para o usuário que abriu o chamado
-    if (usuarioChamado) {
-      
+    // apenas se enviarEmail=true E o usuário tiver a preferência de notificação ativa
+    if (enviarEmail && usuarioChamado) {
       try {
         const preferenciasUsuario = await EmailService.verificarPreferenciasUsuario(usuarioChamado.id);
-        
         if (preferenciasUsuario.includes(3)) {
           await EmailService.enviarEmailConclusaoUsuario(usuarioChamado, chamadoCompleto!, adminResponsavel);
         }
-    
       } catch (emailError) {
         // Erro silencioso para não quebrar o fluxo
       }
@@ -1592,6 +1642,18 @@ router.put("/chamados/:id/encerrar", verifyToken, async (req: AuthenticatedReque
       userResponsavel: chamadoCompleto?.userResponsavel ? { id: chamadoCompleto.userResponsavel.id, name: chamadoCompleto.userResponsavel.name } : null,
       userFechamento: chamadoCompleto?.userFechamento ? { id: chamadoCompleto.userFechamento.id, name: chamadoCompleto.userFechamento.name } : null,
     };
+
+    // emitir evento WebSocket para atualizar status em tempo real para todos na sala
+    try {
+      const realtimeService = RealtimeService.getInstance();
+      realtimeService.notifyNovoHistorico(Number(id), {
+        acao: "Chamado encerrado",
+        statusNovo: { id: 3 },
+        dataMov: new Date(),
+      });
+    } catch (wsError) {
+      // não-fatal
+    }
 
     return res.status(200).json({
       mensagem: "Chamado encerrado com sucesso!",
@@ -1992,7 +2054,9 @@ router.patch("/chamados/editar-multiplos", verifyToken, async (req: Authenticate
 // resolver múltiplos chamados (marcar como resolvido)
 router.patch("/chamados/resolver-multiplos", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { chamadosIds } = req.body;
+    const { chamadosIds, enviarEmail } = req.body;
+    // enviarEmail: true por padrão para manter compatibilidade com chamadas sem o campo
+    const deveEnviarEmail: boolean = enviarEmail !== false;
     const usuarioId = req.userId;
 
     if (!chamadosIds || !Array.isArray(chamadosIds) || chamadosIds.length === 0) {
@@ -2062,7 +2126,7 @@ router.patch("/chamados/resolver-multiplos", verifyToken, async (req: Authentica
         });
 
         // buscar dados do usuário do chamado para email
-        if (chamado.usuario?.id) {
+        if (deveEnviarEmail && chamado.usuario?.id) {
           const usuarioChamado = await userRepository.findOne({
             where: { id: chamado.usuario.id },
             select: ["id", "name", "email"]
@@ -2471,4 +2535,91 @@ router.patch("/chamados/:id/move", verifyToken, async (req: AuthenticatedRequest
   }
 });
   
+// estatísticas dos chamados do próprio usuário (para dashboard na Central de Tickets)
+router.get("/chamados/meus/stats", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const usuarioId = req.userId;
+    const uid = Number(usuarioId);
+
+    const repo = AppDataSource.getRepository(Chamados);
+
+    // contadores por status
+    const totais = await repo
+      .createQueryBuilder("c")
+      .select("c.id_status", "statusId")
+      .addSelect("COUNT(*)", "total")
+      .where("c.id_user = :uid", { uid })
+      .groupBy("c.id_status")
+      .getRawMany();
+
+    const contagemPorStatus: Record<number, number> = {};
+    for (const row of totais) {
+      contagemPorStatus[Number(row.statusId)] = Number(row.total);
+    }
+
+    // contadores por prioridade (com nome e cor)
+    const prioridadesRaw = await repo
+      .createQueryBuilder("c")
+      .select("c.id_prioridade", "prioridadeId")
+      .addSelect("COUNT(*)", "total")
+      .addSelect("tp.nome", "nome")
+      .addSelect("tp.cor", "cor")
+      .innerJoin("tipo_prioridade", "tp", "tp.id = c.id_prioridade")
+      .where("c.id_user = :uid", { uid })
+      .groupBy("c.id_prioridade")
+      .addGroupBy("tp.nome")
+      .addGroupBy("tp.cor")
+      .orderBy("COUNT(*)", "DESC")
+      .getRawMany();
+
+    const prioridades = prioridadesRaw.map((r: any) => ({
+      id:    Number(r.prioridadeId),
+      nome:  r.nome as string,
+      cor:   r.cor  as string,
+      total: Number(r.total),
+    }));
+
+    // linha do tempo — apenas meses com chamados - utlmos 12
+    const dozeAtras = new Date();
+    dozeAtras.setMonth(dozeAtras.getMonth() - 11);
+    dozeAtras.setDate(1);
+    dozeAtras.setHours(0, 0, 0, 0);
+
+    const mesesAbrev = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+
+    const porMes = await repo
+      .createQueryBuilder("c")
+      .select("TO_CHAR(c.data_abertura, 'YYYY-MM')", "mes")
+      .addSelect("COUNT(*)", "total")
+      .where("c.id_user = :uid", { uid })
+      .andWhere("c.data_abertura >= :dozeAtras", { dozeAtras })
+      .groupBy("TO_CHAR(c.data_abertura, 'YYYY-MM')")
+      .orderBy("mes", "ASC")
+      .getRawMany();
+
+  
+    const linhaDoTempo = porMes.map((r: any) => {
+      const [ano, mes] = (r.mes as string).split('-');
+      return {
+        mes:   r.mes as string,
+        label: `${mesesAbrev[Number(mes) - 1]}/${ano.slice(2)}`,
+        total: Number(r.total),
+      };
+    });
+
+    return res.json({
+      aberto:        contagemPorStatus[1] || 0,
+      emAtendimento: contagemPorStatus[2] || 0,
+      encerrado:     contagemPorStatus[3] || 0,
+      aguardando:    (contagemPorStatus[6] || 0) + (contagemPorStatus[7] || 0),
+      total:         Object.values(contagemPorStatus).reduce((s, v) => s + v, 0),
+      prioridades,
+      linhaDoTempo,
+    });
+  } catch (error) {
+    console.error('[STATS] Erro ao buscar estatísticas do usuário:', error);
+    return res.status(500).json({ mensagem: "Erro ao buscar estatísticas" });
+  }
+});
+
 export default router;

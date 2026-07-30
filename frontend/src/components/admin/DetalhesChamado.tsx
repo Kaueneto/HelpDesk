@@ -543,26 +543,30 @@ export default function DetalhesChamado({ chamadoId, onVoltar }: DetalhesChamado
     }
   };
 
-  const marcarComoResolvido = async () => {
+  const marcarComoResolvido = async (enviarEmail: boolean) => {
     try {
-      await api.put(`/chamados/${chamadoId}/encerrar`);
-      toast.success('Chamado marcado como resolvido!', {
-        style: {
-          background: '#fff',
-          color: '#16a34a',
-          fontWeight: 'bold',
-          fontSize: '1rem',
-          borderRadius: '0.75rem',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-        },
-        iconTheme: {
-          primary: '#16a34a',
-          secondary: '#fff',
-        },
-      });
+      await api.put(`/chamados/${chamadoId}/encerrar`, { enviarEmail });
+      toast.success(
+        enviarEmail
+          ? 'Chamado resolvido e email enviado ao usuário!'
+          : 'Chamado marcado como resolvido!',
+        {
+          style: {
+            background: '#fff',
+            color: '#16a34a',
+            fontWeight: 'bold',
+            fontSize: '1rem',
+            borderRadius: '0.75rem',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+          },
+          iconTheme: {
+            primary: '#16a34a',
+            secondary: '#fff',
+          },
+        }
+      );
       await carregarDados();
     } catch (error) {
- 
       toast.error('Erro ao resolver chamado');
     } finally {
       setModalResolvidoAberto(false);
@@ -1112,19 +1116,19 @@ export default function DetalhesChamado({ chamadoId, onVoltar }: DetalhesChamado
           <button
             onClick={abrirModalRedirecionar}
             disabled={chamado.status.id === 3}
-            className="px-3 md:px-5 py-2 bg-transparent border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-all duration-200 transform hover:scale-104 font-medium text-xs md:text-sm whitespace-nowrap disabled:border-gray-300 disabled:text-gray-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-1 focus:ring-blue-500/50 shrink-0"
+            className="px-3 md:px-5 py-2 bg-transparent border border-blue-600 text-blue-500 rounded-lg hover:bg-blue-600 hover:text-white transition-all duration-200 transform hover:scale-104 font-medium text-xs md:text-sm whitespace-nowrap disabled:border-gray-300 disabled:text-gray-400 disabled:bg-transparent disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-1 focus:ring-blue-500/50 shrink-0"
           >
             Redirecionar
           </button>
           <button
             onClick={() => setModalEditarAberto(true)}
-            className="px-3 md:px-5 py-2 bg-transparent border border-gray-600 text-gray-600 rounded-lg hover:bg-gray-600 hover:text-white transition-all duration-200 transform hover:scale-104  font-medium text-xs md:text-sm whitespace-nowrap active:scale-95 focus:outline-none focus:ring-1 focus:ring-gray-500/50 shrink-0"
+            className="px-3 md:px-5 py-2 bg-transparent border border-amber-600 text-amber-500 rounded-lg hover:bg-amber-600 hover:text-white transition-all duration-200 transform hover:scale-104  font-medium text-xs md:text-sm whitespace-nowrap active:scale-95 focus:outline-none focus:ring-1 focus:ring-amber-500/50 shrink-0"
           >
             Editar
           </button>
           <button
             onClick={() => setModalImprimirAberto(true)}
-            className="px-3 md:px-5 py-2 bg-transparent border border-gray-600 text-gray-600 rounded-lg hover:bg-gray-600 hover:text-white transition-all duration-200 transform hover:scale-104 font-medium text-xs md:text-sm whitespace-nowrap active:scale-95 focus:outline-none focus:ring-1 focus:ring-gray-500/50 shrink-0"
+            className="px-3 md:px-5 py-2 bg-transparent border border-indigo-600 text-indigo-300 rounded-lg hover:bg-indigo-600 hover:text-white transition-all duration-200 transform hover:scale-104 font-medium text-xs md:text-sm whitespace-nowrap active:scale-95 focus:outline-none focus:ring-1 focus:ring-indigo-500/50 shrink-0"
           >
             Imprimir
           </button>

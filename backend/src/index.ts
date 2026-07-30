@@ -16,34 +16,16 @@ import cors from "cors";
 // importar cookie-parser
 import cookieParser from "cookie-parser";
 
-// importar multer para upload de arquivos
-import multer from "multer";
-
 // importar DataSource
 import { AppDataSource } from "./data-source";
 
 // criar a aplicação express
 const app = express();
 
-// configurar multer para upload de arquivos
-const storage = multer.memoryStorage();
-const upload = multer({
-  storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
-  fileFilter: (req, file, cb) => {
-    const tiposPermitidos = ["image/jpeg", "image/png", "image/gif", "image/webp"];
-    if (tiposPermitidos.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error("Tipo de arquivo não suportado"));
-    }
-  },
-});
-
 // middlewares
 app.use(express.json());
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
-app.use(upload.single("avatar"));
+
 app.use(cors({
   origin: function (origin, callback) {
    
@@ -113,6 +95,8 @@ import KanbanNewController from "./controllers/KanbanNewController";
 import SugestoesController from "./controllers/SugestoesController";
 import ComprasController from "./controllers/ComprasController";
 import { RealtimeService } from "./services/RealtimeService";
+import { seedPreferencias } from "./utils/seedPreferencias";
+import { seedSituations } from "./utils/seedSituations";
 
 // registrar rotas
 app.use("/", TestConnectionController);
@@ -136,8 +120,12 @@ app.use(rolesRouter);
 
 // inicializar banco ANTES de subir o servidor
 AppDataSource.initialize()
-  .then(() => {
+  .then(async () => {
     console.log("Banco de dados conectado com sucesso!");
+
+    // garantir que as preferências e situations padrão existam no banco
+    await seedPreferencias();
+    await seedSituations();
 
     // criar servidor HTTP para WebSocket
     const server = http.createServer(app);

@@ -5,6 +5,7 @@ import { ChamadoAnexos } from "../entities/ChamadoAnexos";
 import { ChamadoHistorico } from "../entities/ChamadoHistorico";
 import { Chamados } from "../entities/Chamados";
 import { Users } from "../entities/Users";
+import { StatusChamado } from "../entities/StatusChamado";
 import { supabase, SUPABASE_BUCKET } from "../config/supabase";
 import { verifyToken } from "../Middleware/AuthMiddleware";
 import RealtimeService from "../services/RealtimeService";
@@ -33,11 +34,12 @@ router.post("/chamados/:id/mensagens", verifyToken, async (req: AuthenticatedReq
 
     const mensagensRepository = AppDataSource.getRepository(ChamadoMensagens);
     const chamadosRepository = AppDataSource.getRepository(Chamados);
+    const historicoRepository = AppDataSource.getRepository(ChamadoHistorico);
 
-    // Buscar o chamado para verificar se tem um userResponsavel atribuído
+    // Buscar o chamado com status e responsável
     const chamado = await chamadosRepository.findOne({
       where: { id: Number(id) },
-      relations: ["userResponsavel"],
+      relations: ["userResponsavel", "status", "usuario"],
     });
 
     if (!chamado) {
@@ -52,6 +54,28 @@ router.post("/chamados/:id/mensagens", verifyToken, async (req: AuthenticatedReq
       return res.status(400).json({
         mensagem: "Assuma o chamado antes de responder.",
       });
+    }
+
+    // Se o chamado está ENCERRADO (status 3) e um usuário comum está enviando mensagem,
+    // reabrir automaticamente para status REABERTO (5)
+    let reaberto = false;
+    if (chamado.status?.id === 3 && roleId !== 1) {
+      chamado.status = { id: 5 } as StatusChamado; // REABERTO
+      chamado.dataFechamento = null;
+      chamado.userFechamento = null;
+      await chamadosRepository.save(chamado);
+
+      // registrar no histórico
+      await historicoRepository.save({
+        chamado,
+        usuario: { id: usuarioId },
+        acao: "Chamado reaberto pelo usuário ao enviar nova mensagem",
+        statusAnterior: { id: 3 }, // ENCERRADO
+        statusNovo: { id: 5 },     // REABERTO
+        dataMov: new Date(),
+      });
+
+      reaberto = true;
     }
 
     const novaMensagem = mensagensRepository.create({
@@ -75,6 +99,15 @@ router.post("/chamados/:id/mensagens", verifyToken, async (req: AuthenticatedReq
       
       if (mensagemComUsuario) {
         realtimeService.notifyNovaMsg(Number(id), mensagemComUsuario);
+      }
+
+      // se reabriu, emitir history-new para atualizar status em tempo real
+      if (reaberto) {
+        realtimeService.notifyNovoHistorico(Number(id), {
+          acao: "Chamado reaberto pelo usuário ao enviar nova mensagem",
+          statusNovo: { id: 5 },
+          dataMov: new Date(),
+        });
       }
     } catch (wsError) {
       console.error("❌ Erro ao emitir eventos WebSocket:", wsError);

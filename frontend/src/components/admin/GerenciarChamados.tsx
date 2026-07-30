@@ -10,6 +10,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import DatePicker from 'react-datepicker';
 import ModalNovoChamado from '@/app/admin/Modal/ModalNovoChamado';
 import ModalEditarChamadoAdmin from '@/app/admin/Modal/ModalEditarChamadoAdmin';
+import ModalMarcarResolvido from '@/app/admin/Modal/MarcarResolvido';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiGrid, FiList, FiFilter, FiPlus } from 'react-icons/fi';
 import KanbanView from '../kanban/KanbanView';
@@ -95,6 +96,7 @@ export default function GerenciarChamados() {
     const [linhaAnimando, setLinhaAnimando] = useState<number | null>(null);
     const [pageSliding, setPageSliding] = useState(false);
     const [chamadoSelecionadoId, setChamadoSelecionadoId] = useState<string | null>(null);
+    const [modalResolvidoAberto, setModalResolvidoAberto] = useState(false);
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { theme } = useTheme();
@@ -769,20 +771,19 @@ export default function GerenciarChamados() {
       alert('Selecione ao menos um chamado');
       return;
     }
+    setModalResolvidoAberto(true);
+  };
 
-    if (!confirm(`Deseja marcar ${chamadosSelecionados.length} chamado(s) como resolvido?`)) {
-      return;
-    }
-
+  const confirmarResolucao = async (enviarEmail: boolean) => {
     try {
       await api.patch('/chamados/resolver-multiplos', {
         chamadosIds: chamadosSelecionados,
+        enviarEmail,
       });
-
-      alert('Chamados marcados como resolvidos!');
+      setModalResolvidoAberto(false);
       await pesquisarChamados(1, ocultarConcluidos, getEffectivePageSize());
     } catch (error) {
-
+      setModalResolvidoAberto(false);
       alert('Erro ao marcar chamados como resolvidos');
     }
   };
@@ -1515,7 +1516,7 @@ export default function GerenciarChamados() {
                   opacity: chamadosSelecionados.length === 0 ? 0.5 : 1
                 }}
               >
-                Editar Múltiplos
+                Editar Tickets
               </button>
               <button
                 onClick={atribuirAMim}
@@ -1583,7 +1584,7 @@ export default function GerenciarChamados() {
               <>
                 {/* filtro de abas no topo da tabela */}
                 <div className="px-3 py-3 flex gap-4 items-center justify-between" style={{
-                  backgroundColor: theme.background.modal,
+                  backgroundColor: theme.background.pagina,
                   borderBottomColor: theme.border.secondary,
                   borderBottomWidth: '1px'
                 }}>
@@ -1591,7 +1592,7 @@ export default function GerenciarChamados() {
 
                   borderColor: theme.border.primary,
                   borderWidth: '1px',
-                   backgroundColor: theme.background.surface
+                   backgroundColor: theme.background.pagina
                  }}>
                   {(['todos', 'meus', 'outros', 'semResponsavel'] as const).map((aba) => {
                     const labels = {
@@ -1628,14 +1629,24 @@ export default function GerenciarChamados() {
                 </div>
 
                 <div className="overflow-x-auto hidden md:block">
-                  <table className="w-full">
-                    <thead style={{
-                      backgroundColor: theme.background.surface,
-                      borderBottomColor: theme.border.secondary,
-                      borderBottomWidth: '1px'
-                    }}>
-                      <tr>
-                        <th className="px-2 py-2 text-left">
+                  {/* agora o cabeçalho é fixo enquanto rola a pagina */}
+                  <div style={{ maxHeight: 'calc(100vh - 280px)', overflowY: 'auto', overflowX: 'visible' }}>
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr style={{ backgroundColor: theme.text.invertido, position: 'sticky', top: 0, zIndex: 10 }}>
+                        <th
+                          colSpan={12}
+                          style={{
+                            height: '2px',
+                            padding: 0,
+                            backgroundColor: theme.text.invertido,
+                            opacity: 0.6,
+                          }}
+                        />
+                      </tr>
+                      <tr style={{ backgroundColor: theme.background.surface, position: 'sticky', top: '2px', zIndex: 10 }}>
+                       
+                        <th className="pl-4 pr-2 py-3 text-left w-8">
                           <input
                             type="checkbox"
                             checked={todosChecados}
@@ -1643,173 +1654,57 @@ export default function GerenciarChamados() {
                             className="theme-checkbox"
                           />
                         </th>
-                        <th 
-                          className="px-2 py-2 text-left text-xs font-semibold cursor-pointer transition-colors select-none min-w-20"
-                          style={{ color: theme.text.primary, backgroundColor: theme.background.tabelaEscuro }}
-                          onClick={() => handleOrdenar('numeroChamado')}
-                        >
-                          <div className="flex items-center gap-1">
-                            Cód. Chamado
-                            {ordenarPor === 'numeroChamado' && (
-                              <span>{direcaoOrdem === 'asc' ? '↑' : '↓'}</span>
-                            )}
-                          </div>
-                        </th>
-                        <th 
-                          className="px-2 py-2 text-left text-xs font-semibold cursor-pointer transition-colors select-none min-w-20"
-                          style={{ color: theme.text.primary, backgroundColor: theme.background.tabelaEscuro, whiteSpace: 'nowrap' }}
-                          onClick={() => handleOrdenar('prioridade')}
-                        >
-                          <div className="flex items-center gap-1">
-                            Prioridade
-                            {ordenarPor === 'prioridade' && (
-                              <span>{direcaoOrdem === 'asc' ? '↑' : '↓'}</span>
-                            )}
-                          </div>
-                        </th>
-                        <th 
-                          className="px-2 py-2 text-left text-xs font-semibold cursor-pointer transition-colors select-none min-w-50"
-                          style={{ color: theme.text.primary, backgroundColor: theme.background.tabelaEscuro, whiteSpace: 'nowrap' }}
-                          onClick={() => handleOrdenar('resumo')}
-                        >
-                          <div className="flex items-center gap-1">
-                            Assunto
-                            {ordenarPor === 'resumo' && (
-                              <span>{direcaoOrdem === 'asc' ? '↑' : '↓'}</span>
-                            )}
-                          </div>
-                        </th>
-                        <th 
-                          className="px-2 py-2 text-left text-xs font-semibold cursor-pointer transition-colors select-none min-w-40"
-                          style={{ color: theme.text.primary, backgroundColor: theme.background.tabelaEscuro, whiteSpace: 'nowrap' }}
-                          onClick={() => handleOrdenar('usuario')}
-                        >
-                          <div className="flex items-center gap-1">
-                            Usuário
-                            {ordenarPor === 'usuario' && (
-                              <span>{direcaoOrdem === 'asc' ? '↑' : '↓'}</span>
-                            )}
-                          </div>
-                        </th>
-                        <th 
-                          className="px-2 py-2 text-left text-xs font-semibold cursor-pointer transition-colors select-none min-w-50"
-                          style={{ color: theme.text.primary, backgroundColor: theme.background.tabelaEscuro, whiteSpace: 'nowrap' }}
-                          onClick={() => handleOrdenar('departamento')}
-                        >
-                          <div className="flex items-center gap-1">
-                            Departamento
-                            {ordenarPor === 'departamento' && (
-                              <span>{direcaoOrdem === 'asc' ? '↑' : '↓'}</span>
-                            )}
-                          </div>
-                        </th>
-                        <th 
-                          className="px-2 py-2 text-left text-xs font-semibold cursor-pointer transition-colors select-none min-w-38"
-                          style={{ color: theme.text.primary, backgroundColor: theme.background.tabelaEscuro, whiteSpace: 'nowrap' }}
-                          onClick={() => handleOrdenar('topico')}
-                        >
-                          <div className="flex items-center gap-1">
-                            Tópico
-                            {ordenarPor === 'topico' && (
-                              <span>{direcaoOrdem === 'asc' ? '↑' : '↓'}</span>
-                            )}
-                          </div>
-                        </th>
-                        <th 
-                          className="px-2 py-2 text-left text-xs font-semibold cursor-pointer transition-colors select-none min-w-30"
-                          style={{ color: theme.text.primary, backgroundColor: theme.background.tabelaEscuro, whiteSpace: 'nowrap' }}
-                          onClick={() => handleOrdenar('status')}
-                        >
-                          <div className="flex items-center gap-1">
-                            Status
-                            {ordenarPor === 'status' && (
-                              <span>{direcaoOrdem === 'asc' ? '↑' : '↓'}</span>
-                            )}
-                          </div>
-                        </th>
-                        <th 
-                          className="px-2 py-2 text-left text-xs font-semibold cursor-pointer transition-colors select-none min-w-25"
-                          style={{ color: theme.text.primary, backgroundColor: theme.background.tabelaEscuro, whiteSpace: 'nowrap' }}
-                          onClick={() => handleOrdenar('dataAbertura')}
-                        >
-                          <div className="flex items-center gap-1">
-                            Abertura
-                            {ordenarPor === 'dataAbertura' && (
-                              <span>{direcaoOrdem === 'asc' ? '↑' : '↓'}</span>
-                            )}
-                          </div>
-                        </th>
-                        <th
-                          className="px-2 py-2 text-left text-xs font-semibold cursor-pointer transition-colors select-none min-w-25"
-                          style={{ color: theme.text.primary, backgroundColor: theme.background.tabelaEscuro, whiteSpace: 'nowrap' }}
-                          onClick={() => handleOrdenar('dataFechamento')}
-                        >
-                          <div className="flex items-center gap-1">
-                            Fechamento
-                            {ordenarPor === 'dataFechamento' && (
-                              <span>{direcaoOrdem === 'asc' ? '↑' : '↓'}</span>
-                            )}
-                          </div>
-                        </th>
-                        <th 
-                          className="px-2 py-2 text-left text-xs font-semibold cursor-pointer transition-colors select-none min-w-50"
-                          style={{ color: theme.text.primary, backgroundColor: theme.background.tabelaEscuro, whiteSpace: 'nowrap' }}
-                          onClick={() => handleOrdenar('responsavel')}
-                        >
-                          <div className="flex items-center gap-1">
-                            Responsável
-                            {ordenarPor === 'responsavel' && (
-                              <span>{direcaoOrdem === 'asc' ? '↑' : '↓'}</span>
-                            )}
-                          </div>
-                        </th>
-                      <th 
-                        className="px-2 py-2 text-left text-xs font-semibold cursor-pointer transition-colors select-none min-w-60"
-                        style={{ 
-                          color: theme.text.primary, 
-                          backgroundColor: theme.background.tabelaEscuro, 
-                          whiteSpace: 'nowrap' 
-                        }}
-                        onClick={() => handleOrdenar('ultimaInteracao')}
-                      >
-                        <div className="flex items-center gap-1">
-                          Última Interação
-                          {ordenarPor === 'ultimaInteracao' && (
-                            <span>{direcaoOrdem === 'asc' ? '↑' : '↓'}</span>
-                          )}
-                        </div>
-                      </th>
+                        {/* helper para renderizar th ordenável */}
+                        {([
+                          { key: 'numeroChamado', label: 'Chamado', minW: '5rem' },
+                          { key: 'prioridade',    label: 'Prioridade', minW: '6rem'   },
+                          { key: 'resumo',        label: 'Assunto',    minW: '14rem'  },
+                          { key: 'usuario',       label: 'Solicitante', minW: '7rem' },
+                          { key: 'topico',        label: 'Tópico',     minW: '12rem'   },
+                          { key: 'status',        label: 'Status',     minW: '7.5rem' },
+                          { key: 'dataAbertura',  label: 'Abertura',    minW: '8rem'   },
+                          { key: 'dataFechamento',label: 'Fechamento', minW: '8rem'   },
+                          { key: 'responsavel',   label: 'Responsável',minW: '10rem'  },
+                          { key: 'ultimaInteracao',label: 'Última interação', minW: '11rem' },
+                        ] as const).map(({ key, label, minW }) => (
+                          <th
+                            key={key}
+                            className="px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide cursor-pointer select-none whitespace-nowrap group"
+                            style={{ color: theme.text.secondary, width: key === 'usuario' ? '7rem' : undefined, minWidth: minW }}
+                            onClick={() => handleOrdenar(key as any)}
+                          >
+                            <div className="flex items-center gap-1">
+                              <span className="group-hover:opacity-80 transition-opacity">{label}</span>
+                              <span className="text-[10px] w-3 inline-block text-center" style={{ color: theme.brand.primary }}>
+                                {ordenarPor === key ? (direcaoOrdem === 'asc' ? '↑' : '↓') : ''}
+                              </span>
+                            </div>
+                          </th>
+                        ))}
+                      </tr>
+                      <tr style={{ backgroundColor: theme.background.surface, position: 'sticky', top: 'calc(2px + 42px)', zIndex: 9 }}>
+                        <td colSpan={12} style={{ height: '1px', padding: 0, backgroundColor: theme.border.secondary, opacity: 0.8 }} />
                       </tr>
                     </thead>
                     <tbody>
-                      {chamadosOrdenados.map((chamado, index) => (<tr
+                      {chamadosOrdenados.map((chamado, index) => (
+                        <tr
                           key={chamado.id}
                           onClick={(e) => {
-                            if ((e.target as HTMLElement).closest('input[type="checkbox"]')) {
-                              return;
-                            }
-                            // grava posição do clique em porcentagem da viewport
+                            if ((e.target as HTMLElement).closest('input[type="checkbox"]')) return;
                             const xPct = (e.clientX / window.innerWidth) * 100;
                             const yPct = (e.clientY / window.innerHeight) * 100;
-                            try {
-                              sessionStorage.setItem('detailOrigin', JSON.stringify({ x: `${xPct}%`, y: `${yPct}%` }));
-                            } catch (err) {
-                              // ignore
-                            }
+                            try { sessionStorage.setItem('detailOrigin', JSON.stringify({ x: `${xPct}%`, y: `${yPct}%` })); } catch {}
                             setLinhaAnimando(chamado.id);
-                            setTimeout(() => {
-                              setChamadoSelecionadoId(chamado.id.toString());
-                              setLinhaAnimando(null);
-                            }, 240); // aguarda animação slideOutLeft (220ms)
+                            setTimeout(() => { setChamadoSelecionadoId(chamado.id.toString()); setLinhaAnimando(null); }, 240);
                           }}
-                          className={`transition-colors cursor-pointer ${linhaAnimando === chamado.id ? 'slideOutLeft' : ''}`}
+                          className={`cursor-pointer ${linhaAnimando === chamado.id ? 'slideOutLeft' : ''}`}
                           style={{
-                            backgroundColor: index % 2 === 0 ? theme.background.tabelaClaro : theme.background.tabelaEscuro,
-                            borderBottomColor: theme.border.secondary,
-                            borderBottomWidth: '1px'
+                            backgroundColor: 'transparent',
+                            transition: 'background-color 120ms ease',
                           }}
                           onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = theme.background.hover)}
-                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = index % 2 === 0 ? theme.background.tabelaClaro : theme.background.tabelaEscuro)}
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                         >
                           <td className="px-2 py-2" onClick={(e) => e.stopPropagation()}>
                             <input
@@ -1819,62 +1714,107 @@ export default function GerenciarChamados() {
                               className="theme-checkbox"
                             />
                           </td>
-                          {/* Código chamado */}
-                          <td className="px-2 py-2 text-xs font-medium" style={{ color: theme.text.primary }}>
-                            {chamado.numeroChamado || chamado.id}
+
+                          {/* Cód. Chamado — badge monoespaçado */}
+                          <td className="px-3 py-3 whitespace-nowrap min-w-[5rem]">
+                            <span
+                              className="inline-flex items-center px-2 py-0.5 rounded text-[12px] font-mono font-semibold tracking-wide"
+                              style={{
+                                backgroundColor: `${theme.text.primary}14`,
+                                color: theme.text.primary,
+                                border: `1px solid ${theme.text.primary}30`,
+                              }}
+                            >
+                              #{chamado.numeroChamado || chamado.id}
+                            </span>
                           </td>
-                          {/* Prioridade */}
-                          <td className="px-2 py-2 whitespace-nowrap">
-                            <div className="flex items-center gap-2">
-                              <div
-                                className="w-3 h-3 rounded-full"
-                                style={{ backgroundColor: chamado.tipoPrioridade?.cor || '#gray' }}
-                              ></div>
-                              <span className="text-xs" style={{ color: `rgb(var(--text-primary))` }}>
-                                {chamado.tipoPrioridade?.nome || '-'}
+
+                          <td className="px-3 py-3 whitespace-nowrap">
+                            <div className="flex items-center gap-1.5">
+                              <span
+                                className="w-2 h-2 rounded-full shrink-0"
+                                style={{ backgroundColor: chamado.tipoPrioridade?.cor || '#9ca3af' }}
+                              />
+                              <span className="text-xs" style={{ color: theme.text.primary }}>
+                                {chamado.tipoPrioridade?.nome || '—'}
                               </span>
                             </div>
                           </td>
-                          {/* Assunto/Resumo */}
-                          <td className="px-2 py-2 text-xs max-w-50 truncate overflow-hidden text-ellipsis" style={{ color: `rgb(var(--text-primary))` }} title={chamado.resumoChamado}>
-                            {chamado.resumoChamado}
-                          </td>
-                          {/* Usuário */}
-                          <td className="px-2 py-2 text-xs max-w-30 truncate overflow-hidden text-ellipsis" style={{ color: `rgb(var(--text-primary))` }} title={chamado.usuario?.name}>
-                            {chamado.usuario?.name || '-'}
-                          </td>
-                          {/* Departamento */}
-                          <td className="px-2 py-2 text-xs max-w-30 truncate overflow-hidden text-ellipsis" style={{ color: `rgb(var(--text-primary))` }} title={chamado.departamento?.nome || chamado.departamento?.name}>
-                            {chamado.departamento?.nome || chamado.departamento?.name || '-'}
-                          </td>
-                          {/* Tópico */}
-                          <td className="px-2 py-2 text-xs max-w-38 truncate overflow-hidden text-ellipsis" style={{ color: `rgb(var(--text-primary))` }} title={chamado.topicoAjuda?.nome}>
-                            {chamado.topicoAjuda?.nome || '-'}
-                          </td>
-                          {/* Status */}
-                          <td className="px-1 py-1 text-center whitespace-nowrap">
+
+                          <td className="px-3 py-3 max-w-[15rem]">
                             <span
-                              className="px-2 py-1 rounded-full text-xs border font-medium"
+                              className="block text-xs truncate"
+                              style={{ color: theme.text.primary }}
+                              title={chamado.resumoChamado}
+                            >
+                              {chamado.resumoChamado}
+                            </span>
+                          </td>
+
+                          <td className="px-3 py-3 max-w-[13rem]">
+                            <div className="flex items-center gap-2 min-w-0">
+                              {/* ícone de user */}
+                              <div
+                                className="w-7 h-7 rounded-full shrink-0 flex items-center justify-center text-[10px] font-bold"
+                                style={{
+                                  backgroundColor: `${theme.brand.primary}18`,
+                                  color: theme.brand.primary,
+                                }}
+                              >
+                                {(chamado.usuario?.name || '?').charAt(0).toUpperCase()}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-xs font-medium truncate leading-tight" style={{ color: theme.text.primary }} title={chamado.usuario?.name}>
+                                  {chamado.usuario?.name || '—'}
+                                </p>
+                                <p className="text-[11px] truncate leading-tight mt-0.5" style={{ color: theme.text.tertiary }} title={chamado.departamento?.nome || chamado.departamento?.name}>
+                                  {chamado.departamento?.nome || chamado.departamento?.name || '—'}
+                                </p>
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* Tópico */}
+                          <td className="px-3 py-3 max-w-[9rem]">
+                            <span className="text-xs truncate block" style={{ color: theme.text.secondary }} title={chamado.topicoAjuda?.nome}>
+                              {chamado.topicoAjuda?.nome || '—'}
+                            </span>
+                          </td>
+
+                          {/* Status */}
+                          <td className="px-3 py-3 whitespace-nowrap">
+                            <span
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium"
                               style={{
                                 backgroundColor: getStatusColor(chamado.status.id).bg,
                                 color: getStatusColor(chamado.status.id).text,
-                                borderColor: getStatusColor(chamado.status.id).border,
-                                borderWidth: '1.5px'
                               }}
                             >
-                              {chamado.status?.nome || 'Desconhecido'}
+              
+                              <span
+                                className="w-1.5 h-1.5 rounded-full shrink-0"
+                                style={{ backgroundColor: getStatusColor(chamado.status.id).border }}
+                              />
+                              {chamado.status?.nome || '—'}
                             </span>
                           </td>
-                          {/* Data Abertura */}
-                          <td className="px-2 py-2 text-xs whitespace-nowrap" style={{ color: theme.text.secondary }}>
-                            {formatarData(chamado.dataAbertura)}
+
+                          {/* Abertura */}
+                          <td className="px-3 py-3 whitespace-nowrap">
+                            <span className="text-[11px] tabular-nums" style={{ color: theme.text.secondary }}>
+                              {formatarData(chamado.dataAbertura)}
+                            </span>
                           </td>
-                          {/* Data Fechamento */}
-                          <td className="px-2 py-2 text-xs whitespace-nowrap" style={{ color: theme.text.secondary }}>
-                            {formatarData(chamado.dataFechamento)}
+
+                          {/* Fechamento */}
+                          <td className="px-3 py-3 whitespace-nowrap">
+                            <span className="text-[11px] tabular-nums" style={{ color: chamado.dataFechamento ? theme.text.secondary : theme.text.tertiary }}>
+                              {formatarData(chamado.dataFechamento)}
+                            </span>
                           </td>
+
                           {/* Responsável */}
-                          <td className="px-2 py-2 text-xs" style={{ color: theme.text.primary }}>
+                          <td className="px-3 py-3">
                             {chamado.userResponsavel ? (
                               <div className="flex items-center gap-2 min-w-0">
                                 <Avatar
@@ -1882,42 +1822,39 @@ export default function GerenciarChamados() {
                                   avatarUrl={chamado.userResponsavel.avatar_url}
                                   size="sm"
                                 />
-                                <span className="truncate" title={chamado.userResponsavel.name}>
+                                <span className="text-xs truncate" style={{ color: theme.text.primary }} title={chamado.userResponsavel.name}>
                                   {chamado.userResponsavel.name}
                                 </span>
-                                {/* debiguii */}
-                       
                               </div>
                             ) : (
-                              <span className="italic opacity-50" style={{ color: theme.text.secondary }}>Não atribuído</span>
+                              <span className="text-xs italic" style={{ color: theme.text.tertiary }}>
+                                Não atribuído
+                              </span>
                             )}
                           </td>
-                          {/* Última Interação */}
-                          <td className="px-2 py-2 text-xs" style={{ color: theme.text.primary }}>
+
+                          {/* Última interação */}
+                          <td className="px-3 py-3">
                             {chamado.ultimaInteracao ? (
-                              <div className="flex flex-col gap-1">
-                                <span className="font-medium">
-                                  {new Date(chamado.ultimaInteracao.data).toLocaleDateString('pt-BR', {
-                                    year: 'numeric',
-                                    month: '2-digit',
-                                    day: '2-digit'
-                                  })} {new Date(chamado.ultimaInteracao.data).toLocaleTimeString('pt-BR', {
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                    second: '2-digit'
-                                  })}
+                              <div className="flex flex-col gap-0.5">
+                                <span className="text-[11px] font-medium tabular-nums leading-tight" style={{ color: theme.text.primary }}>
+                                  {new Date(chamado.ultimaInteracao.data).toLocaleDateString('pt-BR', { year: 'numeric', month: '2-digit', day: '2-digit' })}
+                                  {' '}
+                                  {new Date(chamado.ultimaInteracao.data).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                                 </span>
-                                <span className="text-xs opacity-75" title={chamado.ultimaInteracao.usuarioNome}>
+                                <span className="text-[10px] truncate max-w-[10rem]" style={{ color: theme.text.tertiary }} title={chamado.ultimaInteracao.usuarioNome}>
                                   por {chamado.ultimaInteracao.usuarioNome}
                                 </span>
                               </div>
                             ) : (
-                              <span className="italic opacity-50" style={{ color: theme.text.secondary }}>Sem mensagens</span>
+                              <span className="text-xs italic" style={{ color: theme.text.tertiary }}>—</span>
                             )}
                           </td>
-                        </tr>))}
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
+                  </div>
                 </div>
 
                 {/* modo mobile, exibir tipo uns cards */}
@@ -2371,7 +2308,13 @@ export default function GerenciarChamados() {
           const sizeForSearch = viewModeFromStorage === 'kanban' ? 10000 : pageSize;
           pesquisarChamados(1, ocultarConcluidos, sizeForSearch);
         }}
+      />
 
+      {/* modal de marcar como resolvido multiplos chamados */}
+      <ModalMarcarResolvido
+        isOpen={modalResolvidoAberto}
+        onConfirm={confirmarResolucao}
+        onClose={() => setModalResolvidoAberto(false)}
       />
     </div>
     </>
