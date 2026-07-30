@@ -111,6 +111,7 @@ import { preferencesRouter } from "./controllers/PreferenciasController";
 import KanbanController from "./controllers/KanbanController";
 import KanbanNewController from "./controllers/KanbanNewController";
 import SugestoesController from "./controllers/SugestoesController";
+import ComprasController from "./controllers/ComprasController";
 import { RealtimeService } from "./services/RealtimeService";
 
 // registrar rotas
@@ -129,6 +130,7 @@ app.use("/", ParametrosSistemaController);
 app.use("/", KanbanController);
 app.use("/", KanbanNewController);
 app.use("/", SugestoesController);
+app.use("/", ComprasController);
 app.use("/preferencias", preferencesRouter);
 app.use(rolesRouter);
 

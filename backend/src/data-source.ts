@@ -28,6 +28,10 @@ import { SugestoesInteracoes } from "./entities/SugestoesInteracoes";
 import { KanbanBoard } from "./entities/KanbanBoard";
 import { KanbanColumn } from "./entities/KanbanColumn";
 import { KanbanCard } from "./entities/KanbanCard";
+import { Cotacoes } from "./entities/Cotacoes";
+import { CotacaoItens } from "./entities/CotacaoItens";
+import { CotacaoItemOpcoes } from "./entities/CotacaoItemOpcoes";
+import { CotacaoItemOpcaoClassificacoes } from "./entities/CotacaoItemOpcaoClassificacoes";
 //carregar as variaveis  do arquivo .env
 
 
@@ -43,7 +47,7 @@ export const AppDataSource = new DataSource({
   database: process.env.DB_DATABASE,
   synchronize: false, 
   logging: false,
-  entities: [SituationsUsers, Users, ChamadoHistorico, ChamadoMensagens, Departamentos, TipoPrioridade, Chamados, TopicosAjuda, StatusChamado, Roles, ChamadoAnexos, ParametrosSistema, LogsSistema, Preferences, PrefUsers, KanbanPositions, Sugestoes, SugestoesVotos, SugestoesInteracoes, KanbanBoard, KanbanColumn, KanbanCard],
+  entities: [SituationsUsers, Users, ChamadoHistorico, ChamadoMensagens, Departamentos, TipoPrioridade, Chamados, TopicosAjuda, StatusChamado, Roles, ChamadoAnexos, ParametrosSistema, LogsSistema, Preferences, PrefUsers, KanbanPositions, Sugestoes, SugestoesVotos, SugestoesInteracoes, KanbanBoard, KanbanColumn, KanbanCard, Cotacoes, CotacaoItens, CotacaoItemOpcoes, CotacaoItemOpcaoClassificacoes],
   subscribers: [],
   migrations: [__dirname + "/migrations/*.js"],
   

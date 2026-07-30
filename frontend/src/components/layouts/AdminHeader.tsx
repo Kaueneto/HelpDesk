@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import { FiBook, FiUser, FiSun, FiMoon, FiSettings, FiLogOut, FiChevronDown } from 'react-icons/fi';
+import { FiBook, FiUser, FiSun, FiMoon, FiLogOut } from 'react-icons/fi';
 import Avatar from '@/components/Avatar';
 
 interface AdminHeaderProps {}
@@ -14,7 +14,6 @@ export default function AdminHeader({}: AdminHeaderProps) {
   const { mode, setTheme } = useTheme();
   const router = useRouter();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [themeSubmenuOpen, setThemeSubmenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   // funcao para obter saudação baseado na hora do dia
@@ -35,7 +34,6 @@ export default function AdminHeader({}: AdminHeaderProps) {
     function handleClickOutside(event: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setUserMenuOpen(false);
-        setThemeSubmenuOpen(false);
       }
     }
 
@@ -72,11 +70,9 @@ export default function AdminHeader({}: AdminHeaderProps) {
         {/* Profile Button */}
         <button
           onClick={() => setUserMenuOpen(!userMenuOpen)}
-          className="flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200"
-          style={{
-            color: 'white',
-          }}
-          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.15)'}
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all duration-200"
+          style={{ color: 'white' }}
+          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.12)'}
           onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
         >
           <Avatar 
@@ -85,171 +81,108 @@ export default function AdminHeader({}: AdminHeaderProps) {
             size="sm"
           />
           <span className="font-medium hidden sm:inline text-sm">{user?.name}</span>
-          <FiChevronDown className={`w-4 h-4 transition-transform duration-200 ${userMenuOpen ? 'rotate-180' : ''}`} />
         </button>
 
         {userMenuOpen && (
           <>
-       
+            <style>{`
+              @keyframes dropdown-in {
+                0%   { opacity: 0; transform: translateY(-6px) scale(0.97); }
+                100% { opacity: 1; transform: translateY(0)     scale(1);    }
+              }
+              .dropdown-anim {
+                animation: dropdown-in 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+              }
+            `}</style>
+
             <div 
-              className="fixed inset-0 z-40 md:hidden"
+              className="fixed inset-0 z-40"
               onClick={() => setUserMenuOpen(false)}
             />
             
             <div 
               ref={menuRef}
-              className="absolute right-0 top-full mt-2 w-80 rounded-2xl shadow-2xl z-50 overflow-hidden animate-dropdown-open"
+              className="dropdown-anim absolute right-0 top-full mt-2 w-56 rounded-xl shadow-xl z-50 overflow-hidden"
               style={{
                 backgroundColor: `rgb(var(--bg-elevated))`,
                 border: `1px solid rgb(var(--border-secondary))`
               }}
             >
-
+              {/* Cabeçalho compacto */}
               <div 
-                className="px-6 py-5"
+                className="px-4 py-3 flex items-center gap-3"
                 style={{
                   background: `linear-gradient(135deg, rgb(var(--bg-secondary)) 0%, rgb(var(--bg-tertiary)) 100%)`,
                   borderBottom: `1px solid rgb(var(--border-secondary))`
                 }}
               >
-                <div className="flex items-center gap-3 mb-3">
-                  <Avatar 
-                    name={user?.name} 
-                    avatarUrl={user?.avatar_url}
-                    size="lg"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="font-bold text-base truncate" style={{ color: `rgb(var(--text-primary))` }}>
-                      {user?.name}
-                    </div>
-                    <div className="text-xs truncate" style={{ color: `rgb(var(--text-tertiary))` }}>
-                      {user?.email}
-                    </div>
+                <Avatar 
+                  name={user?.name} 
+                  avatarUrl={user?.avatar_url}
+                  size="sm"
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="font-semibold text-sm truncate" style={{ color: `rgb(var(--text-primary))` }}>
+                    {user?.name}
+                  </div>
+                  <div className="text-xs truncate opacity-60" style={{ color: `rgb(var(--text-tertiary))` }}>
+                    {user?.email}
                   </div>
                 </div>
               </div>
 
-              {/* menu items */}
-              <div className="py-2">
-                {/* tema */}
-                <div className="px-2">
-                  <div className="px-3 py-2 mb-1">
-                    <p className="text-xs font-semibold uppercase" style={{ color: `rgb(var(--text-tertiary))` }}>
-                      Aparência
-                    </p>
+              {/* Itens */}
+              <div className="py-1 px-1">
+
+                {/* Tema inline — sem submenu */}
+                <div className="px-2 py-1.5">
+                  <p className="text-[12px] font-semibold tracking-wide opacity-50 mb-1" style={{ color: `rgb(var(--text-tertiary))` }}>
+                    Tema
+                  </p>
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => setTheme('light')}
+                      className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-medium transition-all ${mode === 'light' ? 'bg-blue-500 text-white' : ''}`}
+                      style={mode !== 'light' ? { color: `rgb(var(--text-secondary))`, backgroundColor: `rgb(var(--bg-hover))` } : {}}
+                    >
+                      <FiSun className="w-3.5 h-3.5" /> Claro
+                    </button>
+                    <button
+                      onClick={() => setTheme('dark')}
+                      className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-medium transition-all ${mode === 'dark' ? 'bg-blue-600 text-white' : ''}`}
+                      style={mode !== 'dark' ? { color: `rgb(var(--text-secondary))`, backgroundColor: `rgb(var(--bg-hover))` } : {}}
+                    >
+                      <FiMoon className="w-3.5 h-3.5" /> Escuro
+                    </button>
                   </div>
-                  <button
-                    onClick={() => setThemeSubmenuOpen(!themeSubmenuOpen)}
-                    className="w-full px-3 py-3 rounded-lg flex items-center gap-3 transition-all duration-200 relative"
-                    style={{ 
-                      color: `rgb(var(--text-primary))`,
-                      backgroundColor: themeSubmenuOpen ? `rgb(var(--bg-hover))` : 'transparent'
-                    }}
-                    onMouseEnter={(e) => !themeSubmenuOpen && (e.currentTarget.style.backgroundColor = `rgb(var(--bg-hover))`)}
-                    onMouseLeave={(e) => !themeSubmenuOpen && (e.currentTarget.style.backgroundColor = 'transparent')}
-                  >
-                    <div className="w-5 h-5 flex items-center justify-center">
-                      {mode === 'dark' ? <FiMoon className="w-5 h-5" /> : <FiSun className="w-5 h-5" />}
-                    </div>
-                    <span className="flex-1 text-left font-medium text-sm">Tema</span>
-                    <FiChevronDown className={`w-4 h-4 transition-transform duration-200 ${themeSubmenuOpen ? 'rotate-180' : ''}`} />
-                  </button>
-
-                  {themeSubmenuOpen && (
-                    <div className="mt-2 ml-2 pl-3 border-l-2" style={{ borderColor: `rgb(var(--border-secondary))` }}>
-                      <button
-                        onClick={() => {
-                          setTheme('light');
-                          setThemeSubmenuOpen(false);
-                        }}
-                        className="w-full px-3 py-2 rounded-lg flex items-center gap-3 transition-all duration-200 text-sm"
-                        style={{
-                            color: mode === 'light' ? `#1A68CF` : `rgb(var(--text-secondary))`,
-                          backgroundColor: mode === 'light' ? `rgba(var(--brand-primary), 0.1)` : 'transparent'
-                        }}
-                        onMouseEnter={(e) => {
-                          if (mode !== 'light') e.currentTarget.style.backgroundColor = `rgb(var(--bg-hover))`;
-                        }}
-                        onMouseLeave={(e) => {
-                          if (mode !== 'light') e.currentTarget.style.backgroundColor = 'transparent';
-                        }}
-                      >
-                        <FiSun className="w-4 h-4" />
-                        <span>Claro</span>
-                        {mode === 'light' && <div className="ml-auto w-2 h-2 rounded-full" style={{ backgroundColor: `rgb(var(--brand-primary))` }}></div>}
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          setTheme('dark');
-                          setThemeSubmenuOpen(false);
-                        }}
-                        className="w-full px-3 py-2 rounded-lg flex items-center gap-3 transition-all duration-200 text-sm mt-1"
-                        style={{
-                          color: mode === 'dark' ? `#87CEEB` : `rgb(var(--text-secondary))`,
-                          backgroundColor: mode === 'dark' ? `rgba(var(--brand-primary), 0.1)` : 'transparent'
-                        }}
-                        onMouseEnter={(e) => {
-                          if (mode !== 'dark') e.currentTarget.style.backgroundColor = `rgb(var(--bg-hover))`;
-                        }}
-                        onMouseLeave={(e) => {
-                          if (mode !== 'dark') e.currentTarget.style.backgroundColor = 'transparent';
-                        }}
-                      >
-                        <FiMoon className="w-4 h-4" />
-                        <span>Escuro</span>
-                        {mode === 'dark' && <div className="ml-auto w-2 h-2 rounded-full" style={{ backgroundColor: `rgb(var(--brand-primary))` }}></div>}
-                      </button>
-                    </div>
-                  )}
                 </div>
 
-                <div style={{
-                  height: '1px',
-                  backgroundColor: `rgb(var(--border-secondary))`,
-                  margin: '8px 0'
-                }}></div>
+                <div className="my-1 mx-1" style={{ height: '1px', backgroundColor: `rgb(var(--border-secondary))` }} />
 
-                <div className="px-2">
-                  <button
-                    onClick={() => {
-                      setUserMenuOpen(false);
-                      setThemeSubmenuOpen(false);
-                      router.push('/perfil');
-                    }}
-                    className="w-full px-3 py-3 rounded-lg flex items-center gap-3 transition-all duration-200"
-                    style={{ color: `rgb(var(--text-primary))` }}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = `rgb(var(--bg-hover))`}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                  >
-                    <FiSettings className="w-5 h-5" />
-                    <span className="flex-1 text-left font-medium text-sm">Meus dados</span>
-                  </button>
-                </div>
+                <button
+                  onClick={() => { setUserMenuOpen(false); router.push('/perfil'); }}
+                  className="w-full px-3 py-2 rounded-lg flex items-center gap-2.5 transition-all duration-150 text-sm"
+                  style={{ color: `rgb(var(--text-primary))` }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = `rgb(var(--bg-hover))`}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                >
+                  <FiUser className="w-4 h-4 opacity-60" />
+                  <span>Meu perfil</span>
+                </button>
 
-                <div style={{
-                  height: '1px',
-                  backgroundColor: `rgb(var(--border-secondary))`,
-                  margin: '8px 0'
-                }}></div>
+                <div className="my-1 mx-1" style={{ height: '1px', backgroundColor: `rgb(var(--border-secondary))` }} />
 
-                {/* bt logout */}
-                <div className="px-2">
-                  <button
-                    onClick={() => {
-                      setUserMenuOpen(false);
-                      setThemeSubmenuOpen(false);
-                      logout();
-                    }}
-                    className="w-full px-3 py-3 rounded-lg flex items-center gap-3 transition-all duration-200"
-                    style={{ color: '#EF4444' }}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)'}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                  >
-                    <FiLogOut className="w-5 h-5" />
-                    <span className="flex-1 text-left font-medium text-sm">Sair</span>
-                  </button>
-                </div>
+                <button
+                  onClick={() => { setUserMenuOpen(false); logout(); }}
+                  className="w-full px-3 py-2 rounded-lg flex items-center gap-2.5 transition-all duration-150 text-sm"
+                  style={{ color: '#EF4444' }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.08)'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                >
+                  <FiLogOut className="w-4 h-4" />
+                  <span>Sair</span>
+                </button>
+
               </div>
             </div>
           </>
