@@ -14,7 +14,9 @@ import {
   FiChevronRight,
   FiExternalLink,
   FiEdit2,
+  FiPrinter,
 } from 'react-icons/fi';
+import ModalImpressaoCotacao from './ModalImpressaoCotacao';
 
 interface Usuario {
   id: number;
@@ -107,6 +109,7 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
 
   const [editandoStatus, setEditandoStatus] = useState(false);
   const [novoStatus, setNovoStatus] = useState('');
+  const [modalImpressao, setModalImpressao] = useState(false);
 
   useEffect(() => {
     carregarCotacao();
@@ -367,6 +370,14 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
         }
       `}</style>
 
+      {/* modal de impressão */}
+      {modalImpressao && cotacao && (
+        <ModalImpressaoCotacao
+          cotacao={cotacao}
+          onClose={() => setModalImpressao(false)}
+        />
+      )}
+
       {/* ── Header azul ─────────────────────────────────────── */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-8 py-5 shadow-lg">
         <div className="flex items-start justify-between gap-4">
@@ -422,15 +433,25 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
           </div>
 
           {/* link para o chamado de origem — colapsado, pq ele nao é destaque */}
-          <button
-            onClick={() => router.push(`/chamado/${cotacao.chamado.id}`)}
-            className="shrink-0 text-right text-blue-200 hover:text-white transition-colors group"
-          >
-            <p className="text-[10px] uppercase tracking-wide opacity-60 mb-0.5">Chamado de origem</p>
-            <p className="text-sm font-medium group-hover:underline">
-              #{cotacao.chamado.numeroChamado} — {cotacao.chamado.resumoChamado}
-            </p>
-          </button>
+          <div className="flex items-center gap-3 shrink-0">
+            <button
+              onClick={() => setModalImpressao(true)}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/15 hover:bg-white/25 hover:scale-105 text-white text-sm font-medium transition-all border border-white/20"
+              title="Imprimir cotação"
+            >
+              <FiPrinter size={14} />
+              <span className="hidden sm:block">Imprimir</span>
+            </button>
+            <button
+              onClick={() => router.push(`/chamado/${cotacao.chamado.id}`)}
+              className="shrink-0 text-right text-blue-200 hover:text-white transition-colors group"
+            >
+              <p className="text-[10px] uppercase tracking-wide opacity-60 mb-0.5">Chamado de origem</p>
+              <p className="text-sm font-medium group-hover:underline">
+                #{cotacao.chamado.numeroChamado} — {cotacao.chamado.resumoChamado}
+              </p>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -462,7 +483,14 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
                   <FiChevronRight size={15} />
                 </span>
                 <FiPackage size={14} className="text-blue-500 shrink-0" />
-                <span className="font-bold flex-1 text-lg" style={{ color: text }}>{item.descricao}</span>
+
+                {/* descrição + observação em coluna */}
+                <div className="flex-1 min-w-0">
+                  <span className="font-bold text-lg block truncate" style={{ color: text }}>{item.descricao}</span>
+                  {item.observacao && (
+                    <span className="text-xs opacity-50 block" style={{ color: text }}>{item.observacao}</span>
+                  )}
+                </div>
 
                 {/* ── resumo de valores ── */}
                 {item.opcoes && item.opcoes.length > 0 && (() => {
@@ -489,7 +517,7 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
                   );
                 })()}
                 <span className="text-xs opacity-40 italic mr-2" style={{ color: text }}>
-                  {item.quantidade} un.{item.observacao ? ` · ${item.observacao}` : ''}
+                  {item.quantidade} un.
                 </span>
                 <span className="text-xs opacity-35 tabular-nums" style={{ color: text }}>
                   {item.opcoes?.length ?? 0} {(item.opcoes?.length ?? 0) === 1 ? 'opção' : 'opções'}
