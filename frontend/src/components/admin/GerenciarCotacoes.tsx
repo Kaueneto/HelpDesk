@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import api from '@/services/api';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useRouter } from 'next/navigation';
-import { FiFileText, FiEye, FiPlus, FiEdit, FiTrash2, FiCheck, FiX } from 'react-icons/fi';
+import { FiFileText, FiTrash2, FiSearch, FiFilter, FiPackage } from 'react-icons/fi';
 
 interface Usuario {
   id: number;
@@ -19,6 +19,21 @@ interface Chamado {
   usuario: Usuario;
 }
 
+interface CotacaoItemOpcao {
+  id: number;
+  valor_unitario: number;
+  valor_total: number;
+  quantidade: number;
+  selecionado: boolean;
+}
+
+interface CotacaoItem {
+  id: number;
+  descricao: string;
+  quantidade: number;
+  opcoes?: CotacaoItemOpcao[];
+}
+
 interface Cotacao {
   id: number;
   status: string;
@@ -29,271 +44,337 @@ interface Cotacao {
   itens?: CotacaoItem[];
 }
 
-interface CotacaoItem {
-  id: number;
-  descricao: string;
-  quantidade: number;
-  observacao: string | null;
-  opcoes?: CotacaoItemOpcao[];
+//  helpers de estilo 
+const STATUS_STYLE: Record<string, {
+  bgLight: string; bgDark: string; textLight: string; textDark: string; dot: string; label: string;
+}> = {
+  EM_ANDAMENTO:         { bgLight:'#dbeafe', bgDark:'#1e3a5f', textLight:'#1d4ed8', textDark:'#93c5fd', dot:'#3b82f6', label:'Em Andamento'  },
+  AGUARDANDO_APROVACAO: { bgLight:'#fef3c7', bgDark:'#451a03', textLight:'#92400e', textDark:'#fcd34d', dot:'#f59e0b', label:'Ag. Aprovação' },
+  APROVADA:             { bgLight:'#dcfce7', bgDark:'#14532d', textLight:'#15803d', textDark:'#86efac', dot:'#22c55e', label:'Aprovada'       },
+  EM_COMPRA:            { bgLight:'#f3e8ff', bgDark:'#2e1065', textLight:'#7c3aed', textDark:'#c4b5fd', dot:'#8b5cf6', label:'Em Compra'      },
+  FINALIZADA:           { bgLight:'#f1f5f9', bgDark:'#1e293b', textLight:'#475569', textDark:'#94a3b8', dot:'#64748b', label:'Finalizada'     },
+  CANCELADA:            { bgLight:'#fee2e2', bgDark:'#450a0a', textLight:'#b91c1c', textDark:'#fca5a5', dot:'#ef4444', label:'Cancelada'      },
+};
+
+function fmtData(d: string) {
+  return new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
-interface CotacaoItemOpcao {
-  id: number;
-  fornecedor: string;
-  descricao_produto: string;
-  quantidade: number;
-  valor_unitario: number;
-  valor_total: number;
-  selecionado: boolean;
+function fmtMoeda(v: number) {
+  return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
+// Calcula o menor valor total entre as opções de todos os itens (soma dos menores preços por item)
+function calcularValorTotal(itens?: CotacaoItem[]): number | null {
+  if (!itens || itens.length === 0) return null;
+  let total = 0;
+  let temOpcao = false;
+  for (const item of itens) {
+    if (!item.opcoes || item.opcoes.length === 0) continue;
+    const precos = item.opcoes.map(o => Number(o.valor_unitario) * item.quantidade);
+    const menor = Math.min(...precos);
+    if (isFinite(menor)) { total += menor; temOpcao = true; }
+  }
+  return temOpcao ? total : null;
+}
+
+function calcularValorMedio(itens?: CotacaoItem[]): number | null {
+  if (!itens || itens.length === 0) return null;
+  let somaMedias = 0;
+  let count = 0;
+  for (const item of itens) {
+    if (!item.opcoes || item.opcoes.length === 0) continue;
+    const media = item.opcoes.reduce((acc, o) => acc + Number(o.valor_unitario), 0) / item.opcoes.length;
+    somaMedias += media * item.quantidade;
+    count++;
+  }
+  return count > 0 ? somaMedias : null;
+}
+
+//  componente principal 
 export default function GerenciarCotacoes() {
-  const { theme, mode } = useTheme();
-  const router = useRouter();
-  
-  const [cotacoes, setCotacoes] = useState<Cotacao[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [filtroStatus, setFiltroStatus] = useState<string>('todos');
-  const [busca, setBusca] = useState('');
+  const { mode } = useTheme();
+  const router   = useRouter();
 
-  useEffect(() => {
-    carregarCotacoes();
-  }, []);
+  const [cotacoes, setCotacoes]         = useState<Cotacao[]>([]);
+  const [loading, setLoading]           = useState(false);
+  const [filtroStatus, setFiltroStatus] = useState('todos');
+  const [busca, setBusca]               = useState('');
 
-  const carregarCotacoes = async () => {
+  // cores
+  const bg      = mode === 'dark' ? '#0F172A' : '#EDEDED';
+  const card    = mode === 'dark' ? '#1E293B' : '#cdcdcdff';
+  const text    = mode === 'dark' ? '#F1F5F9' : '#1E293B';
+  const border  = mode === 'dark' ? '#334155' : '#E2E8F0';
+  const inputBg = mode === 'dark' ? '#1E293B' : '#FFFFFF';
+  const muted   = mode === 'dark' ? '#64748b' : '#94a3b8';
+
+  useEffect(() => { carregarCotacoes(); }, []);
+
+  async function carregarCotacoes() {
     setLoading(true);
     try {
-      const response = await api.get('/compras/cotacoes');
-      setCotacoes(response.data);
-    } catch (error) {
-      console.error('Erro ao carregar cotações:', error);
+      const r = await api.get('/compras/cotacoes');
+      setCotacoes(r.data);
+    } catch {
       alert('Erro ao carregar cotações');
     } finally {
       setLoading(false);
     }
-  };
-
-  const excluirCotacao = async (id: number) => {
-    if (!confirm('Deseja realmente excluir esta cotação?')) {
-      return;
-    }
-
-    try {
-      await api.delete(`/compras/cotacoes/${id}`);
-      alert('Cotação excluída com sucesso!');
-      carregarCotacoes();
-    } catch (error) {
-      console.error('Erro ao excluir cotação:', error);
-      alert('Erro ao excluir cotação');
-    }
-  };
-
-  const cotacoesFiltradas = cotacoes.filter((cot) => {
-    const matchStatus = filtroStatus === 'todos' || cot.status === filtroStatus;
-    const matchBusca = 
-      cot.chamado.numeroChamado.toString().includes(busca) ||
-      cot.chamado.resumoChamado.toLowerCase().includes(busca.toLowerCase()) ||
-      cot.criadoPor.name.toLowerCase().includes(busca.toLowerCase());
-    
-    return matchStatus && matchBusca;
-  });
-
-  const formatarData = (data: string) => {
-    return new Date(data).toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
-  const getStatusColor = (status: string) => {
-    const cores: { [key: string]: string } = {
-      EM_ANDAMENTO: 'bg-blue-500',
-      AGUARDANDO_APROVACAO: 'bg-yellow-500',
-      APROVADA: 'bg-green-500',
-      EM_COMPRA: 'bg-purple-500',
-      FINALIZADA: 'bg-gray-500',
-      CANCELADA: 'bg-red-500',
-    };
-    return cores[status] || 'bg-gray-500';
-  };
-
-  const getStatusLabel = (status: string) => {
-    const labels: { [key: string]: string } = {
-      EM_ANDAMENTO: 'Em Andamento',
-      AGUARDANDO_APROVACAO: 'Aguardando Aprovação',
-      APROVADA: 'Aprovada',
-      EM_COMPRA: 'Em Compra',
-      FINALIZADA: 'Finalizada',
-      CANCELADA: 'Cancelada',
-    };
-    return labels[status] || status;
-  };
-
-  const bgColor = mode === 'dark' ? '#0F172A' : '#EDEDED';
-  const cardBg = mode === 'dark' ? '#1E293B' : '#FFFFFF';
-  const textColor = mode === 'dark' ? '#F1F5F9' : '#1E293B';
-  const borderColor = mode === 'dark' ? '#334155' : '#E2E8F0';
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen" style={{ backgroundColor: bgColor }}>
-        <div className="text-lg" style={{ color: textColor }}>Carregando...</div>
-      </div>
-    );
   }
 
+  async function excluirCotacao(e: React.MouseEvent, id: number) {
+    e.stopPropagation();
+    if (!confirm('Deseja realmente excluir esta cotação?')) return;
+    try {
+      await api.delete(`/compras/cotacoes/${id}`);
+      setCotacoes(prev => prev.filter(c => c.id !== id));
+    } catch {
+      alert('Erro ao excluir cotação');
+    }
+  }
+
+  //métricas
+  const metricas = useMemo(() => ({
+    total:      cotacoes.length,
+    andamento:  cotacoes.filter(c => c.status === 'EM_ANDAMENTO').length,
+    aprovadas:  cotacoes.filter(c => c.status === 'APROVADA').length,
+    finalizadas:cotacoes.filter(c => c.status === 'FINALIZADA').length,
+    canceladas: cotacoes.filter(c => c.status === 'CANCELADA').length,
+  }), [cotacoes]);
+
+  // fitlros
+  const filtradas = useMemo(() => cotacoes.filter(c => {
+    const okStatus = filtroStatus === 'todos' || c.status === filtroStatus;
+    const q = busca.toLowerCase();
+    const okBusca = !q
+      || c.id.toString().includes(q)
+      || c.chamado.numeroChamado.toString().includes(q)
+      || c.chamado.resumoChamado.toLowerCase().includes(q)
+      || c.criadoPor.name.toLowerCase().includes(q)
+      || c.chamado.usuario.name.toLowerCase().includes(q);
+    return okStatus && okBusca;
+  }), [cotacoes, busca, filtroStatus]);
+
+  if (loading) return (
+    <div className="flex items-center justify-center h-screen" style={{ backgroundColor: bg }}>
+      <div className="text-lg" style={{ color: text }}>Carregando...</div>
+    </div>
+  );
+
   return (
-    <div className="p-6 min-h-screen" style={{ backgroundColor: bgColor }}>
-      <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <FiFileText className="text-3xl" style={{ color: textColor }} />
-            <h1 className="text-3xl font-bold" style={{ color: textColor }}>
-              Cotações
-            </h1>
-          </div>
+    <div className="min-h-screen" style={{ backgroundColor: bg }}>
+
+      {/*  header  */}
+      <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-8 py-6 shadow-lg">
+        <h1 className="text-2xl font-bold">Cotações</h1>
+        <p className="text-blue-100 text-sm mt-1 opacity-80">Gerencie todas as cotações do sistema</p>
+      </div>
+
+      <div className="px-8 py-6 space-y-6">
+
+        {/*  métricas  */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          {[
+            { label: 'Total',        value: metricas.total,        color: 'from-blue-500 to-blue-600'   },
+            { label: 'Em Andamento', value: metricas.andamento,    color: 'from-sky-400 to-sky-500'     },
+            { label: 'Aprovadas',    value: metricas.aprovadas,    color: 'from-green-500 to-green-600' },
+            { label: 'Finalizadas',  value: metricas.finalizadas,  color: 'from-slate-400 to-slate-500' },
+            { label: 'Canceladas',   value: metricas.canceladas,   color: 'from-red-400 to-red-500'     },
+          ].map(m => (
+            <div key={m.label} className={`bg-gradient-to-br ${m.color} text-white rounded-xl px-5 py-4 shadow-md`}>
+              <p className="text-3xl font-bold">{m.value}</p>
+              <p className="text-sm mt-1 opacity-90">{m.label}</p>
+            </div>
+          ))}
         </div>
 
-               <div
-          className="rounded-lg p-4 mb-6 shadow-md"
-          style={{ backgroundColor: cardBg, borderColor: borderColor }}
-        >
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-2" style={{ color: textColor }}>
-                Buscar
-              </label>
-              <input
-                type="text"
-                value={busca}
-                onChange={(e) => setBusca(e.target.value)}
-                placeholder="Número do chamado, assunto ou responsável..."
-                className="w-full px-4 py-2 rounded-lg border"
-                style={{
-                  backgroundColor: mode === 'dark' ? '#334155' : '#FFFFFF',
-                  borderColor: borderColor,
-                  color: textColor,
-                }}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2" style={{ color: textColor }}>
-                Status
-              </label>
-              <select
-                value={filtroStatus}
-                onChange={(e) => setFiltroStatus(e.target.value)}
-                className="w-full px-4 py-2 rounded-lg border"
-                style={{
-                  backgroundColor: mode === 'dark' ? '#334155' : '#FFFFFF',
-                  borderColor: borderColor,
-                  color: textColor,
-                }}
-              >
-                <option value="todos">Todos</option>
-                <option value="EM_ANDAMENTO">Em Andamento</option>
-                <option value="AGUARDANDO_APROVACAO">Aguardando Aprovação</option>
-                <option value="APROVADA">Aprovada</option>
-                <option value="EM_COMPRA">Em Compra</option>
-                <option value="FINALIZADA">Finalizada</option>
-                <option value="CANCELADA">Cancelada</option>
-              </select>
-            </div>
+        {/*  filtros  */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 opacity-40" style={{ color: text }} />
+            <input
+              type="text"
+              value={busca}
+              onChange={e => setBusca(e.target.value)}
+              placeholder="Buscar por ID, chamado, solicitante ou responsável..."
+              className="w-full pl-9 pr-4 py-2.5 rounded-lg border text-sm "
+              style={{ backgroundColor: inputBg, borderColor: border, color: text }}
+            />
           </div>
-        </div>
-
-        <div className="space-y-4">
-          {cotacoesFiltradas.length === 0 ? (
-            <div
-              className="text-center py-12 rounded-lg"
-              style={{ backgroundColor: cardBg, color: textColor }}
+          <div className="relative">
+            <FiFilter className="absolute left-3 top-1/2 -translate-y-1/2 opacity-40" style={{ color: text }} />
+            <select
+              value={filtroStatus}
+              onChange={e => setFiltroStatus(e.target.value)}
+              className="pl-9 pr-8 py-2.5 rounded-lg border text-sm appearance-none"
+              style={{ backgroundColor: inputBg, borderColor: border, color: text }}
             >
-              <FiFileText className="mx-auto text-5xl mb-4 opacity-50" />
-              <p className="text-lg">Nenhuma cotação encontrada</p>
+              <option value="todos">Todos os status</option>
+              <option value="EM_ANDAMENTO">Em Andamento</option>
+              <option value="AGUARDANDO_APROVACAO">Ag. Aprovação</option>
+              <option value="APROVADA">Aprovada</option>
+              <option value="EM_COMPRA">Em Compra</option>
+              <option value="FINALIZADA">Finalizada</option>
+              <option value="CANCELADA">Cancelada</option>
+            </select>
+          </div>
+        </div>
+
+        {/*  lista  */}
+        <div className="space-y-3">
+          {filtradas.length === 0 ? (
+            <div className="text-center py-16 rounded-xl" style={{ backgroundColor: card, color: text }}>
+              <FiFileText className="mx-auto text-5xl mb-4 opacity-20" />
+              <p className="text-lg font-medium opacity-60">Nenhuma cotação encontrada</p>
             </div>
-          ) : (
-            cotacoesFiltradas.map((cotacao) => (
+          ) : filtradas.map(cot => {
+            const st       = STATUS_STYLE[cot.status];
+            const stBg     = st ? (mode === 'dark' ? st.bgDark   : st.bgLight)   : (mode === 'dark' ? '#1e293b' : '#f1f5f9');
+            const stText   = st ? (mode === 'dark' ? st.textDark : st.textLight) : '#94a3b8';
+            const dot      = st?.dot ?? '#94a3b8';
+            const nItens   = cot.itens?.length ?? 0;
+            const nOpcoes  = cot.itens?.reduce((a, i) => a + (i.opcoes?.length ?? 0), 0) ?? 0;
+            const valorMin = calcularValorTotal(cot.itens);
+            const valorMed = calcularValorMedio(cot.itens);
+
+            return (
               <div
-                key={cotacao.id}
-                className="rounded-lg p-4 shadow-md hover:shadow-lg transition-shadow"
-                style={{ backgroundColor: cardBg, borderColor: borderColor, borderWidth: '1px' }}
+                key={cot.id}
+                onClick={() => router.push(`/compras/cotacoes/${cot.id}`)}
+                className="cursor-pointer"
+                style={{
+                  backgroundColor: bg,
+                  borderRadius: '12px',
+                  border: `1px solid ${card}`,
+                  transition: 'box-shadow 200ms ease, transform 200ms ease',
+                }}
+                onMouseEnter={e => {
+                  const el = e.currentTarget as HTMLDivElement;
+                  el.style.transform = 'translateY(-1px)';
+                  el.style.boxShadow = mode === 'dark'
+                    ? '0 8px 10px 4px rgba(3, 219, 243, 0.15), 0 2px 4px rgba(0,0,0,0.6)'
+                    : '0 4px 10px rgba(0, 0, 0, 0.17)';
+                }}
+                onMouseLeave={e => {
+                  const el = e.currentTarget as HTMLDivElement;
+                  el.style.transform = 'translateY(0)';
+                  el.style.boxShadow = 'none';
+                }}
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <span
-                        className="px-3 py-1 rounded-full text-xs font-semibold text-white"
-                        style={{ backgroundColor: '#3B82F6' }}
-                      >
-                        Cotação #{cotacao.id}
+                <div className="flex items-center gap-4 px-5 py-4">
+
+                  {/* ID */}
+                  <span
+                    className="text-[13px] font-segoe font-bold shrink-0 px-2 py-0.5 rounded"
+                    style={{ color: dot, backgroundColor: `${dot}15` }}
+                  >
+                    #{cot.id}
+                  </span>
+
+                  {/* info principal */}
+                  <div className="flex-1 min-w-0">
+                    {/* linha 1: título + status */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-semibold text-sm truncate font-segoe" style={{ color: text }}>
+                        #{cot.chamado.numeroChamado} — {cot.chamado.resumoChamado}
                       </span>
                       <span
-                        className={`px-3 py-1 rounded-full text-xs font-semibold text-white ${getStatusColor(
-                          cotacao.status
-                        )}`}
+                        className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold shrink-0 flex items-center gap-1.5"
+                        style={{ backgroundColor: stBg, color: stText }}
                       >
-                        {getStatusLabel(cotacao.status)}
+                        <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: dot }} />
+                        {st?.label ?? cot.status}
                       </span>
                     </div>
 
-                    <h3 className="text-lg font-semibold mb-2" style={{ color: textColor }}>
-                      Chamado #{cotacao.chamado.numeroChamado} - {cotacao.chamado.resumoChamado}
-                    </h3>
+                    {/* linha 2: metadados */}
+                    <div className="flex items-center gap-4 mt-1.5 flex-wrap">
+                      {/* itens */}
+                      <span className="flex items-center gap-1 text-xs" style={{ color: muted }}>
+                        <FiPackage size={11} />
+                        <span>{nItens} {nItens === 1 ? 'item' : 'itens'}</span>
+                        {nOpcoes > 0 && <span className="opacity-60">· {nOpcoes} opções</span>}
+                      </span>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
-                      <div>
-                        <span className="opacity-70">Solicitante:</span>{' '}
-                        <span className="font-medium">{cotacao.chamado.usuario.name}</span>
-                      </div>
-                      <div>
-                        <span className="opacity-70">Criado por:</span>{' '}
-                        <span className="font-medium">{cotacao.criadoPor.name}</span>
-                      </div>
-                      <div>
-                        <span className="opacity-70">Data:</span>{' '}
-                        <span className="font-medium">{formatarData(cotacao.createdAt)}</span>
-                      </div>
+                      {/* solicitante */}
+                      <span className="text-xs hidden sm:block" style={{ color: muted }}>
+                        Solicitante: <span style={{ color: text }}>{cot.chamado.usuario.name}</span>
+                      </span>
+
+                      {/* criado por */}
+                      <span className="text-xs hidden md:block" style={{ color: muted }}>
+                        Criado por: <span style={{ color: text }}>{cot.criadoPor.name}</span>
+                      </span>
+
+                      {/* data */}
+                      <span className="text-xs hidden lg:block" style={{ color: muted }}>
+                        {fmtData(cot.createdAt)}
+                      </span>
                     </div>
+                  </div>
 
-                    {cotacao.itens && cotacao.itens.length > 0 && (
-                      <div className="mt-3 text-sm">
-                        <span className="opacity-70">Itens na cotação:</span>{' '}
-                        <span className="font-medium">{cotacao.itens.length}</span>
+                  {/* valores + excluir */}
+                  <div className="flex items-center gap-3 shrink-0">
+
+                    {/* bloco de valores destacado */}
+                    {(valorMin !== null || valorMed !== null) && (
+                      <div className="text-right hidden sm:block">
+                        {valorMin !== null && (
+                          <div className="flex items-center justify-end gap-1.5">
+                            <span className="text-[10px] uppercase tracking-wide" style={{ color: muted }}>Total</span>
+                            <span
+                              className="text-sm font-bold tabular-nums"
+                              style={{ color: mode === 'dark' ? '#4ade80' : '#16a34a' }}
+                            >
+                              {fmtMoeda(valorMin)}
+                            </span>
+                          </div>
+                        )}
+                        {valorMed !== null && (
+                          <div className="flex items-center justify-end gap-1.5">
+                            <span className="text-[10px]  tracking-wide" style={{ color: muted }}>Média</span>
+                            <span className="text-xs font-medium tabular-nums" style={{ color: muted }}>
+                              {fmtMoeda(valorMed)}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     )}
+
+                    {/* separador */}
+                    {(valorMin !== null || valorMed !== null) && (
+                      <div className="w-px h-8 hidden sm:block" style={{ backgroundColor: border }} />
+                    )}
+
+                  {/* excluir */}
+                  <div className="relative group shrink-0">
+                    <button
+                      onClick={e => excluirCotacao(e, cot.id)}
+                      className="p-1.5 rounded-lg transition-all duration-150 opacity-20 hover:opacity-100 hover:text-red-500"
+                      style={{ color: text }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#ef444415'; }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent'; }}
+                    >
+                      <FiTrash2 size={14} />
+                    </button>
+                    <div
+                      className="absolute bottom-full right-0 mb-2 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-lg z-10"
+                      style={{ backgroundColor: mode === 'dark' ? '#1e293b' : '#334155', color: '#fff' }}
+                    >
+                      Excluir cotação
+                      <div className="absolute top-full right-3 w-0 h-0"
+                        style={{ borderLeft: '4px solid transparent', borderRight: '4px solid transparent',
+                          borderTop: `4px solid ${mode === 'dark' ? '#1e293b' : '#334155'}` }}
+                      />
+                    </div>
                   </div>
 
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => router.push(`/compras/cotacoes/${cotacao.id}`)}
-                      className="p-2 rounded-lg hover:bg-blue-500 hover:text-white transition-colors"
-                      style={{
-                        backgroundColor: mode === 'dark' ? '#334155' : '#E2E8F0',
-                        color: textColor,
-                      }}
-                      title="Ver detalhes"
-                    >
-                      <FiEye className="text-lg" />
-                    </button>
-                    <button
-                      onClick={() => excluirCotacao(cotacao.id)}
-                      className="p-2 rounded-lg hover:bg-red-500 hover:text-white transition-colors"
-                      style={{
-                        backgroundColor: mode === 'dark' ? '#334155' : '#E2E8F0',
-                        color: textColor,
-                      }}
-                      title="Excluir"
-                    >
-                      <FiTrash2 className="text-lg" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
+                </div>{/* fim: valores + excluir */}
+              </div>{/* fim: flex row do card */}
+            </div>
+            );
+          })}
         </div>
       </div>
     </div>

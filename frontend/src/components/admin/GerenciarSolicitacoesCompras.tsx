@@ -65,12 +65,10 @@ const STATUS_COTACAO_STYLE: Record<string, { bgLight:string; bgDark:string; text
 };
 
 const PRIORIDADE_STYLE: Record<string, { dot: string; label: string }> = {
-  BAIXA:  { dot:'#22c55e', label:'Baixa'   },
-  MEDIA:  { dot:'#3b82f6', label:'Média'   },
-  MÉDIA:  { dot:'#3b82f6', label:'Média'   },
-  ALTO:   { dot:'#f97316', label:'Alta'    },
-  ALTA:   { dot:'#f97316', label:'Alta'    },
-  URGENTE:{ dot:'#ef4444', label:'Urgente' },
+  BAIXO:   { dot:'#22c55e', label:'Baixo'   },
+  MEDIO:   { dot:'#3b82f6', label:'Médio'   },
+  ALTO:    { dot:'#f97316', label:'Alto'    },
+  URGENTE: { dot:'#ef4444', label:'Urgente' },
 };
 
 function fmtData(d: string) {
@@ -205,7 +203,7 @@ export default function GerenciarSolicitacoesCompras() {
           ].map((m) => (
             <div
               key={m.label}
-              className={`bg-gradient-to-br ${m.color} text-white rounded-xl px-5 py-4 shadow-md`}
+              className={`bg-gradient-to-br ${m.color} text-white rounded-xl px-5 py-4 shadow-md hover:scale-105 transition-all`}
             >
               <p className="text-3xl font-bold">{m.value}</p>
               <p className="text-sm mt-1 opacity-90">{m.label}</p>
@@ -222,7 +220,7 @@ export default function GerenciarSolicitacoesCompras() {
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
               placeholder="Buscar por número, assunto, solicitante..."
-              className="w-full pl-9 pr-4 py-2.5 rounded-lg border text-sm"
+              className="w-full pl-9 pr-4 py-2.5 rounded-lg border text-sm hover:scale-101 transition-all"
               style={{ backgroundColor: inputBg, borderColor: border, color: text }}
             />
           </div>
@@ -253,8 +251,13 @@ export default function GerenciarSolicitacoesCompras() {
           ) : filtradas.map((sol) => {
             const isExpanded = expandedIds.has(sol.id);
             const det        = detalhes[sol.id];
-            const prioKey    = sol.tipoPrioridade.nome.toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-            const prio       = PRIORIDADE_STYLE[prioKey] ?? { dot: '#94a3b8', label: sol.tipoPrioridade.nome };
+            
+            // normaliza o nome da prioridade removendo acentos e transformando em uppercase
+            const prioNome   = sol.tipoPrioridade.nome.toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+            
+            //tenta mapear a prioridade, se nao encontrar usa cinza como fallback
+            const prio = PRIORIDADE_STYLE[prioNome] ?? { dot: '#94a3b8', label: sol.tipoPrioridade.nome };
+            
             const statusSt   = STATUS_CHAMADO_STYLE[sol.status.id] ?? {
               bgLight:'#f1f5f9', bgDark:'#1e293b', textLight:'#475569', textDark:'#94a3b8', dot:'#94a3b8', label: sol.status.nome,
             };
@@ -262,15 +265,17 @@ export default function GerenciarSolicitacoesCompras() {
             const statusText = mode === 'dark' ? statusSt.textDark  : statusSt.textLight;
             const accent     = statusSt.dot;
 
-            // card: borda superior colorida no topo — 3px, mais elegante que lateral
+            // card: sem borda colorida superior
             const cardBase: React.CSSProperties = {
               backgroundColor: card,
               borderRadius: '12px',
               overflow: 'hidden',
-              border: `1px solid ${mode === 'dark' ? '#334155' : '#e2e8f0'}`,
-              borderTop: `3px solid ${accent}`,
+              border: `1px solid ${border}`,
               transition: 'box-shadow 200ms ease, transform 200ms ease',
             };
+
+            // conta total de cotações
+            const totalCotacoes = det?.cotacoes?.length ?? 0;
 
             return (
               <div
@@ -324,10 +329,33 @@ export default function GerenciarSolicitacoesCompras() {
                   {/* metadados — desktop */}
                   <div className="hidden md:flex items-center gap-4 shrink-0 text-xs" style={{ color: text }}>
 
-                    {/* prioridade como texto colorido — sem badge */}
-                    <span className="font-semibold tracking-wide uppercase text-[10px]" style={{ color: prio.dot }}>
+                    {/* prioridade como badge moderno */}
+                    <span 
+                      className="px-2.5 py-1 rounded-full font-semibold tracking-wide uppercase text-[10px] flex items-center gap-1.5" 
+                      style={{ 
+                        backgroundColor: `${prio.dot}20`, 
+                        color: prio.dot,
+                        border: `1px solid ${prio.dot}40`
+                      }}
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: prio.dot }}></span>
                       {prio.label}
                     </span>
+
+                    {/* total de cotações */}
+                    {det && (
+                      <span 
+                        className="px-2.5 py-1 rounded-full font-semibold text-[10px] flex items-center gap-1.5" 
+                        style={{ 
+                          backgroundColor: mode === 'dark' ? '#1e40af30' : '#dbeafe', 
+                          color: mode === 'dark' ? '#93c5fd' : '#1d4ed8',
+                          border: `1px solid ${mode === 'dark' ? '#1e40af50' : '#93c5fd50'}`
+                        }}
+                      >
+                        <FiFileText size={10} />
+                        {totalCotacoes} {totalCotacoes === 1 ? 'cotação' : 'cotações'}
+                      </span>
+                    )}
 
                     {/* solicitante */}
                     <span className="opacity-55 hidden lg:block max-w-[130px] truncate">
@@ -357,14 +385,35 @@ export default function GerenciarSolicitacoesCompras() {
                     >
                       <FiPlus size={14} />
                     </button>
-                    <button
-                      onClick={() => router.push(`/chamado/${sol.id}`)}
-                      title="Ver chamado"
-                      className="p-1.5 rounded-lg transition-all duration-150 opacity-40 hover:opacity-80"
-                      style={{ color: text }}
-                    >
-                      <FiEye size={14} />
-                    </button>
+                    <div className="relative group">
+                      <button
+                        onClick={() => router.push(`/chamado/${sol.id}`)}
+                        className="p-1.5 rounded-lg transition-all duration-150 opacity-40 hover:opacity-100"
+                        style={{ color: text }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = `${text}10`; }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent'; }}
+                      >
+                        <FiEye size={14} />
+                      </button>
+                      {/* tooltip */}
+                      <div 
+                        className="absolute bottom-full right-0 mb-2 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-lg z-10"
+                        style={{ 
+                          backgroundColor: mode === 'dark' ? '#1e293b' : '#334155',
+                          color: '#ffffff'
+                        }}
+                      >
+                        Visualizar chamado desta solicitação
+                        <div 
+                          className="absolute top-full right-3 w-0 h-0" 
+                          style={{ 
+                            borderLeft: '4px solid transparent',
+                            borderRight: '4px solid transparent',
+                            borderTop: `4px solid ${mode === 'dark' ? '#1e293b' : '#334155'}`
+                          }}
+                        ></div>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -374,9 +423,30 @@ export default function GerenciarSolicitacoesCompras() {
                   style={{ color: text }}
                   onClick={() => toggleExpand(sol.id)}
                 >
-                  <span className="font-semibold tracking-wide uppercase text-[10px]" style={{ color: prio.dot }}>
+                  <span 
+                    className="px-2.5 py-1 rounded-full font-semibold tracking-wide uppercase text-[10px] flex items-center gap-1.5" 
+                    style={{ 
+                      backgroundColor: `${prio.dot}20`, 
+                      color: prio.dot,
+                      border: `1px solid ${prio.dot}40`
+                    }}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: prio.dot }}></span>
                     {prio.label}
                   </span>
+                  {det && (
+                    <span 
+                      className="px-2.5 py-1 rounded-full font-semibold text-[10px] flex items-center gap-1.5" 
+                      style={{ 
+                        backgroundColor: mode === 'dark' ? '#1e40af30' : '#dbeafe', 
+                        color: mode === 'dark' ? '#93c5fd' : '#1d4ed8',
+                        border: `1px solid ${mode === 'dark' ? '#1e40af50' : '#93c5fd50'}`
+                      }}
+                    >
+                      <FiFileText size={10} />
+                      {totalCotacoes}
+                    </span>
+                  )}
                   <span className="opacity-50">{sol.usuario.name}</span>
                   <span className="opacity-40">{sol.departamento.name}</span>
                 </div>
@@ -395,7 +465,7 @@ export default function GerenciarSolicitacoesCompras() {
                       style={{ borderColor: mode === 'dark' ? '#334155' : '#e2e8f0', color: mode === 'dark' ? '#94a3b8' : '#64748b' }}>
                       <span>Solicitante: <strong style={{ color: text }}>{sol.usuario.name}</strong></span>
                       <span>Departamento: <strong style={{ color: text }}>{sol.departamento.name}</strong></span>
-                      <span>Aberto em: <strong style={{ color: text }}>{fmtData(sol.dataAbertura)}</strong></span>
+                      <span>Solicitado em: <strong style={{ color: text }}>{fmtData(sol.dataAbertura)}</strong></span>
                       {sol.userResponsavel && (
                         <span>Responsável: <strong style={{ color: text }}>{sol.userResponsavel.name}</strong></span>
                       )}

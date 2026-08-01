@@ -220,7 +220,7 @@ export const lightTheme: Theme = {
       bg: '#FFFFFF',
       border: '#D1D5DB',
       text: '#1F2937',
-      placeholder: '#9CA3AF',
+      placeholder: '#af9c9cff',
     },
     select: {
       bg: '#FFFFFF',
