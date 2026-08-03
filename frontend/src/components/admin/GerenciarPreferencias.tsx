@@ -96,17 +96,26 @@ export default function GerenciarPreferencias() {
       style={{ backgroundColor: theme.background.pagina }}
     >
       {/* Header full width */}
-      <div
-        className="w-full py-3 px-5 mb-4"
-        style={{ backgroundColor: theme.brand.subHeader }}
-      >
-        <h1 className="text-xl font-bold text-white">
+      <div className="
+          px-8 py-3 
+          bg-gradient-to-r 
+          from-blue-600 
+          to-blue-700
+          bg-[length:200%_100%]
+          hover:bg-[position:100%_0]
+          text-white
+          shadow-lg
+          transition-[background-position] 
+          duration-500
+          flex items-center justify-between
+        ">
+        <h1 className="text-xl font-semibold text-white hover:scale-103 transition-transform duration-300 font-segoe">
           Minhas Preferências
         </h1>
       </div>
 
       {/* Conteúdo */}
-      <div className="px-5 pb-5">
+      <div className="px-5 pb-5 py-3">
         <div className="max-w-4xl">
           {/* Filtro */}
           <div
@@ -116,7 +125,7 @@ export default function GerenciarPreferencias() {
               border: `1px solid ${theme.border.primary}`,
             }}
           >
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 hover:scale-102 transition-transform duration-300">
               <input
                 type="text"
                 placeholder="Filtrar preferências..."

@@ -179,7 +179,7 @@ export default function GerenciarSolicitacoesCompras() {
       <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-8 py-6 shadow-lg">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">Solicitações de Compras</h1>
+            <h1 className="text-2xl font-bold hover:scale-105 transition-transform duration-300">Solicitações de Compras</h1>
     
           </div>
           <button

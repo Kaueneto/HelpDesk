@@ -1081,11 +1081,23 @@ export default function DetalhesChamado({ chamadoId, onVoltar }: DetalhesChamado
       >
       <Toaster position="top-right" />
       {/* Header */}
-      <div className="bg-[#1A68CF] px-4 md:px-6 py-4">
+      <div className="
+          px-8 py-3 
+          bg-gradient-to-r 
+          from-blue-600 
+          to-blue-700
+          bg-[length:200%_100%]
+          hover:bg-[position:100%_0]
+          text-white
+          shadow-lg
+          transition-[background-position] 
+          duration-500
+          flex items-center justify-between
+        ">
         <div className="flex items-center gap-3 md:gap-4">
           <button
             onClick={handleVoltar}
-             className="flex items-center justify-center w-8 h-15 rounded-2xl hover:bg-white/20 transition-colors duration-100 focus:outline-none  active:bg-gray-300/50 hover:scale-103shrink-0"
+             className="flex items-center justify-center w-8 h-15 rounded-2xl hover:bg-white/20 transition-colors duration-100 focus:outline-none  active:bg-gray-300/50 hover:scale-103 shrink-0"
 
           >
             <img 
@@ -1095,11 +1107,12 @@ export default function DetalhesChamado({ chamadoId, onVoltar }: DetalhesChamado
             />
           </button>
           <div className="min-w-0 flex-1">
-            <h2 className="text-white text-lg md:text-2xl font-semibold  transition-transform duration-150 truncate">
+            <h2 className="text-white text-2xl font-semibold font-segoe hover:scale-103 transition-transform duration-300">
               {chamado.resumoChamado}
             </h2>
             <p className="text-blue-100 text-xs md:text-sm">#{chamado.numeroChamado}</p>
           </div>
+         
         </div>
       </div>
 
@@ -1155,7 +1168,7 @@ export default function DetalhesChamado({ chamadoId, onVoltar }: DetalhesChamado
         <div className="px-4 md:px-6 flex gap-1">
           <button
             onClick={() => setAbaAtiva('detalhes')}
-            className="px-6 py-3 font-medium text-sm transition-all relative"
+            className="px-6 py-2 font-medium text-xs transition-all relative"
             style={{
               color: abaAtiva === 'detalhes' ? theme.detalhesChamado.redirecionar : theme.text.secondary,
               borderBottomColor: abaAtiva === 'detalhes' ? theme.detalhesChamado.redirecionar : 'transparent',
@@ -1166,7 +1179,7 @@ export default function DetalhesChamado({ chamadoId, onVoltar }: DetalhesChamado
           </button>
           <button
             onClick={() => setAbaAtiva('historico')}
-            className="px-6 py-3 font-medium text-sm transition-all relative"
+            className="px-6 py-2 font-medium text-xs transition-all relative"
             style={{
               color: abaAtiva === 'historico' ? theme.detalhesChamado.redirecionar : theme.text.secondary,
               borderBottomColor: abaAtiva === 'historico' ? theme.detalhesChamado.redirecionar : 'transparent',

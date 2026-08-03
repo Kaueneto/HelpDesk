@@ -248,9 +248,21 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="pb-10 min-h-screen" style={{ backgroundColor: theme.background.pagina }}>
-      <div className="px-4 md:px-6 py-4" style={{ backgroundColor: theme.brand.subHeader }}>
-        <h2 className="text-white text-xl md:text-2xl font-semibold font-segoe">Dashboard</h2>
+    <div className="pb-10 min-h-screen" >
+        <div className="
+          px-8 py-4 
+          bg-gradient-to-r 
+          from-blue-600 
+          to-blue-700
+          bg-[length:200%_100%]
+          hover:bg-[position:100%_0]
+          text-white
+          shadow-lg
+          transition-[background-position] 
+          duration-500
+          flex items-center justify-between
+        ">
+        <h2 className="text-white text-2xl font-semibold font-segoe hover:scale-103 transition-transform duration-300 ">Dashboard</h2>
       </div>
 
       <div className="p-4 md:p-6">

@@ -255,7 +255,7 @@ export default function PainelUsuario() {
                       style={{ backgroundColor: '#ff0066' }}
                     >
                       <div>Sugestões</div>
-                      <div className="text-sm font-normal opacity-90 mt-1">Queremos ouvir você</div>
+                      <div className="text-sm font-normal opacity-90 mt-1 hover:scale">Queremos ouvir você</div>
                     </button>
                   </div>
                 </div>

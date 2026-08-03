@@ -339,8 +339,20 @@ export default function GerenciarTopicosAjuda() {
 
   return (
     <>
-      <div className="px-6 py-4" style={{ backgroundColor: theme.brand.subHeader }}>
-        <h2 className="text-white text-2xl font-semibold font-segoe">Gerenciar Tópicos de Ajuda</h2>
+       <div className="
+          px-8 py-3 
+          bg-gradient-to-r 
+          from-blue-600 
+          to-blue-700
+          bg-[length:200%_100%]
+          hover:bg-[position:100%_0]
+          text-white
+          shadow-lg
+          transition-[background-position] 
+          duration-500
+          flex items-center justify-between
+        ">
+        <h2 className="text-white text-2xl font-semibold font-segoe hover:scale-103 transition-transform duration-300">Gerenciar Tópicos de Ajuda</h2>
       </div>
 
       <div className="p-2" style={{ backgroundColor: theme.background.surface }}>
