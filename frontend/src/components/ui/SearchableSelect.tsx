@@ -10,6 +10,8 @@ export interface SelectOption {
   sublabel?: string;
 }
 
+type SelectionMode = 'single' | 'multiple';
+
 type Props = {
   value: string | number | (string | number)[];
   onChange: (val: string | number | (string | number)[]) => void;
@@ -21,6 +23,8 @@ type Props = {
   fullWidth?: boolean;
   className?: string;
   multi?: boolean;
+  selectionMode?: SelectionMode;
+  hideMultiToggle?: boolean;
 };
 
 function triggerLabel(
@@ -46,13 +50,16 @@ export function SearchableSelect(props: Props) {
     width = 180,
     dropdownWidth,
     multi,
+    selectionMode,
     fullWidth,
     className,
   } = props;
 
-  // Auto-detectar se é multi baseado no tipo do value
   const isModeMulti = Array.isArray(props.value);
-  const isMultiProp = multi === true || isModeMulti;
+  const isSingleMode = selectionMode === 'single';
+  const isMultiEnabled = !isSingleMode && (selectionMode === 'multiple' || multi === true || isModeMulti);
+  const isMultiProp = isMultiEnabled;
+  const allowMultiToggle = !isSingleMode && !props.hideMultiToggle && isMultiEnabled;
 
   const { mode } = useTheme();
   const [open, setOpen] = useState(false);
@@ -234,11 +241,11 @@ export function SearchableSelect(props: Props) {
 
       {open && (
         <div
-          className="absolute top-full left-0 z-[200] mt-1 overflow-hidden rounded-lg border shadow-md"
+          className="absolute top-full left-0 z-200 mt-1 overflow-hidden rounded-lg border shadow-md"
           style={{ width: dw, backgroundColor: surface, borderColor: border }}
         >
           <div className="flex items-center gap-2 px-2 pt-1.5 pb-1">
-            {!isMultiProp && (
+            {allowMultiToggle && !isMultiProp && (
               <button
                 type="button"
                 onClick={() => toggleMultiMode()}

@@ -100,6 +100,12 @@ export default function GerenciarSolicitacoesCompras() {
     { value: '5', label: 'Reaberto' },
   ];
 
+  const solicitacaoOptions: SelectOption[] = solicitacoes.map((s) => ({
+    value: s.id,
+    label: `#${s.numeroChamado} — ${s.resumoChamado}`,
+    sublabel: s.usuario.name,
+  }));
+
   // cores
   const bg     = mode === 'dark' ? '#0F172A' : '#EDEDED';
   const card   = mode === 'dark' ? '#1E293B' : '#FFFFFF';
@@ -305,11 +311,11 @@ export default function GerenciarSolicitacoesCompras() {
               </span>
             )}
 
-            <span className="opacity-55 hidden lg:block max-w-[130px] truncate">
+            <span className="opacity-55 hidden lg:block max-w-32.5 truncate">
               {sol.usuario.name}
             </span>
 
-            <span className="opacity-45 hidden xl:block max-w-[120px] truncate">
+            <span className="opacity-45 hidden xl:block max-w-30 truncate">
               {sol.departamento.name}
             </span>
 
@@ -492,7 +498,7 @@ export default function GerenciarSolicitacoesCompras() {
   return (
     <div className="min-h-screen" style={{ backgroundColor: bg }}>
 
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-8 py-6 shadow-lg">
+      <div className="bg-linear-to-r from-blue-600 to-blue-700 text-white px-8 py-6 shadow-lg">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold hover:scale-105 transition-transform duration-300">Solicitações de Compras</h1>
@@ -519,7 +525,7 @@ export default function GerenciarSolicitacoesCompras() {
           ].map((m) => (
             <div
               key={m.label}
-              className={`bg-gradient-to-br ${m.color} text-white rounded-xl px-5 py-4 shadow-md hover:scale-105 transition-all`}
+              className={`bg-linear-to-br ${m.color} text-white rounded-xl px-5 py-4 shadow-md hover:scale-105 transition-all`}
             >
               <p className="text-3xl font-bold">{m.value}</p>
               <p className="text-sm mt-1 opacity-90">{m.label}</p>
@@ -549,6 +555,7 @@ export default function GerenciarSolicitacoesCompras() {
               width="100%"
               fullWidth
               dropdownWidth={220}
+              selectionMode="multiple"
             />
           </div>
         </div>
@@ -621,19 +628,16 @@ export default function GerenciarSolicitacoesCompras() {
                 <label className="block text-sm font-medium mb-2" style={{ color: text }}>
                   Selecione a solicitação de compra
                 </label>
-                <select
+                <SearchableSelect
                   value={chamadoSelecionado ?? ''}
-                  onChange={(e) => setChamadoSelecionado(Number(e.target.value))}
-                  className="w-full px-4 py-3 rounded-lg border text-sm"
-                  style={{ backgroundColor: mode === 'dark' ? '#334155' : '#F8FAFC', borderColor: border, color: text }}
-                >
-                  <option value="">Escolha uma solicitação...</option>
-                  {solicitacoes.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      #{s.numeroChamado} — {s.resumoChamado} ({s.usuario.name})
-                    </option>
-                  ))}
-                </select>
+                  onChange={(value) => setChamadoSelecionado(typeof value === 'number' ? value : Number(value))}
+                  options={solicitacaoOptions}
+                  placeholder="Escolha uma solicitação..."
+                  width="100%"
+                  fullWidth
+                  dropdownWidth={480}
+                  selectionMode="single"
+                />
               </div>
 
               <div className="flex gap-3 justify-end pt-2">
