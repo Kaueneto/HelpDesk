@@ -156,16 +156,317 @@ export default function GerenciarSolicitacoesCompras() {
   }, [solicitacoes, detalhes]);
 
   // ─── filtro ──────────────────────────────────────────────
-  const filtradas = useMemo(() => solicitacoes.filter(s => {
-    const okStatus = filtroStatus === 'todos' || s.status.id.toString() === filtroStatus;
-    const q = busca.toLowerCase();
-    const okBusca  = !q
-      || s.numeroChamado.toString().includes(q)
-      || s.resumoChamado.toLowerCase().includes(q)
-      || s.usuario.name.toLowerCase().includes(q)
-      || s.departamento.name.toLowerCase().includes(q);
-    return okStatus && okBusca;
-  }), [solicitacoes, busca, filtroStatus]);
+  const STATUS_ORDEM: Record<number, number> = {
+    1: 0,
+    2: 1,
+    6: 2,
+    7: 3,
+    5: 4,
+    3: 5,
+    4: 6,
+  };
+
+  const solicitacoesAgrupadas = useMemo(() => {
+    const filtradas = solicitacoes.filter(s => {
+      const okStatus = filtroStatus === 'todos' || s.status.id.toString() === filtroStatus;
+      const q = busca.toLowerCase();
+      const okBusca  = !q
+        || s.numeroChamado.toString().includes(q)
+        || s.resumoChamado.toLowerCase().includes(q)
+        || s.usuario.name.toLowerCase().includes(q)
+        || s.departamento.name.toLowerCase().includes(q);
+      return okStatus && okBusca;
+    });
+
+    const ordenadas = [...filtradas].sort((a, b) => {
+      const ordemA = STATUS_ORDEM[a.status.id] ?? 99;
+      const ordemB = STATUS_ORDEM[b.status.id] ?? 99;
+      if (ordemA !== ordemB) return ordemA - ordemB;
+      return new Date(b.dataAbertura).getTime() - new Date(a.dataAbertura).getTime();
+    });
+
+    const ativas = ordenadas.filter(s => s.status.id !== 3);
+    const encerradas = ordenadas.filter(s => s.status.id === 3);
+
+    return { ativas, encerradas };
+  }, [solicitacoes, busca, filtroStatus]);
+
+  const renderSolicitacaoCard = (sol: Solicitacao) => {
+    const isExpanded = expandedIds.has(sol.id);
+    const det = detalhes[sol.id];
+
+    const prioNome = sol.tipoPrioridade.nome.toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+    const prio = PRIORIDADE_STYLE[prioNome] ?? { dot: '#94a3b8', label: sol.tipoPrioridade.nome };
+
+    const statusSt = STATUS_CHAMADO_STYLE[sol.status.id] ?? {
+      bgLight: '#f1f5f9',
+      bgDark: '#1e293b',
+      textLight: '#475569',
+      textDark: '#94a3b8',
+      dot: '#94a3b8',
+      label: sol.status.nome,
+    };
+    const accent = statusSt.dot;
+
+    const cardBase: React.CSSProperties = {
+      backgroundColor: card,
+      borderRadius: '12px',
+      overflow: 'hidden',
+      border: `1px solid ${border}`,
+      transition: 'box-shadow 200ms ease, transform 200ms ease',
+    };
+
+    const totalCotacoes = det?.cotacoes?.length ?? 0;
+
+    return (
+      <div
+        key={sol.id}
+        style={cardBase}
+        onMouseEnter={e => {
+          const el = e.currentTarget as HTMLDivElement;
+          el.style.transform = 'translateY(-2px)';
+          el.style.boxShadow = mode === 'dark'
+            ? `0 8px 32px rgba(0,0,0,0.45), 0 0 0 1px ${accent}40`
+            : `0 8px 24px rgba(0,0,0,0.10), 0 0 0 1px ${accent}30`;
+        }}
+        onMouseLeave={e => {
+          const el = e.currentTarget as HTMLDivElement;
+          el.style.transform = 'translateY(0)';
+          el.style.boxShadow = isExpanded
+            ? (mode === 'dark' ? '0 4px 20px rgba(0,0,0,0.4)' : '0 4px 16px rgba(0,0,0,0.08)')
+            : 'none';
+        }}
+      >
+        <div
+          className="flex items-center gap-3 px-5 py-4 cursor-pointer select-none"
+          onClick={() => toggleExpand(sol.id)}
+        >
+          <span
+            className="inline-flex items-center justify-center w-5 h-5 rounded-full shrink-0"
+            style={{
+              color: isExpanded ? accent : (mode === 'dark' ? '#64748b' : '#94a3b8'),
+              transition: 'transform 220ms cubic-bezier(0.4,0,0.2,1), color 180ms ease',
+              transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
+            }}
+          >
+            <FiChevronRight size={15} />
+          </span>
+
+          <span
+            className="text-[11px] font-mono font-bold shrink-0 px-2 py-0.5 rounded"
+            style={{ color: accent, backgroundColor: `${accent}15` }}
+          >
+            #{sol.numeroChamado}
+          </span>
+
+          <span className="font-medium flex-1 truncate text-sm" style={{ color: text }}>
+            {sol.resumoChamado}
+          </span>
+
+          <div className="hidden md:flex items-center gap-4 shrink-0 text-xs" style={{ color: text }}>
+            <span
+              className="px-2.5 py-1 rounded-full font-semibold tracking-wide uppercase text-[10px] flex items-center gap-1.5"
+              style={{
+                backgroundColor: `${prio.dot}20`,
+                color: prio.dot,
+                border: `1px solid ${prio.dot}40`,
+              }}
+            >
+              <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: prio.dot }}></span>
+              {prio.label}
+            </span>
+
+            {det && (
+              <span
+                className="px-2.5 py-1 rounded-full font-semibold text-[10px] flex items-center gap-1.5"
+                style={{
+                  backgroundColor: mode === 'dark' ? '#1e40af30' : '#dbeafe',
+                  color: mode === 'dark' ? '#93c5fd' : '#1d4ed8',
+                  border: `1px solid ${mode === 'dark' ? '#1e40af50' : '#93c5fd50'}`,
+                }}
+              >
+                <FiFileText size={10} />
+                {totalCotacoes} {totalCotacoes === 1 ? 'cotação' : 'cotações'}
+              </span>
+            )}
+
+            <span className="opacity-55 hidden lg:block max-w-[130px] truncate">
+              {sol.usuario.name}
+            </span>
+
+            <span className="opacity-45 hidden xl:block max-w-[120px] truncate">
+              {sol.departamento.name}
+            </span>
+
+            <span className="opacity-35 hidden xl:block tabular-nums">
+              {fmtData(sol.dataAbertura)}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-0.5 shrink-0" onClick={e => e.stopPropagation()}>
+            <button
+              onClick={() => criarCotacao(sol.id)}
+              title="Nova cotação"
+              className="p-1.5 rounded-lg text-sm transition-all duration-150"
+              style={{ color: accent }}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = `${accent}18`; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent'; }}
+            >
+              <FiPlus size={14} />
+            </button>
+            <div className="relative group">
+              <button
+                onClick={() => router.push(`/chamado/${sol.id}`)}
+                className="p-1.5 rounded-lg transition-all duration-150 opacity-40 hover:opacity-100"
+                style={{ color: text }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = `${text}10`; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent'; }}
+              >
+                <FiEye size={14} />
+              </button>
+              <div
+                className="absolute bottom-full right-0 mb-2 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-lg z-10"
+                style={{
+                  backgroundColor: mode === 'dark' ? '#1e293b' : '#334155',
+                  color: '#ffffff',
+                }}
+              >
+                Visualizar chamado desta solicitação
+                <div
+                  className="absolute top-full right-3 w-0 h-0"
+                  style={{
+                    borderLeft: '4px solid transparent',
+                    borderRight: '4px solid transparent',
+                    borderTop: `4px solid ${mode === 'dark' ? '#1e293b' : '#334155'}`,
+                  }}
+                ></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div
+          className="md:hidden flex flex-wrap items-center gap-3 px-5 pb-3 text-xs"
+          style={{ color: text }}
+          onClick={() => toggleExpand(sol.id)}
+        >
+          <span
+            className="px-2.5 py-1 rounded-full font-semibold tracking-wide uppercase text-[10px] flex items-center gap-1.5"
+            style={{
+              backgroundColor: `${prio.dot}20`,
+              color: prio.dot,
+              border: `1px solid ${prio.dot}40`,
+            }}
+          >
+            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: prio.dot }}></span>
+            {prio.label}
+          </span>
+          {det && (
+            <span
+              className="px-2.5 py-1 rounded-full font-semibold text-[10px] flex items-center gap-1.5"
+              style={{
+                backgroundColor: mode === 'dark' ? '#1e40af30' : '#dbeafe',
+                color: mode === 'dark' ? '#93c5fd' : '#1d4ed8',
+                border: `1px solid ${mode === 'dark' ? '#1e40af50' : '#93c5fd50'}`,
+              }}
+            >
+              <FiFileText size={10} />
+              {totalCotacoes}
+            </span>
+          )}
+          <span className="opacity-50">{sol.usuario.name}</span>
+          <span className="opacity-40">{sol.departamento.name}</span>
+        </div>
+
+        <div
+          style={{
+            maxHeight: isExpanded ? '1000px' : '0',
+            overflow: 'hidden',
+            transition: 'max-height 320ms cubic-bezier(0.4,0,0.2,1)',
+          }}
+        >
+          <div style={{ borderTop: `1px solid ${mode === 'dark' ? '#334155' : '#e2e8f0'}`, backgroundColor: subBg }}>
+            <div className="px-6 py-3 flex flex-wrap gap-x-5 gap-y-1 text-xs border-b font-segoe "
+              style={{ borderColor: mode === 'dark' ? '#334155' : '#e2e8f0', color: mode === 'dark' ? '#94a3b8' : '#64748b' }}>
+              <span>Solicitante: <strong style={{ color: text }}>{sol.usuario.name}</strong></span>
+              <span>Departamento: <strong style={{ color: text }}>{sol.departamento.name}</strong></span>
+              <span>Solicitado em: <strong style={{ color: text }}>{fmtData(sol.dataAbertura)}</strong></span>
+              {sol.userResponsavel && (
+                <span>Responsável: <strong style={{ color: text }}>{sol.userResponsavel.name}</strong></span>
+              )}
+            </div>
+
+            {!det ? (
+              <p className="px-6 py-4 text-sm opacity-40" style={{ color: text }}>Carregando...</p>
+            ) : !det.cotacoes || det.cotacoes.length === 0 ? (
+              <div className="px-6 py-6 text-center">
+                <p className="text-sm opacity-40 mb-3" style={{ color: text }}>
+                  Nenhuma cotação criada para esta solicitação
+                </p>
+                <button onClick={() => criarCotacao(sol.id)}
+                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm font-medium flex items-center gap-2 mx-auto transition-colors">
+                  <FiPlus /> Criar Cotação
+                </button>
+              </div>
+            ) : (
+              <div className="px-6 py-4 space-y-2">
+                {det.cotacoes.map((cot) => {
+                  const cs = STATUS_COTACAO_STYLE[cot.status];
+                  const cbg = cs ? (mode === 'dark' ? cs.bgDark : cs.bgLight) : (mode === 'dark' ? '#1e293b' : '#f1f5f9');
+                  const ctxt = cs ? (mode === 'dark' ? cs.textDark : cs.textLight) : '#94a3b8';
+
+                  return (
+                    <div key={cot.id}
+                      className="flex items-center justify-between px-4 py-3 rounded-xl cursor-pointer"
+                      style={{
+                        backgroundColor: card,
+                        border: `1px solid ${mode === 'dark' ? '#334155' : '#e2e8f0'}`,
+                        transition: 'box-shadow 150ms ease, transform 150ms ease',
+                      }}
+                      onMouseEnter={e => {
+                        const el = e.currentTarget as HTMLDivElement;
+                        el.style.transform = 'translateX(2px)';
+                        el.style.boxShadow = mode === 'dark' ? '0 4px 16px rgba(0,0,0,0.4)' : '0 4px 12px rgba(0,0,0,0.09)';
+                      }}
+                      onMouseLeave={e => {
+                        const el = e.currentTarget as HTMLDivElement;
+                        el.style.transform = 'translateX(0)';
+                        el.style.boxShadow = 'none';
+                      }}
+                      onClick={() => router.push(`/compras/cotacoes/${cot.id}`)}
+                    >
+                      <div className="flex items-center gap-3 text-sm">
+                        <FiFileText size={14} style={{ color: mode === 'dark' ? '#64748b' : '#94a3b8' }} />
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-medium" style={{ color: text }}>Cotação #{cot.id}</span>
+                            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold"
+                              style={{ backgroundColor: cbg, color: ctxt }}>
+                              {cs?.label ?? cot.status}
+                            </span>
+                          </div>
+                          {cot.itens?.length > 0 && (
+                            <p className="text-[11px] mt-0.5 truncate max-w-xs" style={{ color: mode === 'dark' ? '#64748b' : '#94a3b8' }}>
+                              {cot.itens.length} {cot.itens.length === 1 ? 'item' : 'itens'}
+                              {(cot.itens[0] as any)?.descricao ? ` · ${(cot.itens[0] as any).descricao}` : ''}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs opacity-40" style={{ color: text }}>
+                        <span className="hidden sm:block">{cot.criadoPor.name} · {fmtData(cot.createdAt)}</span>
+                        <FiChevronRight size={13} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   if (loading) return (
     <div className="flex items-center justify-center h-screen" style={{ backgroundColor: bg }}>
@@ -242,309 +543,47 @@ export default function GerenciarSolicitacoesCompras() {
         </div>
 
         {/* lista das solicitações */}
-        <div className="space-y-3">
-          {filtradas.length === 0 ? (
+        <div className="space-y-4">
+          {solicitacoesAgrupadas.ativas.length === 0 && solicitacoesAgrupadas.encerradas.length === 0 ? (
             <div className="text-center py-16 rounded-xl" style={{ backgroundColor: card, color: text }}>
               <FiFileText className="mx-auto text-5xl mb-4 opacity-20" />
               <p className="text-lg font-medium opacity-60">Nenhuma solicitação encontrada</p>
             </div>
-          ) : filtradas.map((sol) => {
-            const isExpanded = expandedIds.has(sol.id);
-            const det        = detalhes[sol.id];
-            
-            // normaliza o nome da prioridade removendo acentos e transformando em uppercase
-            const prioNome   = sol.tipoPrioridade.nome.toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
-            
-            //tenta mapear a prioridade, se nao encontrar usa cinza como fallback
-            const prio = PRIORIDADE_STYLE[prioNome] ?? { dot: '#94a3b8', label: sol.tipoPrioridade.nome };
-            
-            const statusSt   = STATUS_CHAMADO_STYLE[sol.status.id] ?? {
-              bgLight:'#f1f5f9', bgDark:'#1e293b', textLight:'#475569', textDark:'#94a3b8', dot:'#94a3b8', label: sol.status.nome,
-            };
-            const statusBg   = mode === 'dark' ? statusSt.bgDark   : statusSt.bgLight;
-            const statusText = mode === 'dark' ? statusSt.textDark  : statusSt.textLight;
-            const accent     = statusSt.dot;
+          ) : (
+            <>
+              {solicitacoesAgrupadas.ativas.length > 0 && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 px-1">
+                      <div className="h-px flex-1 bg-gray-500/20" />
+                    <span className="text-xs font-semibold font-segoe " style={{ color: mode === 'dark' ? '#94a3b8' : '#64748b' }}>
+                      Em andamento
+                    </span>
+                      <div className="h-px flex-1 bg-gray-500/20" />
+                  </div>
+                  {solicitacoesAgrupadas.ativas.map((sol) => renderSolicitacaoCard(sol))}
+                </div>
+              )}
 
-            // card: sem borda colorida superior
-            const cardBase: React.CSSProperties = {
-              backgroundColor: card,
-              borderRadius: '12px',
-              overflow: 'hidden',
-              border: `1px solid ${border}`,
-              transition: 'box-shadow 200ms ease, transform 200ms ease',
-            };
+             {solicitacoesAgrupadas.encerradas.length > 0 && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 px-1 pt-2">
+                    <div className="h-px flex-1 bg-gray-500/20" />
 
-            // conta total de cotações
-            const totalCotacoes = det?.cotacoes?.length ?? 0;
-
-            return (
-              <div
-                key={sol.id}
-                style={cardBase}
-                onMouseEnter={e => {
-                  const el = e.currentTarget as HTMLDivElement;
-                  el.style.transform = 'translateY(-2px)';
-                  el.style.boxShadow = mode === 'dark'
-                    ? `0 8px 32px rgba(0,0,0,0.45), 0 0 0 1px ${accent}40`
-                    : `0 8px 24px rgba(0,0,0,0.10), 0 0 0 1px ${accent}30`;
-                }}
-                onMouseLeave={e => {
-                  const el = e.currentTarget as HTMLDivElement;
-                  el.style.transform = 'translateY(0)';
-                  el.style.boxShadow = isExpanded
-                    ? (mode === 'dark' ? '0 4px 20px rgba(0,0,0,0.4)' : '0 4px 16px rgba(0,0,0,0.08)')
-                    : 'none';
-                }}
-              >
-                {/* ── linha principal ── */}
-                <div
-                  className="flex items-center gap-3 px-5 py-4 cursor-pointer select-none"
-                  onClick={() => toggleExpand(sol.id)}
-                >
-                  {/* chevron animado */}
-                  <span
-                    className="inline-flex items-center justify-center w-5 h-5 rounded-full shrink-0"
-                    style={{
-                      color: isExpanded ? accent : (mode === 'dark' ? '#64748b' : '#94a3b8'),
-                      transition: 'transform 220ms cubic-bezier(0.4,0,0.2,1), color 180ms ease',
-                      transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
-                    }}
-                  >
-                    <FiChevronRight size={15} />
-                  </span>
-
-                  {/* número mono */}
-                  <span
-                    className="text-[11px] font-mono font-bold shrink-0 px-2 py-0.5 rounded"
-                    style={{ color: accent, backgroundColor: `${accent}15` }}
-                  >
-                    #{sol.numeroChamado}
-                  </span>
-
-                  {/* título */}
-                  <span className="font-medium flex-1 truncate text-sm" style={{ color: text }}>
-                    {sol.resumoChamado}
-                  </span>
-
-                  {/* metadados — desktop */}
-                  <div className="hidden md:flex items-center gap-4 shrink-0 text-xs" style={{ color: text }}>
-
-                    {/* prioridade como badge moderno */}
-                    <span 
-                      className="px-2.5 py-1 rounded-full font-semibold tracking-wide uppercase text-[10px] flex items-center gap-1.5" 
-                      style={{ 
-                        backgroundColor: `${prio.dot}20`, 
-                        color: prio.dot,
-                        border: `1px solid ${prio.dot}40`
-                      }}
+                    <span
+                      className="text-xs font-semibold font-segoe"
+                      style={{ color: mode === 'dark' ? '#94a3b8' : '#64748b' }}
                     >
-                      <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: prio.dot }}></span>
-                      {prio.label}
+                      Encerradas
                     </span>
 
-                    {/* total de cotações */}
-                    {det && (
-                      <span 
-                        className="px-2.5 py-1 rounded-full font-semibold text-[10px] flex items-center gap-1.5" 
-                        style={{ 
-                          backgroundColor: mode === 'dark' ? '#1e40af30' : '#dbeafe', 
-                          color: mode === 'dark' ? '#93c5fd' : '#1d4ed8',
-                          border: `1px solid ${mode === 'dark' ? '#1e40af50' : '#93c5fd50'}`
-                        }}
-                      >
-                        <FiFileText size={10} />
-                        {totalCotacoes} {totalCotacoes === 1 ? 'cotação' : 'cotações'}
-                      </span>
-                    )}
-
-                    {/* solicitante */}
-                    <span className="opacity-55 hidden lg:block max-w-[130px] truncate">
-                      {sol.usuario.name}
-                    </span>
-
-                    {/* departamento */}
-                    <span className="opacity-45 hidden xl:block max-w-[120px] truncate">
-                      {sol.departamento.name}
-                    </span>
-
-                    {/* data */}
-                    <span className="opacity-35 hidden xl:block tabular-nums">
-                      {fmtData(sol.dataAbertura)}
-                    </span>
+                    <div className="h-px flex-1 bg-gray-500/20" />
                   </div>
 
-                  {/* ações */}
-                  <div className="flex items-center gap-0.5 shrink-0" onClick={e => e.stopPropagation()}>
-                    <button
-                      onClick={() => criarCotacao(sol.id)}
-                      title="Nova cotação"
-                      className="p-1.5 rounded-lg text-sm transition-all duration-150"
-                      style={{ color: accent }}
-                      onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = `${accent}18`; }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent'; }}
-                    >
-                      <FiPlus size={14} />
-                    </button>
-                    <div className="relative group">
-                      <button
-                        onClick={() => router.push(`/chamado/${sol.id}`)}
-                        className="p-1.5 rounded-lg transition-all duration-150 opacity-40 hover:opacity-100"
-                        style={{ color: text }}
-                        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = `${text}10`; }}
-                        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent'; }}
-                      >
-                        <FiEye size={14} />
-                      </button>
-                      {/* tooltip */}
-                      <div 
-                        className="absolute bottom-full right-0 mb-2 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-lg z-10"
-                        style={{ 
-                          backgroundColor: mode === 'dark' ? '#1e293b' : '#334155',
-                          color: '#ffffff'
-                        }}
-                      >
-                        Visualizar chamado desta solicitação
-                        <div 
-                          className="absolute top-full right-3 w-0 h-0" 
-                          style={{ 
-                            borderLeft: '4px solid transparent',
-                            borderRight: '4px solid transparent',
-                            borderTop: `4px solid ${mode === 'dark' ? '#1e293b' : '#334155'}`
-                          }}
-                        ></div>
-                      </div>
-                    </div>
-                  </div>
+                  {solicitacoesAgrupadas.encerradas.map((sol) => renderSolicitacaoCard(sol))}
                 </div>
-
-                {/* metadados mobile */}
-                <div
-                  className="md:hidden flex flex-wrap items-center gap-3 px-5 pb-3 text-xs"
-                  style={{ color: text }}
-                  onClick={() => toggleExpand(sol.id)}
-                >
-                  <span 
-                    className="px-2.5 py-1 rounded-full font-semibold tracking-wide uppercase text-[10px] flex items-center gap-1.5" 
-                    style={{ 
-                      backgroundColor: `${prio.dot}20`, 
-                      color: prio.dot,
-                      border: `1px solid ${prio.dot}40`
-                    }}
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: prio.dot }}></span>
-                    {prio.label}
-                  </span>
-                  {det && (
-                    <span 
-                      className="px-2.5 py-1 rounded-full font-semibold text-[10px] flex items-center gap-1.5" 
-                      style={{ 
-                        backgroundColor: mode === 'dark' ? '#1e40af30' : '#dbeafe', 
-                        color: mode === 'dark' ? '#93c5fd' : '#1d4ed8',
-                        border: `1px solid ${mode === 'dark' ? '#1e40af50' : '#93c5fd50'}`
-                      }}
-                    >
-                      <FiFileText size={10} />
-                      {totalCotacoes}
-                    </span>
-                  )}
-                  <span className="opacity-50">{sol.usuario.name}</span>
-                  <span className="opacity-40">{sol.departamento.name}</span>
-                </div>
-
-                {/* ── accordion ── */}
-                <div
-                  style={{
-                    maxHeight: isExpanded ? '1000px' : '0',
-                    overflow: 'hidden',
-                    transition: 'max-height 320ms cubic-bezier(0.4,0,0.2,1)',
-                  }}
-                >
-                  <div style={{ borderTop: `1px solid ${mode === 'dark' ? '#334155' : '#e2e8f0'}`, backgroundColor: subBg }}>
-                    {/* contexto */}
-                    <div className="px-6 py-3 flex flex-wrap gap-x-5 gap-y-1 text-xs border-b"
-                      style={{ borderColor: mode === 'dark' ? '#334155' : '#e2e8f0', color: mode === 'dark' ? '#94a3b8' : '#64748b' }}>
-                      <span>Solicitante: <strong style={{ color: text }}>{sol.usuario.name}</strong></span>
-                      <span>Departamento: <strong style={{ color: text }}>{sol.departamento.name}</strong></span>
-                      <span>Solicitado em: <strong style={{ color: text }}>{fmtData(sol.dataAbertura)}</strong></span>
-                      {sol.userResponsavel && (
-                        <span>Responsável: <strong style={{ color: text }}>{sol.userResponsavel.name}</strong></span>
-                      )}
-                    </div>
-
-                    {/* cotações */}
-                    {!det ? (
-                      <p className="px-6 py-4 text-sm opacity-40" style={{ color: text }}>Carregando...</p>
-                    ) : !det.cotacoes || det.cotacoes.length === 0 ? (
-                      <div className="px-6 py-6 text-center">
-                        <p className="text-sm opacity-40 mb-3" style={{ color: text }}>
-                          Nenhuma cotação criada para esta solicitação
-                        </p>
-                        <button onClick={() => criarCotacao(sol.id)}
-                          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm font-medium flex items-center gap-2 mx-auto transition-colors">
-                          <FiPlus /> Criar Cotação
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="px-6 py-4 space-y-2">
-                        {det.cotacoes.map((cot) => {
-                          const cs   = STATUS_COTACAO_STYLE[cot.status];
-                          const cbg  = cs ? (mode === 'dark' ? cs.bgDark   : cs.bgLight)  : (mode === 'dark' ? '#1e293b' : '#f1f5f9');
-                          const ctxt = cs ? (mode === 'dark' ? cs.textDark : cs.textLight) : '#94a3b8';
-
-                          return (
-                            <div key={cot.id}
-                              className="flex items-center justify-between px-4 py-3 rounded-xl cursor-pointer"
-                              style={{
-                                backgroundColor: card,
-                                border: `1px solid ${mode === 'dark' ? '#334155' : '#e2e8f0'}`,
-                                transition: 'box-shadow 150ms ease, transform 150ms ease',
-                              }}
-                              onMouseEnter={e => {
-                                const el = e.currentTarget as HTMLDivElement;
-                                el.style.transform = 'translateX(2px)';
-                                el.style.boxShadow = mode === 'dark' ? '0 4px 16px rgba(0,0,0,0.4)' : '0 4px 12px rgba(0,0,0,0.09)';
-                              }}
-                              onMouseLeave={e => {
-                                const el = e.currentTarget as HTMLDivElement;
-                                el.style.transform = 'translateX(0)';
-                                el.style.boxShadow = 'none';
-                              }}
-                              onClick={() => router.push(`/compras/cotacoes/${cot.id}`)}
-                            >
-                              <div className="flex items-center gap-3 text-sm">
-                                <FiFileText size={14} style={{ color: mode === 'dark' ? '#64748b' : '#94a3b8' }} />
-                                <div className="min-w-0">
-                                  <div className="flex items-center gap-2 flex-wrap">
-                                    <span className="font-medium" style={{ color: text }}>Cotação #{cot.id}</span>
-                                    {/* status da cotação — o que interessa aqui */}
-                                    <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold"
-                                      style={{ backgroundColor: cbg, color: ctxt }}>
-                                      {cs?.label ?? cot.status}
-                                    </span>
-                                  </div>
-                                  {/* preview dos itens */}
-                                  {cot.itens?.length > 0 && (
-                                    <p className="text-[11px] mt-0.5 truncate max-w-xs" style={{ color: mode === 'dark' ? '#64748b' : '#94a3b8' }}>
-                                      {cot.itens.length} {cot.itens.length === 1 ? 'item' : 'itens'}
-                                      {(cot.itens[0] as any)?.descricao ? ` · ${(cot.itens[0] as any).descricao}` : ''}
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-2 text-xs opacity-40" style={{ color: text }}>
-                                <span className="hidden sm:block">{cot.criadoPor.name} · {fmtData(cot.createdAt)}</span>
-                                <FiChevronRight size={13} />
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+              )}
+            </>
+          )}
         </div>
       </div>
 
