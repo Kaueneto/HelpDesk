@@ -11,8 +11,8 @@ import {
   FiX,
   FiFileText,
   FiSearch,
-  FiFilter,
 } from 'react-icons/fi';
+import { SearchableSelect, type SelectOption } from '@/components/ui/SearchableSelect';
 
 // ─── tipos ───────────────────────────────────────────────────
 interface Usuario      { id: number; name: string; email: string }
@@ -87,10 +87,18 @@ export default function GerenciarSolicitacoesCompras() {
   const [expandedIds, setExpandedIds]             = useState<Set<number>>(new Set());
   const [loading, setLoading]                     = useState(false);
   const [busca, setBusca]                         = useState('');
-  const [filtroStatus, setFiltroStatus]           = useState('todos');
+  const [filtroStatus, setFiltroStatus]           = useState<string | number | (string | number)[]>('todos');
   const [modalAberto, setModalAberto]             = useState(false);
   const [chamadoSelecionado, setChamadoSelecionado] = useState<number | null>(null);
   const [criando, setCriando]                     = useState(false);
+
+  const statusOptions: SelectOption[] = [
+    { value: 'todos', label: 'Todos os status' },
+    { value: '1', label: 'Aberto' },
+    { value: '2', label: 'Em Análise' },
+    { value: '3', label: 'Encerrado' },
+    { value: '5', label: 'Reaberto' },
+  ];
 
   // cores
   const bg     = mode === 'dark' ? '#0F172A' : '#EDEDED';
@@ -168,7 +176,14 @@ export default function GerenciarSolicitacoesCompras() {
 
   const solicitacoesAgrupadas = useMemo(() => {
     const filtradas = solicitacoes.filter(s => {
-      const okStatus = filtroStatus === 'todos' || s.status.id.toString() === filtroStatus;
+      let okStatus = false;
+      if (filtroStatus === 'todos') {
+        okStatus = true;
+      } else if (Array.isArray(filtroStatus)) {
+        okStatus = filtroStatus.some(st => s.status.id.toString() === st.toString());
+      } else {
+        okStatus = s.status.id.toString() === filtroStatus.toString();
+      }
       const q = busca.toLowerCase();
       const okBusca  = !q
         || s.numeroChamado.toString().includes(q)
@@ -525,20 +540,16 @@ export default function GerenciarSolicitacoesCompras() {
               style={{ backgroundColor: inputBg, borderColor: border, color: text }}
             />
           </div>
-                 <div className="relative">
-            <FiFilter className="absolute left-3 top-1/2 -translate-y-1/2 opacity-40" style={{ color: text }} />
-            <select
+          <div className="w-full sm:w-48">
+            <SearchableSelect
               value={filtroStatus}
-              onChange={(e) => setFiltroStatus(e.target.value)}
-              className="pl-9 pr-8 py-2.5 rounded-lg border text-sm appearance-none"
-              style={{ backgroundColor: inputBg, borderColor: border, color: text }}
-            >
-              <option value="todos">Todos os status</option>
-              <option value="1">Aberto</option>
-              <option value="2">Em Análise</option>
-              <option value="3">Encerrado</option>
-              <option value="5">Reaberto</option>
-            </select>
+              onChange={(value: string | number | (string | number)[]) => setFiltroStatus(value)}
+              options={statusOptions}
+              placeholder="Todos os status"
+              width="100%"
+              fullWidth
+              dropdownWidth={220}
+            />
           </div>
         </div>
 

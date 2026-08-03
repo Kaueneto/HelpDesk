@@ -10,6 +10,7 @@ import {
 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import api from '@/services/api';
+import { SearchableSelect, SelectOption } from '@/components/ui/SearchableSelect';
 
 interface Sugestao {
   id: number; titulo: string; descricao: string;
@@ -122,6 +123,14 @@ export default function SugestoesList({ onVerDetalhe, hideHeader = false }: Prop
     return map[status] || map.aberta;
   };
 
+  const handleStatusChange = (val: string | number | (string | number)[]) => {
+    if (typeof val === 'string') setFiltroStatus(val);
+  };
+
+  const handleOrdenacaoChange = (val: string | number | (string | number)[]) => {
+    if (typeof val === 'string') setOrdenarPor(val as 'recente' | 'votos');
+  };
+
   const formatarData = (data: string) =>
     new Date(data).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
 
@@ -173,24 +182,32 @@ export default function SugestoesList({ onVerDetalhe, hideHeader = false }: Prop
               </motion.button>
             )}
           </AnimatePresence>
-          <div className="flex gap-2 flex-wrap ml-auto">
-            <select value={filtroStatus} onChange={e => setFiltroStatus(e.target.value)}
-              className="px-4 py-2 rounded-lg text-sm border outline-none"
-              style={{ backgroundColor: theme.background.surface, borderColor: theme.border.secondary, color: theme.text.primary }}>
-              <option value="">Todos os status</option>
-              <option value="aberta">Aberta</option>
-              <option value="em_analise">Em análise</option>
-              <option value="planejada">Planejada</option>
-              <option value="em_desenvolvimento">Em desenvolvimento</option>
-              <option value="concluida">Concluída</option>
-              <option value="recusada">Recusada</option>
-            </select>
-            <select value={ordenarPor} onChange={e => setOrdenarPor(e.target.value as any)}
-              className="px-4 py-2 rounded-lg text-sm border outline-none"
-              style={{ backgroundColor: theme.background.surface, borderColor: theme.border.secondary, color: theme.text.primary }}>
-              <option value="recente">Mais recentes</option>
-              <option value="votos">Mais votadas</option>
-            </select>
+          <div className="flex gap-2 flex-wrap ml-auto items-center">
+            <SearchableSelect
+              value={filtroStatus}
+              onChange={handleStatusChange}
+              options={[
+                { value: '', label: 'Todos os status' },
+                { value: 'aberta', label: 'Aberta' },
+                { value: 'em_analise', label: 'Em análise' },
+                { value: 'planejada', label: 'Planejada' },
+                { value: 'em_desenvolvimento', label: 'Em desenvolvimento' },
+                { value: 'concluida', label: 'Concluída' },
+                { value: 'recusada', label: 'Recusada' },
+              ]}
+              placeholder="Filtrar status"
+              width={200}
+            />
+            <SearchableSelect
+              value={ordenarPor}
+              onChange={handleOrdenacaoChange}
+              options={[
+                { value: 'recente', label: 'Mais recentes' },
+                { value: 'votos', label: 'Mais votadas' },
+              ]}
+              placeholder="Ordenar por"
+              width={180}
+            />
           </div>
         </div>
 
