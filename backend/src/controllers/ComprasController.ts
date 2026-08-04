@@ -503,8 +503,9 @@ router.delete("/compras/itens/:id", verifyToken, async (req: AuthenticatedReques
         descricao_produto,
         link_produto,
         quantidade,
-        valor_unitario,
-        prazo_entrega,
+        valor_avista,
+        valor_parcelado,
+        valor_frete,
         observacao,
       } = req.body;
 
@@ -517,11 +518,19 @@ router.delete("/compras/itens/:id", verifyToken, async (req: AuthenticatedReques
           .required("Quantidade é obrigatória")
           .positive("Quantidade deve ser maior que zero")
           .integer("Quantidade deve ser um número inteiro"),
-        valor_unitario: yup
+        valor_avista: yup
           .number()
-          .required("Valor unitário é obrigatório")
-          .positive("Valor unitário deve ser maior que zero"),
-        prazo_entrega: yup.string().optional().nullable(),
+          .required("Preço à vista é obrigatório")
+          .min(0, "Preço à vista deve ser maior ou igual a zero"),
+        valor_parcelado: yup
+          .number()
+          .required("Preço parcelado é obrigatório")
+          .min(0, "Preço parcelado deve ser maior ou igual a zero"),
+        valor_frete: yup
+          .number()
+          .optional()
+          .default(0)
+          .min(0, "Frete deve ser maior ou igual a zero"),
         observacao: yup.string().optional().nullable(),
       });
 
@@ -529,7 +538,7 @@ router.delete("/compras/itens/:id", verifyToken, async (req: AuthenticatedReques
 
       const opcoesRepository = AppDataSource.getRepository(CotacaoItemOpcoes);
 
-      const valor_total = Number(valor_unitario) * Number(quantidade);
+      const valor_total = Number(valor_avista || 0) * Number(quantidade);
 
       const novaOpcao = opcoesRepository.create({
         cotacaoItem: { id: Number(itemId) } as any,
@@ -537,9 +546,10 @@ router.delete("/compras/itens/:id", verifyToken, async (req: AuthenticatedReques
         descricao_produto,
         link_produto: link_produto || null,
         quantidade,
-        valor_unitario,
+        valor_avista: Number(valor_avista || 0),
+        valor_parcelado: Number(valor_parcelado || 0),
+        valor_frete: Number(valor_frete || 0),
         valor_total,
-        prazo_entrega: prazo_entrega || null,
         observacao: observacao || null,
         selecionado: false,
       });
@@ -581,8 +591,9 @@ router.put("/compras/opcoes/:id", verifyToken, async (req: AuthenticatedRequest,
         descricao_produto,
         link_produto,
         quantidade,
-        valor_unitario,
-        prazo_entrega,
+        valor_avista,
+        valor_parcelado,
+        valor_frete,
         observacao,
         selecionado,
       } = req.body;
@@ -596,11 +607,19 @@ router.put("/compras/opcoes/:id", verifyToken, async (req: AuthenticatedRequest,
           .required("Quantidade é obrigatória")
           .positive("Quantidade deve ser maior que zero")
           .integer("Quantidade deve ser um número inteiro"),
-        valor_unitario: yup
+        valor_avista: yup
           .number()
-          .required("Valor unitário é obrigatório")
-          .positive("Valor unitário deve ser maior que zero"),
-        prazo_entrega: yup.string().optional().nullable(),
+          .required("Preço à vista é obrigatório")
+          .min(0, "Preço à vista deve ser maior ou igual a zero"),
+        valor_parcelado: yup
+          .number()
+          .required("Preço parcelado é obrigatório")
+          .min(0, "Preço parcelado deve ser maior ou igual a zero"),
+        valor_frete: yup
+          .number()
+          .optional()
+          .default(0)
+          .min(0, "Frete deve ser maior ou igual a zero"),
         observacao: yup.string().optional().nullable(),
         selecionado: yup.boolean().optional(),
       });
@@ -623,9 +642,10 @@ router.put("/compras/opcoes/:id", verifyToken, async (req: AuthenticatedRequest,
       opcao.descricao_produto = descricao_produto;
       opcao.link_produto = link_produto || null;
       opcao.quantidade = quantidade;
-      opcao.valor_unitario = valor_unitario;
-      opcao.valor_total = Number(valor_unitario) * Number(quantidade);
-      opcao.prazo_entrega = prazo_entrega || null;
+      opcao.valor_avista = Number(valor_avista || 0);
+      opcao.valor_parcelado = Number(valor_parcelado || 0);
+      opcao.valor_frete = Number(valor_frete || 0);
+      opcao.valor_total = Number(valor_avista || 0) * Number(quantidade);
       opcao.observacao = observacao || null;
       if (selecionado !== undefined) {
         opcao.selecionado = selecionado;

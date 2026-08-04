@@ -21,7 +21,9 @@ interface Chamado {
 
 interface CotacaoItemOpcao {
   id: number;
-  valor_unitario: number;
+  valor_avista: number;
+  valor_parcelado: number;
+  valor_frete: number;
   valor_total: number;
   quantidade: number;
   selecionado: boolean;
@@ -71,7 +73,7 @@ function calcularValorTotal(itens?: CotacaoItem[]): number | null {
   let temOpcao = false;
   for (const item of itens) {
     if (!item.opcoes || item.opcoes.length === 0) continue;
-    const precos = item.opcoes.map(o => Number(o.valor_unitario) * item.quantidade);
+    const precos = item.opcoes.map(o => Number(o.valor_avista || 0) * item.quantidade);
     const menor = Math.min(...precos);
     if (isFinite(menor)) { total += menor; temOpcao = true; }
   }
@@ -84,7 +86,7 @@ function calcularValorMedio(itens?: CotacaoItem[]): number | null {
   let count = 0;
   for (const item of itens) {
     if (!item.opcoes || item.opcoes.length === 0) continue;
-    const media = item.opcoes.reduce((acc, o) => acc + Number(o.valor_unitario), 0) / item.opcoes.length;
+    const media = item.opcoes.reduce((acc, o) => acc + Number(o.valor_avista || 0), 0) / item.opcoes.length;
     somaMedias += media * item.quantidade;
     count++;
   }

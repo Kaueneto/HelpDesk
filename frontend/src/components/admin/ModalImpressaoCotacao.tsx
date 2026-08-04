@@ -11,9 +11,10 @@ interface CotacaoItemOpcao {
   descricao_produto: string;
   link_produto: string | null;
   quantidade: number;
-  valor_unitario: number;
+  valor_avista: number;
+  valor_parcelado: number;
+  valor_frete: number;
   valor_total: number;
-  prazo_entrega: string | null;
   observacao: string | null;
   selecionado: boolean;
   classificacoes: Classificacao[];
@@ -88,17 +89,14 @@ export default function ModalImpressaoCotacao({ cotacao, onClose }: ModalImpress
     };
 
     const itensHTML = itensParaImprimir.map(item => {
-      // se imprimirTodosItens: mostra tudo
-      // senão: somente opções com classificação ESCOLHIDO ou selecionado=true
       const opcoesFiltradas = item.opcoes.filter(o =>
         o.selecionado || (o.classificacoes || []).some(c => c.tipo === 'ESCOLHIDO')
       );
       const opcoes = imprimirTodosItens ? item.opcoes : opcoesFiltradas;
 
-      const precos  = item.opcoes.map(o => Number(o.valor_unitario));
-      const menor   = precos.length > 0 ? Math.min(...precos) : null;
-      const maior   = precos.length > 0 ? Math.max(...precos) : null;
-      const soma    = precos.reduce((a, b) => a + b, 0);
+      const somaAvista = opcoes.reduce((acc, o) => acc + Number(o.valor_avista || 0), 0);
+      const somaParcelado = opcoes.reduce((acc, o) => acc + Number(o.valor_parcelado || 0), 0);
+      const somaFrete = opcoes.reduce((acc, o) => acc + Number(o.valor_frete || 0), 0);
 
       const linhasOpcoes = opcoes.map((opcao, idx) => {
         const badges = (opcao.classificacoes || [])
@@ -110,11 +108,15 @@ export default function ModalImpressaoCotacao({ cotacao, onClose }: ModalImpress
 
         return `
           <tr class="${opcao.selecionado ? 'row-sel' : idx % 2 === 0 ? '' : 'row-alt'}">
-            <td>${opcao.descricao_produto}</td>
-            <td>${opcao.fornecedor}</td>
-            <td class="num">${fmtMoeda(opcao.valor_unitario)}</td>
-            <td class="num">${fmtMoeda(Number(opcao.valor_total ?? 0))}</td>
-            <td class="center">${opcao.prazo_entrega || '—'}</td>
+            <td>
+              <div class="desc-stack">
+                <div class="desc-text">${opcao.descricao_produto}</div>
+                <div class="fornecedor-text">${opcao.fornecedor}</div>
+              </div>
+            </td>
+            <td class="num">${fmtMoeda(opcao.valor_avista || 0)}</td>
+            <td class="num">${fmtMoeda(opcao.valor_parcelado || 0)}</td>
+            <td class="num">${fmtMoeda(opcao.valor_frete || 0)}</td>
             <td class="center link-cell">${link}</td>
             <td>${opcao.observacao || '—'}</td>
             <td class="center">${badges}</td>
@@ -125,38 +127,49 @@ export default function ModalImpressaoCotacao({ cotacao, onClose }: ModalImpress
         <div class="item-block">
           <div class="item-header">
             <div class="item-header-left">
+              <div class="cotacao-code">Cotação #${cotacao.id}</div>
               <span class="item-label">Itens para compra:</span>
-              <div class="item-title-row">
-                <span class="item-name">${item.descricao}</span>
-                <span class="item-qty">${item.quantidade} un.</span>
+              <div class="item-title-block">
+                <div class="item-title-row">
+                  <span class="item-name">${item.descricao}</span>
+                  <span class="item-qty">${item.quantidade} un.</span>
+                </div>
+                ${item.observacao ? `<p class="item-obs-line">${item.observacao}</p>` : ''}
               </div>
-              ${item.observacao ? `<p class="item-obs-line">${item.observacao}</p>` : ''}
             </div>
           </div>
           <table class="opcoes-table">
             <thead>
               <tr>
-                <th>Descrição</th>
-                <th>Loja</th>
-                <th class="num">Preço</th>
+                <th>Descrição / Loja</th>
+                <th class="num">À vista</th>
+                <th class="num">Parcelado</th>
                 <th class="num">Frete</th>
-                <th class="center">Prazo</th>
                 <th class="center">Link</th>
-                <th>Observação</th>
+                <th>Obs.</th>
                 <th class="center">Ações</th>
               </tr>
             </thead>
             <tbody>
-              ${linhasOpcoes || `<tr><td colspan="8" class="empty">${imprimirTodosItens ? 'Nenhuma opção cotada' : 'Nenhuma opção  escolhida (🏆)'}</td></tr>`}
+              ${linhasOpcoes || `<tr><td colspan="7" class="empty">${imprimirTodosItens ? 'Nenhuma opção cotada' : 'Nenhuma opção escolhida (🏆)'}</td></tr>`}
             </tbody>
           </table>
-          ${precos.length > 0 ? `
+          ${opcoes.length > 0 ? `
           <div class="resumo-item">
-            <span class="resumo-label">Resumo:</span>
+            <span class="resumo-label">Totais por coluna:</span>
             <div class="resumo-grid">
-              <span>Menor preço: <strong class="green">${fmtMoeda(menor!)}</strong></span>
-              <span>Maior preço: <strong class="red">${fmtMoeda(maior!)}</strong></span>
-              <span>Soma total das opções: <strong>${fmtMoeda(soma)}</strong></span>
+              <div class="resumo-col">
+                <span class="resumo-subtitle">À vista</span>
+                <strong class="resumo-value">${fmtMoeda(somaAvista)}</strong>
+              </div>
+              <div class="resumo-col">
+                <span class="resumo-subtitle">Parcelado</span>
+                <strong class="resumo-value">${fmtMoeda(somaParcelado)}</strong>
+              </div>
+              <div class="resumo-col">
+                <span class="resumo-subtitle">Frete</span>
+                <strong class="resumo-value">${fmtMoeda(somaFrete)}</strong>
+              </div>
             </div>
           </div>` : ''}
         </div>`;
@@ -238,11 +251,13 @@ export default function ModalImpressaoCotacao({ cotacao, onClose }: ModalImpress
     .item-block { margin-bottom: 28px; }
     .item-header { margin-bottom: 6px; }
     .item-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: #666; display: block; margin-bottom: 2px; }
-    .item-title-row { display: flex; align-items: baseline; gap: 10px; }
+    .cotacao-code { font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 4px; }
+    .item-title-block { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+    .item-title-row { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
     .item-name { font-size: 17px; font-weight: 700; }
     .item-obs { font-size: 12px; color: #555; }
-    .item-obs-line { font-size: 11px; color: #666; margin-top: 2px; }
-    .item-qty { font-size: 11px; color: #888; margin-left: auto; white-space: nowrap; }
+    .item-obs-line { font-size: 10px; color: #64748b; opacity: 0.75; margin-top: 3px; }
+    .item-qty { font-size: 11px; color: #888; white-space: nowrap; }
 
     /* ── tabela de opções ── */
     .opcoes-table { width: 100%; border-collapse: collapse; font-size: 11.5px; margin-top: 4px; }
@@ -255,15 +270,19 @@ export default function ModalImpressaoCotacao({ cotacao, onClose }: ModalImpress
     .opcoes-table .center { text-align: center; }
     .opcoes-table .empty { text-align: center; color: #aaa; padding: 12px; }
     .opcoes-table .link-cell { font-size: 10px; max-width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .desc-stack { display: flex; flex-direction: column; gap: 3px; }
+    .desc-text { font-weight: 600; }
+    .fornecedor-text { font-size: 10px; color: #64748b; opacity: 0.9; }
     .link { color: #1d4ed8; }
     .badge { font-size: 14px; margin: 0 1px; }
 
     /* ── resumo do item ── */
     .resumo-item { margin-top: 8px; padding: 8px 10px; background: #f8fafc; border-left: 3px solid #334155; font-size: 11.5px; }
     .resumo-label { font-weight: 700; display: block; margin-bottom: 4px; }
-    .resumo-grid { display: flex; gap: 24px; flex-wrap: wrap; }
-    .green { color: #16a34a; }
-    .red { color: #dc2626; }
+    .resumo-grid { display: grid; grid-template-columns: repeat(3, minmax(110px, 1fr)); gap: 12px; }
+    .resumo-col { display: flex; flex-direction: column; gap: 2px; }
+    .resumo-subtitle { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; color: #64748b; }
+    .resumo-value { font-size: 13px; color: #111827; }
 
     /* ── rodapé ── */
     .footer { margin-top: 32px; padding-top: 12px; border-top: 1px solid #e5e7eb; display: flex; justify-content: space-between; font-size: 10px; color: #aaa; }
