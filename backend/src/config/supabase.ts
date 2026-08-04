@@ -25,4 +25,4 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
   },
 });
 
-export const SUPABASE_BUCKET = 'chamados-anexos';
+export const SUPABASE_BUCKET = 'chamados';
