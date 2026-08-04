@@ -13,10 +13,11 @@ import {
   FiChevronDown,
   FiChevronRight,
   FiExternalLink,
-  FiEdit2,
+
   FiPrinter,
 } from 'react-icons/fi';
 import ModalImpressaoCotacao from './ModalImpressaoCotacao';
+import { HiPencil } from 'react-icons/hi';
 
 interface Usuario {
   id: number;
@@ -45,9 +46,10 @@ interface CotacaoItemOpcao {
   descricao_produto: string;
   link_produto: string | null;
   quantidade: number;
-  valor_unitario: number;
+  valor_avista: number;
+  valor_parcelado: number;
+  valor_frete: number;
   valor_total: number;
-  prazo_entrega: string | null;
   observacao: string | null;
   selecionado: boolean;
   classificacoes: Classificacao[];
@@ -81,6 +83,8 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
   const [cotacao, setCotacao] = useState<Cotacao | null>(null);
   const [loading, setLoading] = useState(true);
   const [expandedItems, setExpandedItems] = useState<Set<number>>(new Set());
+  const [editandoItemId, setEditandoItemId] = useState<number | null>(null);
+  const [itemEditando, setItemEditando] = useState({ descricao: '', quantidade: 1, observacao: '' });
   
   // novo item
   const [adicionandoItem, setAdicionandoItem] = useState(false);
@@ -90,11 +94,22 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
   
   // nova opção
   const [adicionandoOpcaoParaItem, setAdicionandoOpcaoParaItem] = useState<number | null>(null);
+  const [editandoOpcaoId, setEditandoOpcaoId] = useState<number | null>(null);
+  const [opcaoEditando, setOpcaoEditando] = useState({
+    descricao_produto: '',
+    fornecedor: '',
+    valor_avista: 0,
+    valor_parcelado: 0,
+    valor_frete: 0,
+    link_produto: '',
+    observacao: '',
+  });
   const [novaOpcao, setNovaOpcao] = useState({
     descricao_produto: '',
     fornecedor: '',
-    valor_unitario: 0,
-    prazo_entrega: '',
+    valor_avista: 0,
+    valor_parcelado: 0,
+    valor_frete: 0,
     link_produto: '',
     observacao: '',
   });
@@ -102,8 +117,9 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
   // refs para navegação Tab
   const refDescricao = useRef<HTMLInputElement>(null);
   const refLoja = useRef<HTMLInputElement>(null);
-  const refPreco = useRef<HTMLInputElement>(null);
-  const refPrazo = useRef<HTMLInputElement>(null);
+  const refPrecoAvista = useRef<HTMLInputElement>(null);
+  const refPrecoParcelado = useRef<HTMLInputElement>(null);
+  const refFrete = useRef<HTMLInputElement>(null);
   const refLink = useRef<HTMLInputElement>(null);
   const refObs = useRef<HTMLInputElement>(null);
 
@@ -133,6 +149,41 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
     const next = new Set(expandedItems);
     next.has(itemId) ? next.delete(itemId) : next.add(itemId);
     setExpandedItems(next);
+  };
+
+  const iniciarEdicaoItem = (item: CotacaoItem) => {
+    setEditandoItemId(item.id);
+    setItemEditando({
+      descricao: item.descricao,
+      quantidade: item.quantidade,
+      observacao: item.observacao || '',
+    });
+  };
+
+  const cancelarEdicaoItem = () => {
+    setEditandoItemId(null);
+    setItemEditando({ descricao: '', quantidade: 1, observacao: '' });
+  };
+
+  const salvarEdicaoItem = async (itemId: number) => {
+    const { descricao, quantidade, observacao } = itemEditando;
+
+    if (!descricao.trim() || quantidade <= 0) {
+      alert('Preencha descrição e quantidade válida');
+      return;
+    }
+
+    try {
+      await api.put(`/compras/itens/${itemId}`, {
+        descricao: descricao.trim(),
+        quantidade,
+        observacao: observacao.trim() || null,
+      });
+      setEditandoItemId(null);
+      carregarCotacao();
+    } catch {
+      alert('Erro ao atualizar item');
+    }
   };
 
   const adicionarItem = async () => {
@@ -179,9 +230,9 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
   };
 
   const adicionarOpcao = async (itemId: number) => {
-    const { fornecedor, descricao_produto, valor_unitario } = novaOpcao;
-    if (!fornecedor.trim() || !descricao_produto.trim() || valor_unitario <= 0) {
-      alert('Preencha descrição, loja e preço');
+    const { fornecedor, descricao_produto, valor_avista, valor_parcelado } = novaOpcao;
+    if (!fornecedor.trim() || !descricao_produto.trim() || valor_avista < 0 || valor_parcelado < 0) {
+      alert('Preencha descrição, loja e os preços');
       return;
     }
     try {
@@ -190,12 +241,13 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
         descricao_produto,
         link_produto: novaOpcao.link_produto || null,
         quantidade: 1,
-        valor_unitario,
-        prazo_entrega: novaOpcao.prazo_entrega || null,
+        valor_avista: Number(valor_avista || 0),
+        valor_parcelado: Number(valor_parcelado || 0),
+        valor_frete: Number(novaOpcao.valor_frete || 0),
         observacao: novaOpcao.observacao || null,
       });
       setAdicionandoOpcaoParaItem(null);
-      setNovaOpcao({ descricao_produto: '', fornecedor: '', valor_unitario: 0, prazo_entrega: '', link_produto: '', observacao: '' });
+      setNovaOpcao({ descricao_produto: '', fornecedor: '', valor_avista: 0, valor_parcelado: 0, valor_frete: 0, link_produto: '', observacao: '' });
       carregarCotacao();
     } catch (error) {
       alert('Erro ao adicionar opção');
@@ -204,9 +256,9 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
 
   // salva a opção e reposiciona o foco na descrição para entrada contínua
   const adicionarOpcaoEContinuar = async (itemId: number) => {
-    const { fornecedor, descricao_produto, valor_unitario } = novaOpcao;
-    if (!fornecedor.trim() || !descricao_produto.trim() || valor_unitario <= 0) {
-      alert('Preencha descrição, loja e preço');
+    const { fornecedor, descricao_produto, valor_avista, valor_parcelado } = novaOpcao;
+    if (!fornecedor.trim() || !descricao_produto.trim() || valor_avista < 0 || valor_parcelado < 0) {
+      alert('Preencha descrição, loja e os preços');
       return;
     }
     try {
@@ -215,12 +267,13 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
         descricao_produto,
         link_produto: novaOpcao.link_produto || null,
         quantidade: 1,
-        valor_unitario,
-        prazo_entrega: novaOpcao.prazo_entrega || null,
+        valor_avista: Number(valor_avista || 0),
+        valor_parcelado: Number(valor_parcelado || 0),
+        valor_frete: Number(novaOpcao.valor_frete || 0),
         observacao: novaOpcao.observacao || null,
       });
       // limpa campos mas mantém o formulário aberto com foco na descrição
-      setNovaOpcao({ descricao_produto: '', fornecedor: '', valor_unitario: 0, prazo_entrega: '', link_produto: '', observacao: '' });
+      setNovaOpcao({ descricao_produto: '', fornecedor: '', valor_avista: 0, valor_parcelado: 0, valor_frete: 0, link_produto: '', observacao: '' });
       // recarrega a cotação para garantir dados corretos
       await carregarCotacao();
       // reposiciona foco após re-render
@@ -250,6 +303,61 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
     } catch { alert('Erro ao excluir opção'); }
   };
 
+  const iniciarEdicaoOpcao = (opcao: CotacaoItemOpcao) => {
+    setAdicionandoOpcaoParaItem(null);
+    setEditandoOpcaoId(opcao.id);
+    setOpcaoEditando({
+      descricao_produto: opcao.descricao_produto,
+      fornecedor: opcao.fornecedor,
+      valor_avista: Number(opcao.valor_avista || 0),
+      valor_parcelado: Number(opcao.valor_parcelado || 0),
+      valor_frete: Number(opcao.valor_frete || 0),
+      link_produto: opcao.link_produto || '',
+      observacao: opcao.observacao || '',
+    });
+    setTimeout(() => { refDescricao.current?.focus(); }, 50);
+  };
+
+  const cancelarEdicaoOpcao = () => {
+    setEditandoOpcaoId(null);
+    setOpcaoEditando({
+      descricao_produto: '',
+      fornecedor: '',
+      valor_avista: 0,
+      valor_parcelado: 0,
+      valor_frete: 0,
+      link_produto: '',
+      observacao: '',
+    });
+  };
+
+  const salvarEdicaoOpcao = async (opcao: CotacaoItemOpcao) => {
+    const { descricao_produto, fornecedor, valor_avista, valor_parcelado, valor_frete, link_produto, observacao } = opcaoEditando;
+
+    if (!fornecedor.trim() || !descricao_produto.trim() || valor_avista < 0 || valor_parcelado < 0 || valor_frete < 0) {
+      alert('Preencha descrição, loja e os preços corretamente');
+      return;
+    }
+
+    try {
+      await api.put(`/compras/opcoes/${opcao.id}`, {
+        fornecedor: fornecedor.trim(),
+        descricao_produto: descricao_produto.trim(),
+        link_produto: link_produto.trim() || null,
+        quantidade: opcao.quantidade,
+        valor_avista: Number(valor_avista || 0),
+        valor_parcelado: Number(valor_parcelado || 0),
+        valor_frete: Number(valor_frete || 0),
+        observacao: observacao.trim() || null,
+        selecionado: opcao.selecionado,
+      });
+      setEditandoOpcaoId(null);
+      carregarCotacao();
+    } catch {
+      alert('Erro ao atualizar opção');
+    }
+  };
+
   const toggleSelecionado = async (opcao: CotacaoItemOpcao) => {
     try {
       await api.put(`/compras/opcoes/${opcao.id}`, {
@@ -257,8 +365,9 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
         descricao_produto: opcao.descricao_produto,
         link_produto: opcao.link_produto,
         quantidade: opcao.quantidade,
-        valor_unitario: opcao.valor_unitario,
-        prazo_entrega: opcao.prazo_entrega,
+        valor_avista: opcao.valor_avista,
+        valor_parcelado: opcao.valor_parcelado,
+        valor_frete: opcao.valor_frete,
         observacao: opcao.observacao,
         selecionado: !opcao.selecionado,
       });
@@ -335,7 +444,7 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
   // Input fluido — sem borda, sem fundo separado, somente placeholder
   const placeholderColor = mode === 'dark' ? '#4a5568' : '#9ca3af';
   const inputCls =
-    "w-full !bg-transparent border-none outline-none shadow-none ring-0 focus:ring-0 focus:outline-none py-1.5 font-bold [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none custom-input";
+    "w-full !bg-transparent border-none outline-none shadow-none ring-0 focus:ring-0 focus:outline-none py-1.5  [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none custom-input";
   
   const inputStyle = {
     backgroundColor: 'transparent !important',
@@ -412,10 +521,10 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
               ) : (
                 <button
                   onClick={() => setEditandoStatus(true)}
-                  className={`group flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold text-white tracking-wide shadow-sm transition-all hover:shadow-md hover:scale-[1.03] active:scale-[0.98] ${getStatusColor(cotacao.status)}`}
+                  className={`group flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold text-white tracking-wide shadow-sm transition-all hover:shadow-md hover:scale-[1.03] active:scale-[0.98] ${getStatusColor(cotacao.status)}`}
                 >
                   <span>{getStatusLabel(cotacao.status)}</span>
-                  <FiEdit2 size={11} className="opacity-70 group-hover:opacity-100 transition-opacity" />
+                  <HiPencil size={11} className="opacity-70 group-hover:opacity-100 transition-opacity" />
                 </button>
               )}
             </div>
@@ -477,7 +586,10 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
             }}>
               {/* cabeçalho do produto */}
               <div className="flex items-center gap-3 px-5 py-3.5 cursor-pointer select-none font-segoe"
-                onClick={() => toggleItem(item.id)}>
+                onClick={() => {
+                  if (editandoItemId === item.id) return;
+                  toggleItem(item.id);
+                }}>
                 <span className="inline-block transition-transform duration-200 shrink-0"
                   style={{ transform: isExpanded ? 'rotate(90deg)' : 'none', color: isExpanded ? '#3b82f6' : text, opacity: isExpanded ? 1 : 0.4 }}>
                   <FiChevronRight size={15} />
@@ -485,16 +597,100 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
                 <FiPackage size={14} className="text-blue-500 shrink-0" />
 
                 {/* descrição + observação em coluna */}
-                <div className="flex-1 min-w-0">
-                  <span className="font-bold text-lg block truncate" style={{ color: text }}>{item.descricao}</span>
-                  {item.observacao && (
-                    <span className="text-xs opacity-50 block" style={{ color: text }}>{item.observacao}</span>
+                <div className="flex-1 min-w-0 group" onClick={(e) => e.stopPropagation()}>
+                  {editandoItemId === item.id ? (
+                    <div className="flex flex-col gap-2 pr-2">
+                      <input
+                        autoFocus
+                        value={itemEditando.descricao}
+                        onChange={(e) => setItemEditando((prev) => ({ ...prev, descricao: e.target.value }))}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Escape') {
+                            cancelarEdicaoItem();
+                          } else if (e.key === 'Enter') {
+                            e.preventDefault();
+                            salvarEdicaoItem(item.id);
+                          }
+                        }}
+                        placeholder="Descrição do item"
+                        className="w-full rounded-md border px-2 py-1.5 text-sm outline-none"
+                        style={{ backgroundColor: mode === 'dark' ? '#0f172a' : '#ffffff', borderColor: border, color: text }}
+                      />
+                      <input
+                        value={itemEditando.observacao}
+                        onChange={(e) => setItemEditando((prev) => ({ ...prev, observacao: e.target.value }))}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Escape') {
+                            cancelarEdicaoItem();
+                          } else if (e.key === 'Enter') {
+                            e.preventDefault();
+                            salvarEdicaoItem(item.id);
+                          }
+                        }}
+                        placeholder="Observação"
+                        className="w-full rounded-md border px-2 py-1.5 text-sm outline-none"
+                        style={{ backgroundColor: mode === 'dark' ? '#0f172a' : '#ffffff', borderColor: border, color: text }}
+                      />
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          min="1"
+                          value={itemEditando.quantidade}
+                          onChange={(e) => setItemEditando((prev) => ({ ...prev, quantidade: Number(e.target.value) }))}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Escape') {
+                              cancelarEdicaoItem();
+                            } else if (e.key === 'Enter') {
+                              e.preventDefault();
+                              salvarEdicaoItem(item.id);
+                            }
+                          }}
+                          placeholder="Qtd"
+                          className="w-20 rounded-md border px-2 py-1.5 text-sm outline-none"
+                          style={{ backgroundColor: mode === 'dark' ? '#0f172a' : '#ffffff', borderColor: border, color: text }}
+                        />
+                        <button
+                          onClick={() => salvarEdicaoItem(item.id)}
+                          className="rounded-md bg-blue-500 px-2.5 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-blue-600"
+                        >
+                          Salvar
+                        </button>
+                        <button
+                          onClick={cancelarEdicaoItem}
+                          className="rounded-md bg-red-500 px-2.5 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-red-600"
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-2 min-w-0 group/desc">
+                        <span className="font-semibold font-segoe text-lg block truncate" style={{ color: text }}>{item.descricao}</span>
+                        <button
+                          type="button"
+                          onMouseDown={(e) => e.stopPropagation()}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            iniciarEdicaoItem(item);
+                          }}
+                          className="opacity-0 transition-all duration-200 group-hover/desc:opacity-100 group-hover/desc:scale-110 hover:text-green-500 hover:scale-125 shrink-0"
+                          title="Editar item"
+                        >
+                          <HiPencil size={13} />
+                        </button>
+                      </div>
+                      {item.observacao && (
+                        <span className="text-xs opacity-50 block" style={{ color: text }}>{item.observacao}</span>
+                      )}
+                    </>
                   )}
                 </div>
 
                 {/* ── resumo de valores ── */}
                 {item.opcoes && item.opcoes.length > 0 && (() => {
-                  const precos = item.opcoes.map(o => Number(o.valor_unitario));
+                  const precos = item.opcoes.map(o => Number(o.valor_avista || 0));
                   const menor  = Math.min(...precos);
                   const maior  = Math.max(...precos);
                   const soma   = precos.reduce((a, b) => a + b, 0);
@@ -536,50 +732,176 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
                     style={{ color: text, backgroundColor: mode === 'dark' ? '#0c1525' : '#f8fafc',
                       gridTemplateColumns: '2fr 1.2fr 0.8fr 0.6fr 0.6fr 0.8fr 1.2fr auto', columnGap: '12px' }}>
                     <span>Descrição</span><span>Loja</span>
-                    <span className="text-right">Preço</span><span className="text-right">Frete</span>
-                    <span className="text-center">Prazo</span><span className="text-center">Link</span>
+                    <span className="text-right">À vista</span><span className="text-right">Parcelado</span>
+                    <span className="text-right">Frete</span><span className="text-center">Link</span>
                     <span>Obs.</span><span className="text-center" style={{ width: '6rem' }}>Ações</span>
                   </div>
                   {/* linhas de opções */}
                   {item.opcoes?.map((opcao, idx) => (
-                    <div key={opcao.id} className="grid items-center px-5 py-2.5 text-sm"
-                      style={{ gridTemplateColumns: '2fr 1.2fr 0.8fr 0.6fr 0.6fr 0.8fr 1.2fr auto', columnGap: '12px',
-                        backgroundColor: opcao.selecionado ? rowSel : idx % 2 === 0 ? card : rowAlt,
-                         }}>
-                      <span className="truncate" style={{ color: text }} title={opcao.descricao_produto}>{opcao.descricao_produto}</span>
-                      <span className="font-medium truncate" style={{ color: text }}>{opcao.fornecedor}</span>
-                      <span className="text-right font-semibold tabular-nums" style={{ color: text }}>{formatarMoeda(opcao.valor_unitario)}</span>
-                      <span className="text-right opacity-40 tabular-nums" style={{ color: text }}>{formatarMoeda(0)}</span>
-                      <span className="text-center text-xs" style={{ color: text }}>{opcao.prazo_entrega || '—'}</span>
-                      <span className="text-center">
-                        {opcao.link_produto
-                          ? <a href={opcao.link_produto} target="_blank" rel="noopener noreferrer"
-                              className="text-blue-500 hover:text-blue-700 inline-flex items-center gap-1 justify-center text-xs">
-                              <FiExternalLink size={11} /> link</a>
-                          : <span className="opacity-30 text-xs" style={{ color: text }}>—</span>}
-                      </span>
-                      <span className="text-xs opacity-50 line-clamp-2 leading-snug" style={{ color: text }}>{opcao.observacao || '—'}</span>
-                      <div className="flex items-center justify-end gap-1.5" style={{ width: '6rem' }}>
-                        {CLASSIFICACOES.map((c) => {
-                          const has = opcao.classificacoes?.some((cl) => cl.tipo === c.tipo);
-                          return (
-                            <button key={c.tipo} title={c.title} onClick={() => toggleClassificacao(opcao, c.tipo)}
-                              className={`text-sm leading-none transition-all hover:scale-120 ${has ? 'opacity-100' : 'opacity-20 hover:scale-120 hover:opacity-60'}`}>
-                              {c.emoji}
-                            </button>
-                          );
-                        })}
-                        <button onClick={() => excluirOpcao(opcao.id)}
-                          className="opacity-20 hover:opacity-100 hover:scale-120 hover:text-red-500 transition-all ml-1"
-                          title="Excluir"><FiX size={13} /></button>
+                    editandoOpcaoId === opcao.id ? (
+                      <div key={opcao.id} className="grid items-center px-5 py-2.5 text-sm"
+                        style={{ gridTemplateColumns: '2fr 1.2fr 0.8fr 0.8fr 0.7fr 0.8fr 1.2fr auto', columnGap: '12px',
+                          borderTop: `1px solid #3b82f6`, backgroundColor: card }}>
+                        <input 
+                          ref={refDescricao} 
+                          autoFocus 
+                          autoComplete="off"
+                          type="text" 
+                          value={opcaoEditando.descricao_produto}
+                          onChange={(e) => setOpcaoEditando((p) => ({ ...p, descricao_produto: e.target.value }))}
+                          onKeyDown={(e) => { 
+                            if (e.key === 'Escape') { cancelarEdicaoOpcao(); return; }
+                            if (e.key === 'Enter') { e.preventDefault(); refLoja.current?.focus(); }
+                          }}
+                          placeholder="Descrição" 
+                          className={inputCls} 
+                          style={{ ...inputStyle, color: text }} />
+                        <input 
+                          ref={refLoja} 
+                          type="text" 
+                          autoComplete="off"
+                          value={opcaoEditando.fornecedor}
+                          onChange={(e) => setOpcaoEditando((p) => ({ ...p, fornecedor: e.target.value }))}
+                          onKeyDown={(e) => { 
+                            if (e.key === 'Escape') { cancelarEdicaoOpcao(); return; }
+                            if (e.key === 'Enter') { e.preventDefault(); refPrecoAvista.current?.focus(); }
+                          }}
+                          placeholder="Loja" 
+                          className={inputCls} 
+                          style={{ ...inputStyle, color: text }} />
+                        <input 
+                          ref={refPrecoAvista} 
+                          type="number" 
+                          autoComplete="off"
+                          min="0" 
+                          step="0.01" 
+                          value={opcaoEditando.valor_avista || ''}
+                          onChange={(e) => setOpcaoEditando((p) => ({ ...p, valor_avista: Number(e.target.value) }))}
+                          onKeyDown={(e) => { 
+                            if (e.key === 'Escape') { cancelarEdicaoOpcao(); return; }
+                            if (e.key === 'Enter') { e.preventDefault(); refPrecoParcelado.current?.focus(); }
+                          }}
+                          placeholder="À vista" 
+                          className={inputCls + ' text-right'} 
+                          style={{ ...inputStyle, color: text }} />
+                        <input 
+                          ref={refPrecoParcelado} 
+                          type="number" 
+                          autoComplete="off"
+                          min="0" 
+                          step="0.01" 
+                          value={opcaoEditando.valor_parcelado || ''}
+                          onChange={(e) => setOpcaoEditando((p) => ({ ...p, valor_parcelado: Number(e.target.value) }))}
+                          onKeyDown={(e) => { 
+                            if (e.key === 'Escape') { cancelarEdicaoOpcao(); return; }
+                            if (e.key === 'Enter') { e.preventDefault(); refFrete.current?.focus(); }
+                          }}
+                          placeholder="Parcelado" 
+                          className={inputCls + ' text-right'} 
+                          style={{ ...inputStyle, color: text }} />
+                        <input 
+                          ref={refFrete} 
+                          type="number" 
+                          autoComplete="off"
+                          min="0" 
+                          step="0.01" 
+                          value={opcaoEditando.valor_frete || ''}
+                          onChange={(e) => setOpcaoEditando((p) => ({ ...p, valor_frete: Number(e.target.value) }))}
+                          onKeyDown={(e) => { 
+                            if (e.key === 'Escape') { cancelarEdicaoOpcao(); return; }
+                            if (e.key === 'Enter') { e.preventDefault(); refLink.current?.focus(); }
+                          }}
+                          placeholder="Frete" 
+                          className={inputCls + ' text-right'} 
+                          style={{ ...inputStyle, color: text }} />
+                        <input 
+                          ref={refLink} 
+                          type="url" 
+                          autoComplete="off"
+                          value={opcaoEditando.link_produto}
+                          onChange={(e) => setOpcaoEditando((p) => ({ ...p, link_produto: e.target.value }))}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Escape') { cancelarEdicaoOpcao(); return; }
+                            if (e.key === 'Enter') { e.preventDefault(); refObs.current?.focus(); }
+                          }}
+                          placeholder="URL" 
+                          className={inputCls} 
+                          style={{ ...inputStyle, color: text }} />
+                        <input 
+                          ref={refObs} 
+                          type="text" 
+                          autoComplete="off"
+                          value={opcaoEditando.observacao}
+                          onChange={(e) => setOpcaoEditando((p) => ({ ...p, observacao: e.target.value }))}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Escape') { cancelarEdicaoOpcao(); return; }
+                            if (e.key === 'Enter') { e.preventDefault(); salvarEdicaoOpcao(opcao); }
+                          }}
+                          placeholder="Obs. ↵ salva" 
+                          className={inputCls} 
+                          style={{ ...inputStyle, color: text }} />
+                        <div className="flex items-center justify-end gap-1.5" style={{ width: '6rem' }}>
+                          <button onClick={() => salvarEdicaoOpcao(opcao)}
+                            className="p-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"><FiCheck size={12} /></button>
+                          <button onClick={cancelarEdicaoOpcao}
+                            className="p-1.5 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"><FiX size={12} /></button>
+                        </div>
                       </div>
-                    </div>
+                    ) : (
+                      <div key={opcao.id} className="group grid items-center px-5 py-2.5 text-sm"
+                        style={{ gridTemplateColumns: '2fr 1.2fr 0.8fr 0.8fr 0.7fr 0.8fr 1.2fr auto', columnGap: '12px',
+                          backgroundColor: opcao.selecionado ? rowSel : idx % 2 === 0 ? card : rowAlt,
+                           }}>
+                        <div className="flex items-center gap-2 min-w-0 group/desc">
+                          <span className="truncate" style={{ color: text }} title={opcao.descricao_produto}>{opcao.descricao_produto}</span>
+                          <button
+                            type="button"
+                            onMouseDown={(e) => e.stopPropagation()}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              iniciarEdicaoOpcao(opcao);
+                            }}
+                            className="opacity-0 transition-all duration-200 group-hover/desc:opacity-100 group-hover/desc:scale-110 hover:text-green-500 hover:scale-125 shrink-0"
+                            title="Editar opção"
+                          >
+                            <HiPencil size={13} />
+                          </button>
+                        </div>
+                        <span className="font-medium truncate" style={{ color: text }}>{opcao.fornecedor}</span>
+                        <span className="text-right font-semibold font-segoe tabular-nums" style={{ color: text }}>{formatarMoeda(opcao.valor_avista)}</span>
+                        <span className="text-right font-segoe tabular-nums" style={{ color: text }}>{formatarMoeda(opcao.valor_parcelado)}</span>
+                        <span className="text-right font-segoe tabular-nums" style={{ color: text }}>{formatarMoeda(opcao.valor_frete)}</span>
+                        <span className="text-center">
+                          {opcao.link_produto
+                            ? <a href={opcao.link_produto} target="_blank" rel="noopener noreferrer"
+                                className="text-blue-500 hover:text-blue-700 inline-flex items-center gap-1 justify-center text-xs">
+                                <FiExternalLink size={11} /> link</a>
+                            : <span className="opacity-30 text-xs" style={{ color: text }}>—</span>}
+                        </span>
+                        <span className="text-xs opacity-50 line-clamp-2 leading-snug" style={{ color: text }}>{opcao.observacao || '—'}</span>
+                        <div className="flex items-center justify-end gap-1.5" style={{ width: '6rem' }}>
+                          {CLASSIFICACOES.map((c) => {
+                            const has = opcao.classificacoes?.some((cl) => cl.tipo === c.tipo);
+                            return (
+                              <button key={c.tipo} title={c.title} onClick={() => toggleClassificacao(opcao, c.tipo)}
+                                className={`text-sm leading-none transition-all hover:scale-120 ${has ? 'opacity-100' : 'opacity-20 hover:scale-120 hover:opacity-60'}`}>
+                                {c.emoji}
+                              </button>
+                            );
+                          })}
+                          <button onClick={() => excluirOpcao(opcao.id)}
+                            className="opacity-20 hover:opacity-100 hover:scale-120 hover:text-red-500 transition-all ml-1"
+                            title="Excluir"><FiX size={13} /></button>
+                        </div>
+                      </div>
+                    )
                   ))}
                     {/* ── edição inline de opção ── */}
 
                   {adicionandoOpcaoParaItem === item.id && (
                     <div className="grid items-center px-5 py-2.5 text-sm"
-                      style={{ gridTemplateColumns: '2fr 1.2fr 0.8fr 0.6fr 0.6fr 0.8fr 1.2fr auto', columnGap: '12px',
+                      style={{ gridTemplateColumns: '2fr 1.2fr 0.8fr 0.8fr 0.7fr 0.8fr 1.2fr auto', columnGap: '12px',
                         borderTop: `1px solid #3b82f6`, backgroundColor: card }}>
                       <input 
                         ref={refDescricao} 
@@ -603,39 +925,55 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
                         onChange={(e) => setNovaOpcao((p) => ({ ...p, fornecedor: e.target.value }))}
                         onKeyDown={(e) => {
                           if (e.key === 'Escape') { setAdicionandoOpcaoParaItem(null); return; }
-                          if (e.key === 'Enter') { e.preventDefault(); refPreco.current?.focus(); }
+                          if (e.key === 'Enter') { e.preventDefault(); refPrecoAvista.current?.focus(); }
                         }}
                         placeholder="Loja" 
                         className={inputCls} 
                         style={{ ...inputStyle, color: text }} />
                       <input 
-                        ref={refPreco} 
+                        ref={refPrecoAvista} 
                         type="number" 
                         autoComplete="off"
                         min="0" 
                         step="0.01" 
-                        value={novaOpcao.valor_unitario || ''}
-                        onChange={(e) => setNovaOpcao((p) => ({ ...p, valor_unitario: Number(e.target.value) }))}
+                        value={novaOpcao.valor_avista || ''}
+                        onChange={(e) => setNovaOpcao((p) => ({ ...p, valor_avista: Number(e.target.value) }))}
                         onKeyDown={(e) => {
                           if (e.key === 'Escape') { setAdicionandoOpcaoParaItem(null); return; }
-                          if (e.key === 'Enter') { e.preventDefault(); refPrazo.current?.focus(); }
+                          if (e.key === 'Enter') { e.preventDefault(); refPrecoParcelado.current?.focus(); }
                         }}
-                        placeholder="0,00" 
+                        placeholder="À vista" 
                         className={inputCls + ' text-right'} 
                         style={{ ...inputStyle, color: text }} />
-                      <span className="text-center opacity-30 text-sm" style={{ color: text }}>—</span>
                       <input 
-                        ref={refPrazo} 
-                        type="text" 
+                        ref={refPrecoParcelado} 
+                        type="number" 
                         autoComplete="off"
-                        value={novaOpcao.prazo_entrega}
-                        onChange={(e) => setNovaOpcao((p) => ({ ...p, prazo_entrega: e.target.value }))}
+                        min="0" 
+                        step="0.01" 
+                        value={novaOpcao.valor_parcelado || ''}
+                        onChange={(e) => setNovaOpcao((p) => ({ ...p, valor_parcelado: Number(e.target.value) }))}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Escape') { setAdicionandoOpcaoParaItem(null); return; }
+                          if (e.key === 'Enter') { e.preventDefault(); refFrete.current?.focus(); }
+                        }}
+                        placeholder="Parcelado" 
+                        className={inputCls + ' text-right'} 
+                        style={{ ...inputStyle, color: text }} />
+                      <input 
+                        ref={refFrete} 
+                        type="number" 
+                        autoComplete="off"
+                        min="0" 
+                        step="0.01" 
+                        value={novaOpcao.valor_frete || ''}
+                        onChange={(e) => setNovaOpcao((p) => ({ ...p, valor_frete: Number(e.target.value) }))}
                         onKeyDown={(e) => {
                           if (e.key === 'Escape') { setAdicionandoOpcaoParaItem(null); return; }
                           if (e.key === 'Enter') { e.preventDefault(); refLink.current?.focus(); }
                         }}
-                        placeholder="dias" 
-                        className={inputCls + ' text-center'} 
+                        placeholder="Frete" 
+                        className={inputCls + ' text-right'} 
                         style={{ ...inputStyle, color: text }} />
                       <input 
                         ref={refLink} 
