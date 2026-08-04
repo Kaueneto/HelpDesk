@@ -23,14 +23,17 @@ export class CotacaoItemOpcoes {
   @Column({ type: "integer" })
   quantidade!: number;
 
-  @Column({ type: "decimal", precision: 10, scale: 2 })
-  valor_unitario!: number;
+  @Column({ type: "decimal", precision: 10, scale: 2, default: 0 })
+  valor_avista!: number;
 
-  @Column({ type: "decimal", precision: 10, scale: 2 })
+  @Column({ type: "decimal", precision: 10, scale: 2, default: 0 })
+  valor_parcelado!: number;
+
+  @Column({ type: "decimal", precision: 10, scale: 2, default: 0 })
+  valor_frete!: number;
+
+  @Column({ type: "decimal", precision: 10, scale: 2, default: 0 })
   valor_total!: number;
-
-  @Column({ type: "varchar", length: 100, nullable: true })
-  prazo_entrega!: string | null;
 
   @Column({ type: "text", nullable: true })
   observacao!: string | null;
