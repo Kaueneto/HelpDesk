@@ -1492,41 +1492,83 @@ export default function DetalhesChamado({ chamadoId, onVoltar }: DetalhesChamado
                           <p className="text-base whitespace-pre-wrap" style={{ color: theme.text.primary }}>{msg.mensagem}</p>
                           {/* Anexos da mensagem */}
                           {msg.anexos && msg.anexos.length > 0 && (
-                            <div className="mt-3 space-y-1">
-                              {msg.anexos.map((anexo) => {
-                                const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(anexo.filename);
-                                const fileUrl = anexo.signedUrl || '#';
+                            <div className="mt-3 space-y-2">
+                              {(() => {
+                                const images = msg.anexos.filter((a) => /\.(jpg|jpeg|png|gif|webp)$/i.test(a.filename));
+                                const files = msg.anexos.filter((a) => !/\.(jpg|jpeg|png|gif|webp)$/i.test(a.filename));
+
                                 return (
-                                  <a
-                                    key={anexo.id}
-                                    href={fileUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="flex items-center gap-2 px-2 py-1.5 rounded hover:transition text-xs group"
-                                    style={{
-                                      backgroundColor: theme.detalhesChamado.bgBranco,
-                                      borderColor: theme.border.primary,
-                                      borderWidth: '1px'
-                                    }}
-                                  >
-                                    {isImage ? (
-                                      <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: theme.detalhesChamado.redirecionar }}>
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                      </svg>
-                                    ) : (
-                                      <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: theme.text.secondary }}>
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                      </svg>
+                                  <>
+                                    {/* Thumbnails de imagens */}
+                                    {images.length > 0 && (
+                                      <div className="flex flex-wrap gap-2">
+                                        {images.map((anexo) => {
+                                          const fileUrl = anexo.signedUrl || '#';
+                                          return (
+                                            <a
+                                              key={anexo.id}
+                                              href={fileUrl}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className="group relative overflow-hidden rounded-lg border-2 transition-all hover:shadow-lg hover:scale-105"
+                                              style={{
+                                                borderColor: theme.border.primary,
+                                                width: '72px',
+                                                height: '72px'
+                                              }}
+                                              title={anexo.filename}
+                                            >
+                                              <img
+                                                src={fileUrl}
+                                                alt={anexo.filename}
+                                                className="w-full h-full object-cover"
+                                              />
+                                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
+                                                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4m14 4h6m0 0v6m0-6L10 14" />
+                                                </svg>
+                                              </div>
+                                            </a>
+                                          );
+                                        })}
+                                      </div>
                                     )}
-                                    <span className="truncate flex-1" style={{ color: theme.text.primary }}>
-                                      {anexo.filename}
-                                    </span>
-                                    <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: theme.text.secondary }}>
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                                    </svg>
-                                  </a>
+
+                                    {/* Arquivos não-imagem */}
+                                    {files.length > 0 && (
+                                      <div className="space-y-1">
+                                        {files.map((anexo) => {
+                                          const fileUrl = anexo.signedUrl || '#';
+                                          return (
+                                            <a
+                                              key={anexo.id}
+                                              href={fileUrl}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className="flex items-center gap-2 px-2.5 py-1.5 rounded hover:transition text-xs group"
+                                              style={{
+                                                backgroundColor: theme.detalhesChamado.bgBranco,
+                                                borderColor: theme.border.primary,
+                                                borderWidth: '1px'
+                                              }}
+                                            >
+                                              <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: theme.text.secondary }}>
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                              </svg>
+                                              <span className="truncate flex-1" style={{ color: theme.text.primary }}>
+                                                {anexo.filename}
+                                              </span>
+                                              <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: theme.text.secondary }}>
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                              </svg>
+                                            </a>
+                                          );
+                                        })}
+                                      </div>
+                                    )}
+                                  </>
                                 );
-                              })}
+                              })()}
                             </div>
                           )}
                         </div>
@@ -1595,27 +1637,82 @@ export default function DetalhesChamado({ chamadoId, onVoltar }: DetalhesChamado
 
                   {/* Lista de Arquivos Selecionados */}
                   {anexosResposta.length > 0 && (
-                    <div className="mt-3 space-y-2">
+                    <div className="mt-3 space-y-3">
                       <p className="text-sm font-medium" style={{ color: theme.text.primary }}>
                         Arquivos selecionados ({anexosResposta.length}/5):
                       </p>
-                      {anexosResposta.map((file, index) => (
-                        <div
-                          key={index}
-                          className="flex items-center justify-between px-3 py-2 rounded"
-                          style={{ backgroundColor: theme.detalhesChamado.bgBranco }}
-                        >
-                          <span className="text-sm truncate flex-1" style={{ color: theme.text.primary }}>
-                            {file.name} ({(file.size / 1024).toFixed(1)} KB)
-                          </span>
-                          <button
-                            onClick={() => removeFileResposta(index)}
-                            className="ml-2 text-red-500 hover:text-red-700 font-medium text-sm"
-                          >
-                            Remover
-                          </button>
-                        </div>
-                      ))}
+                      
+                      {/* Thumbnails de imagens */}
+                      {(() => {
+                        const images = anexosResposta.filter((f) => /\.(jpg|jpeg|png|gif|webp)$/i.test(f.name));
+                        return images.length > 0 ? (
+                          <div className="flex flex-wrap gap-2">
+                            {images.map((file, index) => (
+                              <div
+                                key={index}
+                                className="group relative overflow-hidden rounded-lg border-2 transition-all hover:shadow-lg"
+                                style={{
+                                  borderColor: theme.border.primary,
+                                  width: '80px',
+                                  height: '80px'
+                                }}
+                              >
+                                <img
+                                  src={URL.createObjectURL(file)}
+                                  alt={file.name}
+                                  className="w-full h-full object-cover"
+                                />
+                                <button
+                                  onClick={() => removeFileResposta(anexosResposta.indexOf(file))}
+                                  className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-all"
+                                  title="Remover"
+                                >
+                                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                  </svg>
+                                </button>
+                                <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs p-1 truncate">
+                                  {(file.size / 1024).toFixed(1)} KB
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : null;
+                      })()}
+
+                      {/* Arquivos não-imagem */}
+                      {(() => {
+                        const files = anexosResposta.filter((f) => !/\.(jpg|jpeg|png|gif|webp)$/i.test(f.name));
+                        return files.length > 0 ? (
+                          <div className="space-y-1">
+                            {files.map((file, index) => {
+                              const actualIndex = anexosResposta.indexOf(file);
+                              return (
+                                <div
+                                  key={index}
+                                  className="flex items-center justify-between px-3 py-2 rounded"
+                                  style={{ backgroundColor: theme.detalhesChamado.bgBranco }}
+                                >
+                                  <div className="flex items-center gap-2 flex-1">
+                                    <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: theme.text.secondary }}>
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                    <span className="text-sm truncate flex-1" style={{ color: theme.text.primary }}>
+                                      {file.name} ({(file.size / 1024).toFixed(1)} KB)
+                                    </span>
+                                  </div>
+                                  <button
+                                    onClick={() => removeFileResposta(actualIndex)}
+                                    className="ml-2 text-red-500 hover:text-red-700 font-medium text-sm"
+                                  >
+                                    Remover
+                                  </button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : null;
+                      })()}
                     </div>
                   )}
 
