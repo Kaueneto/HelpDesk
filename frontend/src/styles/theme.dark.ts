@@ -13,6 +13,12 @@ export const darkTheme: Theme = {
     text: '#50cf01',       
     border: '#50cf01',     
   },
+
+  DarkTotal: {
+    bgDarkTotal: '#141416ff',
+
+  },
+  
   // Backgrounds
   background: {
     pagina: '#0F172A',       // Cinza muito escuro (quase preto)
@@ -196,7 +202,7 @@ export const darkTheme: Theme = {
     },
   },
 
-    detalhesChamado: {
+  detalhesChamado: {
     label: '#d6d6d6',        // Quase branco para labels (invertido)
     labelActive: '#60A5FA',   // Azul claro para labels ativas (invertido)
     value: '#CBD5E1',        // Cinza claro para valores (invertido)

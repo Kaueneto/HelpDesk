@@ -332,4 +332,8 @@ export const lightTheme: Theme = {
     border: 'rgba(169, 172, 180, 0.2)', 
     },
   },
+
+  DarkTotal: {
+    bgDarkTotal: '#fafafaff',
+  },
 };

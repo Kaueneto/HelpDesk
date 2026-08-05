@@ -336,4 +336,10 @@ export type Theme = {
     };
   };
 
+  DarkTotal: {
+    bgDarkTotal: string;
+  };
+
+  
+
 };

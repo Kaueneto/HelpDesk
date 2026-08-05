@@ -11,8 +11,10 @@ import {
   FiX,
   FiFileText,
   FiSearch,
+  FiShoppingCart,
 } from 'react-icons/fi';
 import { SearchableSelect, type SelectOption } from '@/components/ui/SearchableSelect';
+import ModalNovaSolicitacaoCompra from '@/app/admin/Modal/ModalNovaSolicitacaoCompra';
 
 // ─── tipos ───────────────────────────────────────────────────
 interface Usuario      { id: number; name: string; email: string }
@@ -91,6 +93,7 @@ export default function GerenciarSolicitacoesCompras() {
   const [modalAberto, setModalAberto]             = useState(false);
   const [chamadoSelecionado, setChamadoSelecionado] = useState<number | null>(null);
   const [criando, setCriando]                     = useState(false);
+  const [modalNovaSolicitacao, setModalNovaSolicitacao] = useState(false);
 
   const statusOptions: SelectOption[] = [
     { value: 'todos', label: 'Todos os status' },
@@ -504,12 +507,20 @@ export default function GerenciarSolicitacoesCompras() {
             <h1 className="text-2xl font-bold hover:scale-105 transition-transform duration-300">Solicitações de Compras</h1>
     
           </div>
-          <button
-            onClick={() => { setModalAberto(true); setChamadoSelecionado(null); }}
-            className="px-4 py-2 bg-white text-blue-600 font-semibold rounded-lg hover:bg-blue-50 transition-colors flex items-center gap-2 shadow-sm"
-          >
-            <FiPlus /> Nova Cotação
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setModalNovaSolicitacao(true)}
+              className="px-4 py-2 bg-white/15 hover:bg-white/25 border border-white/30 text-white font-semibold rounded-lg transition-all flex items-center gap-2 shadow-sm hover:scale-105"
+            >
+              <FiShoppingCart size={15} /> Nova Solicitação
+            </button>
+            <button
+              onClick={() => { setModalAberto(true); setChamadoSelecionado(null); }}
+              className="px-4 py-2 bg-white text-blue-600 font-semibold rounded-lg hover:bg-blue-50 transition-colors flex items-center gap-2 shadow-sm"
+            >
+              <FiPlus /> Nova Cotação
+            </button>
+          </div>
         </div>
       </div>
 
@@ -605,9 +616,18 @@ export default function GerenciarSolicitacoesCompras() {
         </div>
       </div>
 
+      {/* ── modal Nova Solicitação de Compra ── */}
+      <ModalNovaSolicitacaoCompra
+        isOpen={modalNovaSolicitacao}
+        onClose={() => setModalNovaSolicitacao(false)}
+        onSuccess={() => {
+          setModalNovaSolicitacao(false);
+          carregarSolicitacoes();
+        }}
+      />
+
       {/* ── modal Nova Cotação ── */}
-      {modalAberto && (
-        <div
+      {modalAberto && (        <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
           onClick={() => setModalAberto(false)}
         >
