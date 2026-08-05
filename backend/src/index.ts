@@ -29,38 +29,34 @@ app.use(express.urlencoded({ limit: "50mb", extended: true }));
 app.use(cors({
   origin: function (origin, callback) {
    
-    const allowedOrigins = [    
-     process.env.NEXT_PUBLIC_API_URL,
-     'http://localhost:5001',
-
-    ];
+    const allowedOrigins = [
+      'https://helpdesk-castel.vercel.app',  // produção no vercel — fixo
+      process.env.FRONTEND_URL,              // variável de ambiente (opcional)
+      process.env.NEXT_PUBLIC_FRONTEND_URL,  // fallback
+      'http://localhost:3000',
+      'http://localhost:5001',
+    ].filter(Boolean) as string[];
     
-    // permitir requisições sem origem (ex: Postman, aplicações mobile)
+    // permitir requisições sem origem (ex: Postman, mobile)
     if (!origin) return callback(null, true);
     
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
     
-    // PRODUÇÃO: permtir  qualquer origem da rede interna e localhost
+    // permitir qualquer origem de rede local / localhost
     if (origin.includes('localhost') || 
         origin.includes('127.0.0.1') || 
         origin.includes('192.168.') || 
         origin.includes('10.') ||
-        origin.includes('172.16.') || 
-        origin.includes('172.17.') || 
-        origin.includes('172.18.') || 
-        origin.includes('172.19.') || 
-        origin.includes('172.2') || 
-        origin.includes('172.3') ||
-        origin.match(/^http:\/\/[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}:[0-9]+$/)) {
+        origin.match(/^https?:\/\/[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}(:[0-9]+)?$/)) {
       return callback(null, true);
     }
     
-    const msg = 'A política de CORS desta aplicação não permite acesso da origem ' + origin;
+    const msg = 'A política de CORS desta aplicação não permite acesso da origem: ' + origin;
     return callback(new Error(msg), false);
   },
-  credentials: true // permite cookies
+  credentials: true
 }));
 app.use(cookieParser()); // sporte a cookies
 

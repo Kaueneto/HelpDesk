@@ -38,18 +38,14 @@ router.post("/login", async (req: Request, res: Response) => {
     const userData = await authService.login(email, password);
 
     // Configurar cookie seguro com o token
+    const isProduction = process.env.NODE_ENV === 'production';
     const cookieOptions: any = {
-      httpOnly: true, // Não acessível via JavaScript
-      secure: false, // Desabilitado para HTTP (use HTTPS para ativar)
-      sameSite: 'lax', // Proteção CSRF
-      maxAge: 8 * 60 * 60 * 1000, // 8 horas em milissegundos
+      httpOnly: true,
+      secure: isProduction,        // HTTPS em produção, HTTP em dev
+      sameSite: isProduction ? 'none' : 'lax', // 'none' permite cross-site em HTTPS
+      maxAge: 8 * 60 * 60 * 1000, // 8 horas
       path: '/'
     };
-    
-    // Se COOKIE_DOMAIN está configurado, add
-    if (process.env.COOKIE_DOMAIN) {
-      cookieOptions.domain = process.env.COOKIE_DOMAIN;
-    }
     
     res.cookie('auth-token', userData.token, cookieOptions);
     
@@ -83,17 +79,13 @@ router.post("/login", async (req: Request, res: Response) => {
 
 // Logout - limpar cookie
 router.post("/logout", (req: Request, res: Response) => {
+  const isProduction = process.env.NODE_ENV === 'production';
   const clearOptions: any = {
     httpOnly: true,
-    secure: false, // Desabilitado para HTTP
-    sameSite: 'lax',
+    secure: isProduction,
+    sameSite: isProduction ? 'none' : 'lax',
     path: '/'
   };
-  
-  // Se COOKIE_DOMAIN está configurado, adicionar
-  if (process.env.COOKIE_DOMAIN) {
-    clearOptions.domain = process.env.COOKIE_DOMAIN;
-  }
   
   res.clearCookie('auth-token', clearOptions);
   
