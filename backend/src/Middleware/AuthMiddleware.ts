@@ -38,3 +38,23 @@ export const verifyToken = (req: Request, res: Response, next: NextFunction) => 
     return res.status(500).json({ mensagem: "Erro ao validar token" });
   }
 };
+
+/**
+ * Middleware exclusivo para rotas de compras.
+ * Permite acesso para: Administrador (1), Usuário Pro (3) e princpalmente compras (4).
+ */
+export const verifyComprasAccess = (req: Request, res: Response, next: NextFunction) => {
+  // primeiro valida o token normalmente
+  verifyToken(req, res, () => {
+    const roleId = (req as any).userRoleId;
+    const ALLOWED_ROLES = [1, 3, 4];
+
+    if (!ALLOWED_ROLES.includes(roleId)) {
+      return res.status(403).json({
+        mensagem: "Acesso negado. Seu perfil não tem permissão para acessar o módulo de compras.",
+      });
+    }
+
+    return next();
+  });
+};

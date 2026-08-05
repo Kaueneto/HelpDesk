@@ -110,7 +110,8 @@ export default function GerenciarCotacoes() {
   const border  = mode === 'dark' ? '#334155' : '#E2E8F0';
   const inputBg = mode === 'dark' ? '#1E293B' : '#FFFFFF';
   const muted   = mode === 'dark' ? '#64748b' : '#94a3b8';
-
+  const seconcolorgray =  mode === 'dark' ? '#aaaaaad3' : '#94a3b8';
+  
   useEffect(() => { carregarCotacoes(); }, []);
 
   async function carregarCotacoes() {
@@ -301,17 +302,17 @@ export default function GerenciarCotacoes() {
 
                       {/* solicitante */}
                       <span className="text-xs hidden sm:block" style={{ color: muted }}>
-                        Solicitante: <span style={{ color: text }}>{cot.chamado.usuario.name}</span>
+                        Solicitante: <span style={{ color: seconcolorgray }}>{cot.chamado.usuario.name}</span>
                       </span>
 
                       {/* criado por */}
                       <span className="text-xs hidden md:block" style={{ color: muted }}>
-                        Criado por: <span style={{ color: text }}>{cot.criadoPor.name}</span>
+                        Criado por: <span style={{ color: seconcolorgray }}>{cot.criadoPor.name}</span>
                       </span>
 
                       {/* data */}
                       <span className="text-xs hidden lg:block" style={{ color: muted }}>
-                        {fmtData(cot.createdAt)}
+                        Criado em: {fmtData(cot.createdAt)}
                       </span>
                     </div>
                   </div>

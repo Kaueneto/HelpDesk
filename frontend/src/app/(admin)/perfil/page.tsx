@@ -248,7 +248,7 @@ const nomeAlterado = nomeEditavel.trim() !== '' && nomeEditavel.trim() !== user?
                     avatarUrl={previewAvatar || user?.avatar_url}
                     size="xl"
                   />
-                  <p className="text-xs text-secondary text-center">
+                  <p className="text-xs text-secondary text-center text-gray-400">
                     {user?.avatar_url && !previewAvatar ? 'Avatar atual' : previewAvatar ? 'Pré-visualização' : 'Sem avatar'}
                   </p>
                 </div>
@@ -297,7 +297,7 @@ const nomeAlterado = nomeEditavel.trim() !== '' && nomeEditavel.trim() !== user?
                     )}
                   </div>
 
-                  <p className="text-xs text-secondary">
+                  <p className="text-xs text-secondary text-gray-400">
                     Formatos suportados: JPG, PNG, GIF. Tamanho máximo: 5MB.
                   </p>
                 </div>

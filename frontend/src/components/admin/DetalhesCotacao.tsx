@@ -732,8 +732,8 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
                     style={{ color: text, backgroundColor: mode === 'dark' ? '#0c1525' : '#f8fafc',
                       gridTemplateColumns: '2fr 1.2fr 0.8fr 0.6fr 0.6fr 0.8fr 1.2fr auto', columnGap: '12px' }}>
                     <span>Descrição</span><span>Loja</span>
-                    <span className="text-right">À vista</span><span className="text-right">Parcelado</span>
-                    <span className="text-right">Frete</span><span className="text-center">Link</span>
+                    <span className="text-right">Valor à vista</span><span className="text-right">Vlr. Parcelado</span>
+                    <span className="text-right">Valor Frete</span><span className="text-center">Link</span>
                     <span>Obs.</span><span className="text-center" style={{ width: '6rem' }}>Ações</span>
                   </div>
                   {/* linhas de opções */}
@@ -781,7 +781,7 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
                             if (e.key === 'Escape') { cancelarEdicaoOpcao(); return; }
                             if (e.key === 'Enter') { e.preventDefault(); refPrecoParcelado.current?.focus(); }
                           }}
-                          placeholder="À vista" 
+                          placeholder="Valor a vista" 
                           className={inputCls + ' text-right'} 
                           style={{ ...inputStyle, color: text }} />
                         <input 
@@ -796,7 +796,7 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
                             if (e.key === 'Escape') { cancelarEdicaoOpcao(); return; }
                             if (e.key === 'Enter') { e.preventDefault(); refFrete.current?.focus(); }
                           }}
-                          placeholder="Parcelado" 
+                          placeholder="Valor Parcelado" 
                           className={inputCls + ' text-right'} 
                           style={{ ...inputStyle, color: text }} />
                         <input 

@@ -22,12 +22,18 @@ export default function AdminLayout({
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       router.push(`${baseUrl}/auth/login`);
-    } else if (!isLoading && user && (user.roleId !== 1 && user.roleId !== 3)) {
+    } else if (!isLoading && user && (user.roleId !== 1 && user.roleId !== 3 && user.roleId !== 4)) {
       router.push(`${baseUrl}/usuario/inicial`);
+    } else if (!isLoading && user && user.roleId === 4) {
+      // perfil Compras — só acessa rotas de compras e perfil
+      const allowedPaths = ['/compras', '/preferencias', '/perfil'];
+      const isAllowed = allowedPaths.some(p => pathname.startsWith(p));
+      if (!isAllowed) {
+        router.push(`/compras/solicitacoes`);
+      }
     } else if (!isLoading && user && user.roleId === 3) {
       const allowedAdminPaths = ['/painel', '/chamados', '/preferencias', '/sugestoes', '/perfil'];
       const isAllowedAdminPath = allowedAdminPaths.some(p => pathname.startsWith(p)) || pathname.startsWith('/chamado/');
-      
       if (!isAllowedAdminPath && pathname !== '/') {
         router.push(`${baseUrl}/painel`);
       }
@@ -42,7 +48,7 @@ export default function AdminLayout({
     );
   }
 
-  if (!isAuthenticated || !user || (user.roleId !== 1 && user.roleId !== 3)) {
+  if (!isAuthenticated || !user || (user.roleId !== 1 && user.roleId !== 3 && user.roleId !== 4)) {
     return null;
   }
 

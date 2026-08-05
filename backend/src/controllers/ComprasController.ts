@@ -8,7 +8,7 @@ import {
   CotacaoItemOpcaoClassificacoes,
   TipoClassificacao,
 } from "../entities/CotacaoItemOpcaoClassificacoes";
-import { verifyToken } from "../Middleware/AuthMiddleware";
+import { verifyComprasAccess } from "../Middleware/AuthMiddleware";
 import * as yup from "yup";
 
 interface AuthenticatedRequest extends Request {
@@ -20,7 +20,7 @@ interface AuthenticatedRequest extends Request {
 const router = Router();
 
 //listar todos os chamados do topico de solicitacao de compras   (id = 26)
-router.get("/compras/solicitacoes",  verifyToken, async (req: AuthenticatedRequest, res: Response) => {
+router.get("/compras/solicitacoes",  verifyComprasAccess, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const chamadosRepository = AppDataSource.getRepository(Chamados);
 
@@ -51,7 +51,7 @@ router.get("/compras/solicitacoes",  verifyToken, async (req: AuthenticatedReque
 
 
 //bsucar uma solicitacao especifica com suas cotaoesc
-router.get(  "/compras/solicitacoes/:id", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
+router.get(  "/compras/solicitacoes/:id", verifyComprasAccess, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { id } = req.params;
 
@@ -103,7 +103,7 @@ router.get(  "/compras/solicitacoes/:id", verifyToken, async (req: Authenticated
 );
 
 //listar todas as cotações
-router.get(  "/compras/cotacoes", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
+router.get(  "/compras/cotacoes", verifyComprasAccess, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const cotacoesRepository = AppDataSource.getRepository(Cotacoes);
 
@@ -132,7 +132,7 @@ router.get(  "/compras/cotacoes", verifyToken, async (req: AuthenticatedRequest,
 
 
 //buscar uma cotacao especifica
-router.get(  "/compras/cotacoes/:id", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
+router.get(  "/compras/cotacoes/:id", verifyComprasAccess, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { id } = req.params;
 
@@ -177,7 +177,7 @@ router.get(  "/compras/cotacoes/:id", verifyToken, async (req: AuthenticatedRequ
 
 
 //criar uma nova cotacao para uma solicitacao de compra 
-router.post( "/compras/cotacoes", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
+router.post( "/compras/cotacoes", verifyComprasAccess, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { chamadoId } = req.body;
       const usuarioId = req.userId;
@@ -240,7 +240,7 @@ router.post( "/compras/cotacoes", verifyToken, async (req: AuthenticatedRequest,
 );
 
 //atualizar status da  cotacao
-router.put("/compras/cotacoes/:id/status", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
+router.put("/compras/cotacoes/:id/status", verifyComprasAccess, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { id } = req.params;
       const { status } = req.body;
@@ -295,7 +295,7 @@ router.put("/compras/cotacoes/:id/status", verifyToken, async (req: Authenticate
 );
 
 //excluir uma cotacao
-router.delete("/compras/cotacoes/:id", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
+router.delete("/compras/cotacoes/:id", verifyComprasAccess, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { id } = req.params;
 
@@ -332,7 +332,7 @@ router.delete("/compras/cotacoes/:id", verifyToken, async (req: AuthenticatedReq
 );
 
 //add item a cotacao
-router.post("/compras/cotacoes/:cotacaoId/itens", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
+router.post("/compras/cotacoes/:cotacaoId/itens", verifyComprasAccess, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { cotacaoId } = req.params;
       const { descricao, quantidade, observacao } = req.body;
@@ -388,7 +388,7 @@ router.post("/compras/cotacoes/:cotacaoId/itens", verifyToken, async (req: Authe
   }
 );
 //atualizar item da cotacao
-router.put("/compras/itens/:id", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
+router.put("/compras/itens/:id", verifyComprasAccess, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { id } = req.params;
       const { descricao, quantidade, observacao } = req.body;
@@ -452,7 +452,7 @@ router.put("/compras/itens/:id", verifyToken, async (req: AuthenticatedRequest, 
 );
 
 //excluir item da cotacao
-router.delete("/compras/itens/:id", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
+router.delete("/compras/itens/:id", verifyComprasAccess, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { id } = req.params;
 
@@ -489,7 +489,7 @@ router.delete("/compras/itens/:id", verifyToken, async (req: AuthenticatedReques
 );
 
 //add opção de cotação ao item
- router.post("/compras/itens/:itemId/opcoes", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
+ router.post("/compras/itens/:itemId/opcoes", verifyComprasAccess, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { itemId } = req.params;
 
@@ -577,7 +577,7 @@ router.delete("/compras/itens/:id", verifyToken, async (req: AuthenticatedReques
 );
 
 //ataulziar opcao de cotacao
-router.put("/compras/opcoes/:id", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
+router.put("/compras/opcoes/:id", verifyComprasAccess, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { id } = req.params;
 
@@ -674,7 +674,7 @@ router.put("/compras/opcoes/:id", verifyToken, async (req: AuthenticatedRequest,
 );
 
 //excluir opção de cotação
-router.delete("/compras/opcoes/:id", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
+router.delete("/compras/opcoes/:id", verifyComprasAccess, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { id } = req.params;
 
@@ -713,7 +713,7 @@ router.delete("/compras/opcoes/:id", verifyToken, async (req: AuthenticatedReque
 //add classificacao a opcao
 router.post(
   "/compras/opcoes/:opcaoId/classificacoes",
-  verifyToken,
+  verifyComprasAccess,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { opcaoId } = req.params;
@@ -781,7 +781,7 @@ router.post(
 //delete exlcuir classificacao
 router.delete(
   "/compras/classificacoes/:id",
-  verifyToken,
+  verifyComprasAccess,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { id } = req.params;

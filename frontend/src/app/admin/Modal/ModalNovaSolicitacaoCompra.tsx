@@ -93,7 +93,7 @@ export default function ModalNovaSolicitacaoCompra({
         : usersRes.data.usuarios || [];
 
       const admins = todosUsuarios
-        .filter((u) => u.roleId === 1)
+        .filter((u) => u.roleId === 1 || u.roleId === 4)
         .map((u: any) => ({
           ...u,
           departamento:

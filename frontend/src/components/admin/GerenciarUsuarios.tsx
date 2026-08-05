@@ -1300,6 +1300,7 @@ export default function GerenciarUsuarios() {
                     <option value={1}>Administrador</option>
                     <option value={2}>Usuário Comum</option>
                     <option value={3}>Usuário Pro</option>
+                    <option value={4}>Compras</option>
                   </select>
                 </div>
 
@@ -1464,6 +1465,7 @@ export default function GerenciarUsuarios() {
                     <option value={1}>Administrador</option>
                     <option value={2}>Usuário Comum</option>
                     <option value={3}>Usuário Pro</option>
+                    <option value={4}>Compras</option>
                   </select>
                 </div>
 

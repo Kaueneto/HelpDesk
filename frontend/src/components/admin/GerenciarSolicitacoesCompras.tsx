@@ -94,6 +94,8 @@ export default function GerenciarSolicitacoesCompras() {
   const [chamadoSelecionado, setChamadoSelecionado] = useState<number | null>(null);
   const [criando, setCriando]                     = useState(false);
   const [modalNovaSolicitacao, setModalNovaSolicitacao] = useState(false);
+  // grupos recolhíveis: chave = label do grupo, valor = se está expandido
+  const [gruposExpandidos, setGruposExpandidos]   = useState<Record<string, boolean>>({});
 
   const statusOptions: SelectOption[] = [
     { value: 'todos', label: 'Todos os status' },
@@ -116,6 +118,7 @@ export default function GerenciarSolicitacoesCompras() {
   const border = mode === 'dark' ? '#334155' : '#E2E8F0';
   const subBg  = mode === 'dark' ? '#0F172A' : '#F8FAFC';
   const inputBg= mode === 'dark' ? '#1E293B' : '#FFFFFF';
+
 
   useEffect(() => { carregarSolicitacoes(); }, []);
 
@@ -173,18 +176,28 @@ export default function GerenciarSolicitacoesCompras() {
   }, [solicitacoes, detalhes]);
 
   // ─── filtro ──────────────────────────────────────────────
-  const STATUS_ORDEM: Record<number, number> = {
-    1: 0,
-    2: 1,
-    6: 2,
-    7: 3,
-    5: 4,
-    3: 5,
-    4: 6,
-  };
 
-  const solicitacoesAgrupadas = useMemo(() => {
-    const filtradas = solicitacoes.filter(s => {
+  // grupos de status da solicitação (chamado) com sua ordem e cores
+  const GRUPOS: {
+    label: string;
+    statusIds: number[];
+    dot: string;
+    bgLight: string;
+    bgDark: string;
+    textLight: string;
+    textDark: string;
+  }[] = [
+    { label: 'Aberto',          statusIds: [1],    dot: '#f59e0b', bgLight: '#fef3c7', bgDark: '#451a03', textLight: '#92400e', textDark: '#fcd34d' },
+    { label: 'Em Análise',      statusIds: [2],    dot: '#3b82f6', bgLight: '#dbeafe', bgDark: '#1e3a5f', textLight: '#1d4ed8', textDark: '#93c5fd' },
+    { label: 'Reaberto',        statusIds: [5],    dot: '#f97316', bgLight: '#ffedd5', bgDark: '#431407', textLight: '#c2410c', textDark: '#fdba74' },
+    { label: 'Pend. Usuário',   statusIds: [6],    dot: '#8b5cf6', bgLight: '#ede9fe', bgDark: '#2e1065', textLight: '#7c3aed', textDark: '#c4b5fd' },
+    { label: 'Pend. Terceiros', statusIds: [7],    dot: '#0ea5e9', bgLight: '#e0f2fe', bgDark: '#0c4a6e', textLight: '#0369a1', textDark: '#7dd3fc' },
+    { label: 'Encerrado',       statusIds: [3],    dot: '#22c55e', bgLight: '#dcfce7', bgDark: '#14532d', textLight: '#15803d', textDark: '#86efac' },
+    { label: 'Cancelado',       statusIds: [4],    dot: '#ef4444', bgLight: '#fee2e2', bgDark: '#450a0a', textLight: '#b91c1c', textDark: '#fca5a5' },
+  ];
+
+  const solicitacoesFiltradas = useMemo(() => {
+    return solicitacoes.filter(s => {
       let okStatus = false;
       if (filtroStatus === 'todos') {
         okStatus = true;
@@ -194,26 +207,35 @@ export default function GerenciarSolicitacoesCompras() {
         okStatus = s.status.id.toString() === filtroStatus.toString();
       }
       const q = busca.toLowerCase();
-      const okBusca  = !q
+      const okBusca = !q
         || s.numeroChamado.toString().includes(q)
         || s.resumoChamado.toLowerCase().includes(q)
         || s.usuario.name.toLowerCase().includes(q)
         || s.departamento.name.toLowerCase().includes(q);
       return okStatus && okBusca;
     });
-
-    const ordenadas = [...filtradas].sort((a, b) => {
-      const ordemA = STATUS_ORDEM[a.status.id] ?? 99;
-      const ordemB = STATUS_ORDEM[b.status.id] ?? 99;
-      if (ordemA !== ordemB) return ordemA - ordemB;
-      return new Date(b.dataAbertura).getTime() - new Date(a.dataAbertura).getTime();
-    });
-
-    const ativas = ordenadas.filter(s => s.status.id !== 3);
-    const encerradas = ordenadas.filter(s => s.status.id === 3);
-
-    return { ativas, encerradas };
   }, [solicitacoes, busca, filtroStatus]);
+
+  // agrupa por label do grupo
+  const solicitacoesAgrupadas = useMemo(() => {
+    return GRUPOS.map(grupo => ({
+      ...grupo,
+      itens: solicitacoesFiltradas.filter(s => grupo.statusIds.includes(s.status.id))
+        .sort((a, b) => new Date(b.dataAbertura).getTime() - new Date(a.dataAbertura).getTime()),
+    })).filter(g => g.itens.length > 0);
+  }, [solicitacoesFiltradas]);
+
+  // toggle de grupo recolhível — começa expandido por padrão
+  function toggleGrupo(label: string) {
+    setGruposExpandidos(prev => ({
+      ...prev,
+      [label]: prev[label] === false ? true : false, // undefined = expandido, false = recolhido
+    }));
+  }
+
+  function isGrupoExpandido(label: string) {
+    return gruposExpandidos[label] !== false; // padrão = expandido
+  }
 
   const renderSolicitacaoCard = (sol: Solicitacao) => {
     const isExpanded = expandedIds.has(sol.id);
@@ -571,47 +593,59 @@ export default function GerenciarSolicitacoesCompras() {
           </div>
         </div>
 
-        {/* lista das solicitações */}
+        {/* lista das solicitações agrupadas por status */}
         <div className="space-y-4">
-          {solicitacoesAgrupadas.ativas.length === 0 && solicitacoesAgrupadas.encerradas.length === 0 ? (
+          {solicitacoesAgrupadas.length === 0 ? (
             <div className="text-center py-16 rounded-xl" style={{ backgroundColor: card, color: text }}>
               <FiFileText className="mx-auto text-5xl mb-4 opacity-20" />
               <p className="text-lg font-medium opacity-60">Nenhuma solicitação encontrada</p>
             </div>
           ) : (
-            <>
-              {solicitacoesAgrupadas.ativas.length > 0 && (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 px-1">
-                      <div className="h-px flex-1 bg-gray-500/20" />
-                    <span className="text-xs font-semibold font-segoe " style={{ color: mode === 'dark' ? '#94a3b8' : '#64748b' }}>
-                      Em andamento
-                    </span>
-                      <div className="h-px flex-1 bg-gray-500/20" />
-                  </div>
-                  {solicitacoesAgrupadas.ativas.map((sol) => renderSolicitacaoCard(sol))}
-                </div>
-              )}
+            solicitacoesAgrupadas.map(grupo => {
+              const expandido = isGrupoExpandido(grupo.label);
+              const bg_badge  = mode === 'dark' ? grupo.bgDark  : grupo.bgLight;
+              const txt_badge = mode === 'dark' ? grupo.textDark : grupo.textLight;
 
-             {solicitacoesAgrupadas.encerradas.length > 0 && (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 px-1 pt-2">
-                    <div className="h-px flex-1 bg-gray-500/20" />
-
+              return (
+                <div key={grupo.label} className="space-y-3">
+                  {/* ── badge recolhível ── */}
+                  <button
+                    onClick={() => toggleGrupo(grupo.label)}
+                    className="flex items-center gap-2 w-full group"
+                  >
+                    <div className="h-px flex-1 opacity-20" style={{ backgroundColor: grupo.dot }} />
                     <span
-                      className="text-xs font-semibold font-segoe"
-                      style={{ color: mode === 'dark' ? '#94a3b8' : '#64748b' }}
+                      className="flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold select-none transition-all hover:scale-105 cursor-pointer"
+                      style={{ backgroundColor: bg_badge, color: txt_badge, border: `1px solid ${grupo.dot}40` }}
                     >
-                      Encerradas
+                      <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: grupo.dot }} />
+                      {grupo.label}
+                      <span
+                        className="ml-1 flex items-center justify-center w-4 h-4 rounded-full text-[10px] font-bold"
+                        style={{ backgroundColor: `${grupo.dot}30`, color: grupo.dot }}
+                      >
+                        {grupo.itens.length}
+                      </span>
+                      <span
+                        className="transition-transform duration-200 opacity-60"
+                        style={{ transform: expandido ? 'rotate(90deg)' : 'rotate(0deg)', display: 'inline-block' }}
+                      >
+                        <FiChevronRight size={11} />
+                      </span>
                     </span>
+                    <div className="h-px flex-1 opacity-20" style={{ backgroundColor: grupo.dot }} />
+                  </button>
 
-                    <div className="h-px flex-1 bg-gray-500/20" />
+                  {/* ── itens com animação de colapso ── */}
+                  <div
+                    className="space-y-3 overflow-hidden transition-all duration-300"
+                    style={{ maxHeight: expandido ? `${grupo.itens.length * 200}px` : '0px', opacity: expandido ? 1 : 0 }}
+                  >
+                    {grupo.itens.map(sol => renderSolicitacaoCard(sol))}
                   </div>
-
-                  {solicitacoesAgrupadas.encerradas.map((sol) => renderSolicitacaoCard(sol))}
                 </div>
-              )}
-            </>
+              );
+            })
           )}
         </div>
       </div>

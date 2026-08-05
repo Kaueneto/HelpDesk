@@ -146,6 +146,8 @@ export default function AdminSidebar({ collapsed, onToggle }: AdminSidebarProps)
       </div>
 
       <nav className="flex-1 py-4 space-y-1">
+        {/* Inicio — oculto para perfil Compras */}
+        {user?.roleId !== 4 && (
         <button
           onClick={() => router.push('/painel')}
           className={`w-full px-4 py-3 text-left flex items-center gap-3 transition-all duration-150 group/item relative ${
@@ -168,7 +170,10 @@ export default function AdminSidebar({ collapsed, onToggle }: AdminSidebarProps)
             </div>
           )}
         </button>
+        )}
 
+        {/* Chamados — oculto para perfil Compras */}
+        {user?.roleId !== 4 && (
         <button
           onClick={() => router.push('/chamados')}
           className={`w-full px-4 py-3 text-left flex items-center gap-3 transition-all duration-150 group/item relative ${
@@ -191,9 +196,9 @@ export default function AdminSidebar({ collapsed, onToggle }: AdminSidebarProps)
             </div>
           )}
         </button>
+        )}
 
-
-        {/* Gerencial */}
+        {/* Gerencial — só admin (roleId=1) */}
         {user?.roleId === 1 && (
         <div className="relative">
           <button
@@ -289,6 +294,8 @@ export default function AdminSidebar({ collapsed, onToggle }: AdminSidebarProps)
         </div>
         )}
 
+        {/* Preferências — oculto para perfil Compras */}
+        {user?.roleId !== 4 && (
         <button
           onClick={() => router.push('/preferencias')}
           className={`w-full px-4 py-3 text-left flex items-center gap-3 transition-all duration-150 group/item relative ${
@@ -311,7 +318,10 @@ export default function AdminSidebar({ collapsed, onToggle }: AdminSidebarProps)
             </div>
           )}
         </button>
+        )}
 
+        {/* Sugestões — oculto para perfil Compras */}
+        {user?.roleId !== 4 && (
         <button
           onClick={() => router.push('/sugestoes')}
           className={`w-full px-4 py-3 text-left flex items-center gap-3 transition-all duration-150 group/item relative ${
@@ -332,6 +342,7 @@ export default function AdminSidebar({ collapsed, onToggle }: AdminSidebarProps)
             </div>
           )}
         </button>
+        )}
 
 
         

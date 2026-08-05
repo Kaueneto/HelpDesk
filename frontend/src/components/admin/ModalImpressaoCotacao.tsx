@@ -142,9 +142,9 @@ export default function ModalImpressaoCotacao({ cotacao, onClose }: ModalImpress
             <thead>
               <tr>
                 <th>Descrição / Loja</th>
-                <th class="num">À vista</th>
-                <th class="num">Parcelado</th>
-                <th class="num">Frete</th>
+                <th class="num">Vlr.à vista</th>
+                <th class="num">Vlr.Parcelado</th>
+                <th class="num">Vlr.Frete</th>
                 <th class="center">Link</th>
                 <th>Obs.</th>
                 <th class="center">Ações</th>
@@ -159,15 +159,15 @@ export default function ModalImpressaoCotacao({ cotacao, onClose }: ModalImpress
             <span class="resumo-label">Totais por coluna:</span>
             <div class="resumo-grid">
               <div class="resumo-col">
-                <span class="resumo-subtitle">À vista</span>
+                <span class="resumo-subtitle">Vlr.À vista</span>
                 <strong class="resumo-value">${fmtMoeda(somaAvista)}</strong>
               </div>
               <div class="resumo-col">
-                <span class="resumo-subtitle">Parcelado</span>
+                <span class="resumo-subtitle">Vlr.Parcelado</span>
                 <strong class="resumo-value">${fmtMoeda(somaParcelado)}</strong>
               </div>
               <div class="resumo-col">
-                <span class="resumo-subtitle">Frete</span>
+                <span class="resumo-subtitle">Vlr.Frete</span>
                 <strong class="resumo-value">${fmtMoeda(somaFrete)}</strong>
               </div>
             </div>
