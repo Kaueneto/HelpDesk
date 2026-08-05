@@ -17,6 +17,7 @@ import HistoricoEventItem from './HistoricoEventItem';
 import { Toaster, toast } from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { FiChevronLeft } from "react-icons/fi";
 
 interface Anexo {
   id: number;
@@ -1100,11 +1101,7 @@ export default function DetalhesChamado({ chamadoId, onVoltar }: DetalhesChamado
              className="flex items-center justify-center w-8 h-15 rounded-2xl hover:bg-white/20 transition-colors duration-100 focus:outline-none  active:bg-gray-300/50 hover:scale-103 shrink-0"
 
           >
-            <img 
-              src="/icons/arrowpointGerencial.svg" 
-              alt="Voltar" 
-              className="arrowIcon"
-            />
+       <FiChevronLeft className="w-7 h-7 hover:scale-103" />
           </button>
           <div className="min-w-0 flex-1">
             <h2 className="text-white text-2xl font-semibold font-segoe hover:scale-103 transition-transform duration-300">

@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { FiEdit3 } from 'react-icons/fi';
+import { FiEdit3, FiChevronRight, FiShield   } from 'react-icons/fi';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface AdminSidebarProps {
@@ -209,9 +209,7 @@ export default function AdminSidebar({ collapsed, onToggle }: AdminSidebarProps)
             } ${gerencialPopupOpen && collapsed ? 'bg-white/10 text-white' : ''}`}
           >
             <div className="flex items-center gap-3">
-              <img
-                src="/icons/iconadministrator.svg"
-                alt="Gerencial"
+            <FiShield 
                 className="w-5 h-5 shrink-0 group-hover/item:scale-110 transition-transform duration-150"
               />
               {!collapsed && (
@@ -219,13 +217,11 @@ export default function AdminSidebar({ collapsed, onToggle }: AdminSidebarProps)
               )}
             </div>
             {!collapsed && (
-              <img
-                src="/icons/arrowpointGerencial.svg"
-                alt="Expandir"
-                className={`w-4 h-4 transform transition-all duration-200 ${
-                  gerencialExpanded ? 'rotate-90' : ''
+              <FiChevronRight
+                className={`w-5 h-5 transition-transform duration-100 ${
+                  gerencialExpanded ? "rotate-90" : ""
                 }`}
-              />
+            />
             )}
             {/* Tooltip padrão quando colapsado e popup fechado */}
             {collapsed && !gerencialPopupOpen && (
@@ -376,12 +372,10 @@ export default function AdminSidebar({ collapsed, onToggle }: AdminSidebarProps)
                 <span className="font-medium transition-all duration-200">Compras</span>
               )}
             </div>
-            {!collapsed && (
-              <img
-                src="/icons/arrowpointGerencial.svg"
-                alt="Expandir"
-                className={`w-4 h-4 transform transition-all duration-200 ${
-                  comprasExpanded ? 'rotate-90' : ''
+          {!collapsed && (
+              <FiChevronRight
+                className={`w-4 h-4 transition-transform duration-200 ${
+                  comprasExpanded ? "rotate-90" : ""
                 }`}
               />
             )}
