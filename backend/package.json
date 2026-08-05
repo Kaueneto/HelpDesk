@@ -47,7 +47,8 @@
     "@types/nodemailer": "^7.0.3",
     "concurrently": "^9.2.1",
     "ts-node": "^10.9.2",
-    "tsconfig-paths": "^4.2.0"
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^7.0.2"
   },
   "repository": {
     "type": "git",
