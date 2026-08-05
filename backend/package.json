@@ -17,10 +17,19 @@
   "license": "ISC",
   "dependencies": {
     "@supabase/supabase-js": "^2.98.0",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/cookie-parser": "^1.4.10",
+    "@types/cors": "^2.8.19",
+    "@types/dotenv": "^6.1.1",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/multer": "^2.0.0",
+    "@types/node": "^24.10.4",
+    "@types/nodemailer": "^7.0.3",
     "@types/react-datepicker": "^6.2.0",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.3",
+    "concurrently": "^9.2.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
@@ -33,29 +42,19 @@
     "reflect-metadata": "^0.2.2",
     "slugify": "^1.6.6",
     "socket.io": "^4.8.3",
-    "typeorm": "^0.3.28",
-    "yup": "^1.7.1"
-  },
-  "devDependencies": {
-    "@types/bcryptjs": "^2.4.6",
-    "@types/cookie-parser": "^1.4.10",
-    "@types/cors": "^2.8.19",
-    "@types/dotenv": "^6.1.1",
-    "@types/express": "^5.0.6",
-    "@types/jsonwebtoken": "^9.0.10",
-    "@types/node": "^24.10.4",
-    "@types/nodemailer": "^7.0.3",
-    "concurrently": "^9.2.1",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
-    "typescript": "^7.0.2"
+    "typeorm": "^0.3.28",
+    "typescript": "^7.0.2",
+    "yup": "^1.7.1"
   },
+  "devDependencies": {},
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Kaueneto/Programacao-web-II-.git"
+    "url": "git+https://github.com/Kaueneto/HelpDesk.git"
   },
   "bugs": {
-    "url": "https://github.com/Kaueneto/Programacao-web-II-/issues"
+    "url": "https://github.com/Kaueneto/HelpDesk/issues"
   },
-  "homepage": "https://github.com/Kaueneto/Programacao-web-II-#readme"
+  "homepage": "https://github.com/Kaueneto/HelpDesk#readme"
 }
