@@ -342,13 +342,16 @@ export default function GerenciarChamados() {
       if (filtrosSalvos.direcaoOrdem) setDirecaoOrdem(filtrosSalvos.direcaoOrdem);
       if (filtrosSalvos.paginaAtual) setPaginaAtual(filtrosSalvos.paginaAtual);
       if (filtrosSalvos.pageSize) setPageSize(filtrosSalvos.pageSize);
-      if (filtrosSalvos.viewMode) setViewMode(filtrosSalvos.viewMode); // Restaurar o modo de visualização
+      // viewMode NÃO é restaurado dos filtros — a fonte de verdade é 'ticketsView' no localStorage
+      // (evita que uma sessão anterior com kanban ativo force o kanban ao entrar)
       
+      // calcular pageSize baseado no viewMode atual (já inicializado a partir de ticketsView)
+      const viewModeAtual = (localStorage.getItem('ticketsView') as 'table' | 'kanban') || 'table';
+      const customPageSizeParaFiltros = viewModeAtual === 'kanban' ? 10000 : (filtrosSalvos.pageSize || 20);
+
       // fazer a pesquisa com os filtros salvos após restaurá-los
-      // Ususarar setTimeout para aguardar os states serem commitados
+      // usar setTimeout para aguardar os states serem commitados
       const timer = setTimeout(() => {
-        // calcular pageSize correto baseado no viewMode restaurado
-        const customPageSizeParaFiltros = filtrosSalvos.viewMode === 'kanban' ? 10000 : (filtrosSalvos.pageSize || 20);
         pesquisarChamadosComFiltros(
           filtrosSalvos.dataAberturaInicio ? new Date(filtrosSalvos.dataAberturaInicio) : null,
           filtrosSalvos.dataAberturaFim ? new Date(filtrosSalvos.dataAberturaFim) : null,
