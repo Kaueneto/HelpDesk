@@ -18,14 +18,18 @@ function getTransporter(): nodemailer.Transporter {
       host: process.env.EMAIL_HOST,
       port: Number(process.env.EMAIL_PORT),
       secure: false,
+      requireTLS: true,
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
       },
-      pool: true,          // mantém conexões abertas para reutilização
-      maxConnections: 3,   // até 3 conexões simultâneas
-      rateDelta: 1000,     // intervalo mínimo entre envios (ms)
-      rateLimit: 5,        // máximo 5 emails por rateDelta
+      tls: {
+        rejectUnauthorized: false,
+      },
+      pool: true,
+      maxConnections: 3,
+      rateDelta: 1000,
+      rateLimit: 5,
     } as any);
   }
   return _transporter;

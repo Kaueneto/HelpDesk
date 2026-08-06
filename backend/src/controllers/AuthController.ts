@@ -165,10 +165,14 @@ router.post("/recoverPassword", async (req: Request, res: Response) => {
     const transporter = nodemailer.createTransport({
       host: process.env.EMAIL_HOST,
       port: Number(process.env.EMAIL_PORT),
-      secure: false,
+      secure: false,        // false para porta 587 (STARTTLS)
+      requireTLS: true,     // forçar STARTTLS
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
+      },
+      tls: {
+        rejectUnauthorized: false, // necessário em alguns ambientes de produção (Render)
       },
     });
 
