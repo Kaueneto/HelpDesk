@@ -319,7 +319,7 @@ export default function SugestoesList({ onVerDetalhe, hideHeader = false }: Prop
 
         {/* guias que so mostram no painel do usuario comum */}
         {hideHeader && etapaCriacao === 'repouso' && (
-          <div className="flex gap-1 mb-5 p-1 rounded-lg w-fit" style={{ backgroundColor: theme.background.hover }}>
+          <div className="flex gap-1 mb-5 p-1 rounded-lg w-fit" style={{ backgroundColor: theme.background.tabelaClaro }}>
             {([
               { key: 'minhas' as const, label: 'Minhas sugestões' },
               { key: 'departamento' as const, label: 'Do meu departamento' },

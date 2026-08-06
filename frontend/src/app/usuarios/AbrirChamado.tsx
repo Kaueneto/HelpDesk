@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import api from '@/services/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface TopicosAjuda {
   id: number;
@@ -26,6 +27,13 @@ interface AbrirChamadoProps {
 
 export default function AbrirChamado({ userEmail, onSuccess, onCancel }: AbrirChamadoProps) {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { mode } = useTheme();
+  const dark = mode === 'dark';
+  const textPrim   = dark ? '#F1F5F9' : '#1f2937';
+  const textSec    = dark ? '#94a3b8' : '#6b7280';
+  const borderClr  = dark ? '#334155' : '#d1d5db';
+  const inputBg    = dark ? '#1E293B' : '#ffffff';
+  const labelCls   = `block text-sm sm:text-base font-medium mb-2 sm:mb-3`;
   const [ramal, setRamal] = useState('');
   const [prioridadeId, setPrioridadeId] = useState<number>(0);
   const [topicoAjudaId, setTopicoAjudaId] = useState<number>(0);
@@ -264,39 +272,32 @@ export default function AbrirChamado({ userEmail, onSuccess, onCancel }: AbrirCh
           {/* Linha 1: Assunto e Tópico de Ajuda */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
             <div className="md:col-span-2">
-              <label htmlFor="assunto" className="block text-sm sm:text-base font-medium text-gray-800 mb-2 sm:mb-3">
+              <label htmlFor="assunto" className={labelCls} style={{ color: textPrim }}>
                 Assunto <span className="text-red-500">*</span>
               </label>
               <input
-                id="assunto"
-                type="text"
-                value={resumoChamado}
-                onChange={(e) => setResumoChamado(e.target.value)}
-                required
-                maxLength={200}
-                className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg text-sm sm:text-base text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm"
+                id="assunto" type="text" value={resumoChamado}
+                onChange={e => setResumoChamado(e.target.value)}
+                required maxLength={200}
+                className="w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg text-sm sm:text-base focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all shadow-sm"
+                style={{ borderColor: borderClr, backgroundColor: inputBg, color: textPrim }}
                 placeholder="Resuma seu problema em poucas palavras"
               />
             </div>
-
             <div>
-              <label htmlFor="topico" className="block text-sm sm:text-base font-medium text-gray-800 mb-2 sm:mb-3">
+              <label htmlFor="topico" className={labelCls} style={{ color: textPrim }}>
                 Tópico de ajuda <span className="text-red-500">*</span>
               </label>
               <select
-                id="topico"
-                value={topicoAjudaId}
-                onChange={(e) => setTopicoAjudaId(Number(e.target.value))}
+                id="topico" value={topicoAjudaId}
+                onChange={e => setTopicoAjudaId(Number(e.target.value))}
                 required
-                className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg bg-white text-sm sm:text-base text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm"
+                className="w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg text-sm sm:text-base focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all shadow-sm"
+                style={{ borderColor: borderClr, backgroundColor: inputBg, color: textPrim }}
               >
                 <option value={0}>Selecione...</option>
-                {topicos
-                  .sort((a, b) => Number(a.codigo) - Number(b.codigo))
-                  .map((topico) => (
-                    <option key={topico.id} value={topico.id}>
-                      {topico.codigo} - {topico.nome}
-                    </option>
+                {topicos.sort((a, b) => Number(a.codigo) - Number(b.codigo)).map(t => (
+                  <option key={t.id} value={t.id}>{t.codigo} - {t.nome}</option>
                 ))}
               </select>
             </div>
@@ -307,16 +308,15 @@ export default function AbrirChamado({ userEmail, onSuccess, onCancel }: AbrirCh
             <div className="animate-slide-up-fade-in origin-top">
               <div className="space-y-4 sm:space-y-6 pt-2">
                 <div>
-                  <label htmlFor="descricao" className="block text-sm sm:text-base font-medium text-gray-800 mb-2 sm:mb-3">
+                  <label htmlFor="descricao" className={labelCls} style={{ color: textPrim }}>
                     Descrição <span className="text-red-500">*</span>
                   </label>
                   <textarea
-                    id="descricao"
-                    value={descricaoChamado}
-                    onChange={(e) => setDescricaoChamado(e.target.value)}
-                    required
-                    rows={6}
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg text-sm sm:text-base text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent resize-y transition-all shadow-sm"
+                    id="descricao" value={descricaoChamado}
+                    onChange={e => setDescricaoChamado(e.target.value)}
+                    required rows={6}
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg text-sm sm:text-base focus:outline-none focus:ring-1 focus:ring-blue-500 resize-y transition-all shadow-sm"
+                    style={{ borderColor: borderClr, backgroundColor: inputBg, color: textPrim }}
                     placeholder="Descreva seu problema com o maior número de detalhes..."
                   />
                 </div>
@@ -331,55 +331,39 @@ export default function AbrirChamado({ userEmail, onSuccess, onCancel }: AbrirCh
                     onDragLeave={handleDragLeave}
                     onDrop={handleDrop}
                     className={`border-2 border-dashed rounded-lg p-4 sm:p-6 md:p-8 text-center transition-colors ${
-                      isDragging
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-300 bg-gray-50'
+                      isDragging ? 'border-blue-500 bg-blue-50' : ''
                     }`}
+                    style={!isDragging ? { borderColor: borderClr, backgroundColor: dark ? '#0F172A' : '#f9fafb' } : {}}
                   >
-                    <label
-                      htmlFor="file-upload"
-                      className="cursor-pointer flex flex-col items-center"
-                    >
-                      <svg className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 text-gray-400 mb-2 sm:mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <label htmlFor="file-upload" className="cursor-pointer flex flex-col items-center">
+                      <svg className="h-8 w-8 sm:h-10 sm:w-10 text-gray-400 mb-2 sm:mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                       </svg>
-                      <p className="text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                      <p className="text-xs sm:text-sm font-medium mb-1" style={{ color: textPrim }}>
                         Clique para selecionar ou arraste arquivos aqui
                       </p>
-                      <p className="text-xs text-gray-500">Máximo de 5 arquivos (10MB cada)</p>
+                      <p className="text-xs" style={{ color: textSec }}>Máximo de 5 arquivos (10MB cada)</p>
                     </label>
-                    <input
-                      id="file-upload"
-                      type="file"
-                      multiple
+                    <input id="file-upload" type="file" multiple
                       accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip"
-                      onChange={handleFileChange}
-                      className="hidden"
-                      disabled={submitting}
-                    />
+                      onChange={handleFileChange} className="hidden" disabled={submitting} />
                   </div>
 
                   {selectedFiles.length > 0 && (
                     <div className="mt-4 space-y-2">
                       {selectedFiles.map((file, index) => (
-                        <div
-                          key={index}
-                          className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg animate-fadeIn"
+                        <div key={index}
+                          className="flex items-center justify-between p-3 border rounded-lg"
+                          style={{ backgroundColor: dark ? '#1E293B' : '#f9fafb', borderColor: borderClr }}
                         >
                           <div className="flex items-center gap-2">
-                            <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="h-5 w-5" style={{ color: textSec }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                             </svg>
-                            <span className="text-sm text-gray-700">{file.name}</span>
-                            <span className="text-xs text-gray-500">
-                              ({(file.size / 1024).toFixed(2)} KB)
-                            </span>
+                            <span className="text-sm" style={{ color: textPrim }}>{file.name}</span>
+                            <span className="text-xs" style={{ color: textSec }}>({(file.size / 1024).toFixed(2)} KB)</span>
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => removeFile(index)}
-                            className="text-red-500 hover:text-red-700 transition-colors"
-                          >
+                          <button type="button" onClick={() => removeFile(index)} className="text-red-500 hover:text-red-700 transition-colors">
                             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                             </svg>
@@ -417,26 +401,22 @@ export default function AbrirChamado({ userEmail, onSuccess, onCancel }: AbrirCh
           }`}
         >
           <div className="space-y-4 sm:space-y-6">
-            <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">Agora confirme alguns dados</p>
+            <p className="text-sm sm:text-base mb-4 sm:mb-6" style={{ color: textSec }}>Agora confirme alguns dados</p>
 
             <div className="space-y-4 sm:space-y-6">
               <div>
-                <label className="block text-sm sm:text-base font-medium text-gray-800 mb-2 sm:mb-3">
+                <label className={labelCls} style={{ color: textPrim }}>
                   Nível de prioridade <span className="text-red-500">*</span>
                 </label>
-                <div className="grid grid-cols-4 h-10 sm:h-12 rounded-lg overflow-hidden border border-gray-300">
+                <div className="grid grid-cols-4 h-10 sm:h-12 rounded-lg overflow-hidden border" style={{ borderColor: borderClr }}>
                   {prioridades.map((prioridade) => (
                     <button
-                      key={prioridade.id}
-                      type="button"
+                      key={prioridade.id} type="button"
                       onClick={() => setPrioridadeId(prioridade.id)}
-                      className={`flex items-center justify-center text-sm font-medium transition-all ${
-                        prioridadeId === prioridade.id
-                          ? 'text-gray-900'
-                          : 'bg-[#DFDFDF] text-gray-700 hover:opacity-80'
-                      }`}
+                      className="flex items-center justify-center text-sm font-medium transition-all"
                       style={{
-                        backgroundColor: prioridadeId === prioridade.id ? prioridade.cor : undefined,
+                        backgroundColor: prioridadeId === prioridade.id ? prioridade.cor : (dark ? '#1E293B' : '#DFDFDF'),
+                        color: prioridadeId === prioridade.id ? '#ffffff' : textSec,
                       }}
                     >
                       {prioridade.nome}
@@ -446,55 +426,36 @@ export default function AbrirChamado({ userEmail, onSuccess, onCancel }: AbrirCh
               </div>
 
               <div>
-                <label htmlFor="ramal" className="block text-sm sm:text-base font-medium text-gray-800 mb-2 sm:mb-3">
+                <label htmlFor="ramal" className={labelCls} style={{ color: textPrim }}>
                   Número do Ramal <span className="text-red-500">*</span>
                 </label>
-
                 <div className="relative max-w-xs">
-                  <img
-                    src="/icons/iconphone.svg"
-                    
-                    className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 opacity-60 pointer-events-none"
-                  />
-
+                  <img src="/icons/iconphone.svg" className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 opacity-60 pointer-events-none" />
                   <input
-                    id="ramal"
-                    type="text"
-                    value={ramal}
-                    onChange={(e) => setRamal(e.target.value)}
-                    required
-                    placeholder="Digite o ramal"
-                    className="w-full pl-4 sm:pl-5 pr-3 sm:pr-4 py-2 sm:py-3 border border-gray-300 rounded-lg text-sm sm:text-base text-gray-900 
-                              focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent 
-                              transition-shadow shadow-sm"
+                    id="ramal" type="text" value={ramal}
+                    onChange={e => setRamal(e.target.value)}
+                    required placeholder="Digite o ramal"
+                    className="w-full pl-4 sm:pl-5 pr-10 py-2 sm:py-3 border rounded-lg text-sm sm:text-base focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-sm"
+                    style={{ borderColor: borderClr, backgroundColor: inputBg, color: textPrim }}
                   />
                 </div>
               </div>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-between pt-4 sm:pt-6 md:pt-8">
-              <button
-                type="button"
-                onClick={handleVoltar}
-                disabled={submitting}
-                className="w-full sm:w-auto px-6 sm:px-8 py-2.5 sm:py-3 border border-gray-300 rounded-lg text-sm sm:text-base text-gray-700 font-medium hover:bg-gray-50 transition disabled:opacity-50 shadow-sm"
-              >
+              <button type="button" onClick={handleVoltar} disabled={submitting}
+                className="w-full sm:w-auto px-6 sm:px-8 py-2.5 sm:py-3 border rounded-lg text-sm sm:text-base font-medium transition disabled:opacity-50 shadow-sm"
+                style={{ borderColor: borderClr, color: textPrim, backgroundColor: 'transparent' }}>
                 Voltar
               </button>
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-                <button
-                  type="button"
-                  onClick={handleCancelar}
-                  disabled={submitting}
-                  className="w-full sm:w-auto px-6 sm:px-8 py-2.5 sm:py-3 border border-gray-300 rounded-lg text-sm sm:text-base text-gray-700 font-medium hover:bg-gray-50 transition disabled:opacity-50 shadow-sm"
-                >
+                <button type="button" onClick={handleCancelar} disabled={submitting}
+                  className="w-full sm:w-auto px-6 sm:px-8 py-2.5 sm:py-3 border rounded-lg text-sm sm:text-base font-medium transition disabled:opacity-50 shadow-sm"
+                  style={{ borderColor: borderClr, color: textPrim, backgroundColor: 'transparent' }}>
                   Cancelar
                 </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="w-full sm:w-auto px-8 sm:px-10 py-2.5 sm:py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm sm:text-base font-medium rounded-lg transition disabled:opacity-50 shadow-sm hover:shadow-md"
-                >
+                <button type="submit" disabled={submitting}
+                  className="w-full sm:w-auto px-8 sm:px-10 py-2.5 sm:py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm sm:text-base font-medium rounded-lg transition disabled:opacity-50 shadow-sm hover:shadow-md">
                   {submitting ? 'Abrindo chamado...' : 'Abrir chamado'}
                 </button>
               </div>
@@ -504,12 +465,12 @@ export default function AbrirChamado({ userEmail, onSuccess, onCancel }: AbrirCh
 
         {/* msg de erro */}
         {errorMessage && (
-          <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm mt-6 animate-fade-in">
+          <div className="bg-red-500/10 border border-red-500/40 text-red-400 px-4 py-3 rounded-lg text-sm mt-6">
             {errorMessage}
           </div>
         )}
 
-        {/* etapa 3 mensagem de sucesso */}
+        {/* etapa 3 — sucesso */}
         <div
           className={`w-full ${
             etapaAtual === 3

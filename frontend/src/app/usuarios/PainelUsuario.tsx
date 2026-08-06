@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import { FiSun, FiMoon } from 'react-icons/fi';
 import AbrirChamado from './AbrirChamado';
 import AcompanharChamado from './AcompanharChamado';
 import DetalhesChamados from './DetalhesChamados';
@@ -15,6 +17,7 @@ const baseUrl = process.env.NEXT_PUBLIC_FRONTEND_URL;
 
 export default function PainelUsuario() {
   const { user, isAuthenticated, isLoading, logout } = useAuth();
+  const { mode, setTheme } = useTheme();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'home' | 'novo' | 'acompanhar' | 'sugestoes'>('home');
   const [chamadoSelecionado, setChamadoSelecionado] = useState<any>(null);
@@ -22,22 +25,13 @@ export default function PainelUsuario() {
   const [showConfiguracoes, setShowConfiguracoes] = useState(false);
   const [sugestaoDetalheId, setSugestaoDetalheId] = useState<number | null>(null);
 
-
-
-  // funcao para obter saudação baseado na hora do dia
   const getGreeting = () => {
     const hour = new Date().getHours();
     const firstName = user?.name?.split(' ')[0] || 'Usuário';
-    
-    if (hour >= 6 && hour < 12) {
-      return `Bom dia, ${firstName}`;
-    } else if (hour >= 12 && hour < 18) {
-      return `Boa tarde, ${firstName}`;
-    } else {
-      return `Boa noite, ${firstName}`;
-    }
+    if (hour >= 6 && hour < 12) return `Bom dia, ${firstName}`;
+    if (hour >= 12 && hour < 18) return `Boa tarde, ${firstName}`;
+    return `Boa noite, ${firstName}`;
   };
-
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -45,197 +39,205 @@ export default function PainelUsuario() {
     }
   }, [isAuthenticated, isLoading, router]);
 
-  const handleChamadoClick = async (chamado: any) => {
-    setChamadoSelecionado(chamado);
-  };
-
-  const handleVoltarLista = () => {
-    setChamadoSelecionado(null);
-  };
+  const handleChamadoClick = (chamado: any) => setChamadoSelecionado(chamado);
+  const handleVoltarLista = () => setChamadoSelecionado(null);
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <div className="text-gray-600">Carregando...</div>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: mode === 'dark' ? '#0F172A' : '#f1f5f9' }}>
+        <div style={{ color: mode === 'dark' ? '#94a3b8' : '#4b5563' }}>Carregando...</div>
       </div>
     );
   }
 
-  if (!isAuthenticated || !user) {
-    return null;
-  }
+  if (!isAuthenticated || !user) return null;
 
-  // Se está mostrando configurações
+  // paleta dinamica
+  const dark = mode === 'dark';
+  const bg         = dark ? '#0F172A'                   : '#f1f5f9';
+  const cardBg     = dark ? '#1E293B'                   : '#f8fafc';
+  const borderClr  = dark ? '#334155'                   : '#e5e7eb';
+  const textPrim   = dark ? '#F1F5F9'                   : '#111827';
+  const textSec    = dark ? '#94a3b8'                   : '#6b7280';
+  const tabsBg     = dark ? '#0F172A'                   : 'rgba(229,231,235,0.7)';
+  const tabMuted   = dark ? '#64748b'                   : '#6b7280';
+  const dropdownBg = dark ? '#1E293B'                   : '#f8fafc';
+  const hoverBg    = dark ? 'rgba(255,255,255,0.07)'    : '#f3f4f6';
+  const dividerClr = dark ? '#334155'                   : '#e5e7eb';
+  const inputBg    = dark ? '#0F172A'                   : '#ffffff';
+  const logoSrc    = dark ? '/logowhite.png'            : '/logo.png';
+
   if (showConfiguracoes) {
     return (
-      <div className="min-h-screen bg-gray-100">
+      <div className="min-h-screen" style={{ backgroundColor: bg }}>
         <div className="h-screen flex flex-col">
-          <Configuracoes 
-            user={user} 
-            onClose={() => setShowConfiguracoes(false)} 
-          />
+          <Configuracoes user={user} onClose={() => setShowConfiguracoes(false)} />
         </div>
       </div>
     );
   }
 
-  // Tela de usuário comum
   return (
-    <>
-   
-      <div className="min-h-screen bg-gray-100 flex flex-col">
-        {/* Container principal — altura fixa baseada na viewport para não variar entre abas */}
-        <div className="flex-1 max-w-7xl mx-auto w-full p-8 flex flex-col">
-        <div className={`bg-[#f8fafc] rounded-lg shadow-lg flex-1 flex flex-col min-h-0 ${activeTab === 'sugestoes' ? 'overflow-visible' : 'overflow-hidden'}`}>
-          {/* Header */}
-          <div className="bg-[#f8fafc] border-b border-gray-200 px-8 py-5 flex justify-between items-center">
+    <div className="min-h-screen flex flex-col" style={{ backgroundColor: bg }}>
+      <div className="flex-1 max-w-7xl mx-auto w-full p-4 sm:p-8 flex flex-col">
+        <div
+          className={`rounded-xl shadow-lg flex-1 flex flex-col min-h-0 ${activeTab === 'sugestoes' ? 'overflow-visible' : 'overflow-hidden'}`}
+          style={{ backgroundColor: cardBg, border: `1px solid ${borderClr}` }}
+        >
+          {/* ── Header ── */}
+          <div
+            className="px-6 sm:px-8 py-4 sm:py-5 flex justify-between items-center border-b"
+            style={{ backgroundColor: cardBg, borderColor: borderClr }}
+          >
             <div className="flex items-center gap-4">
-                <img
-                  src="/logo.png"
-                  alt="Logo"
-                  className="w-24 h-8 object-contain"
-                />
-
-                <div className="h-8 w-px bg-gray-300"></div>
-
-                <h1 className="text-1xl font-bold text-gray-900">
-                  Central de Tickets
-                </h1>
+              <img src={logoSrc} alt="Logo" className="h-6 object-contain" />
+              <div className="h-6 w-px" style={{ backgroundColor: dividerClr }} />
+              <h1 className="text-base font-semibold hidden font-segoe sm:block" style={{ color: textPrim }}>
+                Central de Tickets
+              </h1>
             </div>
 
             <div className="relative">
               <button
                 onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors"
+                className="flex items-center gap-2 px-3 py-2 rounded-lg transition-colors"
+                style={{ color: textPrim }}
+                onMouseEnter={e => (e.currentTarget.style.backgroundColor = hoverBg)}
+                onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
               >
-                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
+                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
                   {user.name.charAt(0).toUpperCase()}
                 </div>
-                <span className="text-gray-700 font-medium">{user.name}</span>
-                <svg 
-                  className={`w-4 h-4 text-gray-500 transition-transform ${userDropdownOpen ? 'rotate-180' : ''}`}
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24"
-                >
+                <span className="font-medium hidden sm:inline text-sm">{user.name}</span>
+                <svg className={`w-4 h-4 transition-transform ${userDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
 
-              {/* Dropdown Menu */}
               {userDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-56 bg-[#f8fafc] rounded-lg shadow-lg border border-gray-200 py-2 z-50">
-                  <button
-                    onClick={() => {
-                      setShowConfiguracoes(true);
-                      setUserDropdownOpen(false);
-                    }}
-                    className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setUserDropdownOpen(false)} />
+                  <div
+                    className="absolute right-0 mt-2 w-60 rounded-xl shadow-xl py-1 z-50 border overflow-hidden"
+                    style={{ backgroundColor: dropdownBg, borderColor: borderClr }}
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    Configurações
-                  </button>
-                  <hr className="my-2 border-gray-200" />
-                  <button
-                    onClick={() => {
-                      setUserDropdownOpen(false);
-                      logout();
-                    }}
-                    className="w-full px-4 py-2 text-left text-red-600 hover:bg-red-50 flex items-center gap-2"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                    </svg>
-                    Sair
-                  </button>
-                </div>
+                    {/* info usuário */}
+                    <div className="px-4 py-3 border-b" style={{ borderColor: borderClr }}>
+                      <p className="font-semibold text-sm truncate" style={{ color: textPrim }}>{user.name}</p>
+                      <p className="text-xs truncate opacity-60" style={{ color: textSec }}>{user.email}</p>
+                    </div>
+
+                    {/* toggle de tema iplamntado */}
+                    <div className="px-4 py-2.5">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide opacity-50 mb-1.5" style={{ color: textSec }}>Tema</p>
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => setTheme('light')}
+                          className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-medium transition-all"
+                          style={mode === 'light'
+                            ? { backgroundColor: '#3b82f6', color: '#fff' }
+                            : { backgroundColor: hoverBg, color: textSec }}
+                        >
+                          <FiSun size={13} /> Claro
+                        </button>
+                        <button
+                          onClick={() => setTheme('dark')}
+                          className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-medium transition-all"
+                          style={mode === 'dark'
+                            ? { backgroundColor: '#3b82f6', color: '#fff' }
+                            : { backgroundColor: hoverBg, color: textSec }}
+                        >
+                          <FiMoon size={13} /> Escuro
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="mx-3 my-1 h-px" style={{ backgroundColor: borderClr }} />
+
+                    <button
+                      onClick={() => { setShowConfiguracoes(true); setUserDropdownOpen(false); }}
+                      className="w-full px-4 py-2 text-left text-sm flex items-center gap-2 transition-colors"
+                      style={{ color: textPrim }}
+                      onMouseEnter={e => (e.currentTarget.style.backgroundColor = hoverBg)}
+                      onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+                    >
+                      <svg className="w-4 h-4 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      Configurações
+                    </button>
+
+                    <div className="mx-3 my-1 h-px" style={{ backgroundColor: borderClr }} />
+
+                    <button
+                      onClick={() => { setUserDropdownOpen(false); logout(); }}
+                      className="w-full px-4 py-2 text-left text-sm flex items-center gap-2 transition-colors text-red-500"
+                      onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.08)')}
+                      onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                      </svg>
+                      Sair
+                    </button>
+                  </div>
+                </>
               )}
             </div>
           </div>
 
-          {/* Tabs de Navegação */}
-          <div className="px-8 py-4">
-            <div className="items-center justify-center rounded-md bg-gray-200/70 p-1 text-gray-500 grid w-full grid-cols-4" role="tablist">
-              <button
-                type="button"
-                role="tab"
-                onClick={() => setActiveTab('home')}
-                className={`inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-base font-medium transition-all duration-200 ${
-                  activeTab === 'home' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                <img src="/icons/iconhome.svg" alt="Home" className="w-5 h-5 sm:w-4 sm:h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Pagina Inicial</span>
-              </button>
-              <button
-                type="button"
-                role="tab"
-                onClick={() => setActiveTab('novo')}
-                className={`inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-base font-medium transition-all duration-200 ${
-                  activeTab === 'novo' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                <img src="/icons/iconabrirnovochamado.svg" alt="Abrir Chamado" className="w-5 h-5 sm:w-4 sm:h-4 sm:mr-2 " />
-                <span className="hidden sm:inline">Abrir novo Chamado</span>
-              </button>
-              <button
-                type="button"
-                role="tab"
-                onClick={() => setActiveTab('acompanhar')}
-                className={`inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-base font-medium transition-all duration-200 ${
-                  activeTab === 'acompanhar' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                <img src="/icons/iconacompanhar.svg" alt="Acompanhar" className="w-5 h-5 sm:w-4 sm:h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Acompanhar Chamado</span>
-              </button>
-              <button
-                type="button"
-                role="tab"
-                onClick={() => { setActiveTab('sugestoes'); setSugestaoDetalheId(null); }}
-                className={`inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-base font-medium transition-all duration-200 ${
-                  activeTab === 'sugestoes' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                <img
-                  src="/icons/sugest.svg"
-                  alt="Sugestões"
-                  className="w-5 h-5 sm:w-4 sm:h-4 sm:mr-2 object-contain"
-                />
-                <span className="hidden sm:inline">Sugestões</span>
-              </button>
+          {/* ── Tabs ── */}
+          <div className="px-4 sm:px-8 py-3">
+            <div
+              className="grid w-full grid-cols-4 rounded-lg p-1 gap-0.5"
+              style={{ backgroundColor: tabsBg }}
+            >
+              {([
+                { key: 'home'       as const, icon: '/icons/iconhome.svg',              label: 'Início' },
+                { key: 'novo'       as const, icon: '/icons/iconabrirnovochamado.svg',   label: 'Abrir Chamado' },
+                { key: 'acompanhar' as const, icon: '/icons/iconacompanhar.svg',         label: 'Acompanhar' },
+                { key: 'sugestoes'  as const, icon: '/icons/sugest.svg',                 label: 'Sugestões' },
+              ]).map(({ key, icon, label }) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => { setActiveTab(key); if (key === 'sugestoes') setSugestaoDetalheId(null); }}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-md px-2 py-2 text-sm font-medium transition-all"
+                  style={activeTab === key
+                    ? { backgroundColor: dark ? '#334155' : '#ffffff', color: textPrim, boxShadow: '0 1px 3px rgba(0,0,0,0.12)' }
+                    : { color: tabMuted }}
+                >
+                  <img src={icon} alt={label} className="w-4 h-4 shrink-0" />
+                  <span className="hidden sm:inline whitespace-nowrap">{label}</span>
+                </button>
+              ))}
             </div>
           </div>
 
-          {/* Conteúdo Principal — altura fixa, scroll interno */}
-          <div className="flex-1 min-h-0 px-8 py-6 overflow-y-auto">
+          {/* ── Conteúdo ── */}
+          <div
+            className="flex-1 min-h-0 px-4 sm:px-8 py-6 overflow-y-auto"
+            style={{ color: textPrim }}
+          >
             {activeTab === 'home' && (
               <div className="flex flex-col h-full">
                 <div className="mb-5">
-                  <h2 className="text-2xl font-semibold font-segoe text-gray-900 mb-1">
-                     {getGreeting()}!
+                  <h2 className="text-2xl font-semibold font-segoe mb-1" style={{ color: textPrim }}>
+                    {getGreeting()}!
                   </h2>
-                  <p className="text-1xl font-segoe text-gray-700">Como podemos ajudar hoje?</p>
+                  <p className="text-base font-segoe" style={{ color: textSec }}>Como podemos ajudar hoje?</p>
                 </div>
 
-                {/* Layout lado a lado: botões à direita, dashboard à esquerda */}
                 <div className="flex-1 flex gap-6 items-start">
-
-                  {/* Dashboard compacto — ocupa o espaço à esquerda */}
-               <div className="flex-[1.4]  pl-8 min-w-0 hidden sm:flex">
-                    <div className="w-full ">
-                      <DashboardUsuario />
-                    </div>
+                  <div className="flex-[1.4] pl-8 min-w-0 hidden sm:flex">
+                    <DashboardUsuario />
                   </div>
 
-                  {/* Botões de ação — coluna à direita */}
                   <div className="flex flex-col gap-5 w-full max-w-md ml-auto pr-4 sm:pr-12">
                     <button
                       onClick={() => setActiveTab('novo')}
-                     className="w-full px-12 py-7 bg-blue-500 hover:bg-blue-600 text-white text-lg font-semibold rounded-lg shadow-md hover:shadow-2xl hover:shadow-blue-500/30 transition-all duration-300 ease-out transform hover:scale-105 hover:-translate-y-1 flex items-center justify-center gap-3"
+                      className="w-full px-12 py-7 bg-blue-500 hover:bg-blue-600 text-white text-lg font-semibold rounded-lg shadow-md hover:shadow-2xl hover:shadow-blue-500/30 transition-all duration-300 hover:scale-105 hover:-translate-y-1 flex items-center justify-center gap-3"
                     >
                       <span className="text-2xl">+</span>
                       <span>Abrir novo chamado</span>
@@ -243,32 +245,26 @@ export default function PainelUsuario() {
 
                     <button
                       onClick={() => setActiveTab('acompanhar')}
-                      className="w-full px-12 py-7 bg-green-800 hover:bg-green-900 text-white text-lg font-semibold rounded-lg hover:shadow-2xl hover:shadow-blue-500/30 transition-all duration-300 ease-out transform hover:scale-105 hover:-translate-y-1 flex items-center justify-center gap-3"
+                      className="w-full px-12 py-7 bg-green-800 hover:bg-green-900 text-white text-lg font-semibold rounded-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 hover:-translate-y-1 flex items-center justify-center"
                     >
-                      <div>Verificar andamento do chamado</div>
-                    
+                      Verificar andamento do chamado
                     </button>
 
                     <button
                       onClick={() => { setActiveTab('sugestoes'); setSugestaoDetalheId(null); }}
-                      className="w-full px-12 py-7 text-white text-lg font-semibold rounded-lg shadow-md transition-all duration-300 ease-out transform hover:scale-105 hover:-translate-y-1"
+                      className="w-full px-12 py-7 text-white text-lg font-semibold rounded-lg shadow-md transition-all duration-300 hover:scale-105 hover:-translate-y-1"
                       style={{ backgroundColor: '#ff0066' }}
                     >
                       <div>Sugestões</div>
-                      <div className="text-sm font-normal opacity-90 mt-1 hover:scale">Queremos ouvir você</div>
+                      <div className="text-sm font-normal opacity-90 mt-1">Queremos ouvir você</div>
                     </button>
                   </div>
                 </div>
               </div>
             )}
 
-            
             {activeTab === 'novo' && (
-              <AbrirChamado
-                userEmail={user.email}
-                onSuccess={() => setActiveTab('home')}
-                onCancel={() => setActiveTab('home')}
-              />
+              <AbrirChamado userEmail={user.email} onSuccess={() => setActiveTab('home')} onCancel={() => setActiveTab('home')} />
             )}
 
             {activeTab === 'acompanhar' && (
@@ -276,27 +272,17 @@ export default function PainelUsuario() {
                 {!chamadoSelecionado ? (
                   <AcompanharChamado onChamadoClick={handleChamadoClick} />
                 ) : (
-                  <DetalhesChamados
-                    chamado={chamadoSelecionado}
-                    onVoltar={handleVoltarLista}
-                  />
+                  <DetalhesChamados chamado={chamadoSelecionado} onVoltar={handleVoltarLista} />
                 )}
               </div>
             )}
 
             {activeTab === 'sugestoes' && (
-              <div className="-mx-8 -my-6">
+              <div className="-mx-4 sm:-mx-8 -my-6">
                 {sugestaoDetalheId === null ? (
-                  <SugestoesList
-                    onVerDetalhe={(id) => setSugestaoDetalheId(id)}
-                    hideHeader
-                  />
+                  <SugestoesList onVerDetalhe={(id) => setSugestaoDetalheId(id)} hideHeader />
                 ) : (
-                  <SugestaoDetalhe
-                    sugestaoId={sugestaoDetalheId}
-                    onVoltar={() => setSugestaoDetalheId(null)}
-                    inlineLayout
-                  />
+                  <SugestaoDetalhe sugestaoId={sugestaoDetalheId} onVoltar={() => setSugestaoDetalheId(null)} inlineLayout />
                 )}
               </div>
             )}
@@ -304,6 +290,5 @@ export default function PainelUsuario() {
         </div>
       </div>
     </div>
-    </>
   );
 }
