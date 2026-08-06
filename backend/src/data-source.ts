@@ -45,19 +45,21 @@ export const AppDataSource = new DataSource({
   username: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_DATABASE,
-  synchronize: false, 
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  extra: {
+    // pool de conexões — evita abrir nova conexão a cada requisição
+    max: 5,
+    min: 1,
+    acquire: 30000,
+    idle: 10000,
+  },
+  synchronize: false,
   logging: false,
   entities: [SituationsUsers, Users, ChamadoHistorico, ChamadoMensagens, Departamentos, TipoPrioridade, Chamados, TopicosAjuda, StatusChamado, Roles, ChamadoAnexos, ParametrosSistema, LogsSistema, Preferences, PrefUsers, KanbanPositions, Sugestoes, SugestoesVotos, SugestoesInteracoes, KanbanBoard, KanbanColumn, KanbanCard, Cotacoes, CotacaoItens, CotacaoItemOpcoes, CotacaoItemOpcaoClassificacoes],
   subscribers: [],
   migrations: [__dirname + "/migrations/*.js"],
-  
 });
 //inicializar conexao com bd
 
-AppDataSource.initialize()
-  .then(() => {
-    console.log("Banco de dados conectado com sucesso!");
-  })
-  .catch((error) => {
-    console.log("erro na conexao com o banco de dados!", error);
-  });
+// A inicialização é feita somente no index.ts
+// AppDataSource.initialize() não deve ser chamado aqui

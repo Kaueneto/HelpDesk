@@ -24,7 +24,7 @@ export class ChamadoMensagens {
   @JoinColumn({ name: "chamado_id" })
   chamado!: Chamados;
 
-  @Column({ type: "text" })
+  @Column({ name:"mensagem", type: "text" })
   mensagem!: string;
 
   @OneToMany(() => ChamadoAnexos, anexo => anexo.mensagem)
