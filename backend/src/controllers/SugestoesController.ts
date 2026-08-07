@@ -185,4 +185,25 @@ router.patch('/sugestoes/:id/escopo', verifyToken, async (req: Request, res: Res
   }
 });
 
+// excluir sugestão (admin apenas)
+router.delete('/sugestoes/:id', verifyToken, async (req: Request, res: Response) => {
+  try {
+    const roleId = (req as any).usuarioAutenticado.roleId;
+
+    if (roleId !== 1) {
+      return res.status(403).json({ mensagem: 'Apenas administradores podem excluir sugestões' });
+    }
+
+    const sugestaoId = parseInt(req.params.id);
+    await sugestoesService.excluirSugestao(sugestaoId);
+
+    res.json({ mensagem: 'Sugestão excluída com sucesso' });
+  } catch (error: any) {
+    if (error.message === 'Sugestão não encontrada') {
+      return res.status(404).json({ mensagem: error.message });
+    }
+    res.status(500).json({ mensagem: 'erro ao excluir sugestão', erro: error.message });
+  }
+});
+
 export default router;

@@ -6,7 +6,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   FiThumbsUp, FiMessageCircle, FiClock, FiChevronRight,
-  FiX, FiPlus, FiArrowRight, FiGlobe, FiLock, FiCheck, FiUser,
+  FiX, FiPlus, FiArrowRight, FiGlobe, FiLock, FiCheck, FiUser, FiTrash2,
 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import api from '@/services/api';
@@ -108,6 +108,29 @@ export default function SugestoesList({ onVerDetalhe, hideHeader = false }: Prop
       toast.success(`${count} sugestão(ões) com escopo atualizado!`);
       setSelecionadas([]); setNovoEscopo(''); carregarSugestoes();
     } catch (error: any) { toast.error(error.response?.data?.mensagem || 'Erro ao atualizar escopo'); }
+    finally { setSubmittingBulk(false); }
+  };
+
+  const handleExcluirSugestao = async (id: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!window.confirm('Tem certeza que deseja excluir esta sugestão? Esta ação não pode ser desfeita.')) return;
+    try {
+      await api.delete(`/sugestoes/${id}`);
+      toast.success('sugestão excluída com sucesso!');
+      carregarSugestoes();
+    } catch (error: any) { toast.error(error.response?.data?.mensagem || 'Erro ao excluir sugestão'); }
+  };
+
+  const handleBulkExcluir = async () => {
+    if (!window.confirm(`Excluir ${selecionadas.length} sugestão(ões)? Esta ação não pode ser desfeita.`)) return;
+    setSubmittingBulk(true); let count = 0;
+    try {
+      for (const id of selecionadas) {
+        await api.delete(`/sugestoes/${id}`); count++;
+      }
+      toast.success(`${count} sugestão(ões) excluída(s)!`);
+      setSelecionadas([]); carregarSugestoes();
+    } catch (error: any) { toast.error(error.response?.data?.mensagem || 'Erro ao excluir sugestões'); }
     finally { setSubmittingBulk(false); }
   };
 
@@ -424,6 +447,16 @@ export default function SugestoesList({ onVerDetalhe, hideHeader = false }: Prop
                                 <div className="flex items-center gap-1 text-xs" style={{ color: theme.text.tertiary }}>
                                   <FiMessageCircle size={13} /><span>{comentarios}</span>
                                 </div>
+                                {isAdmin && (
+                                  <button
+                                    onClick={e => handleExcluirSugestao(sugestao.id, e)}
+                                    className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium transition-all hover:scale-105 opacity-0 group-hover:opacity-100"
+                                    style={{ backgroundColor: '#fee2e2', color: '#dc2626' }}
+                                    title="Excluir sugestão"
+                                  >
+                                    <FiTrash2 size={13} />
+                                  </button>
+                                )}
                                 <FiChevronRight size={18} style={{ color: theme.text.tertiary }} />
                               </div>
                             </div>
@@ -442,8 +475,16 @@ export default function SugestoesList({ onVerDetalhe, hideHeader = false }: Prop
         <AnimatePresence>
           {isAdmin && selecionadas.length > 0 && (
             <motion.div initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 100, opacity: 0 }}
-              className="fixed bottom-8 left-1/2 -translate-x-1/2 shadow-2xl rounded-2xl px-6 py-4 flex items-center gap-6 z-50 border"
-              style={{ backgroundColor: theme.background.card, borderColor: theme.border.secondary }}>
+              className="fixed bottom-8 left-1/2 -translate-x-1/2 rounded-2xl px-6 py-4 flex items-center gap-6 z-50"
+              style={{
+                background: theme.background.pagina === '#0F172A'
+                  ? 'rgba(15, 23, 42, 0.65)'     // dark: azul-escuro translúcido
+                  : 'rgba(200, 212, 230, 0.27)',  // light: cinza-azulado — contraste visível sobre branco
+                backdropFilter: 'blur(20px) saturate(150%)',
+                WebkitBackdropFilter: 'blur(20px) saturate(200%)',
+                border: '1px solid rgba(255, 255, 255, 0.50)',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.16), inset 0 1px 0 rgba(255,255,255,0.65)',
+              }}>
               <div className="flex flex-col">
                 <span className="text-sm font-semibold" style={{ color: theme.text.primary }}>{selecionadas.length} selecionada(s)</span>
                 <button onClick={() => setSelecionadas([])} className="text-xs text-left hover:underline opacity-80"
@@ -483,6 +524,16 @@ export default function SugestoesList({ onVerDetalhe, hideHeader = false }: Prop
                   {submittingBulk ? '...' : 'Aplicar'}
                 </button>
               </div>
+              <div className="h-8 w-px opacity-30" style={{ backgroundColor: theme.border.secondary }} />
+              <button
+                onClick={handleBulkExcluir}
+                disabled={submittingBulk}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm disabled:opacity-50 hover:scale-105 transition-all"
+                style={{ backgroundColor: '#f23333', color: '#f1f1f1' }}
+              >
+                <FiTrash2 size={15} />
+                {submittingBulk ? '...' : 'Excluir'}
+              </button>
             </motion.div>
           )}
         </AnimatePresence>

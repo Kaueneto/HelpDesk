@@ -384,6 +384,15 @@ export class SugestoesService {
     return sugestao;
   }
 
+  // excluir sugestão (apenas admin)
+  async excluirSugestao(sugestaoId: number): Promise<void> {
+    const sugestao = await this.sugestoesRepository.findOne({ where: { id: sugestaoId } });
+    if (!sugestao) {
+      throw new Error('Sugestão não encontrada');
+    }
+    await this.sugestoesRepository.remove(sugestao);
+  }
+
   // verificar acesso à sugestão - VALIDAÇÃO RIGOROSA
   private verificarAcesso(
     sugestao: Sugestoes,
