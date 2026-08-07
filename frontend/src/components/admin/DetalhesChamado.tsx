@@ -161,15 +161,6 @@ export default function DetalhesChamado({ chamadoId, onVoltar }: DetalhesChamado
     return () => cancelAnimationFrame(scrollTimer);
   }, [mensagens]); // reage SEMPRE que mensagens mudam
 
-  useEffect(() => {
-    // só  carregar dados se estiver autenticado
-    if (authLoading) return;
-    if (!isAuthenticated) return;
-    
-    carregarDados();
-    carregarUsuarioLogado();
-  }, [chamadoId, isAuthenticated, authLoading]);
-
   // merge inteligente - add apenas mensagens novas (sem refetch total)
   const adicionarMensagemDoWebSocket = useCallback((novaMensagem: any) => {
     setMensagens(prev => {
@@ -182,6 +173,73 @@ export default function DetalhesChamado({ chamadoId, onVoltar }: DetalhesChamado
       return [...prev, novaMensagem];
     });
   }, []);
+
+  const carregarDados = useCallback(async (silent = false) => {
+    if (!isAuthenticated) return; // protecao adicional
+    
+    if (!silent) setLoading(true);
+    try {
+      // prioridades são dados estáticos — carregar apenas na primeira vez (sem silent)
+      const requests: Promise<any>[] = [
+        api.get(`/chamados/${chamadoId}`),
+        api.get(`/chamados/${chamadoId}/mensagens`),
+        api.get(`/chamados/${chamadoId}/historico`),
+      ];
+      if (!silent) {
+        requests.push(api.get('/tipo_prioridade'));
+      }
+
+      const results = await Promise.all(requests);
+      const [chamadoRes, mensagensRes, historicoRes] = results;
+
+      setChamado(chamadoRes.data);
+      setMensagens(mensagensRes.data);
+      setHistorico(historicoRes.data);
+      if (!silent) setPrioridades(results[3].data);
+    } catch (error) {
+  
+      toast.error('Erro ao carregar chamado', {
+        style: {
+          background: '#fff',
+          color: '#dc2626',
+          fontWeight: 'bold',
+          fontSize: '1rem',
+          borderRadius: '0.75rem',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+        },
+        iconTheme: {
+          primary: '#dc2626',
+          secondary: '#fff',
+        },
+      });
+    } finally {
+      if (!silent) setLoading(false);
+    }
+  }, [chamadoId, isAuthenticated]);
+
+  // recarrega apenas o histórico + dados do chamado (chamado pelo WebSocket history-new)
+  const carregarHistorico = useCallback(async () => {
+    if (!isAuthenticated) return;
+    try {
+      const [historicoRes, chamadoRes] = await Promise.all([
+        api.get(`/chamados/${chamadoId}/historico`),
+        api.get(`/chamados/${chamadoId}`),
+      ]);
+      setHistorico(historicoRes.data);
+      setChamado(chamadoRes.data);
+    } catch {
+      // silencioso — não exibe erro para o usuário em atualizações de bg
+    }
+  }, [chamadoId, isAuthenticated]);
+
+  useEffect(() => {
+    // só  carregar dados se estiver autenticado
+    if (authLoading) return;
+    if (!isAuthenticated) return;
+    
+    carregarDados();
+    carregarUsuarioLogado();
+  }, [chamadoId, isAuthenticated, authLoading]);
 
   // autto-atualização do chat via WebSocket (sem polling)
   useEffect(() => {
@@ -208,7 +266,7 @@ export default function DetalhesChamado({ chamadoId, onVoltar }: DetalhesChamado
 
         const unsubHistorico = socketManager.on('history-new', (data: any) => {
           console.log('[📜 history-new] Evento recebido via manager:', data);
-          carregarDados(true);
+          carregarHistorico();
         });
 
         // listener de teste para diagnosticar
@@ -231,7 +289,7 @@ export default function DetalhesChamado({ chamadoId, onVoltar }: DetalhesChamado
 
     // retornar cleanup vazio aqui (listeners já cuidam da limpeza)
     return () => {};
-  }, [chamadoId, isAuthenticated, adicionarMensagemDoWebSocket]);
+  }, [chamadoId, isAuthenticated, adicionarMensagemDoWebSocket, carregarHistorico]);
 
   const carregarUsuarioLogado = () => {
     // obter id do usuário do contexto de autenticação
@@ -274,43 +332,6 @@ export default function DetalhesChamado({ chamadoId, onVoltar }: DetalhesChamado
         new Date(a.dataSorting).getTime() - new Date(b.dataSorting).getTime()
     );
   }, [mensagens, historico]);
-
-  const carregarDados = async (silent = false) => {
-    if (!isAuthenticated) return; // protecao adicional
-    
-    if (!silent) setLoading(true);
-    try {
-      const [chamadoRes, mensagensRes, historicoRes, prioridadesRes] = await Promise.all([
-        api.get(`/chamados/${chamadoId}`),
-        api.get(`/chamados/${chamadoId}/mensagens`),
-        api.get(`/chamados/${chamadoId}/historico`),
-        api.get('/tipo_prioridade'),
-      ]);
-
-      setChamado(chamadoRes.data);
-      setMensagens(mensagensRes.data);
-      setHistorico(historicoRes.data);
-      setPrioridades(prioridadesRes.data);
-    } catch (error) {
-  
-      toast.error('Erro ao carregar chamado', {
-        style: {
-          background: '#fff',
-          color: '#dc2626',
-          fontWeight: 'bold',
-          fontSize: '1rem',
-          borderRadius: '0.75rem',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-        },
-        iconTheme: {
-          primary: '#dc2626',
-          secondary: '#fff',
-        },
-      });
-    } finally {
-      if (!silent) setLoading(false);
-    }
-  };
 
   const abrirModalEmail = () => {
     setModalEmailAberto(true);

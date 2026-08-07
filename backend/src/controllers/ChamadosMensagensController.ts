@@ -153,32 +153,36 @@ router.get("/chamados/:id/mensagens", verifyToken, async (req: AuthenticatedRequ
       anexos: todosAnexos.filter(anexo => anexo.mensagemId === msg.id)
     }));
 
-    // Gerar signed URLs para todos os anexos
-    const mensagensComSignedUrls = await Promise.all(
-      mensagensComAnexos.map(async (mensagem) => {
-        if (mensagem.anexos && mensagem.anexos.length > 0) {
-          const anexosComSignedUrl = await Promise.all(
-            mensagem.anexos.map(async (anexo) => {
-              const { data: signedUrlData } = await supabase.storage
-                .from(SUPABASE_BUCKET)
-                .createSignedUrl(anexo.url, 3600);
-              
-              return {
-                ...anexo,
-                signedUrl: signedUrlData?.signedUrl,
-              };
-            })
-          );
-          
-          return {
-            ...mensagem,
-            anexos: anexosComSignedUrl,
-          };
-        }
-        
-        return mensagem;
-      })
-    );
+    // Gerar signed URLs para todos os anexos em lote (uma chamada por arquivo único)
+    // Coletar todos os paths únicos de uma vez
+    const todosOsPaths = new Set<string>();
+    mensagensComAnexos.forEach(msg => {
+      msg.anexos?.forEach(a => todosOsPaths.add(a.url));
+    });
+
+    const signedUrlMap = new Map<string, string>();
+    if (todosOsPaths.size > 0) {
+      await Promise.all(
+        Array.from(todosOsPaths).map(async (filePath) => {
+          try {
+            const { data } = await supabase.storage
+              .from(SUPABASE_BUCKET)
+              .createSignedUrl(filePath, 3600);
+            if (data?.signedUrl) signedUrlMap.set(filePath, data.signedUrl);
+          } catch {
+            // ignora e mantém sem signed URL
+          }
+        })
+      );
+    }
+
+    const mensagensComSignedUrls = mensagensComAnexos.map((mensagem) => ({
+      ...mensagem,
+      anexos: mensagem.anexos?.map(anexo => ({
+        ...anexo,
+        signedUrl: signedUrlMap.get(anexo.url),
+      })) ?? [],
+    }));
 
     return res.status(200).json(mensagensComSignedUrls);
   } catch (error) {

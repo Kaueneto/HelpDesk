@@ -500,49 +500,45 @@ router.get("/chamados/:id", verifyToken, async (req: AuthenticatedRequest, res: 
       return res.status(404).json({ mensagem: "Chamado não encontrado" });
     }
 
-    // Buscar apenas anexos do tipo CHAMADO (anexos iniciais) e gerar signed URLs
+    // coletar todos os paths a assinar em paralelo (anexos + avatar do responsável)
     const anexosIniciais = chamado.anexos?.filter(a => a.tipoAnexo === 'CHAMADO') || [];
-    const anexosComUrls = await Promise.all(
-      anexosIniciais.map(async (anexo) => {
-        const { data: signedUrlData } = await supabase.storage
-          .from(SUPABASE_BUCKET)
-          .createSignedUrl(anexo.url, 3600);
-        
-        return {
-          id: anexo.id,
-          filename: anexo.filename,
-          signedUrl: signedUrlData?.signedUrl,
-          criadoEm: anexo.criadoEm,
-        };
-      })
-    );
 
-    // gerar signed URL para avatar do userResponsavel se existir
+    const pathsParaAssinar: string[] = [
+      ...anexosIniciais.map(a => a.url),
+      ...(chamado.userResponsavel?.avatar_url ? [chamado.userResponsavel.avatar_url] : []),
+    ];
+
+    // Gerar todas as signed URLs em paralelo (uma única rodada de I/O)
+    const signedUrlMap = new Map<string, string>();
+    if (pathsParaAssinar.length > 0) {
+      await Promise.all(
+        pathsParaAssinar.map(async (filePath) => {
+          try {
+            const { data } = await supabase.storage
+              .from(SUPABASE_BUCKET)
+              .createSignedUrl(filePath, 3600);
+            if (data?.signedUrl) signedUrlMap.set(filePath, data.signedUrl);
+          } catch {
+            // fallback: mantém path original se falhar
+          }
+        })
+      );
+    }
+
+    const anexosComUrls = anexosIniciais.map((anexo) => ({
+      id: anexo.id,
+      filename: anexo.filename,
+      signedUrl: signedUrlMap.get(anexo.url),
+      criadoEm: anexo.criadoEm,
+    }));
+
     let userResponsavelFormatado = null;
-    if (chamado.userResponsavel && chamado.userResponsavel.avatar_url) {
-      try {
-        const { data: signedUrlData } = await supabase.storage
-          .from(SUPABASE_BUCKET)
-          .createSignedUrl(chamado.userResponsavel.avatar_url, 3600);
-        
-        userResponsavelFormatado = {
-          id: chamado.userResponsavel.id,
-          name: chamado.userResponsavel.name,
-          avatar_url: signedUrlData?.signedUrl || chamado.userResponsavel.avatar_url
-        };
-      } catch (error) {
-        console.warn(`Erro ao gerar signed URL para avatar do userResponsavel ${chamado.userResponsavel.id}:`, error);
-        userResponsavelFormatado = {
-          id: chamado.userResponsavel.id,
-          name: chamado.userResponsavel.name,
-          avatar_url: chamado.userResponsavel.avatar_url
-        };
-      }
-    } else if (chamado.userResponsavel) {
+    if (chamado.userResponsavel) {
+      const avatarPath = chamado.userResponsavel.avatar_url;
       userResponsavelFormatado = {
         id: chamado.userResponsavel.id,
         name: chamado.userResponsavel.name,
-        avatar_url: null
+        avatar_url: avatarPath ? (signedUrlMap.get(avatarPath) || avatarPath) : null,
       };
     }
 
@@ -789,23 +785,18 @@ router.get("/chamados", verifyToken, async (req: AuthenticatedRequest, res: Resp
     // Ordenar por data de abertura (mais recentes primeiro)
     queryBuilder.orderBy("chamado.data_abertura", "DESC");
 
-    // Obter total de registros ANTES de aplicar paginação
-    // Fazer um clone da query para contar sem os limites
-    const countQuery = queryBuilder.clone();
-    const total = await countQuery.getCount();
-
-    // Aplicar paginação usando .limit() e .offset()
+    // Aplicar paginação e buscar dados + total em uma única operação
     queryBuilder.limit(pageSizeNum).offset(offset);
-
-    const chamados = await queryBuilder.getMany();
+    const [chamados, total] = await queryBuilder.getManyAndCount();
 
     // Calcular total de páginas
     const totalPages = Math.ceil(total / pageSizeNum);
 
-    // Buscar TODAS as posições do kanban para os chamados retornados
     const chamadoIds = chamados.map(c => c.id);
+
+    // Buscar posições kanban APENAS quando estiver no modo kanban (evita query desnecessária no modo tabela)
     const kanbanPositionsRepo = AppDataSource.getRepository(KanbanPositions);
-    const todasAsPosicoes = chamadoIds.length > 0 
+    const todasAsPosicoes = (isKanban && chamadoIds.length > 0)
       ? await kanbanPositionsRepo.find({
           where: { idChamado: In(chamadoIds) },
           order: { updatedAt: 'DESC' }
@@ -825,76 +816,83 @@ router.get("/chamados", verifyToken, async (req: AuthenticatedRequest, res: Resp
       });
     });
 
-    // buscar ult mensagem de cada chamado
+    // buscar última mensagem de cada chamado usando subquery com ROW_NUMBER
+    // (DISTINCT ON não é suportado pelo TypeORM query builder)
     const ultimasMensagensRepo = AppDataSource.getRepository(ChamadoMensagens);
-    const todasMensagens = chamadoIds.length > 0
-      ? await ultimasMensagensRepo
-          .createQueryBuilder("mensagem")
-          .select("mensagem.id", "id")
-          .addSelect("mensagem.chamado_id", "chamadoId")
-          .addSelect("mensagem.data_envio", "dataEnvio")
-          .addSelect("mensagem.mensagem", "mensagem")
-          .addSelect("usuario.id", "usuarioId")
-          .addSelect("usuario.name", "usuarioNome")
-          .leftJoin("mensagem.usuario", "usuario")
-          .where("mensagem.chamado_id IN (:...chamadoIds)", { chamadoIds })
-          .orderBy("mensagem.chamado_id", "ASC")
-          .addOrderBy("mensagem.data_envio", "DESC")
-          .getRawMany()
+    const ultimasMensagens = chamadoIds.length > 0
+      ? await ultimasMensagensRepo.query(
+          `SELECT m.chamado_id AS "chamadoId",
+                  m.data_envio AS "dataEnvio",
+                  m.mensagem   AS "mensagem",
+                  u.id         AS "usuarioId",
+                  u.name       AS "usuarioNome"
+           FROM (
+             SELECT chamado_id, data_envio, mensagem, user_id,
+                    ROW_NUMBER() OVER (PARTITION BY chamado_id ORDER BY data_envio DESC) AS rn
+             FROM chamados_mensagens
+             WHERE chamado_id = ANY($1)
+           ) m
+           LEFT JOIN users u ON u.id = m.user_id
+           WHERE m.rn = 1`,
+          [chamadoIds]
+        )
       : [];
 
-    // criar um mapa com a ult msg por chamado (primeira = ult por estar ordenada desc)
+    // montar mapa direto (DISTINCT ON já garante uma linha por chamado)
     const ultimaMensagemPorChamado: { [key: number]: any } = {};
-    const chamadoIdProcessados = new Set<number>();
-    
-    todasMensagens.forEach((msg: any) => {
-      // msg.chamadoId vem do select alias
+    ultimasMensagens.forEach((msg: any) => {
       const idChamado = msg.chamadoId;
-      if (idChamado && !chamadoIdProcessados.has(idChamado)) {
+      if (idChamado) {
         ultimaMensagemPorChamado[idChamado] = {
           data: msg.dataEnvio,
           usuarioId: msg.usuarioId,
           usuarioNome: msg.usuarioNome,
           mensagem: msg.mensagem?.substring(0, 50) + (msg.mensagem?.length > 50 ? '...' : '')
         };
-        chamadoIdProcessados.add(idChamado);
       }
     });
 
-    // Formatar resposta com signed URLs para avatares
-    const chamadosFormatados = await Promise.all(chamados.map(async (chamado: any) => {
-      // Se tiver múltiplas posições, retornar um array; senão retornar null ou a primeira
+    // Coletar avatares únicos de responsáveis para gerar signed URLs em lote
+    const avataresPendentes = new Map<string, string>(); // path -> signedUrl
+    chamados.forEach((chamado: any) => {
+      if (chamado.userResponsavel?.avatar_url) {
+        avataresPendentes.set(chamado.userResponsavel.avatar_url, '');
+      }
+    });
+
+    // Gerar signed URLs em lote (uma chamada por avatar único, não por chamado)
+    if (avataresPendentes.size > 0) {
+      await Promise.all(
+        Array.from(avataresPendentes.keys()).map(async (avatarPath) => {
+          try {
+            const { data: signedUrlData } = await supabase.storage
+              .from(SUPABASE_BUCKET)
+              .createSignedUrl(avatarPath, 3600);
+            if (signedUrlData?.signedUrl) {
+              avataresPendentes.set(avatarPath, signedUrlData.signedUrl);
+            }
+          } catch {
+            // mantém string vazia, fallback para path original
+          }
+        })
+      );
+    }
+
+    // Formatar resposta usando o mapa de avatares já resolvido (sem await no map)
+    const chamadosFormatados = chamados.map((chamado: any) => {
       const posicoesDoCard = posicoesPorChamado[chamado.id] || [];
-      
-      // Gerar signed URL para avatar do userResponsavel se existir
+
       let userResponsavelFormatado = null;
-      if (chamado.userResponsavel && chamado.userResponsavel.avatar_url) {
-        try {
-          const { data: signedUrlData } = await supabase.storage
-            .from(SUPABASE_BUCKET)
-            .createSignedUrl(chamado.userResponsavel.avatar_url, 3600);
-          
-          userResponsavelFormatado = {
-            id: chamado.userResponsavel.id,
-            name: chamado.userResponsavel.name,
-            avatar_url: signedUrlData?.signedUrl || chamado.userResponsavel.avatar_url
-          };
-        } catch (error) {
-          console.warn(`Erro ao gerar signed URL para avatar do userResponsavel ${chamado.userResponsavel.id}:`, error);
-          userResponsavelFormatado = {
-            id: chamado.userResponsavel.id,
-            name: chamado.userResponsavel.name,
-            avatar_url: chamado.userResponsavel.avatar_url
-          };
-        }
-      } else if (chamado.userResponsavel) {
+      if (chamado.userResponsavel) {
+        const avatarPath = chamado.userResponsavel.avatar_url;
+        const signedUrl = avatarPath ? (avataresPendentes.get(avatarPath) || avatarPath) : null;
         userResponsavelFormatado = {
           id: chamado.userResponsavel.id,
           name: chamado.userResponsavel.name,
-          avatar_url: null
+          avatar_url: signedUrl,
         };
       }
-      
+
       return {
         id: chamado.id,
         numeroChamado: chamado.numeroChamado,
@@ -907,7 +905,7 @@ router.get("/chamados", verifyToken, async (req: AuthenticatedRequest, res: Resp
         usuario: chamado.usuario ? {
           id: chamado.usuario.id,
           name: chamado.usuario.name,
-          roleId: chamado.usuario.roleId // add roleId para o frontend identificar interno/externo
+          roleId: chamado.usuario.roleId,
         } : null,
         tipoPrioridade: chamado.tipoPrioridade,
         departamento: chamado.departamento,
@@ -916,10 +914,9 @@ router.get("/chamados", verifyToken, async (req: AuthenticatedRequest, res: Resp
         userResponsavel: userResponsavelFormatado,
         userFechamento: chamado.userFechamento ? { id: chamado.userFechamento.id, name: chamado.userFechamento.name } : null,
         ultimaInteracao: ultimaMensagemPorChamado[chamado.id] || null,
-        // Retornar array de todas as posições para o frontend escolher a correta
         kanbanPositions: posicoesDoCard.length > 0 ? posicoesDoCard : null,
       };
-    }));
+    });
 
     return res.status(200).json({
       chamados: chamadosFormatados,
