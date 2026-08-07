@@ -331,11 +331,7 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
                
           {/* priority */}
-          <div className="rounded-xl shadow-sm p-4 md:p-8" style={{
-            backgroundColor: theme.background.surface,
-            borderColor: theme.border.secondary,
-            borderWidth: '1px'
-          }}>
+          <GraficoCard className="p-4 md:p-8">
             <h3 className="font-bold mb-3 md:mb-4 font-segoe text-base md:text-lg" style={{ color: theme.text.primary }}>Distribuição por Prioridade</h3>
             
             <div className="mb-4 md:mb-6 flex flex-wrap gap-2 p-2 md:p-3 rounded-lg overflow-x-auto" style={{
@@ -406,14 +402,10 @@ export default function Dashboard() {
                 <Legend />
               </PieChart>
             </ResponsiveContainer>
-          </div>
+          </GraficoCard>
 
           {/* grafico por departamento */}
-          <div className="rounded-xl shadow-sm p-4 md:p-8" style={{
-            backgroundColor: theme.background.surface,
-            borderColor: theme.border.secondary,
-            borderWidth: '1px'
-          }}>
+          <GraficoCard className="p-4 md:p-8">
             <h3 className="font-bold mb-4 md:mb-6 text-base md:text-lg font-segoe" style={{ color: theme.text.primary }}>Chamados por Departamento</h3>
             <div className="space-y-3 md:space-y-5">
               {dadosDepartamento.map((d, i) => (
@@ -437,15 +429,11 @@ export default function Dashboard() {
                 </div>
               ))}
             </div>
-          </div>
+          </GraficoCard>
         </div>
         
    {/* grafico de linhas Interno x Externo */}
-<div className="mt-6 md:mt-8 rounded-2xl shadow-md p-5 md:p-8 transition-all hover:shadow-lg" style={{
-  backgroundColor: theme.background.surface,
-  borderColor: theme.border.secondary,
-  borderWidth: '1px'
-}}>
+<GraficoCard className="mt-6 md:mt-8 p-5 md:p-8">
   
   {/* Header */}
   <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
@@ -556,14 +544,10 @@ export default function Dashboard() {
       />
     </LineChart>
   </ResponsiveContainer>
-</div>
+</GraficoCard>
 
         {/* grafico top5 */}
-        <div className="mt-6 md:mt-8 rounded-xl shadow-sm p-4 md:p-8 overflow-x-auto" style={{
-          backgroundColor: theme.background.surface,
-          borderColor: theme.border.secondary,
-          borderWidth: '1px'
-        }}>
+        <GraficoCard className="mt-6 md:mt-8 overflow-x-auto p-4 md:p-8">
             <h3 className="text-base md:text-xl font-bold font-segoe mb-3 md:mb-6" style={{ color: theme.text.primary }}>Top 5 Tópicos de Ajuda</h3>
             <p className="text-xs md:text-sm mb-4" style={{ color: theme.text.secondary }}>Chamados abertos com mais frequencia + usuario mais ativo no tópico</p>
             <div className="min-w-125">
@@ -622,14 +606,10 @@ export default function Dashboard() {
                 </BarChart>
             </ResponsiveContainer>
             </div>
-        </div>
+        </GraficoCard>
 
        {/* graficos por usuario */}
-<div className="mt-6 md:mt-8 rounded-xl shadow-sm p-4 md:p-8 overflow-x-auto" style={{
-  backgroundColor: theme.background.surface,
-  borderColor: theme.border.secondary,
-  borderWidth: '1px'
-}}>
+<GraficoCard className="mt-6 md:mt-8 overflow-x-auto p-4 md:p-8">
   <div className="mb-4 md:mb-6">
     <h3 className="text-base md:text-xl font-bold" style={{ color: theme.text.primary }}>Total de Chamados Abertos por Usuário</h3>
     <p className="text-xs md:text-sm" style={{ color: theme.text.secondary }}>Quantidade total de chamados abertos por cada usuário no período selecionado</p>
@@ -719,8 +699,46 @@ export default function Dashboard() {
     </ResponsiveContainer>
     </div>
   )}
-</div>
+</GraficoCard>
       </div>
+    </div>
+  );
+}
+function GraficoCard({
+  children,
+  className = '',
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  const { theme } = useTheme();
+  const [hovered, setHovered] = useState(false);
+
+  return (
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      className={className}
+     style={{
+  backgroundColor: theme.background.pagina,
+  borderRadius: '0.75rem',
+  padding: undefined,
+
+  transform: hovered
+    ? 'translateY(-4px) scale(1.01)'
+    : 'translateY(0)',
+
+  boxShadow: hovered
+  ? `
+      0 10px 28px ${theme.brand.primary}30,
+      0 18px 40px rgba(37, 81, 99, 0.35)
+    `
+  : 'none',
+
+  transition: 'all .22s ease',
+}}
+    >
+      {children}
     </div>
   );
 }
