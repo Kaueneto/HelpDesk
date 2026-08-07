@@ -291,7 +291,7 @@ export default function GerenciarSolicitacoesCompras() {
             className="inline-flex items-center justify-center w-5 h-5 rounded-full shrink-0"
             style={{
               color: isExpanded ? accent : (mode === 'dark' ? '#64748b' : '#94a3b8'),
-              transition: 'transform 220ms cubic-bezier(0.4,0,0.2,1), color 180ms ease',
+              transition: 'transform 120ms cubic-bezier(0.4,0,0.2,1), color 180ms ease',
               transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
             }}
           >
@@ -615,7 +615,7 @@ export default function GerenciarSolicitacoesCompras() {
                   >
                     <div className="h-px flex-1 opacity-20" style={{ backgroundColor: grupo.dot }} />
                     <span
-                      className="flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold select-none transition-all hover:scale-105 cursor-pointer"
+                      className="flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold select-none transition-all hover:scale-102 cursor-pointer"
                       style={{ backgroundColor: bg_badge, color: txt_badge, border: `1px solid ${grupo.dot}40` }}
                     >
                       <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: grupo.dot }} />
@@ -637,12 +637,11 @@ export default function GerenciarSolicitacoesCompras() {
                   </button>
 
                   {/* ── itens com animação de colapso ── */}
-                  <div
-                    className="space-y-3 overflow-hidden transition-all duration-300"
-                    style={{ maxHeight: expandido ? `${grupo.itens.length * 200}px` : '0px', opacity: expandido ? 1 : 0 }}
-                  >
-                    {grupo.itens.map(sol => renderSolicitacaoCard(sol))}
-                  </div>
+                 {expandido && (
+                    <div className="space-y-3 pt-1 pb-2">
+                      {grupo.itens.map(sol => renderSolicitacaoCard(sol))}
+                    </div>
+                  )}
                 </div>
               );
             })

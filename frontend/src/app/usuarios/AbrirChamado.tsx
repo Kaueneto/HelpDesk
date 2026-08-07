@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import api from '@/services/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import CustomSelect from '@/components/admin/CustomSelect';
 
 interface TopicosAjuda {
   id: number;
@@ -107,13 +108,13 @@ export default function AbrirChamado({ userEmail, onSuccess, onCancel }: AbrirCh
     }
     
     setSlideDirection('right');
-    setTimeout(() => setEtapaAtual(2), 50);
+    setTimeout(() => setEtapaAtual(2), 60);
   };
 
   const handleVoltar = () => {
     setErrorMessage('');
-    setSlideDirection('left');
-    setTimeout(() => setEtapaAtual(1), 50);
+    setSlideDirection('right');
+    setTimeout(() => setEtapaAtual(1), 60);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -273,13 +274,13 @@ export default function AbrirChamado({ userEmail, onSuccess, onCancel }: AbrirCh
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
             <div className="md:col-span-2">
               <label htmlFor="assunto" className={labelCls} style={{ color: textPrim }}>
-                Assunto <span className="text-red-500">*</span>
+                Assunto <span className="text-red-500 " >*</span>
               </label>
               <input
                 id="assunto" type="text" value={resumoChamado}
                 onChange={e => setResumoChamado(e.target.value)}
                 required maxLength={200}
-                className="w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg text-sm sm:text-base focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all shadow-sm"
+                className="w-full px-3 sm:px-4 py-2 sm:py-2 border rounded-lg text-sm sm:text-base  focus:ring-1 focus:ring-blue-500 transition-all shadow-sm"
                 style={{ borderColor: borderClr, backgroundColor: inputBg, color: textPrim }}
                 placeholder="Resuma seu problema em poucas palavras"
               />
@@ -288,18 +289,19 @@ export default function AbrirChamado({ userEmail, onSuccess, onCancel }: AbrirCh
               <label htmlFor="topico" className={labelCls} style={{ color: textPrim }}>
                 Tópico de ajuda <span className="text-red-500">*</span>
               </label>
-              <select
-                id="topico" value={topicoAjudaId}
-                onChange={e => setTopicoAjudaId(Number(e.target.value))}
-                required
-                className="w-full px-3 sm:px-4 py-2 sm:py-3 border rounded-lg text-sm sm:text-base focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all shadow-sm"
-                style={{ borderColor: borderClr, backgroundColor: inputBg, color: textPrim }}
-              >
-                <option value={0}>Selecione...</option>
-                {topicos.sort((a, b) => Number(a.codigo) - Number(b.codigo)).map(t => (
-                  <option key={t.id} value={t.id}>{t.codigo} - {t.nome}</option>
-                ))}
-              </select>
+             <CustomSelect
+                value={topicoAjudaId}
+                onChange={setTopicoAjudaId}
+                textPrim={textPrim}
+                inputBg={inputBg}
+                borderClr={borderClr}
+                options={topicos
+                  .sort((a, b) => Number(a.codigo) - Number(b.codigo))
+                  .map(t => ({
+                    id: t.id,
+                    label: `${t.codigo} - ${t.nome}`,
+                  }))}
+              />
             </div>
           </div>
 

@@ -17,7 +17,7 @@ export const lightTheme: Theme = {
     modal: '#FFFFFF',        // Branco para modais
     card: '#FFFFFF',         // Branco para cards
     hover: '#F3F4F6',        // Cinza claro no hover
-    tabelaClaro: '#F9FAFB',      // Cinza claro para tabela clara
+    tabelaClaro: '#E5E7EB',      // Cinza claro para tabela clara
     tabelaEscuro: '#F3F3F3',     // Cinza para tabela escura
 
   },

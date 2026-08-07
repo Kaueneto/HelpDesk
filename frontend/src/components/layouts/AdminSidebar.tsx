@@ -233,18 +233,24 @@ export default function AdminSidebar({ collapsed, onToggle }: AdminSidebarProps)
 
           {/* Popup flutuante — só aparece quando colapsado */}
           {collapsed && gerencialPopupOpen && (
-            <div
-              ref={popupRef}
-              className="absolute left-full top-0 ml-2 z-50 min-w-48 rounded-lg overflow-hidden shadow-2xl border border-gray-700/60"
-              style={{ backgroundColor: '#002244' }}
-            >
+         <div
+            ref={popupRef}
+            className="absolute left-full top-0 ml-2 z-50 min-w-48 rounded-lg overflow-hidden shadow-2xl"
+            style={{
+              background: 'rgba(0, 34, 68, 0.50)',
+              backdropFilter: 'blur(11px) saturate(150%)',
+              WebkitBackdropFilter: 'blur(60px) saturate(180%)',
+              border: '1px solid rgba(255, 255, 255, 0.10)',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.15)',
+            }}
+          >
                  {/* Itens do menu */}
               <div className="py-1">
                 {gerencialItems.map((item) => (
                   <button
                     key={item.path}
                     onClick={() => handleGerencialNavigate(item.path)}
-                    className={`w-full px-4 py-2.5 text-left text-sm transition-all duration-150 flex items-center gap-2 ${
+                    className={`w-[calc(100%-8px)] mx-1 px-4 py-2.5 text-left text-sm transition-all duration-150 flex items-center gap-2 rounded-lg hover:scale-102 ${
                       isActive(item.path)
                         ? 'bg-blue-600/30 text-white border-r-2 border-blue-400'
                         : 'text-gray-300 hover:bg-white/10 hover:text-white'
@@ -390,14 +396,20 @@ export default function AdminSidebar({ collapsed, onToggle }: AdminSidebarProps)
             <div
               ref={comprasPopupRef}
               className="absolute left-full top-0 ml-2 z-50 min-w-48 rounded-lg overflow-hidden shadow-2xl border border-gray-700/60"
-              style={{ backgroundColor: '#002244' }}
+             style={{
+              background: 'rgba(0, 34, 68, 0.50)',
+              backdropFilter: 'blur(10px) saturate(150%)',
+              WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+              border: '1px solid rgba(255, 255, 255, 0.10)',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.15)',
+            }}
             >
               <div className="py-1">
                 {comprasItems.map((item) => (
                   <button
                     key={item.path}
                     onClick={() => handleComprasNavigate(item.path)}
-                    className={`w-full px-4 py-2.5 text-left text-sm transition-all duration-150 flex items-center gap-2 ${
+                  className={`w-[calc(100%-8px)] mx-1 px-4 py-2.5 text-left text-sm transition-all duration-150 flex items-center gap-2 rounded-lg hover:scale-102 ${
                       isActive(item.path)
                         ? 'bg-blue-600/30 text-white border-r-2 border-blue-400'
                         : 'text-gray-300 hover:bg-white/10 hover:text-white'

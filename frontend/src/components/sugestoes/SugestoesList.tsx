@@ -350,7 +350,7 @@ export default function SugestoesList({ onVerDetalhe, hideHeader = false }: Prop
               <button key={g.key} onClick={() => setGuiaAtiva(g.key)}
                 className="px-4 py-1.5 rounded-md text-sm font-medium transition-all"
                 style={guiaAtiva === g.key
-                  ? { backgroundColor: theme.background.modal, color: theme.brand.primary, boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }
+                  ? { backgroundColor: theme.background.modal, color: theme.brand.secondary, boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }
                   : { color: theme.text.secondary }}>
                 {g.label}
               </button>
