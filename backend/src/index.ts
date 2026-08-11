@@ -30,7 +30,6 @@ app.use(cors({
   origin: function (origin, callback) {
    
     const allowedOrigins = [
-      'https://helpdesk-castel.vercel.app',  // produção no vercel — fixo
       process.env.FRONTEND_URL,              // variável de ambiente (opcional)
       process.env.NEXT_PUBLIC_FRONTEND_URL,  // fallback
       'http://localhost:3000',
