@@ -815,6 +815,8 @@ export default function GerenciarChamados() {
   };
 
   const atribuirAMim = () => {
+    if (submittingEdicao) return;
+
     if (!user) {
       alert('Erro: usuário não autenticado.');
       return;
@@ -885,6 +887,8 @@ export default function GerenciarChamados() {
   };
 
   const confirmarAtribuirAMim = async () => {
+    if (submittingEdicao) return;
+
     if (!user) {
       alert(' Erro: usuário não autenticado.');
       return;
@@ -1535,14 +1539,14 @@ export default function GerenciarChamados() {
               </button>
               <button
                 onClick={atribuirAMim}
-                disabled={chamadosSelecionados.length === 0}
+                disabled={chamadosSelecionados.length === 0 || submittingEdicao}
                 className="action-button px-5 py-2 rounded transition-all font-medium text-sm hover:shadow-md active:scale-95"
                 style={{
-                  backgroundColor: chamadosSelecionados.length === 0 ? theme.background.hover : theme.buttonsExclusivos.btDark,
-                  color: chamadosSelecionados.length === 0 ? theme.text.tertiary : 'white',
+                  backgroundColor: chamadosSelecionados.length === 0 || submittingEdicao ? theme.background.hover : theme.buttonsExclusivos.btDark,
+                  color: chamadosSelecionados.length === 0 || submittingEdicao ? theme.text.tertiary : 'white',
                   borderWidth: '0px',
-                  cursor: chamadosSelecionados.length === 0 ? 'not-allowed' : 'pointer',
-                  opacity: chamadosSelecionados.length === 0 ? 0.5 : 1
+                  cursor: chamadosSelecionados.length === 0 || submittingEdicao ? 'not-allowed' : 'pointer',
+                  opacity: chamadosSelecionados.length === 0 || submittingEdicao ? 0.5 : 1
                 }}
               >
                 Atribuir a mim

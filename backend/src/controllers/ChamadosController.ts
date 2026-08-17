@@ -1120,6 +1120,15 @@ router.put("/chamados/:id/assumir", verifyToken, async (req: AuthenticatedReques
       return res.status(400).json({ mensagem: "Não é possível assumir um chamado encerrado" });
     }
 
+    // essa rota deve ser idempotente: requisições repetidas não geram históricos duplicados.
+    if (chamado.userResponsavel?.id === usuarioId) {
+      return res.status(200).json({
+        mensagem: "Chamado já está atribuído a você.",
+        chamado,
+        jaAtribuido: true,
+      });
+    }
+
     // save status anterior antes de mudar
     const statusAnteriorId = chamado.status?.id || 1;
     const responsavelAnterior = chamado.userResponsavel?.id;
@@ -1796,7 +1805,7 @@ router.patch("/chamados/editar-multiplos", verifyToken, async (req: Authenticate
     // Buscar chamados
     const chamados = await chamadoRepository.find({
       where: chamadosIds.map((id: number) => ({ id })),
-      relations: ["status", "tipoPrioridade", "usuario"],
+      relations: ["status", "tipoPrioridade", "usuario", "userResponsavel"],
     });
 
     const erros: string[] = [];

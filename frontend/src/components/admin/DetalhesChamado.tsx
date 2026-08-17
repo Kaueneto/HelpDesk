@@ -128,6 +128,7 @@ export default function DetalhesChamado({ chamadoId, onVoltar }: DetalhesChamado
   const [modalRedirecionarAberto, setModalRedirecionarAberto] = useState(false);
   // Estado do modal de assumir chamado
   const [modalAssumirAberto, setModalAssumirAberto] = useState(false);
+  const [assumindoChamado, setAssumindoChamado] = useState(false);
   // Estado do modal de marcar como resolvido
   const [modalResolvidoAberto, setModalResolvidoAberto] = useState(false);
   // Estado do modal de impressão
@@ -145,6 +146,7 @@ export default function DetalhesChamado({ chamadoId, onVoltar }: DetalhesChamado
   // Ref para rastrear se listeners já foram registrados
   const listenersRegistradosRef = useRef(false);
   const socketRef = useRef<any>(null);
+  const assumindoChamadoRef = useRef(false);
 
   // fazer scroll automático SEMPRE que mensagens mudam
   useEffect(() => {
@@ -596,6 +598,10 @@ export default function DetalhesChamado({ chamadoId, onVoltar }: DetalhesChamado
   };
 
   const assumirChamado = async () => {
+    if (assumindoChamadoRef.current) return;
+
+    assumindoChamadoRef.current = true;
+    setAssumindoChamado(true);
     try {
       await api.put(`/chamados/${chamadoId}/assumir`);
       toast.success('Chamado atribuido com sucesso!', {
@@ -618,6 +624,8 @@ export default function DetalhesChamado({ chamadoId, onVoltar }: DetalhesChamado
       const mensagemErro = error.response?.data?.mensagem || 'Erro ao assumir chamado';
       toast.error(mensagemErro);
     } finally {
+      assumindoChamadoRef.current = false;
+      setAssumindoChamado(false);
       setModalAssumirAberto(false);
     }
   };
@@ -1801,6 +1809,7 @@ export default function DetalhesChamado({ chamadoId, onVoltar }: DetalhesChamado
         isOpen={modalAssumirAberto}
         onConfirm={assumirChamado}
         onClose={() => setModalAssumirAberto(false)}
+        isLoading={assumindoChamado}
       />
       {/* Modal de Marcar como Resolvido */}
       <ModalMarcarResolvido
