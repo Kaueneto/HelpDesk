@@ -11,6 +11,24 @@ import { SecurityUtils } from "../utils/SecurityUtils";
 
 const router = express.Router();
 
+
+const useSecureCookie = () =>
+  process.env.COOKIE_SECURE === undefined
+    ? process.env.NODE_ENV === "production"
+    : process.env.COOKIE_SECURE === "true";
+
+const authCookieOptions = (includeMaxAge: boolean) => {
+  const secure = useSecureCookie();
+
+  return {
+    httpOnly: true,
+    secure,
+    sameSite: secure ? "none" as const : "lax" as const,
+    ...(includeMaxAge ? { maxAge: 8 * 60 * 60 * 1000 } : {}),
+    path: "/",
+  };
+};
+
 // Login de usuário com sistema de segurança
 router.post("/login", async (req: Request, res: Response) => {
   try {
@@ -38,14 +56,7 @@ router.post("/login", async (req: Request, res: Response) => {
     const userData = await authService.login(email, password);
 
     // Configurar cookie seguro com o token
-    const isProduction = process.env.NODE_ENV === 'production';
-    const cookieOptions: any = {
-      httpOnly: true,
-      secure: isProduction,        // HTTPS em produção, HTTP em dev
-      sameSite: isProduction ? 'none' : 'lax', // 'none' permite cross-site em HTTPS
-      maxAge: 8 * 60 * 60 * 1000, // 8 horas
-      path: '/'
-    };
+    const cookieOptions = authCookieOptions(true);
     
     res.cookie('auth-token', userData.token, cookieOptions);
     
@@ -79,13 +90,7 @@ router.post("/login", async (req: Request, res: Response) => {
 
 // Logout - limpar cookie
 router.post("/logout", (req: Request, res: Response) => {
-  const isProduction = process.env.NODE_ENV === 'production';
-  const clearOptions: any = {
-    httpOnly: true,
-    secure: isProduction,
-    sameSite: isProduction ? 'none' : 'lax',
-    path: '/'
-  };
+  const clearOptions = authCookieOptions(false);
   
   res.clearCookie('auth-token', clearOptions);
   

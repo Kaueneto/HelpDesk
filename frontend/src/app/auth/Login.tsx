@@ -12,7 +12,9 @@ interface LoginProps {
 export default function Login({ onCadastrarClick, onEsqueceuSenhaClick }: LoginProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [error, setError] = useState(() =>
+    typeof window === 'undefined' ? '' : sessionStorage.getItem('login-error') || ''
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -22,6 +24,7 @@ export default function Login({ onCadastrarClick, onEsqueceuSenhaClick }: LoginP
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
+    sessionStorage.removeItem('login-error');
     setIsLoading(true);
 
     try {
@@ -40,11 +43,13 @@ export default function Login({ onCadastrarClick, onEsqueceuSenhaClick }: LoginP
 
       window.location.assign(destino);
     } catch (err: any) {
-      setError(
+      const mensagem =
         err.response?.data?.mensagem ||
           err.message ||
-          'Erro ao fazer login. Verifique suas credenciais.'
-      );
+          'Erro ao fazer login. Verifique suas credenciais.';
+
+      sessionStorage.setItem('login-error', mensagem);
+      setError(mensagem);
     } finally {
       setIsLoading(false);
     }
