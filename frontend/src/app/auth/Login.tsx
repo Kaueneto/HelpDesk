@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, FormEvent } from 'react';
-import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { FiEye, FiEyeOff } from "react-icons/fi";
@@ -10,8 +9,6 @@ interface LoginProps {
   onCadastrarClick: () => void;
   onEsqueceuSenhaClick: () => void;
 }
- const baseUrl = process.env.NEXT_PUBLIC_FRONTEND_URL;
- 
 export default function Login({ onCadastrarClick, onEsqueceuSenhaClick }: LoginProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -19,9 +16,8 @@ export default function Login({ onCadastrarClick, onEsqueceuSenhaClick }: LoginP
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const { login } = useAuth();
+  const { login, validateToken } = useAuth();
   const { theme, mode } = useTheme();
-  const router = useRouter();
  
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -29,16 +25,24 @@ export default function Login({ onCadastrarClick, onEsqueceuSenhaClick }: LoginP
     setIsLoading(true);
 
     try {
-      await login({ email, password });
-      // O contexto de auth já carrega os dados do usuário
-      // Aguardar um breve momento para garantir que o estado seja atualizado
-      setTimeout(() => {
-        // usar o  window.location para garantir que vá para a página correta
-        window.location.href = `${baseUrl}/painel`; // o admin  sempre vai para painel primeiro
-      }, 100);
+      const user = await login({ email, password });
+      const sessaoValida = await validateToken();
+
+      if (!sessaoValida) {
+        throw new Error('Login aceito, mas a sessão não foi criada. Verifique cookie, HTTPS e CORS.');
+      }
+
+      const destino = user.roleId === 1 || user.roleId === 3
+        ? '/painel'
+        : user.roleId === 4
+          ? '/compras/solicitacoes'
+          : '/usuario/inicial';
+
+      window.location.assign(destino);
     } catch (err: any) {
       setError(
         err.response?.data?.mensagem ||
+          err.message ||
           'Erro ao fazer login. Verifique suas credenciais.'
       );
     } finally {
@@ -123,7 +127,11 @@ export default function Login({ onCadastrarClick, onEsqueceuSenhaClick }: LoginP
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-600 px-3 py-2 rounded-md text-sm">
+          <div
+            role="alert"
+            aria-live="assertive"
+            className="bg-red-50 border border-red-200 text-red-700 px-3 py-3 rounded-md text-sm font-medium break-words"
+          >
             {error}
           </div>
         )}

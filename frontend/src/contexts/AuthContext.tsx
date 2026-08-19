@@ -11,7 +11,7 @@ interface AuthContextData {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (credentials: LoginCredentials) => Promise<void>;
+  login: (credentials: LoginCredentials) => Promise<User>;
   logout: () => void;
   updateUser: (userData: Partial<User>) => void;
   validateToken: () => Promise<boolean>;
@@ -90,7 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    * Função para realizar login
    * @param credentials - Email e senha do usuário
    */
-  const login = async (credentials: LoginCredentials) => {
+  const login = async (credentials: LoginCredentials): Promise<User> => {
     try {
 
       const response = await api.post<LoginResponse>('/login', credentials, {
@@ -107,6 +107,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // persiste  apenas dados bsicos no localstorage
       localStorage.setItem('user', JSON.stringify(userData));
+
+      return userData;
 
     } catch (error) {
       console.error("Erro no login:", error);
