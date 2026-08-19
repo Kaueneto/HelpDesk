@@ -98,6 +98,7 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
   const [opcaoEditando, setOpcaoEditando] = useState({
     descricao_produto: '',
     fornecedor: '',
+    quantidade: 1,
     valor_avista: 0,
     valor_parcelado: 0,
     valor_frete: 0,
@@ -107,6 +108,7 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
   const [novaOpcao, setNovaOpcao] = useState({
     descricao_produto: '',
     fornecedor: '',
+    quantidade: 1,
     valor_avista: 0,
     valor_parcelado: 0,
     valor_frete: 0,
@@ -117,6 +119,7 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
   // refs para navegação Tab
   const refDescricao = useRef<HTMLInputElement>(null);
   const refLoja = useRef<HTMLInputElement>(null);
+  const refQuantidade = useRef<HTMLInputElement>(null);
   const refPrecoAvista = useRef<HTMLInputElement>(null);
   const refPrecoParcelado = useRef<HTMLInputElement>(null);
   const refFrete = useRef<HTMLInputElement>(null);
@@ -240,14 +243,14 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
         fornecedor,
         descricao_produto,
         link_produto: novaOpcao.link_produto || null,
-        quantidade: 1,
+        quantidade: Number(novaOpcao.quantidade) > 0 ? Number(novaOpcao.quantidade) : 1,
         valor_avista: Number(valor_avista || 0),
         valor_parcelado: Number(valor_parcelado || 0),
         valor_frete: Number(novaOpcao.valor_frete || 0),
         observacao: novaOpcao.observacao || null,
       });
       setAdicionandoOpcaoParaItem(null);
-      setNovaOpcao({ descricao_produto: '', fornecedor: '', valor_avista: 0, valor_parcelado: 0, valor_frete: 0, link_produto: '', observacao: '' });
+      setNovaOpcao({ descricao_produto: '', fornecedor: '', quantidade: 1, valor_avista: 0, valor_parcelado: 0, valor_frete: 0, link_produto: '', observacao: '' });
       carregarCotacao();
     } catch (error) {
       alert('Erro ao adicionar opção');
@@ -266,14 +269,14 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
         fornecedor,
         descricao_produto,
         link_produto: novaOpcao.link_produto || null,
-        quantidade: 1,
+        quantidade: Number(novaOpcao.quantidade) > 0 ? Number(novaOpcao.quantidade) : 1,
         valor_avista: Number(valor_avista || 0),
         valor_parcelado: Number(valor_parcelado || 0),
         valor_frete: Number(novaOpcao.valor_frete || 0),
         observacao: novaOpcao.observacao || null,
       });
       // limpa campos mas mantém o formulário aberto com foco na descrição
-      setNovaOpcao({ descricao_produto: '', fornecedor: '', valor_avista: 0, valor_parcelado: 0, valor_frete: 0, link_produto: '', observacao: '' });
+      setNovaOpcao({ descricao_produto: '', fornecedor: '', quantidade: 1, valor_avista: 0, valor_parcelado: 0, valor_frete: 0, link_produto: '', observacao: '' });
       // recarrega a cotação para garantir dados corretos
       await carregarCotacao();
       // reposiciona foco após re-render
@@ -309,6 +312,7 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
     setOpcaoEditando({
       descricao_produto: opcao.descricao_produto,
       fornecedor: opcao.fornecedor,
+      quantidade: Number(opcao.quantidade) > 0 ? Number(opcao.quantidade) : 1,
       valor_avista: Number(opcao.valor_avista || 0),
       valor_parcelado: Number(opcao.valor_parcelado || 0),
       valor_frete: Number(opcao.valor_frete || 0),
@@ -323,6 +327,7 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
     setOpcaoEditando({
       descricao_produto: '',
       fornecedor: '',
+      quantidade: 1,
       valor_avista: 0,
       valor_parcelado: 0,
       valor_frete: 0,
@@ -332,10 +337,10 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
   };
 
   const salvarEdicaoOpcao = async (opcao: CotacaoItemOpcao) => {
-    const { descricao_produto, fornecedor, valor_avista, valor_parcelado, valor_frete, link_produto, observacao } = opcaoEditando;
+    const { descricao_produto, fornecedor, quantidade, valor_avista, valor_parcelado, valor_frete, link_produto, observacao } = opcaoEditando;
 
-    if (!fornecedor.trim() || !descricao_produto.trim() || valor_avista < 0 || valor_parcelado < 0 || valor_frete < 0) {
-      alert('Preencha descrição, loja e os preços corretamente');
+    if (!fornecedor.trim() || !descricao_produto.trim() || quantidade <= 0 || valor_avista < 0 || valor_parcelado < 0 || valor_frete < 0) {
+      alert('Preencha descrição, loja, quantidade e os preços corretamente');
       return;
     }
 
@@ -344,7 +349,7 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
         fornecedor: fornecedor.trim(),
         descricao_produto: descricao_produto.trim(),
         link_produto: link_produto.trim() || null,
-        quantidade: opcao.quantidade,
+        quantidade: Number(quantidade) || 1,
         valor_avista: Number(valor_avista || 0),
         valor_parcelado: Number(valor_parcelado || 0),
         valor_frete: Number(valor_frete || 0),
@@ -422,8 +427,19 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
     FINALIZADA: 'bg-gray-500', CANCELADA: 'bg-red-500',
   } as Record<string,string>)[s] || 'bg-gray-400';
 
-  const formatarMoeda = (v: number) =>
-    Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  const numeroSeguro = (valor: number | null | undefined) => {
+    const numero = Number(valor);
+    return Number.isFinite(numero) ? numero : 0;
+  };
+
+  const quantidadeSegura = (quantidade: number | null | undefined) =>
+    Math.max(1, numeroSeguro(quantidade) || 1);
+
+  const calcularTotal = (quantidade: number | null | undefined, valorUnitario: number | null | undefined) =>
+    quantidadeSegura(quantidade) * numeroSeguro(valorUnitario);
+
+  const formatarMoeda = (v: number | null | undefined) =>
+    numeroSeguro(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
   const CLASSIFICACOES = [
     { tipo: 'ESCOLHIDO',            emoji: '🏆', title: 'Escolhido' },
@@ -469,6 +485,18 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
       </div>
     );
   }
+
+  const itensDaCotacao = cotacao.itens ?? [];
+  const opcoesDaCotacao = itensDaCotacao.flatMap((item) => item.opcoes ?? []);
+  const totalUnidades = itensDaCotacao.reduce((total, item) => total + quantidadeSegura(item.quantidade), 0);
+  const totalAvistaGeral = opcoesDaCotacao.reduce(
+    (total, opcao) => total + calcularTotal(opcao.quantidade, opcao.valor_avista),
+    0
+  );
+  const totalParceladoGeral = opcoesDaCotacao.reduce(
+    (total, opcao) => total + calcularTotal(opcao.quantidade, opcao.valor_parcelado),
+    0
+  );
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: bg }}>
@@ -576,9 +604,40 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
       </div>
 
       {/* ── itens da cotação — layout vertical por produto ── */}
-      <div className="px-6 pb-10 space-y-5 mt-4 ">
+      <div className="px-2 mt-2 flex justify-end">
+        <div className="w-full max-w-md  px-2 py-3 shadow-sm" style={{ backgroundColor: card, borderColor: border }}>
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase  opacity-60" style={{ color: text }}>Total geral</p>
+              <p className="mt-0.5 text-xs opacity-60" style={{ color: text }}>
+                {itensDaCotacao.length} {itensDaCotacao.length === 1 ? 'produto' : 'produtos'} · {totalUnidades} {totalUnidades === 1 ? 'unidade' : 'unidades'}
+              </p>
+            </div>
+            <div className="flex items-center gap-5 text-right">
+              <div>
+                <p className="text-[11px] opacity-60" style={{ color: text }}>à vista</p>
+                <p className="font-semibold tabular-nums" style={{ color: mode === 'dark' ? '#4ade80' : '#15803d' }}>{formatarMoeda(totalAvistaGeral)}</p>
+              </div>
+              <div>
+                <p className="text-[11px] opacity-60" style={{ color: text }}>Parcelado</p>
+                <p className="font-semibold tabular-nums" style={{ color: mode === 'dark' ? '#60a5fa' : '#2563eb' }}>{formatarMoeda(totalParceladoGeral)}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="px-6 pb-8 space-y-5 mt-2 ">
         {cotacao.itens?.map((item) => {
           const isExpanded = expandedItems.has(item.id);
+          const totaisDoProduto = (item.opcoes ?? []).reduce(
+            (totais, opcao) => ({
+              avista: totais.avista + calcularTotal(opcao.quantidade, opcao.valor_avista),
+              parcelado: totais.parcelado + calcularTotal(opcao.quantidade, opcao.valor_parcelado),
+              frete: totais.frete + numeroSeguro(opcao.valor_frete),
+            }),
+            { avista: 0, parcelado: 0, frete: 0 }
+          );
           return (
             <div key={item.id} style={{
               backgroundColor: card, borderRadius: '12px', border: `1px solid ${border}`,
@@ -726,13 +785,13 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
 
               {/* opções expandíveis */}
               {isExpanded && (
-                <div style={{ borderTop: `1px solid ${border}` }}>
+                <div className="overflow-x-auto" style={{ borderTop: `1px solid ${border}` }}>
                   {/* header colunas */}
-                  <div className="grid text-sm font-segoe  tracking-wider px-5 py-2 opacity-50"
+                  <div className="grid text-sm font-segoe  px-5 py-2 opacity-50"
                     style={{ color: text, backgroundColor: mode === 'dark' ? '#0c1525' : '#f8fafc',
-                      gridTemplateColumns: '2fr 1.2fr 0.8fr 0.6fr 0.6fr 0.8fr 1.2fr auto', columnGap: '12px' }}>
+                      gridTemplateColumns: 'minmax(160px, 1.7fr) minmax(110px, 1.1fr) 58px minmax(125px, 1fr) minmax(125px, 1fr) 82px 50px minmax(110px, 1fr) 96px', columnGap: '12px' }}>
                     <span>Descrição</span><span>Loja</span>
-                    <span className="text-right">Valor à vista</span><span className="text-right">Vlr. Parcelado</span>
+                    <span className="text-center">Qtd.</span><span className="text-right">à vista</span><span className="text-right">Parcelado</span>
                     <span className="text-right">Valor Frete</span><span className="text-center">Link</span>
                     <span>Obs.</span><span className="text-center" style={{ width: '6rem' }}>Ações</span>
                   </div>
@@ -740,7 +799,7 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
                   {item.opcoes?.map((opcao, idx) => (
                     editandoOpcaoId === opcao.id ? (
                       <div key={opcao.id} className="grid items-center px-5 py-2.5 text-sm"
-                        style={{ gridTemplateColumns: '2fr 1.2fr 0.8fr 0.8fr 0.7fr 0.8fr 1.2fr auto', columnGap: '12px',
+                        style={{ gridTemplateColumns: 'minmax(160px, 1.7fr) minmax(110px, 1.1fr) 58px minmax(125px, 1fr) minmax(125px, 1fr) 82px 50px minmax(110px, 1fr) 96px', columnGap: '12px',
                           borderTop: `1px solid #3b82f6`, backgroundColor: card }}>
                         <input 
                           ref={refDescricao} 
@@ -764,11 +823,26 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
                           onChange={(e) => setOpcaoEditando((p) => ({ ...p, fornecedor: e.target.value }))}
                           onKeyDown={(e) => { 
                             if (e.key === 'Escape') { cancelarEdicaoOpcao(); return; }
-                            if (e.key === 'Enter') { e.preventDefault(); refPrecoAvista.current?.focus(); }
+                            if (e.key === 'Enter') { e.preventDefault(); refQuantidade.current?.focus(); }
                           }}
                           placeholder="Loja" 
                           className={inputCls} 
                           style={{ ...inputStyle, color: text }} />
+                        <input
+                          ref={refQuantidade}
+                          type="number"
+                          min="1"
+                          step="1"
+                          value={opcaoEditando.quantidade || ''}
+                          onChange={(e) => setOpcaoEditando((p) => ({ ...p, quantidade: Number(e.target.value) || 1 }))}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Escape') { cancelarEdicaoOpcao(); return; }
+                            if (e.key === 'Enter') { e.preventDefault(); refPrecoAvista.current?.focus(); }
+                          }}
+                          className={inputCls + ' text-center'}
+                          style={{ ...inputStyle, color: text }}
+                        />
+                        <div className="flex flex-col gap-0.5">
                         <input 
                           ref={refPrecoAvista} 
                           type="number" 
@@ -784,6 +858,9 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
                           placeholder="Valor a vista" 
                           className={inputCls + ' text-right'} 
                           style={{ ...inputStyle, color: text }} />
+                          <span className="text-right text-xs font-semibold tabular-nums" style={{ color: mode === 'dark' ? '#4ade80' : '#15803d' }}>{formatarMoeda(calcularTotal(opcaoEditando.quantidade, opcaoEditando.valor_avista))} total</span>
+                        </div>
+                        <div className="flex flex-col gap-0.5">
                         <input 
                           ref={refPrecoParcelado} 
                           type="number" 
@@ -799,6 +876,8 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
                           placeholder="Valor Parcelado" 
                           className={inputCls + ' text-right'} 
                           style={{ ...inputStyle, color: text }} />
+                          <span className="text-right text-xs font-semibold tabular-nums" style={{ color: mode === 'dark' ? '#60a5fa' : '#2563eb' }}>{formatarMoeda(calcularTotal(opcaoEditando.quantidade, opcaoEditando.valor_parcelado))} total</span>
+                        </div>
                         <input 
                           ref={refFrete} 
                           type="number" 
@@ -849,7 +928,7 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
                       </div>
                     ) : (
                       <div key={opcao.id} className="group grid items-center px-5 py-2.5 text-sm"
-                        style={{ gridTemplateColumns: '2fr 1.2fr 0.8fr 0.8fr 0.7fr 0.8fr 1.2fr auto', columnGap: '12px',
+                        style={{ gridTemplateColumns: 'minmax(160px, 1.7fr) minmax(110px, 1.1fr) 58px minmax(125px, 1fr) minmax(125px, 1fr) 82px 50px minmax(110px, 1fr) 96px', columnGap: '12px',
                           backgroundColor: opcao.selecionado ? rowSel : idx % 2 === 0 ? card : rowAlt,
                            }}>
                         <div className="flex items-center gap-2 min-w-0 group/desc">
@@ -869,8 +948,15 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
                           </button>
                         </div>
                         <span className="font-medium truncate" style={{ color: text }}>{opcao.fornecedor}</span>
-                        <span className="text-right font-semibold font-segoe tabular-nums" style={{ color: text }}>{formatarMoeda(opcao.valor_avista)}</span>
-                        <span className="text-right font-segoe tabular-nums" style={{ color: text }}>{formatarMoeda(opcao.valor_parcelado)}</span>
+                        <span className="text-center font-semibold tabular-nums" style={{ color: text }}>{quantidadeSegura(opcao.quantidade)}</span>
+                        <div className="text-right leading-tight">
+                          <span className="block font-semibold font-segoe tabular-nums" style={{ color: text }}>{formatarMoeda(opcao.valor_avista)} <span className="text-xs font-normal opacity-50"> un.</span></span>
+                          <span className="block text-xs font-semibold tabular-nums" style={{ color: mode === 'dark' ? '#4ade80' : '#15803d' }}>{formatarMoeda(calcularTotal(opcao.quantidade, opcao.valor_avista))} </span>
+                        </div>
+                        <div className="text-right leading-tight">
+                          <span className="block font-semibold font-segoe tabular-nums" style={{ color: text }}>{formatarMoeda(opcao.valor_parcelado)} <span className="text-xs font-normal opacity-50"> un.</span></span>
+                          <span className="block text-xs font-semibold tabular-nums" style={{ color: mode === 'dark' ? '#60a5fa' : '#2563eb' }}>{formatarMoeda(calcularTotal(opcao.quantidade, opcao.valor_parcelado))} </span>
+                        </div>
                         <span className="text-right font-segoe tabular-nums" style={{ color: text }}>{formatarMoeda(opcao.valor_frete)}</span>
                         <span className="text-center">
                           {opcao.link_produto
@@ -901,7 +987,7 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
 
                   {adicionandoOpcaoParaItem === item.id && (
                     <div className="grid items-center px-5 py-2.5 text-sm"
-                      style={{ gridTemplateColumns: '2fr 1.2fr 0.8fr 0.8fr 0.7fr 0.8fr 1.2fr auto', columnGap: '12px',
+                      style={{ gridTemplateColumns: 'minmax(160px, 1.7fr) minmax(110px, 1.1fr) 58px minmax(125px, 1fr) minmax(125px, 1fr) 82px 50px minmax(110px, 1fr) 96px', columnGap: '12px',
                         borderTop: `1px solid #3b82f6`, backgroundColor: card }}>
                       <input 
                         ref={refDescricao} 
@@ -925,11 +1011,27 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
                         onChange={(e) => setNovaOpcao((p) => ({ ...p, fornecedor: e.target.value }))}
                         onKeyDown={(e) => {
                           if (e.key === 'Escape') { setAdicionandoOpcaoParaItem(null); return; }
-                          if (e.key === 'Enter') { e.preventDefault(); refPrecoAvista.current?.focus(); }
+                          if (e.key === 'Enter') { e.preventDefault(); refQuantidade.current?.focus(); }
                         }}
                         placeholder="Loja" 
                         className={inputCls} 
                         style={{ ...inputStyle, color: text }} />
+                      <input
+                        ref={refQuantidade}
+                        type="number"
+                        min="1"
+                        step="1"
+                        value={novaOpcao.quantidade || ''}
+                        onChange={(e) => setNovaOpcao((p) => ({ ...p, quantidade: Number(e.target.value) || 1 }))}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Escape') { setAdicionandoOpcaoParaItem(null); return; }
+                          if (e.key === 'Enter') { e.preventDefault(); refPrecoAvista.current?.focus(); }
+                        }}
+                        placeholder="Qtd"
+                        className={inputCls + ' text-center'}
+                        style={{ ...inputStyle, color: text }}
+                      />
+                      <div className="flex flex-col gap-0.5">
                       <input 
                         ref={refPrecoAvista} 
                         type="number" 
@@ -942,9 +1044,12 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
                           if (e.key === 'Escape') { setAdicionandoOpcaoParaItem(null); return; }
                           if (e.key === 'Enter') { e.preventDefault(); refPrecoParcelado.current?.focus(); }
                         }}
-                        placeholder="À vista" 
+                        placeholder="à vista" 
                         className={inputCls + ' text-right'} 
                         style={{ ...inputStyle, color: text }} />
+                        <span className="text-right text-xs font-semibold tabular-nums" style={{ color: mode === 'dark' ? '#4ade80' : '#15803d' }}>{formatarMoeda(calcularTotal(novaOpcao.quantidade, novaOpcao.valor_avista))} total</span>
+                      </div>
+                      <div className="flex flex-col gap-0.5">
                       <input 
                         ref={refPrecoParcelado} 
                         type="number" 
@@ -960,6 +1065,8 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
                         placeholder="Parcelado" 
                         className={inputCls + ' text-right'} 
                         style={{ ...inputStyle, color: text }} />
+                        <span className="text-right text-xs font-semibold tabular-nums" style={{ color: mode === 'dark' ? '#60a5fa' : '#2563eb' }}>{formatarMoeda(calcularTotal(novaOpcao.quantidade, novaOpcao.valor_parcelado))} total</span>
+                      </div>
                       <input 
                         ref={refFrete} 
                         type="number" 
@@ -1011,11 +1118,26 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
                   )}
                   {/* botão adicionar opção */}
                   {adicionandoOpcaoParaItem !== item.id && (
-                    <div className="px-5 py-3" style={{ borderTop: `1px solid ${border}` }}>
+                    <div
+                      className="grid items-center px-5 py-3 text-xs"
+                      style={{
+                        borderTop: `1px solid ${border}`,
+                        gridTemplateColumns: 'minmax(160px, 1.7fr) minmax(110px, 1.1fr) 58px minmax(125px, 1fr) minmax(125px, 1fr) 82px 50px minmax(110px, 1fr) 96px',
+                        columnGap: '12px',
+                      }}
+                    >
                       <button onClick={() => setAdicionandoOpcaoParaItem(item.id)}
                         className="text-blue-500 hover:text-blue-700 text-sm font-medium flex items-center gap-1.5 transition-colors">
                         <FiPlus size={13} /> Adicionar opção
                       </button>
+                      <span />
+                      <span />
+                      <span className="text-right tabular-nums opacity-40" style={{ color: text }}> {formatarMoeda(totaisDoProduto.avista)}</span>
+                      <span className="text-right tabular-nums opacity-40" style={{ color: text }}> {formatarMoeda(totaisDoProduto.parcelado)}</span>
+                      <span className="text-right tabular-nums opacity-40" style={{ color: text }}> {formatarMoeda(totaisDoProduto.frete)}</span>
+                      <span />
+                      <span />
+                      <span />
                     </div>
                   )}
                 </div>

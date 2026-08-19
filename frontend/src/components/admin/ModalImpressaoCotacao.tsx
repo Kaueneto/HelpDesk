@@ -87,48 +87,78 @@ export default function ModalImpressaoCotacao({ cotacao, onClose }: ModalImpress
     const CLASSIFICACAO_EMOJI: Record<string, string> = {
       ESCOLHIDO: '🏆', RECOMENDADO: '⭐', MELHOR_CUSTO_BENEFICIO: '💰', MENOR_PRECO: '🔥',
     };
+    const quantidadeValida = (quantidade: number | null | undefined) => {
+      const valor = Number(quantidade);
+      return Number.isFinite(valor) && valor > 0 ? valor : 1;
+    };
 
-    const itensHTML = itensParaImprimir.map(item => {
+    const totaisGerais = itensParaImprimir.reduce(
+      (totais, item) => {
+        const opcoesEscolhidas = item.opcoes.filter(o =>
+          o.selecionado || (o.classificacoes || []).some(c => c.tipo === 'ESCOLHIDO')
+        );
+        const opcoes = imprimirTodosItens ? item.opcoes : opcoesEscolhidas;
+        const quantidade = Number(item.quantidade || 1);
+
+        totais.quantidade += quantidade;
+        totais.avista += opcoes.reduce((total, opcao) => total + (Number(opcao.valor_avista || 0) * quantidadeValida(opcao.quantidade)), 0);
+        totais.parcelado += opcoes.reduce((total, opcao) => total + (Number(opcao.valor_parcelado || 0) * quantidadeValida(opcao.quantidade)), 0);
+        totais.frete += opcoes.reduce((total, opcao) => total + Number(opcao.valor_frete || 0), 0);
+        return totais;
+      },
+      { quantidade: 0, avista: 0, parcelado: 0, frete: 0 }
+    );
+
+    const totalGeralHTML = `
+      <div class="total-geral">
+        <span class="total-geral-titulo">Total geral dos itens impressos</span>
+        <div class="total-geral-valores">
+          <span>${totaisGerais.quantidade} un.</span>
+          <span>À vista <strong>${fmtMoeda(totaisGerais.avista)}</strong></span>
+          <span>Parcelado <strong>${fmtMoeda(totaisGerais.parcelado)}</strong></span>
+          <span>Frete <strong>${fmtMoeda(totaisGerais.frete)}</strong></span>
+        </div>
+      </div>`;
+
+    const itensHTML = itensParaImprimir.map((item, itemIndex) => {
       const opcoesFiltradas = item.opcoes.filter(o =>
         o.selecionado || (o.classificacoes || []).some(c => c.tipo === 'ESCOLHIDO')
       );
       const opcoes = imprimirTodosItens ? item.opcoes : opcoesFiltradas;
 
-      const somaAvista = opcoes.reduce((acc, o) => acc + Number(o.valor_avista || 0), 0);
-      const somaParcelado = opcoes.reduce((acc, o) => acc + Number(o.valor_parcelado || 0), 0);
+      const somaAvista = opcoes.reduce((acc, o) => acc + (Number(o.valor_avista || 0) * quantidadeValida(o.quantidade)), 0);
+      const somaParcelado = opcoes.reduce((acc, o) => acc + (Number(o.valor_parcelado || 0) * quantidadeValida(o.quantidade)), 0);
       const somaFrete = opcoes.reduce((acc, o) => acc + Number(o.valor_frete || 0), 0);
 
       const linhasOpcoes = opcoes.map((opcao, idx) => {
+        const quantidadeOpcao = quantidadeValida(opcao.quantidade);
         const badges = (opcao.classificacoes || [])
           .map(c => `<span class="badge">${CLASSIFICACAO_EMOJI[c.tipo] ?? ''}</span>`)
           .join('');
-        const link = opcao.link_produto
-          ? `<a href="${opcao.link_produto}" target="_blank" class="link">${opcao.link_produto}</a>`
-          : '—';
-
         return `
           <tr class="${opcao.selecionado ? 'row-sel' : idx % 2 === 0 ? '' : 'row-alt'}">
             <td>
               <div class="desc-stack">
                 <div class="desc-text">${opcao.descricao_produto}</div>
-                <div class="fornecedor-text">${opcao.fornecedor}</div>
+                ${opcao.observacao ? `<div class="opcao-obs">${opcao.observacao}</div>` : ''}
               </div>
             </td>
+            <td class="fornecedor-cell">${opcao.fornecedor}</td>
+            <td class="center qty-cell">${quantidadeOpcao}</td>
             <td class="num">${fmtMoeda(opcao.valor_avista || 0)}</td>
+            <td class="num total-cell">${fmtMoeda(Number(opcao.valor_avista || 0) * quantidadeOpcao)}</td>
             <td class="num">${fmtMoeda(opcao.valor_parcelado || 0)}</td>
+            <td class="num total-cell">${fmtMoeda(Number(opcao.valor_parcelado || 0) * quantidadeOpcao)}</td>
             <td class="num">${fmtMoeda(opcao.valor_frete || 0)}</td>
-            <td class="center link-cell">${link}</td>
-            <td>${opcao.observacao || '—'}</td>
+            <td class="center link-cell">${opcao.link_produto ? `<a href="${opcao.link_produto}" target="_blank" class="link" title="Abrir produto">🔗</a>` : '—'}</td>
             <td class="center">${badges}</td>
           </tr>`;
       }).join('');
 
       return `
-        <div class="item-block">
+        <div class="item-block${itemIndex === itensParaImprimir.length - 1 ? ' item-block-last' : ''}">
           <div class="item-header">
             <div class="item-header-left">
-              <div class="cotacao-code">Cotação #${cotacao.id}</div>
-              <span class="item-label">Itens para compra:</span>
               <div class="item-title-block">
                 <div class="item-title-row">
                   <span class="item-name">${item.descricao}</span>
@@ -141,37 +171,34 @@ export default function ModalImpressaoCotacao({ cotacao, onClose }: ModalImpress
           <table class="opcoes-table">
             <thead>
               <tr>
-                <th>Descrição / Loja</th>
-                <th class="num">Vlr.à vista</th>
-                <th class="num">Vlr.Parcelado</th>
-                <th class="num">Vlr.Frete</th>
+                <th>Produto</th>
+                <th>Loja</th>
+                <th class="center">Qtd.</th>
+                <th class="num">À vista</th>
+                <th class="num">Total à vista</th>
+                <th class="num">Parcelado</th>
+                <th class="num">Total parcelado</th>
+                <th class="num">Frete</th>
                 <th class="center">Link</th>
-                <th>Obs.</th>
                 <th class="center">Ações</th>
               </tr>
             </thead>
             <tbody>
-              ${linhasOpcoes || `<tr><td colspan="7" class="empty">${imprimirTodosItens ? 'Nenhuma opção cotada' : 'Nenhuma opção escolhida (🏆)'}</td></tr>`}
+              ${linhasOpcoes || `<tr><td colspan="10" class="empty">${imprimirTodosItens ? 'Nenhuma opção cotada' : 'Nenhuma opção escolhida (🏆)'}</td></tr>`}
             </tbody>
+            ${opcoes.length > 0 ? `
+            <tfoot>
+              <tr class="totais-linha">
+                <td colspan="3"></td>
+                <td></td>
+                <td class="num total-cell">${fmtMoeda(somaAvista)}</td>
+                <td></td>
+                <td class="num total-cell">${fmtMoeda(somaParcelado)}</td>
+                <td class="num total-cell">${fmtMoeda(somaFrete)}</td>
+                <td colspan="2"></td>
+              </tr>
+            </tfoot>` : ''}
           </table>
-          ${opcoes.length > 0 ? `
-          <div class="resumo-item">
-            <span class="resumo-label">Totais por coluna:</span>
-            <div class="resumo-grid">
-              <div class="resumo-col">
-                <span class="resumo-subtitle">Vlr.À vista</span>
-                <strong class="resumo-value">${fmtMoeda(somaAvista)}</strong>
-              </div>
-              <div class="resumo-col">
-                <span class="resumo-subtitle">Vlr.Parcelado</span>
-                <strong class="resumo-value">${fmtMoeda(somaParcelado)}</strong>
-              </div>
-              <div class="resumo-col">
-                <span class="resumo-subtitle">Vlr.Frete</span>
-                <strong class="resumo-value">${fmtMoeda(somaFrete)}</strong>
-              </div>
-            </div>
-          </div>` : ''}
         </div>`;
     }).join('');
 
@@ -179,7 +206,7 @@ export default function ModalImpressaoCotacao({ cotacao, onClose }: ModalImpress
       <div class="solicitacao-block">
         <div class="sol-header">
           <div class="sol-left">
-            <span class="sol-label">Solicitação de compra:</span>
+            <span class="sol-label">Cotação #${cotacao.id} · Solicitação de compra</span>
             <h1 class="sol-title">#${cotacao.chamado.numeroChamado} — ${cotacao.chamado.resumoChamado}</h1>
             ${cotacao.chamado.descricaoChamado
               ? `<p class="sol-desc">${cotacao.chamado.descricaoChamado}</p>`
@@ -247,38 +274,46 @@ export default function ModalImpressaoCotacao({ cotacao, onClose }: ModalImpress
       margin: 18px 0;
     }
 
+    .total-geral { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 0 0 18px; padding-bottom: 9px; border-bottom: 1px solid #cbd5e1; }
+    .total-geral-titulo { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #475569; }
+    .total-geral-valores { display: flex; align-items: center; justify-content: flex-end; gap: 14px; font-size: 11px; color: #64748b; white-space: nowrap; }
+    .total-geral-valores strong { color: #0f172a; font-size: 12px; margin-left: 3px; }
+
     /* ── item bloco ── */
     .item-block { margin-bottom: 28px; }
     .item-header { margin-bottom: 6px; }
     .item-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: #666; display: block; margin-bottom: 2px; }
-    .cotacao-code { font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 4px; }
     .item-title-block { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
-    .item-title-row { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+    .item-title-row { display: flex; align-items: center; gap: 8px; }
     .item-name { font-size: 17px; font-weight: 700; }
     .item-obs { font-size: 12px; color: #555; }
     .item-obs-line { font-size: 10px; color: #64748b; opacity: 0.75; margin-top: 3px; }
-    .item-qty { font-size: 11px; color: #888; white-space: nowrap; }
+    .item-qty { font-size: 11px; font-weight: 700; color: #000000; padding: 3px 7px; white-space: nowrap; }
 
     /* ── tabela de opções ── */
-    .opcoes-table { width: 100%; border-collapse: collapse; font-size: 11.5px; margin-top: 4px; }
+    .opcoes-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 4px; }
     .opcoes-table thead tr { border-bottom: 0.5px solid #999; }
-    .opcoes-table th { text-align: left; padding: 5px 6px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: #444; font-weight: 700; }
+    .opcoes-table th { text-align: left; padding: 5px 6px; font-size: 8px; text-transform: uppercase; letter-spacing: 0.03em; color: #444; font-weight: 700; white-space: nowrap; }
     .opcoes-table td { padding: 5px 6px; border-bottom: 0.5px solid #e5e7eb; vertical-align: middle; }
     .opcoes-table .row-alt td { background: #f9fafb; }
     .opcoes-table .row-sel td { background: #dcfce7; }
     .opcoes-table .num { text-align: right; font-variant-numeric: tabular-nums; }
     .opcoes-table .center { text-align: center; }
     .opcoes-table .empty { text-align: center; color: #aaa; padding: 12px; }
-    .opcoes-table .link-cell { font-size: 10px; max-width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .opcoes-table .totais-linha td { border-bottom: none; }
+    .opcoes-table .link-cell { font-size: 13px; width: 28px; }
     .desc-stack { display: flex; flex-direction: column; gap: 3px; }
     .desc-text { font-weight: 600; }
-    .fornecedor-text { font-size: 10px; color: #64748b; opacity: 0.9; }
+    .fornecedor-cell { color: #475569; font-size: 10px; font-weight: 600; }
+    .opcao-obs { font-size: 9px; color: #94a3b8; font-style: italic; line-height: 1.3; }
+    .qty-cell { font-weight: 700; color: #1e3a5f; }
+    .total-cell { font-weight: 700; color: #0f172a; white-space: nowrap; }
     .link { color: #1d4ed8; }
     .badge { font-size: 14px; margin: 0 1px; }
 
     /* ── resumo do item ── */
-    .resumo-item { margin-top: 8px; padding: 8px 10px; background: #f8fafc; border-left: 3px solid #334155; font-size: 11.5px; }
-    .resumo-label { font-weight: 700; display: block; margin-bottom: 4px; }
+    .resumo-item { margin-top: 8px; padding-top: 7px; border-top: 1px solid #d1d5db; font-size: 11.5px; }
+    .resumo-label { font-weight: 700; display: block; margin-bottom: 4px; color: #374151; }
     .resumo-grid { display: grid; grid-template-columns: repeat(3, minmax(110px, 1fr)); gap: 12px; }
     .resumo-col { display: flex; flex-direction: column; gap: 2px; }
     .resumo-subtitle { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; color: #64748b; }
@@ -307,11 +342,12 @@ export default function ModalImpressaoCotacao({ cotacao, onClose }: ModalImpress
 
   <div class="page">
     ${solicitacaoHTML}
+    ${totalGeralHTML}
     ${itensHTML}
 
     <div class="footer">
       <span>Gerado em ${new Date().toLocaleString('pt-BR')}</span>
-      <span>Cotação #${cotacao.id} · Criado por ${cotacao.criadoPor.name} · Status: ${STATUS_LABEL[cotacao.status] ?? cotacao.status}</span>
+      <span>Criado por ${cotacao.criadoPor.name} · Status: ${STATUS_LABEL[cotacao.status] ?? cotacao.status}</span>
     </div>
   </div>
 </body>
