@@ -934,6 +934,10 @@ router.get("/chamados", verifyToken, async (req: AuthenticatedRequest, res: Resp
 });
 
 // atribuir chamado a um responsável (apenas admin)
+const ROLE_ADMINISTRADOR_ID = 1;
+const ROLE_COMPRAS_ID = 4;
+const TOPICO_SOLICITACAO_COMPRA_ID = 26;
+
 router.put("/chamados/:id/atribuir", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
@@ -948,7 +952,7 @@ router.put("/chamados/:id/atribuir", verifyToken, async (req: AuthenticatedReque
 
     const chamado = await chamadoRepository.findOne({
       where: { id: Number(id) },
-      relations: ["userResponsavel", "status"],
+      relations: ["userResponsavel", "status", "topicoAjuda"],
     });
 
     if (!chamado) {
@@ -970,7 +974,7 @@ router.put("/chamados/:id/atribuir", verifyToken, async (req: AuthenticatedReque
     }
     
     // verificar se quem está atribuindo é administrador (role_id = 1)
-    if (usuarioQueAtribui.roleId !== 1) {
+    if (usuarioQueAtribui.roleId !== ROLE_ADMINISTRADOR_ID) {
       return res.status(403).json({ mensagem: "Apenas administradores podem redirecionar chamados." });
     }
     
@@ -986,12 +990,30 @@ router.put("/chamados/:id/atribuir", verifyToken, async (req: AuthenticatedReque
     // Buscar nomes dos usuários para o histórico
     const [usuarioAtribuiu, usuarioResponsavel] = await Promise.all([
       userRepository.findOne({ where: { id: usuarioId }, select: ["id", "name", "email"] }),
-      userRepository.findOne({ where: { id: userResponsavelId }, select: ["id", "name", "email"] })
+      userRepository.findOne({
+        where: { id: userResponsavelId },
+        select: ["id", "name", "email", "roleId", "situationUserId"]
+      })
     ]);
 
     if (!usuarioResponsavel) {
  
       return res.status(404).json({ mensagem: "Usuário responsável não encontrado" });
+    }
+
+    if (usuarioResponsavel.situationUserId !== 1) {
+      return res.status(400).json({ mensagem: "O usuário responsável precisa estar ativo." });
+    }
+
+    const chamadoEhDeCompras = chamado.topicoAjuda?.id === TOPICO_SOLICITACAO_COMPRA_ID;
+    const responsavelPermitido =
+      usuarioResponsavel.roleId === ROLE_ADMINISTRADOR_ID ||
+      (chamadoEhDeCompras && usuarioResponsavel.roleId === ROLE_COMPRAS_ID);
+
+    if (!responsavelPermitido) {
+      return res.status(400).json({
+        mensagem: "Chamados só podem ser redirecionados para administradores; usuários de Compras recebem apenas chamados de compra."
+      });
     }
 
 
@@ -1805,8 +1827,23 @@ router.patch("/chamados/editar-multiplos", verifyToken, async (req: Authenticate
     // Buscar chamados
     const chamados = await chamadoRepository.find({
       where: chamadosIds.map((id: number) => ({ id })),
-      relations: ["status", "tipoPrioridade", "usuario", "userResponsavel"],
+      relations: ["status", "tipoPrioridade", "usuario", "userResponsavel", "topicoAjuda"],
     });
+
+    const novoResponsavel = userResponsavelId
+      ? await userRepository.findOne({
+          where: { id: userResponsavelId },
+          select: ["id", "name", "email", "roleId", "situationUserId"]
+        })
+      : null;
+
+    if (userResponsavelId && !novoResponsavel) {
+      return res.status(404).json({ message: "Usuário responsável não encontrado" });
+    }
+
+    if (novoResponsavel && novoResponsavel.situationUserId !== 1) {
+      return res.status(400).json({ message: "O usuário responsável precisa estar ativo" });
+    }
 
     const erros: string[] = [];
     const alterados: number[] = [];
@@ -1972,12 +2009,15 @@ router.patch("/chamados/editar-multiplos", verifyToken, async (req: Authenticate
 
       // redirecionar p o responsável
       if (userResponsavelId && chamado.userResponsavel?.id !== userResponsavelId) {
-        const novoResponsavel = await userRepository.findOne({
-          where: { id: userResponsavelId },
-          select: ["id", "name", "email"]
-        });
+        const chamadoEhDeCompras = chamado.topicoAjuda?.id === TOPICO_SOLICITACAO_COMPRA_ID;
+        const responsavelPermitido = novoResponsavel && (
+          novoResponsavel.roleId === ROLE_ADMINISTRADOR_ID ||
+          (chamadoEhDeCompras && novoResponsavel.roleId === ROLE_COMPRAS_ID)
+        );
 
-        if (novoResponsavel) {
+        if (!responsavelPermitido) {
+          erros.push(`Chamado ${chamado.numeroChamado} só pode ser redirecionado para administradores; usuários de Compras recebem apenas chamados de compra`);
+        } else {
           chamado.userResponsavel = { id: userResponsavelId } as any;
           chamado.dataAtribuicao = new Date();
 

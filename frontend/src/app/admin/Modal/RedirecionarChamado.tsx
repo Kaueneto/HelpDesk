@@ -23,6 +23,7 @@ interface ModalRedirecionarChamadoProps {
   onClose: () => void;
   onConfirm: (usuarioId: number) => Promise<void>;
   chamadoId: string;
+  ehChamadoDeCompras: boolean;
 }
 
 export default function ModalRedirecionarChamado({
@@ -30,6 +31,7 @@ export default function ModalRedirecionarChamado({
   onClose,
   onConfirm,
   chamadoId,
+  ehChamadoDeCompras,
 }: ModalRedirecionarChamadoProps) {
   const [usuariosAdmin, setUsuariosAdmin] = useState<Usuario[]>([]);
   const [usuarioSelecionado, setUsuarioSelecionado] = useState<number | null>(null);
@@ -49,15 +51,17 @@ export default function ModalRedirecionarChamado({
       carregarAdministradores();
       setUsuarioSelecionado(null);
     }
-  }, [isOpen, usuarioLogadoId]);
+  }, [isOpen, usuarioLogadoId, ehChamadoDeCompras]);
 
   const carregarAdministradores = async () => {
     try {
       const response = await api.get('/users');
       
-      // filtrar admins (roleId === 1) e usuários ativos (situationUserId === 1)
+      // Usuários de Compras só podem receber chamados de compra.
       const allAdmins = response.data.filter(
-        (user: Usuario) => user.roleId === 1 && user.situationUserId === 1
+        (user: Usuario) =>
+          (user.roleId === 1 || (ehChamadoDeCompras && user.roleId === 4)) &&
+          user.situationUserId === 1
       );
       
   

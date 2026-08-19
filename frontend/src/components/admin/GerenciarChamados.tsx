@@ -166,6 +166,7 @@ export default function GerenciarChamados() {
   const [prioridades, setPrioridades] = useState<TipoPrioridade[]>([]);
   const [statusList, setStatusList] = useState<StatusChamado[]>([]);
   const [usuariosAdmin, setUsuariosAdmin] = useState<User[]>([]);
+  const [usuarios, setUsuarios] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
 
   // selecao multipla
@@ -194,6 +195,13 @@ export default function GerenciarChamados() {
 
   // modal de novo chamado
   const [modalNovoChamadoAberto, setModalNovoChamadoAberto] = useState(false);
+
+  const todosSelecionadosSaoDeCompras = chamadosSelecionados.length > 0 && chamadosSelecionados.every(
+    (id) => chamados.find((chamado) => chamado.id === id)?.topicoAjuda.id === 26
+  );
+  const usuariosParaRedirecionar = usuarios.filter((usuario) =>
+    usuario.roleId === 1 || (todosSelecionadosSaoDeCompras && usuario.roleId === 4)
+  );
 
   // visualização Kanban/Tabela
   const [viewMode, setViewMode] = useState<'table' | 'kanban'>(() => {
@@ -516,11 +524,12 @@ export default function GerenciarChamados() {
       setStatusList(statusRes.data);
       
       // filtrar apenas usuários admin
-            const todosUsuarios = Array.isArray(usersRes.data) 
+      const todosUsuarios = Array.isArray(usersRes.data)
         ? usersRes.data
         : (usersRes.data.usuarios || usersRes.data);
+      setUsuarios(todosUsuarios);
       
-      // filtrar admins - testar diferentes propriedades
+      // Mantém a lista de administradores para filtros e Kanban.
       const admins = todosUsuarios.filter((u: any) => {
         const isAdmin = u.roleId === 1 || u.role?.id === 1;
         return isAdmin;
@@ -2262,10 +2271,10 @@ export default function GerenciarChamados() {
       }}
     >
       <option value="">Não alterar responsável</option>
-      {usuariosAdmin.length === 0 && (
+      {usuariosParaRedirecionar.length === 0 && (
         <option value="" disabled>Nenhum administrador disponível</option>
       )}
-      {[...usuariosAdmin].sort((a, b) => a.id - b.id).map((usuario) => (
+      {[...usuariosParaRedirecionar].sort((a, b) => a.id - b.id).map((usuario) => (
         <option key={usuario.id} value={usuario.id}>
           {usuario.name}
         </option>

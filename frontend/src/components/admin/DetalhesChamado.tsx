@@ -1803,6 +1803,7 @@ export default function DetalhesChamado({ chamadoId, onVoltar }: DetalhesChamado
         onClose={fecharModalRedirecionar}
         onConfirm={handleRedirecionarChamado}
         chamadoId={chamadoId}
+        ehChamadoDeCompras={chamado?.topicoAjuda.id === 26}
       />
       {/* Modal de Assumir Chamado */}
       <ModalAssumirChamado
