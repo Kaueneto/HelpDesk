@@ -81,7 +81,7 @@ function fmtData(d: string) {
 
 // ─── componente principal ───────────────────────────────────
 export default function GerenciarSolicitacoesCompras() {
-  const { mode } = useTheme();
+  const { mode, theme } = useTheme();
   const router   = useRouter();
 
   const [solicitacoes, setSolicitacoes]           = useState<Solicitacao[]>([]);
@@ -89,21 +89,11 @@ export default function GerenciarSolicitacoesCompras() {
   const [expandedIds, setExpandedIds]             = useState<Set<number>>(new Set());
   const [loading, setLoading]                     = useState(false);
   const [busca, setBusca]                         = useState('');
-  const [filtroStatus, setFiltroStatus]           = useState<string | number | (string | number)[]>('todos');
+  const [filtroStatus, setFiltroStatus]           = useState('todos');
   const [modalAberto, setModalAberto]             = useState(false);
   const [chamadoSelecionado, setChamadoSelecionado] = useState<number | null>(null);
   const [criando, setCriando]                     = useState(false);
   const [modalNovaSolicitacao, setModalNovaSolicitacao] = useState(false);
-  // grupos recolhíveis: chave = label do grupo, valor = se está expandido
-  const [gruposExpandidos, setGruposExpandidos]   = useState<Record<string, boolean>>({});
-
-  const statusOptions: SelectOption[] = [
-    { value: 'todos', label: 'Todos os status' },
-    { value: '1', label: 'Aberto' },
-    { value: '2', label: 'Em Análise' },
-    { value: '3', label: 'Encerrado' },
-    { value: '5', label: 'Reaberto' },
-  ];
 
   const solicitacaoOptions: SelectOption[] = solicitacoes.map((s) => ({
     value: s.id,
@@ -163,18 +153,6 @@ export default function GerenciarSolicitacoesCompras() {
     finally { setCriando(false); }
   }
 
-  // ─── métricas para o mini dashboard ──────────────────────
-  const metricas = useMemo(() => {
-    const total     = solicitacoes.length;
-    const abertas   = solicitacoes.filter(s => s.status.id === 1).length;
-    const emAnalise = solicitacoes.filter(s => s.status.id === 2).length;
-    const encerradas= solicitacoes.filter(s => s.status.id === 3).length;
-    const totalCotacoes = Object.values(detalhes).reduce(
-      (acc, d) => acc + (d.cotacoes?.length ?? 0), 0
-    );
-    return { total, abertas, emAnalise, encerradas, totalCotacoes };
-  }, [solicitacoes, detalhes]);
-
   // ─── filtro ──────────────────────────────────────────────
 
   // grupos de status da solicitação (chamado) com sua ordem e cores
@@ -198,14 +176,7 @@ export default function GerenciarSolicitacoesCompras() {
 
   const solicitacoesFiltradas = useMemo(() => {
     return solicitacoes.filter(s => {
-      let okStatus = false;
-      if (filtroStatus === 'todos') {
-        okStatus = true;
-      } else if (Array.isArray(filtroStatus)) {
-        okStatus = filtroStatus.some(st => s.status.id.toString() === st.toString());
-      } else {
-        okStatus = s.status.id.toString() === filtroStatus.toString();
-      }
+      const okStatus = filtroStatus === 'todos' || s.status.id.toString() === filtroStatus;
       const q = busca.toLowerCase();
       const okBusca = !q
         || s.numeroChamado.toString().includes(q)
@@ -216,26 +187,10 @@ export default function GerenciarSolicitacoesCompras() {
     });
   }, [solicitacoes, busca, filtroStatus]);
 
-  // agrupa por label do grupo
-  const solicitacoesAgrupadas = useMemo(() => {
-    return GRUPOS.map(grupo => ({
-      ...grupo,
-      itens: solicitacoesFiltradas.filter(s => grupo.statusIds.includes(s.status.id))
-        .sort((a, b) => new Date(b.dataAbertura).getTime() - new Date(a.dataAbertura).getTime()),
-    })).filter(g => g.itens.length > 0);
-  }, [solicitacoesFiltradas]);
-
-  // toggle de grupo recolhível — começa expandido por padrão
-  function toggleGrupo(label: string) {
-    setGruposExpandidos(prev => ({
-      ...prev,
-      [label]: prev[label] === false ? true : false, // undefined = expandido, false = recolhido
-    }));
-  }
-
-  function isGrupoExpandido(label: string) {
-    return gruposExpandidos[label] !== false; // padrão = expandido
-  }
+  const solicitacoesOrdenadas = useMemo(
+    () => [...solicitacoesFiltradas].sort((a, b) => new Date(b.dataAbertura).getTime() - new Date(a.dataAbertura).getTime()),
+    [solicitacoesFiltradas]
+  );
 
   const renderSolicitacaoCard = (sol: Solicitacao) => {
     const isExpanded = expandedIds.has(sol.id);
@@ -349,7 +304,8 @@ export default function GerenciarSolicitacoesCompras() {
             </span>
           </div>
 
-          <div className="flex items-center gap-0.5 shrink-0" onClick={e => e.stopPropagation()}>
+          <div className="relative flex items-center gap-0.5 shrink-0 z-[100]"
+          onClick={e => e.stopPropagation()}>
             <button
               onClick={() => criarCotacao(sol.id)}
               title="Nova cotação"
@@ -360,9 +316,10 @@ export default function GerenciarSolicitacoesCompras() {
             >
               <FiPlus size={14} />
             </button>
-            <div className="relative group">
-              <button
+            <button
                 onClick={() => router.push(`/chamado/${sol.id}`)}
+                title="Visualizar chamado desta solicitação"
+                aria-label="Visualizar chamado desta solicitação"
                 className="p-1.5 rounded-lg transition-all duration-150 opacity-40 hover:opacity-100"
                 style={{ color: text }}
                 onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = `${text}10`; }}
@@ -370,24 +327,6 @@ export default function GerenciarSolicitacoesCompras() {
               >
                 <FiEye size={14} />
               </button>
-              <div
-                className="absolute bottom-full right-0 mb-2 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-lg z-10"
-                style={{
-                  backgroundColor: mode === 'dark' ? '#1e293b' : '#334155',
-                  color: '#ffffff',
-                }}
-              >
-                Visualizar chamado desta solicitação
-                <div
-                  className="absolute top-full right-3 w-0 h-0"
-                  style={{
-                    borderLeft: '4px solid transparent',
-                    borderRight: '4px solid transparent',
-                    borderTop: `4px solid ${mode === 'dark' ? '#1e293b' : '#334155'}`,
-                  }}
-                ></div>
-              </div>
-            </div>
           </div>
         </div>
 
@@ -548,25 +487,7 @@ export default function GerenciarSolicitacoesCompras() {
 
       <div className="px-8 py-6 space-y-6">
 
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          {[
-            { label: 'Total de Solicitações', value: metricas.total,        color: 'from-blue-500 to-blue-600'   },
-            { label: 'Abertas',               value: metricas.abertas,      color: 'from-yellow-400 to-yellow-500'},
-            { label: 'Em Análise',            value: metricas.emAnalise,    color: 'from-red-400 to-red-500'   },
-            { label: 'Encerradas',            value: metricas.encerradas,   color: 'from-green-500 to-green-600' },
-            { label: 'Cotações Criadas',      value: metricas.totalCotacoes,color: 'from-purple-500 to-purple-600'},
-          ].map((m) => (
-            <div
-              key={m.label}
-              className={`bg-linear-to-br ${m.color} text-white rounded-xl px-5 py-4 shadow-md hover:scale-105 transition-all`}
-            >
-              <p className="text-3xl font-bold">{m.value}</p>
-              <p className="text-sm mt-1 opacity-90">{m.label}</p>
-            </div>
-          ))}
-        </div>
-
-        <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex flex-col gap-3">
        
           <div className="relative flex-1">
             <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 opacity-40" style={{ color: text }} />
@@ -579,73 +500,132 @@ export default function GerenciarSolicitacoesCompras() {
               style={{ backgroundColor: inputBg, borderColor: border, color: text }}
             />
           </div>
-          <div className="w-full sm:w-48">
-            <SearchableSelect
-              value={filtroStatus}
-              onChange={(value: string | number | (string | number)[]) => setFiltroStatus(value)}
-              options={statusOptions}
-              placeholder="Todos os status"
-              width="100%"
-              fullWidth
-              dropdownWidth={220}
-              selectionMode="multiple"
-            />
-          </div>
+<div
+  className="h-10 mb-2"
+  role="tablist"
+  aria-label="Status das solicitações"
+>
+  <div
+    className="h-10 w-full flex items-center gap-1 rounded-md p-1 transition-all duration-300 overflow-x-auto"
+    style={{
+      backgroundColor:
+        mode === 'dark'
+          ? theme.background.card
+          : 'rgba(229, 231, 235, 0.7)',
+    }}
+  >
+    {/* TODAS */}
+    <button
+      type="button"
+      role="tab"
+      aria-selected={filtroStatus === 'todos'}
+      onClick={() => setFiltroStatus('todos')}
+      className={`
+        inline-flex h-8 shrink-0 items-center justify-center
+        whitespace-nowrap rounded-sm px-3
+        text-[11px] font-medium uppercase tracking-[0.04em]
+        transition-all duration-200
+        ${
+          filtroStatus === 'todos'
+            ? 'shadow-sm'
+            : 'opacity-70 hover:opacity-100'
+        }
+      `}
+      style={{
+        backgroundColor:
+          filtroStatus === 'todos'
+            ? theme.background.surface
+            : 'transparent',
+        color: theme.text.primary,
+      }}
+    >
+      <span>Todas</span>
+
+      <span
+        className="ml-1.5 inline-flex min-w-[18px] items-center justify-center rounded-full px-1.5 py-[3px] text-[10px] font-semibold leading-none"
+        style={{
+          backgroundColor:
+            mode === 'dark'
+              ? 'rgba(148, 163, 184, 0.16)'
+              : 'rgba(100, 116, 139, 0.10)',
+          color: theme.text.secondary,
+        }}
+      >
+        {solicitacoes.length}
+      </span>
+    </button>
+
+    {/* STATUS */}
+    {GRUPOS.map((grupo) => {
+      const value = String(grupo.statusIds[0]);
+      const ativo = filtroStatus === value;
+
+      const tabText =
+        mode === 'dark'
+          ? grupo.textDark
+          : grupo.textLight;
+
+      const count = solicitacoes.filter((s) =>
+        grupo.statusIds.includes(s.status.id)
+      ).length;
+
+      return (
+        <button
+          key={grupo.label}
+          type="button"
+          role="tab"
+          aria-selected={ativo}
+          onClick={() => setFiltroStatus(value)}
+          className={`
+            inline-flex h-8 shrink-0 items-center justify-center
+            whitespace-nowrap rounded-sm px-3
+            text-[11px] font-medium uppercase tracking-[0.04em]
+            transition-all duration-200
+            ${
+              ativo
+                ? 'shadow-sm'
+                : 'opacity-70 hover:opacity-100'
+            }
+          `}
+          style={{
+            backgroundColor: ativo
+              ? theme.background.surface
+              : 'transparent',
+            color: ativo ? tabText : theme.text.primary,
+          }}
+        >
+          <span>{grupo.label}</span>
+
+          <span
+            className="ml-1.5 inline-flex min-w-[18px] items-center justify-center rounded-full px-1.5 py-[3px] text-[10px] font-semibold leading-none"
+            style={{
+              backgroundColor: ativo
+                ? `${grupo.dot}22`
+                : mode === 'dark'
+                  ? 'rgba(148, 163, 184, 0.12)'
+                  : 'rgba(100, 116, 139, 0.08)',
+              color: ativo
+                ? tabText
+                : theme.text.secondary,
+            }}
+          >
+            {count}
+          </span>
+        </button>
+      );
+    })}
+  </div>
+</div>
         </div>
 
-        {/* lista das solicitações agrupadas por status */}
+        {/* cartões expansíveis das solicitações */}
         <div className="space-y-4">
-          {solicitacoesAgrupadas.length === 0 ? (
+          {solicitacoesOrdenadas.length === 0 ? (
             <div className="text-center py-16 rounded-xl" style={{ backgroundColor: card, color: text }}>
               <FiFileText className="mx-auto text-5xl mb-4 opacity-20" />
               <p className="text-lg font-medium opacity-60">Nenhuma solicitação encontrada</p>
             </div>
-          ) : (
-            solicitacoesAgrupadas.map(grupo => {
-              const expandido = isGrupoExpandido(grupo.label);
-              const bg_badge  = mode === 'dark' ? grupo.bgDark  : grupo.bgLight;
-              const txt_badge = mode === 'dark' ? grupo.textDark : grupo.textLight;
-
-              return (
-                <div key={grupo.label} className="space-y-3">
-                  {/* ── badge recolhível ── */}
-                  <button
-                    onClick={() => toggleGrupo(grupo.label)}
-                    className="flex items-center gap-2 w-full group"
-                  >
-                    <div className="h-px flex-1 opacity-20" style={{ backgroundColor: grupo.dot }} />
-                    <span
-                      className="flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold select-none transition-all hover:scale-102 cursor-pointer"
-                      style={{ backgroundColor: bg_badge, color: txt_badge, border: `1px solid ${grupo.dot}40` }}
-                    >
-                      <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: grupo.dot }} />
-                      {grupo.label}
-                      <span
-                        className="ml-1 flex items-center justify-center w-4 h-4 rounded-full text-[10px] font-bold"
-                        style={{ backgroundColor: `${grupo.dot}30`, color: grupo.dot }}
-                      >
-                        {grupo.itens.length}
-                      </span>
-                      <span
-                        className="transition-transform duration-200 opacity-60"
-                        style={{ transform: expandido ? 'rotate(90deg)' : 'rotate(0deg)', display: 'inline-block' }}
-                      >
-                        <FiChevronRight size={11} />
-                      </span>
-                    </span>
-                    <div className="h-px flex-1 opacity-20" style={{ backgroundColor: grupo.dot }} />
-                  </button>
-
-                  {/* ── itens com animação de colapso ── */}
-                 {expandido && (
-                    <div className="space-y-3 pt-1 pb-2">
-                      {grupo.itens.map(sol => renderSolicitacaoCard(sol))}
-                    </div>
-                  )}
-                </div>
-              );
-            })
-          )}
+          ) : solicitacoesOrdenadas.map(sol => renderSolicitacaoCard(sol))}
         </div>
       </div>
 

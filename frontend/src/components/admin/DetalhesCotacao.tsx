@@ -129,6 +129,7 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
   const [editandoStatus, setEditandoStatus] = useState(false);
   const [novoStatus, setNovoStatus] = useState('');
   const [modalImpressao, setModalImpressao] = useState(false);
+  const [excluindoCotacao, setExcluindoCotacao] = useState(false);
 
   useEffect(() => {
     carregarCotacao();
@@ -145,6 +146,20 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
       alert('Erro ao carregar cotação');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const excluirCotacao = async () => {
+    if (!cotacao || excluindoCotacao) return;
+    if (!confirm(`Deseja realmente excluir a cotação #${cotacao.id}? Esta ação não pode ser desfeita.`)) return;
+
+    setExcluindoCotacao(true);
+    try {
+      await api.delete(`/compras/cotacoes/${cotacao.id}`);
+      router.replace('/compras/cotacoes');
+    } catch (error: any) {
+      alert(error.response?.data?.mensagem || 'Erro ao excluir cotação');
+      setExcluindoCotacao(false);
     }
   };
 
@@ -566,6 +581,16 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
               </span>
               <span className="opacity-40">·</span>
               <span>Criado por {cotacao.criadoPor?.name ?? '—'}</span>
+              <button
+                type="button"
+                onClick={excluirCotacao}
+                disabled={excluindoCotacao}
+                className="ml-1 inline-flex items-center justify-center rounded-md p-1.5 text-red-100/75 transition-all hover:bg-red-500/25 hover:text-red-100 disabled:cursor-not-allowed disabled:opacity-50"
+                title="Excluir cotação"
+                aria-label="Excluir cotação"
+              >
+                <FiTrash2 size={15} />
+              </button>
             </div>
           </div>
 
@@ -605,7 +630,7 @@ export default function DetalhesCotacao({ cotacaoId }: DetalhesCotacaoProps) {
 
       {/* ── itens da cotação — layout vertical por produto ── */}
       <div className="px-2 mt-2 flex justify-end">
-        <div className="w-full max-w-md  px-2 py-3 shadow-sm" style={{ backgroundColor: card, borderColor: border }}>
+        <div className="w-full max-w-md px-2 py-2 " >
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase  opacity-60" style={{ color: text }}>Total geral</p>

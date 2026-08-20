@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from 'react';
 import api from '@/services/api';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useRouter } from 'next/navigation';
-import { FiFileText, FiTrash2, FiSearch, FiFilter, FiPackage } from 'react-icons/fi';
+import { FiFileText, FiTrash2, FiSearch, FiPackage } from 'react-icons/fi';
 
 interface Usuario {
   id: number;
@@ -51,7 +51,7 @@ const STATUS_STYLE: Record<string, {
   bgLight: string; bgDark: string; textLight: string; textDark: string; dot: string; label: string;
 }> = {
   EM_ANDAMENTO:         { bgLight:'#dbeafe', bgDark:'#1e3a5f', textLight:'#1d4ed8', textDark:'#93c5fd', dot:'#3b82f6', label:'Em Andamento'  },
-  AGUARDANDO_APROVACAO: { bgLight:'#fef3c7', bgDark:'#451a03', textLight:'#92400e', textDark:'#fcd34d', dot:'#f59e0b', label:'Ag. Aprovação' },
+  AGUARDANDO_APROVACAO: { bgLight:'#fef3c7', bgDark:'#451a03', textLight:'#92400e', textDark:'#fcd34d', dot:'#f59e0b', label:'Aguardando Aprovação' },
   APROVADA:             { bgLight:'#dcfce7', bgDark:'#14532d', textLight:'#15803d', textDark:'#86efac', dot:'#22c55e', label:'Aprovada'       },
   EM_COMPRA:            { bgLight:'#f3e8ff', bgDark:'#2e1065', textLight:'#7c3aed', textDark:'#c4b5fd', dot:'#8b5cf6', label:'Em Compra'      },
   FINALIZADA:           { bgLight:'#f1f5f9', bgDark:'#1e293b', textLight:'#475569', textDark:'#94a3b8', dot:'#64748b', label:'Finalizada'     },
@@ -95,7 +95,7 @@ function calcularValorMedio(itens?: CotacaoItem[]): number | null {
 
 //  componente principal 
 export default function GerenciarCotacoes() {
-  const { mode } = useTheme();
+  const { mode, theme } = useTheme();
   const router   = useRouter();
 
   const [cotacoes, setCotacoes]         = useState<Cotacao[]>([]);
@@ -137,15 +137,6 @@ export default function GerenciarCotacoes() {
     }
   }
 
-  //métricas
-  const metricas = useMemo(() => ({
-    total:      cotacoes.length,
-    andamento:  cotacoes.filter(c => c.status === 'EM_ANDAMENTO').length,
-    aprovadas:  cotacoes.filter(c => c.status === 'APROVADA').length,
-    finalizadas:cotacoes.filter(c => c.status === 'FINALIZADA').length,
-    canceladas: cotacoes.filter(c => c.status === 'CANCELADA').length,
-  }), [cotacoes]);
-
   // fitlros
   const filtradas = useMemo(() => cotacoes.filter(c => {
     const okStatus = filtroStatus === 'todos' || c.status === filtroStatus;
@@ -158,6 +149,11 @@ export default function GerenciarCotacoes() {
       || c.chamado.usuario.name.toLowerCase().includes(q);
     return okStatus && okBusca;
   }), [cotacoes, busca, filtroStatus]);
+
+  const abasStatus = [
+    { value: 'todos', label: 'Todas', dot: '#7c3aed', bgLight: '#f8fafc', bgDark: '#1e293b', textLight: '#475569', textDark: '#cbd5e1' },
+    ...Object.entries(STATUS_STYLE).map(([value, status]) => ({ value, label: status.label, dot: status.dot, bgLight: status.bgLight, bgDark: status.bgDark, textLight: status.textLight, textDark: status.textDark })),
+  ];
 
   if (loading) return (
     <div className="flex items-center justify-center h-screen" style={{ backgroundColor: bg }}>
@@ -176,24 +172,8 @@ export default function GerenciarCotacoes() {
 
       <div className="px-8 py-6 space-y-6">
 
-        {/*  métricas  */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          {[
-            { label: 'Total',        value: metricas.total,        color: 'from-blue-500 to-blue-600'   },
-            { label: 'Em Andamento', value: metricas.andamento,    color: 'from-sky-400 to-sky-500'     },
-            { label: 'Aprovadas',    value: metricas.aprovadas,    color: 'from-green-500 to-green-600' },
-            { label: 'Finalizadas',  value: metricas.finalizadas,  color: 'from-slate-400 to-slate-500' },
-            { label: 'Canceladas',   value: metricas.canceladas,   color: 'from-red-400 to-red-500'     },
-          ].map(m => (
-            <div key={m.label} className={`bg-gradient-to-br ${m.color} text-white rounded-xl px-5 py-4 shadow-md`}>
-              <p className="text-3xl font-bold">{m.value}</p>
-              <p className="text-sm mt-1 opacity-90">{m.label}</p>
-            </div>
-          ))}
-        </div>
-
         {/*  filtros  */}
-        <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex flex-col gap-3">
           <div className="relative flex-1">
             <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 opacity-40" style={{ color: text }} />
             <input
@@ -205,22 +185,42 @@ export default function GerenciarCotacoes() {
               style={{ backgroundColor: inputBg, borderColor: border, color: text }}
             />
           </div>
-          <div className="relative">
-            <FiFilter className="absolute left-3 top-1/2 -translate-y-1/2 opacity-40" style={{ color: text }} />
-            <select
-              value={filtroStatus}
-              onChange={e => setFiltroStatus(e.target.value)}
-              className="pl-9 pr-8 py-2.5 rounded-lg border text-sm appearance-none"
-              style={{ backgroundColor: inputBg, borderColor: border, color: text }}
+          <div className="h-10 mb-2" role="tablist" aria-label="Status das cotações">
+            <div
+              className="h-10 w-full flex items-center gap-1 rounded-md p-1 transition-all duration-300 overflow-x-auto"
+              style={{ backgroundColor: mode === 'dark' ? theme.background.card : 'rgba(229, 231, 235, 0.7)' }}
             >
-              <option value="todos">Todos os status</option>
-              <option value="EM_ANDAMENTO">Em Andamento</option>
-              <option value="AGUARDANDO_APROVACAO">Ag. Aprovação</option>
-              <option value="APROVADA">Aprovada</option>
-              <option value="EM_COMPRA">Em Compra</option>
-              <option value="FINALIZADA">Finalizada</option>
-              <option value="CANCELADA">Cancelada</option>
-            </select>
+            {abasStatus.map((aba) => {
+              const ativo = filtroStatus === aba.value;
+              const quantidade = aba.value === 'todos' ? cotacoes.length : cotacoes.filter(c => c.status === aba.value).length;
+              const tabText = mode === 'dark' ? aba.textDark : aba.textLight;
+              return (
+                <button
+                  key={aba.value}
+                  type="button"
+                  role="tab"
+                  aria-selected={ativo}
+                  onClick={() => setFiltroStatus(aba.value)}
+                  className={`inline-flex h-8 shrink-0 items-center justify-center whitespace-nowrap rounded-sm px-3 text-[11px] font-medium uppercase tracking-[0.04em] transition-all duration-200 ${ativo ? 'shadow-sm' : 'opacity-70 hover:opacity-100'}`}
+                  style={{
+                    backgroundColor: ativo ? theme.background.surface : 'transparent',
+                    color: ativo ? tabText : theme.text.primary,
+                  }}
+                >
+                  <span>{aba.label}</span>
+                  <span
+                    className="ml-1.5 inline-flex min-w-[18px] items-center justify-center rounded-full px-1.5 py-[3px] text-[10px] font-semibold leading-none"
+                    style={{
+                      backgroundColor: ativo ? `${aba.dot}22` : mode === 'dark' ? 'rgba(148, 163, 184, 0.12)' : 'rgba(100, 116, 139, 0.08)',
+                      color: ativo ? tabText : theme.text.secondary,
+                    }}
+                  >
+                    {quantidade}
+                  </span>
+                </button>
+              );
+            })}
+            </div>
           </div>
         </div>
 
