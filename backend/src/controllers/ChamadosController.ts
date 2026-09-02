@@ -308,8 +308,14 @@ router.post("/chamados", verifyToken, async (req: AuthenticatedRequest, res: Res
           }
         }
 
+        // disparar e-mail automático por configuração de tópico (independente das preferências)
+        if (chamadoCompleto) {
+          await EmailService.enviarEmailAberturaChamadoPorTopico(chamadoCompleto);
+        }
+
       } catch (emailError) {
         // log do erro de email, mas NÃO interrompe o fluxo
+        console.error("[ChamadosController] Erro no bloco de e-mails pós-criação:", emailError);
       }
     });
 

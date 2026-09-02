@@ -32,6 +32,8 @@ import { Cotacoes } from "./entities/Cotacoes";
 import { CotacaoItens } from "./entities/CotacaoItens";
 import { CotacaoItemOpcoes } from "./entities/CotacaoItemOpcoes";
 import { CotacaoItemOpcaoClassificacoes } from "./entities/CotacaoItemOpcaoClassificacoes";
+import { EmailTopicoConfig } from "./entities/EmailTopicoConfig";
+import { EmailTopicoDestinatario } from "./entities/EmailTopicoDestinatario";
 //carregar as variaveis  do arquivo .env
 
 
@@ -55,7 +57,7 @@ export const AppDataSource = new DataSource({
   },
   synchronize: false,
   logging: false,
-  entities: [SituationsUsers, Users, ChamadoHistorico, ChamadoMensagens, Departamentos, TipoPrioridade, Chamados, TopicosAjuda, StatusChamado, Roles, ChamadoAnexos, ParametrosSistema, LogsSistema, Preferences, PrefUsers, KanbanPositions, Sugestoes, SugestoesVotos, SugestoesInteracoes, KanbanBoard, KanbanColumn, KanbanCard, Cotacoes, CotacaoItens, CotacaoItemOpcoes, CotacaoItemOpcaoClassificacoes],
+  entities: [SituationsUsers, Users, ChamadoHistorico, ChamadoMensagens, Departamentos, TipoPrioridade, Chamados, TopicosAjuda, StatusChamado, Roles, ChamadoAnexos, ParametrosSistema, LogsSistema, Preferences, PrefUsers, KanbanPositions, Sugestoes, SugestoesVotos, SugestoesInteracoes, KanbanBoard, KanbanColumn, KanbanCard, Cotacoes, CotacaoItens, CotacaoItemOpcoes, CotacaoItemOpcaoClassificacoes, EmailTopicoConfig, EmailTopicoDestinatario],
   subscribers: [],
   migrations: [__dirname + "/migrations/*.js"],
 });

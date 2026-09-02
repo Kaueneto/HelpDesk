@@ -6,6 +6,7 @@ import { AppDataSource } from "../data-source";
 import { Users } from "../entities/Users";
 import { Chamados } from "../entities/Chamados";
 import { PrefUsers } from "../entities/PrefUsers";
+import { EmailTopicoConfig } from "../entities/EmailTopicoConfig";
 
 // ─── Transporter singleton ────────────────────────────────────────────────────
 // Criado uma única vez ao iniciar o servidor e reutilizado por todas as funções.
@@ -651,5 +652,188 @@ export async function enviarEmailNovaSugestao(
     
     console.error(`falha ao enviar email de sugestao ${destinatario.email}:`, error);
     // falha silenciosa — email não deve bloquear operações
+  }
+}
+/**
+ * veerifica se existe uma configuração ativa de e-mail para o tópico do chamado
+ * e, caso exista, dispara os e-mails para os destinatários (CC e BCC).
+ *
+ * esta função nunca lança erros — falhas de envio são silenciosas para não
+ * comprometer o fluxo de criação do chamado (mesmo padrão dos demais envios
+ * assíncronos do sistema).
+ */
+export async function enviarEmailAberturaChamadoPorTopico(
+  chamado: Chamados
+): Promise<void> {
+  try {
+    const configRepo = AppDataSource.getRepository(EmailTopicoConfig);
+
+    // Buscar configuração ativa para o tópico deste chamado
+    const config = await configRepo
+      .createQueryBuilder("config")
+      .leftJoinAndSelect("config.destinatarios", "destinatarios")
+      .leftJoinAndSelect("config.topico", "topico")
+      .where("config.topicoId = :topicoId", {
+        topicoId: chamado.topicoAjuda?.id ?? (chamado as any).id_topico_ajuda,
+      })
+      .andWhere("config.ativo = true")
+      .getOne();
+
+    // Sem configuração ativa → fluxo normal, sem envio
+    if (!config || config.destinatarios.length === 0) {
+      return;
+    }
+
+    const toList = config.destinatarios
+      .filter((d) => d.tipo === "to")
+      .map((d) => d.email);
+
+    const ccList = config.destinatarios
+      .filter((d) => d.tipo === "cc")
+      .map((d) => d.email);
+
+    const bccList = config.destinatarios
+      .filter((d) => d.tipo === "bcc")
+      .map((d) => d.email);
+
+    // Sem destinatários válidos após filtro
+    if (toList.length === 0 && ccList.length === 0 && bccList.length === 0) {
+      return;
+    }
+
+    // Buscar dados completos do chamado se as relações não estiverem carregadas
+    let usuario = chamado.usuario;
+    let departamento = chamado.departamento;
+    let tipoPrioridade = chamado.tipoPrioridade;
+    let topicoAjuda = chamado.topicoAjuda ?? config.topico;
+
+    if (!usuario?.name || !departamento?.name) {
+      const chamadoCompleto = await AppDataSource.getRepository(Chamados).findOne({
+        where: { id: chamado.id },
+        relations: ["usuario", "departamento", "tipoPrioridade", "topicoAjuda"],
+      });
+      if (chamadoCompleto) {
+        usuario = chamadoCompleto.usuario;
+        departamento = chamadoCompleto.departamento;
+        tipoPrioridade = chamadoCompleto.tipoPrioridade;
+        topicoAjuda = chamadoCompleto.topicoAjuda;
+      }
+    }
+
+    const dataAbertura = chamado.dataAbertura
+      ? new Date(chamado.dataAbertura).toLocaleString("pt-BR")
+      : new Date().toLocaleString("pt-BR");
+
+    const nomeTopico = topicoAjuda?.nome ?? "Não informado";
+    const nomeUsuario = usuario?.name ?? "Não informado";
+    const nomeDepartamento = departamento?.name ?? "Não informado";
+    const nomePrioridade = tipoPrioridade?.nome ?? "Não informada";
+
+    const htmlEmail = `
+<div style="font-family: Arial, sans-serif; max-width: 620px; margin: 0 auto; padding: 20px; background-color: #f5f6f8;">
+  <div style="background-color: #ffffff; border-radius: 8px; border: 1px solid #e5e7eb; overflow: hidden;">
+
+    <!-- Cabeçalho com destaque do tópico -->
+    <div style="background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%); padding: 24px 28px;">
+      <p style="margin: 0 0 6px 0; font-size: 12px; color: #bfdbfe; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">
+        Novo chamado aberto
+      </p>
+      <h1 style="margin: 0 0 10px 0; font-size: 22px; color: #ffffff; font-weight: 700;">
+        ${nomeTopico}
+      </h1>
+      <span style="display: inline-block; background-color: rgba(255,255,255,0.15); color: #ffffff; font-size: 13px; padding: 3px 10px; border-radius: 12px; font-weight: 500;">
+        Ticket #${chamado.numeroChamado}
+      </span>
+    </div>
+
+    <!-- Corpo -->
+    <div style="padding: 24px 28px;">
+
+      <!-- Título do chamado -->
+      <div style="margin-bottom: 20px;">
+        <p style="margin: 0 0 4px 0; font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Título</p>
+        <p style="margin: 0; font-size: 16px; color: #111827; font-weight: 600;">${chamado.resumoChamado}</p>
+      </div>
+
+      <!-- Descrição -->
+      <div style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 14px 16px; margin-bottom: 20px;">
+        <p style="margin: 0 0 6px 0; font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Descrição</p>
+        <p style="margin: 0; font-size: 14px; color: #374151; line-height: 1.6; white-space: pre-wrap;">${(chamado.descricaoChamado ?? "").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</p>
+      </div>
+
+      <!-- Informações do chamado em grade -->
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+        <tr>
+          <td style="padding: 8px 12px; background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 4px; width: 50%; vertical-align: top;">
+            <p style="margin: 0 0 2px 0; font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Solicitante</p>
+            <p style="margin: 0; font-size: 14px; color: #111827; font-weight: 500;">${nomeUsuario}</p>
+          </td>
+          <td style="padding: 0 0 0 8px; width: 50%; vertical-align: top;">
+            <div style="padding: 8px 12px; background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 4px;">
+              <p style="margin: 0 0 2px 0; font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Departamento</p>
+              <p style="margin: 0; font-size: 14px; color: #111827; font-weight: 500;">${nomeDepartamento}</p>
+            </div>
+          </td>
+        </tr>
+        <tr style="height: 8px;"><td colspan="2"></td></tr>
+        <tr>
+          <td style="padding: 8px 12px; background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 4px; vertical-align: top;">
+            <p style="margin: 0 0 2px 0; font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Prioridade</p>
+            <p style="margin: 0; font-size: 14px; color: #111827; font-weight: 500;">${nomePrioridade}</p>
+          </td>
+          <td style="padding: 0 0 0 8px; vertical-align: top;">
+            <div style="padding: 8px 12px; background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 4px;">
+              <p style="margin: 0 0 2px 0; font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Data de Abertura</p>
+              <p style="margin: 0; font-size: 14px; color: #111827; font-weight: 500;">${dataAbertura}</p>
+            </div>
+          </td>
+        </tr>
+      </table>
+
+      <!-- Número do ticket em destaque -->
+      <div style="background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 12px 16px; margin-bottom: 4px;">
+        <p style="margin: 0; font-size: 13px; color: #1e40af;">
+          <strong>Número do ticket:</strong> #${chamado.numeroChamado}
+        </p>
+      </div>
+
+    </div>
+
+    <!-- Rodapé -->
+    <div style="padding: 16px 28px; background-color: #f9fafb; border-top: 1px solid #e5e7eb;">
+      <p style="margin: 0; font-size: 12px; color: #9ca3af; text-align: center;">
+        Este é um e-mail automático gerado pelo Sistema HelpDesk. Não responda.
+      </p>
+    </div>
+
+  </div>
+</div>
+`;
+
+    const mailBase: any = {
+      from: process.env.EMAIL_FROM,
+      subject: `[HelpDesk] Novo chamado — ${nomeTopico} #${chamado.numeroChamado}`,
+      html: htmlEmail,
+    };
+
+    const transporter = getTransporter();
+
+    // Um único envio com to, cc e bcc — o nodemailer/SMTP trata cada campo corretamente.
+    // BCC não é visível para os outros destinatários.
+    const mailOptions: any = { ...mailBase };
+    if (toList.length > 0)  mailOptions.to  = toList.join(", ");
+    if (ccList.length > 0)  mailOptions.cc  = ccList.join(", ");
+    if (bccList.length > 0) mailOptions.bcc = bccList.join(", ");
+
+    // nodemailer exige ao menos um campo "to"; se só há cc/bcc, usamos o remetente
+    // como destinatário fictício para que o envio seja aceito pelo SMTP.
+    if (!mailOptions.to) {
+      mailOptions.to = process.env.EMAIL_FROM;
+    }
+
+    await transporter.sendMail(mailOptions);
+  } catch (error) {
+    // Falha silenciosa — e-mail não deve comprometer a criação do chamado
+    console.error("[EmailTopicoConfig] Erro ao enviar e-mail por tópico:", error);
   }
 }

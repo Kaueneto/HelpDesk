@@ -1,6 +1,7 @@
 import { Router, Request, Response } from "express";
 import { AppDataSource } from "../data-source";
 import { TopicosAjuda } from "../entities/TopicosAjuda";
+import { EmailTopicoConfig } from "../entities/EmailTopicoConfig";
 import { verifyToken } from "../Middleware/AuthMiddleware";
 
 interface AuthenticatedRequest extends Request {
@@ -184,7 +185,7 @@ router.put("/topicos_ajuda/:id", verifyToken, async (req: AuthenticatedRequest, 
 });
 
 //rota pra apagar topico de ajuda
-router.delete("/topicos_ajuda/:id", async (req: Request, res: Response) => {
+router.delete("/topicos_ajuda/:id", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
     const topicosRepository = AppDataSource.getRepository(TopicosAjuda);
@@ -195,6 +196,17 @@ router.delete("/topicos_ajuda/:id", async (req: Request, res: Response) => {
 
     if (!topico) {
       return res.status(404).json({ mensagem: "Tópico não encontrado" });
+    }
+
+    // verificar se o tópico está vinculado a uma configuração de e-mail automático
+    const configVinculada = await AppDataSource.getRepository(EmailTopicoConfig).findOne({
+      where: { topicoId: Number(id) },
+    });
+    if (configVinculada) {
+      return res.status(409).json({
+        mensagem:
+          "este tópico não pode ser excluído pois está vinculado a uma configuração de envio automático de e-mail. Remova a configuração antes de excluir o tópico.",
+      });
     }
 
     await topicosRepository.remove(topico);
