@@ -496,7 +496,7 @@ export default function GerenciarTopicosAjuda() {
                     <th 
                       className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none"
                       onClick={() => handleOrdenar('codigo')}
-                      style={{ color: theme.text.primary, backgroundColor: theme.background.hover }}
+                      style={{ color: theme.text.primary, backgroundColor: theme.background.pagina }}
                     >
                       <div className="flex items-center gap-1">
                         Código
@@ -508,7 +508,7 @@ export default function GerenciarTopicosAjuda() {
                     <th 
                       className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none"
                       onClick={() => handleOrdenar('nome')}
-                      style={{ color: theme.text.primary, backgroundColor: theme.background.hover }}
+                      style={{ color: theme.text.primary, backgroundColor: theme.background.pagina }}
                     >
                       <div className="flex items-center gap-1">
                         Nome
@@ -520,7 +520,7 @@ export default function GerenciarTopicosAjuda() {
                     <th 
                       className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none"
                       onClick={() => handleOrdenar('ativo')}
-                      style={{ color: theme.text.primary, backgroundColor: theme.background.hover }}
+                      style={{ color: theme.text.primary, backgroundColor: theme.background.pagina }}
                     >
                       <div className="flex items-center gap-1">
                         Status
@@ -531,13 +531,13 @@ export default function GerenciarTopicosAjuda() {
                     </th>
                     <th 
                       className="px-4 py-3 text-left text-sm font-semibold"
-                      style={{ color: theme.text.primary, backgroundColor: theme.background.hover }}
+                      style={{ color: theme.text.primary, backgroundColor: theme.background.pagina }}
                     >
                       Criado Por
                     </th>
                     <th 
                       className="px-4 py-3 text-left text-sm font-semibold"
-                      style={{ color: theme.text.primary, backgroundColor: theme.background.hover }}
+                      style={{ color: theme.text.primary, backgroundColor: theme.background.pagina }}
                     >
                       Editado Por
                     </th>

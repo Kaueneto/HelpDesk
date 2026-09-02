@@ -464,7 +464,7 @@ export default function GerenciarDepartamentos() {
               </div>
             ) : (
               <table className="w-full">
-                <thead className="border-b" style={{ backgroundColor: theme.background.surface, borderColor: theme.border.primary }}>
+                <thead className="border-b" style={{ backgroundColor: theme.background.pagina, borderColor: theme.border.primary }}>
                   <tr>
                     <th className="px-4 py-3 text-left">
                       <input
@@ -475,7 +475,7 @@ export default function GerenciarDepartamentos() {
                         before:content-['✓'] before:absolute before:inset-0 before:flex before:items-center before:justify-center before:text-white before:text-sm before:font-bold before:opacity-0 checked:before:opacity-100"
                         style={{
                           borderColor: mode === 'dark' ? '#555555' : '#999999',
-                          backgroundColor: todosChecados ? '#3B82F6' : theme.background.card,
+                          backgroundColor: todosChecados ? '#3B82F6' : theme.background.pagina,
                           borderWidth: '1px',
                         }}
                       />
@@ -483,7 +483,7 @@ export default function GerenciarDepartamentos() {
                     <th 
                       className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none"
                       onClick={() => handleOrdenar('codigo')}
-                      style={{ color: theme.text.primary, backgroundColor: theme.background.hover }}
+                      style={{ color: theme.text.primary, backgroundColor: theme.background.pagina }}
                     >
                       <div className="flex items-center gap-1">
                         Código
@@ -495,7 +495,7 @@ export default function GerenciarDepartamentos() {
                     <th 
                       className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none"
                       onClick={() => handleOrdenar('name')}
-                      style={{ color: theme.text.primary, backgroundColor: theme.background.hover }}
+                      style={{ color: theme.text.primary, backgroundColor: theme.background.pagina }}
                     >
                       <div className="flex items-center gap-1">
                         Nome
@@ -507,7 +507,7 @@ export default function GerenciarDepartamentos() {
                     <th 
                       className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none"
                       onClick={() => handleOrdenar('ativo')}
-                      style={{ color: theme.text.primary, backgroundColor: theme.background.hover }}
+                      style={{ color: theme.text.primary, backgroundColor: theme.background.pagina }}
                     >
                       <div className="flex items-center gap-1">
                         Status

@@ -362,7 +362,7 @@ export default function GerenciarTiposPrioridade() {
                     <th 
                       className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none"
                       onClick={() => handleOrdenar('id')}
-                      style={{ color: theme.text.primary, backgroundColor: theme.background.hover }}
+                      style={{ color: theme.text.primary, backgroundColor: theme.background.pagina }}
                     >
                       <div className="flex items-center gap-1">
                         ID
@@ -374,7 +374,7 @@ export default function GerenciarTiposPrioridade() {
                     <th 
                       className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none"
                       onClick={() => handleOrdenar('nome')}
-                      style={{ color: theme.text.primary, backgroundColor: theme.background.hover }}
+                      style={{ color: theme.text.primary, backgroundColor: theme.background.pagina }}
                     >
                       <div className="flex items-center gap-1">
                         Nome
@@ -386,7 +386,7 @@ export default function GerenciarTiposPrioridade() {
                     <th 
                       className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none"
                       onClick={() => handleOrdenar('cor')}
-                      style={{ color: theme.text.primary, backgroundColor: theme.background.hover }}
+                      style={{ color: theme.text.primary, backgroundColor: theme.background.pagina }}
                     >
                       <div className="flex items-center gap-1">
                         Cor
@@ -398,7 +398,7 @@ export default function GerenciarTiposPrioridade() {
                     <th 
                       className="px-4 py-3 text-left text-sm font-semibold cursor-pointer transition-colors select-none"
                       onClick={() => handleOrdenar('ordem')}
-                      style={{ color: theme.text.primary, backgroundColor: theme.background.hover }}
+                      style={{ color: theme.text.primary, backgroundColor: theme.background.pagina }}
                     >
                       <div className="flex items-center gap-1">
                         Ordem

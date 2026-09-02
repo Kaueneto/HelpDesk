@@ -252,7 +252,7 @@ export default function AdminSidebar({ collapsed, onToggle }: AdminSidebarProps)
                     onClick={() => handleGerencialNavigate(item.path)}
                     className={`w-[calc(100%-8px)] mx-1 px-4 py-2.5 text-left text-sm transition-all duration-150 flex items-center gap-2 rounded-lg hover:scale-102 ${
                       isActive(item.path)
-                        ? 'bg-blue-600/30 text-white border-r-2 border-blue-400'
+                        ? 'bg-blue-600/30 text-white  '
                         : 'text-gray-300 hover:bg-white/10 hover:text-white'
                     }`}
                   >
@@ -411,7 +411,7 @@ export default function AdminSidebar({ collapsed, onToggle }: AdminSidebarProps)
                     onClick={() => handleComprasNavigate(item.path)}
                   className={`w-[calc(100%-8px)] mx-1 px-4 py-2.5 text-left text-sm transition-all duration-150 flex items-center gap-2 rounded-lg hover:scale-102 ${
                       isActive(item.path)
-                        ? 'bg-blue-600/30 text-white border-r-2 border-blue-400'
+                        ? 'bg-blue-600/30 text-white '
                         : 'text-gray-300 hover:bg-white/10 hover:text-white'
                     }`}
                   >
