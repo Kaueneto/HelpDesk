@@ -89,6 +89,7 @@ import KanbanController from "./controllers/KanbanController";
 import KanbanNewController from "./controllers/KanbanNewController";
 import SugestoesController from "./controllers/SugestoesController";
 import ComprasController from "./controllers/ComprasController";
+import EmailTopicoConfigController from "./controllers/EmailTopicoConfigController";
 import { RealtimeService } from "./services/RealtimeService";
 import { seedPreferencias } from "./utils/seedPreferencias";
 import { seedSituations } from "./utils/seedSituations";
@@ -110,6 +111,7 @@ app.use("/", KanbanController);
 app.use("/", KanbanNewController);
 app.use("/", SugestoesController);
 app.use("/", ComprasController);
+app.use("/", EmailTopicoConfigController);
 app.use("/preferencias", preferencesRouter);
 app.use(rolesRouter);
 

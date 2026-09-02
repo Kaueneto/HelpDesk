@@ -51,6 +51,7 @@ export default function AdminSidebar({ collapsed, onToggle }: AdminSidebarProps)
     { label: 'Departamentos', path: '/departamentos' },
     { label: 'Tipos de Prioridade', path: '/prioridades' },
     { label: 'Parâmetros', path: '/parametros' },
+    { label: 'Notificações por Tópico', path: '/notificacoes-topico' },
   ];
 
   const comprasItems = [
