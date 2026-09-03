@@ -82,20 +82,20 @@ export function ThemedSelect({
 
   const isDark = mode === 'dark';
 
-  const triggerBg          = isDark ? 'rgb(30 41 59 / 0.85)'    : 'rgb(255 255 255 / 0.70)';
-  const triggerBgHover     = isDark ? 'rgb(51 65 85 / 0.92)'    : 'rgb(255 255 255 / 0.86)';
-  const triggerBorder      = isDark ? 'rgb(71 85 105 / 0.80)'   : 'rgb(203 213 225 / 0.78)';
-  const triggerBorderHover = isDark ? 'rgb(100 116 139 / 0.90)' : 'rgb(148 163 184 / 0.82)';
+  const triggerBg          = isDark ? 'linear-gradient(135deg, rgb(0 34 68 / 0.50), rgb(15 23 42 / 0.42))' : 'linear-gradient(135deg, rgb(255 255 255 / 0.58), rgb(226 232 240 / 0.34))';
+  const triggerBgHover     = isDark ? 'linear-gradient(135deg, rgb(0 50 94 / 0.62), rgb(30 41 59 / 0.52))' : 'linear-gradient(135deg, rgb(255 255 255 / 0.72), rgb(219 234 254 / 0.44))';
+  const triggerBorder      = isDark ? 'rgb(255 255 255 / 0.15)' : 'rgb(255 255 255 / 0.65)';
+  const triggerBorderHover = isDark ? 'rgb(147 197 253 / 0.42)' : 'rgb(147 197 253 / 0.58)';
   const triggerColor       = isDark ? theme.text.primary        : '#334155';
   const triggerShadow      = isDark
-    ? '0 8px 22px rgb(0 0 0 / 0.30), inset 0 1px 0 rgb(255 255 255 / 0.06)'
-    : '0 8px 22px rgb(15 23 42 / 0.06), inset 0 1px 0 rgb(255 255 255 / 0.72)';
+    ? '0 8px 32px rgb(0 0 0 / 0.35), inset 0 1px 0 rgb(255 255 255 / 0.15)'
+    : '0 8px 28px rgb(15 23 42 / 0.10), inset 0 1px 0 rgb(255 255 255 / 0.82)';
 
-  const contentBg     = isDark ? theme.background.modal : 'rgb(255 255 255 / 0.97)';
-  const contentBorder = isDark ? theme.border.primary   : 'rgb(203 213 225 / 0.70)';
+  const contentBg     = isDark ? 'linear-gradient(135deg, rgb(0 34 68 / 0.58), rgb(15 23 42 / 0.48))' : 'linear-gradient(135deg, rgb(255 255 255 / 0.72), rgb(226 232 240 / 0.48))';
+  const contentBorder = isDark ? 'rgb(255 255 255 / 0.15)' : 'rgb(255 255 255 / 0.72)';
   const contentShadow = isDark
-    ? '0 16px 40px rgb(0 0 0 / 0.50), inset 0 1px 0 rgb(255 255 255 / 0.05)'
-    : '0 16px 40px rgb(15 23 42 / 0.12), inset 0 1px 0 rgb(255 255 255 / 0.80)';
+    ? '0 8px 32px rgb(0 0 0 / 0.35), inset 0 1px 0 rgb(255 255 255 / 0.15)'
+    : '0 12px 32px rgb(15 23 42 / 0.14), inset 0 1px 0 rgb(255 255 255 / 0.86)';
 
   const optionColor         = isDark ? theme.text.primary     : '#334155';
   const optionHoverBg       = isDark ? theme.background.hover : '#f1f5f9';
@@ -124,6 +124,13 @@ export function ThemedSelect({
         .ts-${uid}[data-disabled] {
           opacity: 0.45;
           pointer-events: none;
+        }
+        .ts-viewport-${uid} {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        .ts-viewport-${uid}::-webkit-scrollbar {
+          display: none;
         }
       `}</style>
 
@@ -170,8 +177,9 @@ export function ThemedSelect({
               background: triggerBg,
               padding: compact ? '0.35rem 0.6rem' : '0.5rem 0.75rem',
               color: triggerColor,
-              backdropFilter: 'blur(14px)',
-              WebkitBackdropFilter: 'blur(14px)',
+              boxShadow: triggerShadow,
+              backdropFilter: 'blur(24px) saturate(180%)',
+              WebkitBackdropFilter: 'blur(24px) saturate(180%)',
               fontSize: compact ? '0.8125rem' : '0.875rem',
               outline: 'none',
               cursor: disabled ? 'not-allowed' : 'pointer',
@@ -220,8 +228,8 @@ export function ThemedSelect({
                 borderRadius: '0.75rem',
                 background: contentBg,
                 boxShadow: contentShadow,
-                backdropFilter: 'blur(16px)',
-                WebkitBackdropFilter: 'blur(16px)',
+                backdropFilter: 'blur(24px) saturate(180%)',
+                WebkitBackdropFilter: 'blur(24px) saturate(180%)',
                 overflow: 'hidden',
               }}
             >
@@ -244,7 +252,10 @@ export function ThemedSelect({
                 />
               </SelectPrimitive.ScrollUpButton>
 
-              <SelectPrimitive.Viewport style={{ padding: '0.25rem' }}>
+              <SelectPrimitive.Viewport
+                className={`ts-viewport-${uid}`}
+                style={{ padding: '0.25rem' }}
+              >
                 {options.map((option) => {
                   const itemVal =
                     toRadixValue(option.value, hasEmptyOption) ?? EMPTY_VALUE;

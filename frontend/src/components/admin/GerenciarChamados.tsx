@@ -3,7 +3,9 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import Select from 'react-select';
+import Checkbox from '@/components/ui/Checkbox';
+import { ThemedSelect } from '@/components/ui/ThemedSelect';
+import { ThemedSelectMulti } from '@/components/ui/ThemedSelectMulti';
 import api from '@/services/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -12,7 +14,7 @@ import ModalNovoChamado from '@/app/admin/Modal/ModalNovoChamado';
 import ModalEditarChamadoAdmin from '@/app/admin/Modal/ModalEditarChamadoAdmin';
 import ModalMarcarResolvido from '@/app/admin/Modal/MarcarResolvido';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiGrid, FiList, FiFilter, FiPlus } from 'react-icons/fi';
+import { FiGrid, FiList, FiPlus } from 'react-icons/fi';
 import KanbanView from '../kanban/KanbanView';
 import DetalhesChamado from './DetalhesChamado';
 import Avatar from '@/components/Avatar';
@@ -99,7 +101,7 @@ export default function GerenciarChamados() {
     const [modalResolvidoAberto, setModalResolvidoAberto] = useState(false);
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
-  const { theme } = useTheme();
+  const { theme, mode } = useTheme();
 
   // constante para a chave do localStorage
   const STORAGE_KEY = 'chamados_filtros';
@@ -215,91 +217,6 @@ export default function GerenciarChamados() {
     const saved = localStorage.getItem('filtrosVisiveis');
     return saved !== null ? saved === 'true' : true;
   });
-
-
-
-  // Helper function for React Select component styles
-  const getSelectStyles = () => {
-    return {
-      control: (base: any) => ({
-        ...base,
-        minHeight: '38px',
-        overflowX: "auto",
-        whiteSpace: "nowrap",
-        fontSize: '14px',
-        borderColor: theme.border.secondary,
-        backgroundColor: theme.background.surface,
-        '&:hover': { borderColor: theme.brand.primary, backgroundColor: theme.background.surface },
-        boxShadow: 'none',
-        padding: '2px 4px',
-        color: theme.text.primary,
-      }),
-      menu: (base: any) => ({
-        ...base,
-        backgroundColor: theme.background.surface,
-        borderColor: theme.border.secondary,
-        border: `1px solid ${theme.border.secondary}`,
-      }),
-      menuList: (base: any) => ({
-        ...base,
-        backgroundColor: theme.background.surface,
-        color: theme.text.primary,
-      }),
-      option: (base: any, state: any) => ({
-        ...base,
-        fontSize: '14px',
-        backgroundColor: state.isSelected ? theme.brand.primary : (state.isFocused ? theme.background.hover : theme.background.surface),
-        color: state.isSelected ? 'white' : theme.text.primary,
-        cursor: 'pointer',
-        '&:hover': {
-          backgroundColor: theme.background.hover,
-          color: theme.text.primary
-        }
-      }),
-      multiValue: (base: any) => ({
-        ...base,
-        backgroundColor: theme.brand.primary,
-        margin: '2px 2px',
-        padding: '0 4px',
-        minWidth: 0,
-      }),
-      multiValueLabel: (base: any) => ({
-        ...base,
-        color: 'white',
-        fontSize: '11px',
-        whiteSpace: 'nowrap',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-      }),
-      multiValueRemove: (base: any) => ({
-        ...base,
-        color: 'white',
-        '&:hover': {
-          backgroundColor: theme.brand.primary,
-          color: 'white',
-        },
-      }),
-      valueContainer: (base: any) => ({
-        ...base,
-        padding: '2px 4px',
-        maxHeight: '34px',
-        overflowY: 'auto',
-      }),
-      input: (base: any) => ({
-        ...base,
-        color: theme.text.primary,
-      }),
-      placeholder: (base: any) => ({
-        ...base,
-        color: theme.text.secondary,
-      }),
-      singleValue: (base: any) => ({
-        ...base,
-        color: theme.text.primary,
-      }),
-    };
-  };
-
   const getStatusColor = (statusId: number) => {
     switch (statusId) {
       case 1: // ABERTO
@@ -1146,7 +1063,7 @@ export default function GerenciarChamados() {
       </div>
    </div>
 
-        <div className="rounded-lg shadow-lg overflow-hidden" style={{
+        <div className="rounded-lg shadow-lg" style={{
           backgroundColor: theme.background.modal,
           borderColor: theme.border.secondary,
           borderWidth: '1px'
@@ -1158,370 +1075,315 @@ export default function GerenciarChamados() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3, ease: "easeOut" }}
+              transition={{ duration: 0.25, ease: 'easeOut' }}
             >
-              {/* area de Filtros */}
-          <div className="p-6" style={{
-            borderColor: theme.border.primary,
-            backgroundColor: theme.background.surface,
-            borderBottomWidth: '2px',
-            borderBottomStyle: 'solid'
-          }}>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 ">
-              {/* Período de abertura */}
-              <div className="min-w-0">
-                <label className="block text-sm font-medium mb-1" style={{ color: theme.text.primary }}>
-                  Período de abertura
-                </label>
-                <DatePicker
-                  selectsRange={true}
-                  startDate={dataAberturaInicio}
-                  endDate={dataAberturaFim}
-                  onChange={(update) => {
-                    const [start, end] = update;
-                    setDataAberturaInicio(start);
-                    setDataAberturaFim(end);
-                  }}
-                  dateFormat="dd/MM/yyyy"
-                  placeholderText="Selecione o período"
-                  className="w-full min-w-0 px-3 py-2 border rounded text-sm focus:outline-none transition-all"
-                  isClearable={true}
-                />
-              </div>
+              <div
+                className="px-4 pt-3 pb-2"
+                style={{
+                  backgroundColor: theme.background.surface,
+                  borderBottom: `1px solid ${theme.border.secondary}`,
+                }}
+              >
+                {/* ── Linha principal de filtros ── */}
+                <div className="flex flex-wrap gap-2 items-start">
 
-              {/* periodo de fechamento */}
-              <div className="min-w-0">
-                <label className="block text-sm font-medium mb-1" style={{ color: theme.text.primary }}>
-                  Período de Conclusão
-                </label>
-                <DatePicker
-                  selectsRange={true}
-                  startDate={dataFechamentoInicio}
-                  endDate={dataFechamentoFim}
-                  onChange={(update) => {
-                    const [start, end] = update;
-                    setDataFechamentoInicio(start);
-                    setDataFechamentoFim(end);
-                  }}
-                  dateFormat="dd/MM/yyyy"
-                  placeholderText="Selecione o período"
-                  className="w-full min-w-0 px-3 py-2 border rounded text-sm focus:outline-none transition-all"
-                  isClearable={true}
-                />
-              </div>
-
-              <div className="min-w-0">
-                <label className="block text-sm font-medium mb-1" style={{ color: theme.text.primary }}>
-                  Departamento
-                </label>
-                <Select
-                  isMulti
-                  isClearable
-                  closeMenuOnSelect={false}
-                  options={departamentos.filter(dept => dept.ativo).map((dept) => ({
-                    value: dept.id.toString(),
-                    label: `${dept.codigo} - ${dept.name}`
-                  }))}
-                  value={
-                    departamentoId.length === 0
-                      ? []
-                      : departamentos
-                          .filter((dept) => departamentoId.includes(dept.id.toString()))
-                          .map((dept) => ({
-                            value: dept.id.toString(),
-                            label: `${dept.codigo} - ${dept.name}`
-                          }))
-                  }
-                  onChange={(selected) => {
-                    if (!selected || selected.length === 0) {
-                      setDepartamentoId([]);
-                    } else {
-                      setDepartamentoId(selected.map(item => item.value));
-                    }
-                  }}
-                  placeholder="Selecione..."
-                  noOptionsMessage={() => "Nenhuma opção disponível"}
-                  className="text-sm"
-                  styles={getSelectStyles()}
-                />
-              </div>
-
-              <div className="min-w-0">
-                <label className="block text-sm font-medium mb-1" style={{ color: theme.text.primary }}>
-                  Tópico de ajuda
-                </label>
-                <Select
-                  isMulti
-                  isClearable
-                  closeMenuOnSelect={false}
-                  options={topicosAjuda.filter(topico => topico.ativo).map((topico) => ({
-                    value: topico.id.toString(),
-                    label: `${topico.codigo} - ${topico.nome}`
-                  }))}
-                  value={
-                    topicoAjudaId.length === 0
-                      ? []
-                      : topicosAjuda
-                          .filter((topico) => topicoAjudaId.includes(topico.id.toString()))
-                          .map((topico) => ({
-                            value: topico.id.toString(),
-                            label: `${topico.codigo} - ${topico.nome}`
-                          }))
-                  }
-                  onChange={(selected) => {
-                    if (!selected || selected.length === 0) {
-                      setTopicoAjudaId([]);
-                    } else {
-                      setTopicoAjudaId(selected.map(item => item.value));
-                    }
-                  }}
-                  placeholder="Selecione..."
-                  noOptionsMessage={() => "Nenhuma opção disponível"}
-                  className="text-base"
-                  styles={getSelectStyles()}
-                />
-              </div>
-
-
-              <div className="min-w-0">
-                <label className="block text-sm font-medium mb-1" style={{ color: theme.text.primary }}>
-                  Status
-                </label>
-                <Select
-                  isMulti
-                  isClearable
-                  closeMenuOnSelect={false}
-                  options={statusList.map((status) => ({
-                    value: status.id.toString(),
-                    label: status.nome
-                  }))}
-                  value={
-                    statusId.length === 0
-                      ? []
-                      : statusList
-                          .filter((status) => statusId.includes(status.id.toString()))
-                          .map((status) => ({
-                            value: status.id.toString(),
-                            label: status.nome
-                          }))
-                  }
-                  onChange={(selected) => {
-                    if (!selected || selected.length === 0) {
-                      setStatusId([]);
-                    } else {
-                      setStatusId(selected.map(item => item.value));
-                    }
-                  }}
-                  placeholder="Selecione..."
-                  noOptionsMessage={() => "Nenhuma opção disponível"}
-                  className="text-sm"
-                  styles={getSelectStyles()}
-                />
-              </div>
-            </div>
-
-            {/* 2 linha de filtros */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-              {/* Assunto */}
-              <div className="min-w-0">
-                <label className="block text-sm font-medium mb-1" style={{ color: theme.text.primary }}>
-                  Assunto
-                </label>
-                <input
-                  type="text"
-                  value={assunto}
-                  onChange={(e) => setAssunto(e.target.value)}
-                  placeholder="Digite o assunto"
-                  className="w-full min-w-0 px-3 py-2 border rounded text-sm focus:outline-none transition-all"
-                  style={{
-                    backgroundColor: theme.background.surface,
-                    borderColor: theme.border.secondary,
-                    color: theme.text.primary
-                  }}
-                />
-              </div>
-
-              {/* nome user */}
-              <div className="min-w-0">
-                <label className="block text-sm font-medium mb-1" style={{ color: theme.text.primary }}>
-                  Nome usuário
-                </label>
-                <input
-                  type="text"
-                  value={nomeUsuario}
-                  onChange={(e) => setNomeUsuario(e.target.value)}
-                  placeholder="Digite o nome"
-                  className="w-full min-w-0 px-3 py-2 border rounded text-sm focus:outline-none transition-all"
-                  style={{
-                    backgroundColor: theme.background.pagina,
-                    borderColor: theme.border.secondary,
-                    color: theme.text.primary
-                  }}
-                />
-              </div>
-{/* prioridade - botões visuais */}
-<div className="min-w-0 w-full">
-  <label className="block text-sm font-medium mb-2" style={{ color: theme.text.primary }}>
-    Nível de prioridade
-  </label>
-  
-  {/* container Flexível Arrastável e sem Barra de Rolagem */}
-  <div 
-    ref={scrollRef}
-    onMouseDown={handleMouseDown}
-    onMouseLeave={handleMouseLeave}
-    onMouseUp={handleMouseUp}
-    onMouseMove={handleMouseMove}
-    className="flex flex-row overflow-x-auto gap-2 w-full hide-scrollbar cursor-grab active:cursor-grabbing"
-  >
-    {/* botão TODOS */}
-    <button
-      type="button"
-      onClick={() => setPrioridadeId('')}
-      className="flex items-center justify-center text-xs font-medium transition-all shrink-0 px-4 h-10 rounded-lg shadow-sm hover:opacity-90 pointer-events-auto"
-      style={{
-        backgroundColor: prioridadeId === '' ? theme.brand.primary : theme.background.hover,
-        color: prioridadeId === '' ? '#FFFFFF' : theme.text.primary,
-        border: `1px solid ${prioridadeId === '' ? theme.brand.primary : theme.border.primary}`,
-        outline: 'none'
-      }}
-    >
-      <span>TODOS</span>
-    </button>
-
-    {/* botões de prioridade */}
-    {prioridades.map((prioridade) => (
-      <button
-        key={prioridade.id}
-        type="button"
-        onClick={() => setPrioridadeId(String(prioridade.id))}
-        className="flex items-center justify-center text-xs font-medium transition-all shrink-0 px-4 h-10 rounded-lg shadow-sm hover:opacity-90 pointer-events-auto"
-        style={{
-          backgroundColor: prioridadeId === String(prioridade.id) ? prioridade.cor : theme.background.hover,
-          color: prioridadeId === String(prioridade.id) ? '#FFFFFF' : theme.text.primary,
-          border: `1px solid ${prioridadeId === String(prioridade.id) ? prioridade.cor : theme.border.primary}`,
-          outline: 'none'
-        }}
-      >
-        <span>{prioridade.nome}</span>
-      </button>
-    ))}
-  </div>
-</div>
-           </div>
-
-              <div className="flex items-end gap-6 mt-4">
-                {/* Responsável */}
-                <div className="flex-none"> {/* flex-none impede que ele cresça ou encolha além do necessário */}
-                  <label className="block text-sm font-medium mb-2" style={{ color: theme.text.primary }}>
-                    Responsável
-                  </label>
-                  <select
-                    value={nomeResponsavel}
-                    onChange={(e) => setNomeResponsavel(e.target.value)}
-                    className="w-64 px-3 py-2 border rounded text-sm focus:outline-none transition-all"
-                    style={{
-                      backgroundColor: theme.background.surface,
-                      borderColor: theme.border.secondary,
-                      color: theme.text.primary
-                    }}
-                  >
-                    <option value="">Todos os responsáveis</option>
-                    {usuariosAdmin
-                      .sort((a, b) => a.name.localeCompare(b.name))
-                      .map((admin) => (
-                        <option key={admin.id} value={admin.name}>
-                          {admin.name}
-                        </option>
-                      ))}
-                  </select>
-                </div>
-
-                {/* Ocultar concluídos */}
-                <div className="flex items-center gap-3 mb-2.5"> {/* items-center coloca na mesma linha e mb-2.5 alinha com o select */}
-                  <label className="text-sm font-medium whitespace-nowrap" style={{ color: theme.text.primary }}>
-                    Ocultar concluídos
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => setOcultarConcluidos(!ocultarConcluidos)}
-                    className="relative w-10 h-5 rounded-full transition-colors duration-100 shrink-0"
-                    style={{
-                      backgroundColor: ocultarConcluidos ? theme.brand.primary : theme.background.hover
-                    }}
-                  >
-                    <span
-                      className="absolute top-0.5 left-0.5 w-4 h-4 rounded-full shadow transform transition-transform duration-100"
-                      style={{
-                        backgroundColor: theme.background.pagina,
-                        transform: ocultarConcluidos ? "translateX(20px)" : "translateX(0)"
-                      }}
+                  {/* Período de abertura */}
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] font-medium uppercase tracking-wide" style={{ color: theme.text.tertiary }}>Abertura</span>
+                    <DatePicker
+                      selectsRange
+                      startDate={dataAberturaInicio}
+                      endDate={dataAberturaFim}
+                      onChange={(update) => { const [s, e] = update; setDataAberturaInicio(s); setDataAberturaFim(e); }}
+                      dateFormat="dd/MM/yy"
+                      placeholderText="Início – Fim"
+                      isClearable
+                      className="w-36 px-2.5 py-1.5 border rounded text-xs focus:outline-none"
+                      wrapperClassName="block"
+                      portalId="datepicker-portal"
                     />
-                  </button>
+                  </div>
+
+                  {/* Período de conclusão */}
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] font-medium uppercase tracking-wide" style={{ color: theme.text.tertiary }}>Conclusão</span>
+                    <DatePicker
+                      selectsRange
+                      startDate={dataFechamentoInicio}
+                      endDate={dataFechamentoFim}
+                      onChange={(update) => { const [s, e] = update; setDataFechamentoInicio(s); setDataFechamentoFim(e); }}
+                      dateFormat="dd/MM/yy"
+                      placeholderText="Início – Fim"
+                      isClearable
+                      className="w-36 px-2.5 py-1.5 border rounded text-xs focus:outline-none"
+                      wrapperClassName="block"
+                      portalId="datepicker-portal"
+                    />
+                  </div>
+
+                  {/* Departamento */}
+                  <div className="flex flex-col gap-1 w-44">
+                    <span className="text-[10px] font-medium uppercase tracking-wide" style={{ color: theme.text.tertiary }}>Departamento</span>
+                    <ThemedSelectMulti
+                      values={departamentoId}
+                      onChange={setDepartamentoId}
+                      placeholder="Todos"
+                      compact
+                      fullWidth
+                      options={departamentos.filter(d => d.ativo).map(d => ({ value: d.id.toString(), label: `${d.codigo} - ${d.name}` }))}
+                    />
+                  </div>
+
+                  {/* Tópico */}
+                  <div className="flex flex-col gap-1 w-44">
+                    <span className="text-[10px] font-medium uppercase tracking-wide" style={{ color: theme.text.tertiary }}>Tópico</span>
+                    <ThemedSelectMulti
+                      values={topicoAjudaId}
+                      onChange={setTopicoAjudaId}
+                      placeholder="Todos"
+                      compact
+                      fullWidth
+                      options={topicosAjuda.filter(t => t.ativo).map(t => ({ value: t.id.toString(), label: `${t.codigo} - ${t.nome}` }))}
+                    />
+                  </div>
+
+                  {/* Status */}
+                  <div className="flex flex-col gap-1 w-40">
+                    <span className="text-[10px] font-medium uppercase tracking-wide" style={{ color: theme.text.tertiary }}>Status</span>
+                    <ThemedSelectMulti
+                      values={statusId}
+                      onChange={setStatusId}
+                      placeholder="Todos"
+                      compact
+                      fullWidth
+                      options={statusList.map(s => ({ value: s.id.toString(), label: s.nome }))}
+                    />
+                  </div>
+
+                  {/* Prioridade — pills compactos */}
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] font-medium uppercase tracking-wide" style={{ color: theme.text.tertiary }}>Prioridade</span>                    <div
+                      ref={scrollRef}
+                      onMouseDown={handleMouseDown}
+                      onMouseLeave={handleMouseLeave}
+                      onMouseUp={handleMouseUp}
+                      onMouseMove={handleMouseMove}
+                      className="flex gap-1 overflow-x-auto hide-scrollbar cursor-grab active:cursor-grabbing"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => setPrioridadeId('')}
+                        className="shrink-0 px-2.5 h-[30px] rounded text-[11px] font-medium transition-all"
+                        style={{
+                          backgroundColor: prioridadeId === '' ? theme.brand.primary : theme.background.hover,
+                          color: prioridadeId === '' ? '#fff' : theme.text.primary,
+                          border: `1px solid ${prioridadeId === '' ? theme.brand.primary : theme.border.primary}`,
+                        }}
+                      >
+                        Todas
+                      </button>
+                      {prioridades.map((p) => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => setPrioridadeId(String(p.id))}
+                          className="shrink-0 px-2.5 h-[30px] rounded text-[11px] font-medium transition-all"
+                          style={{
+                            backgroundColor: prioridadeId === String(p.id) ? p.cor : theme.background.hover,
+                            color: prioridadeId === String(p.id) ? '#fff' : theme.text.primary,
+                            border: `1px solid ${prioridadeId === String(p.id) ? p.cor : theme.border.primary}`,
+                          }}
+                        >
+                          {p.nome}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                 </div>
+
+                {/* ── Filtros complementares ── */}
+                <div className="flex flex-wrap gap-2 items-end pt-2 mt-2">
+                    {/* Assunto */}
+                    <div className="flex flex-col gap-1 w-44">
+                      <span className="text-[10px] font-medium uppercase tracking-wide" style={{ color: theme.text.tertiary }}>Assunto</span>
+                      <input
+                        type="text"
+                        value={assunto}
+                        onChange={(e) => setAssunto(e.target.value)}
+                        placeholder="Digite o assunto"
+                        className="w-full px-2.5 py-1.5 border rounded text-xs focus:outline-none"
+                        style={{ backgroundColor: theme.background.card, borderColor: theme.border.secondary, color: theme.text.primary }}
+                      />
+                    </div>
+
+                    {/* Nome usuário */}
+                    <div className="flex flex-col gap-1 w-40">
+                      <span className="text-[10px] font-medium uppercase tracking-wide" style={{ color: theme.text.tertiary }}>Usuário</span>
+                      <input
+                        type="text"
+                        value={nomeUsuario}
+                        onChange={(e) => setNomeUsuario(e.target.value)}
+                        placeholder="Nome do usuário"
+                        className="w-full px-2.5 py-1.5 border rounded text-xs focus:outline-none"
+                        style={{ backgroundColor: theme.background.card, borderColor: theme.border.secondary, color: theme.text.primary }}
+                      />
+                    </div>
+
+                    {/* Responsável */}
+                    <div className="flex flex-col gap-1 w-44">
+                      <span className="text-[10px] font-medium uppercase tracking-wide" style={{ color: theme.text.tertiary }}>Responsável</span>
+                      <ThemedSelect
+                        value={nomeResponsavel}
+                        onChange={setNomeResponsavel}
+                        placeholder="Todos"
+                        compact
+                        fullWidth
+                        options={[
+                          { value: '', label: 'Todos' },
+                          ...usuariosAdmin.sort((a, b) => a.name.localeCompare(b.name)).map(admin => ({
+                            value: admin.name,
+                            label: admin.name,
+                          }))
+                        ]}
+                      />
+                    </div>
+
+                    {/* Ocultar concluídos */}
+                    <div className="flex items-center gap-2 self-end pb-1">
+                      <button
+                        type="button"
+                        onClick={() => setOcultarConcluidos(!ocultarConcluidos)}
+                        className="relative w-8 h-4 rounded-full transition-colors duration-150 shrink-0"
+                        style={{ backgroundColor: ocultarConcluidos ? theme.brand.primary : theme.background.hover }}
+                      >
+                        <span
+                          className="absolute top-0.5 left-0.5 w-3 h-3 rounded-full shadow transition-transform duration-150"
+                          style={{
+                            backgroundColor: theme.background.pagina,
+                            transform: ocultarConcluidos ? 'translateX(16px)' : 'translateX(0)',
+                          }}
+                        />
+                      </button>
+                      <span className="text-xs whitespace-nowrap" style={{ color: theme.text.secondary }}>
+                        Ocultar concluídos
+                      </span>
+                    </div>
+
+                    {/* Ações de filtro — mantidas no extremo direito da linha */}
+                    <div className="flex gap-1.5 self-end ml-auto">
+                      <button
+                        onClick={limparFiltros}
+                        className="px-3 h-[30px] rounded text-[11px] font-medium border transition-all"
+                        style={{
+                          borderColor: theme.border.secondary,
+                          color: theme.text.secondary,
+                          backgroundColor: 'transparent',
+                        }}
+                      >
+                        Limpar
+                      </button>
+                      <button
+                        onClick={() => pesquisarChamados(1, ocultarConcluidos, getEffectivePageSize())}
+                        disabled={loading}
+                        className="px-4 h-[30px] text-white rounded text-[11px] font-medium transition-all disabled:opacity-60"
+                        style={{ backgroundColor: theme.buttonsExclusivos.btDark }}
+                      >
+                        {loading ? 'Buscando...' : 'Pesquisar'}
+                      </button>
+                    </div>
+                </div>
+
+                {/* ── Badges de filtros ativos — flutuantes, sem deslocar layout ── */}
+                {(() => {
+                  const isDark = mode === 'dark';
+                  const badgeBg     = isDark ? 'rgb(74 222 128 / 0.12)' : 'rgb(21 128 61 / 0.10)';
+                  const badgeColor  = isDark ? '#4ade80'                 : '#15803d';
+                  const badgeBorder = isDark ? 'rgb(74 222 128 / 0.35)' : 'rgb(21 128 61 / 0.35)';
+
+                  const badges: { label: string; onRemove: () => void }[] = [];
+
+                  if (dataAberturaInicio || dataAberturaFim)
+                    badges.push({ label: `Abertura: ${dataAberturaInicio?.toLocaleDateString('pt-BR') ?? '?'} – ${dataAberturaFim?.toLocaleDateString('pt-BR') ?? '?'}`, onRemove: () => { setDataAberturaInicio(null); setDataAberturaFim(null); } });
+                  if (dataFechamentoInicio || dataFechamentoFim)
+                    badges.push({ label: `Conclusão: ${dataFechamentoInicio?.toLocaleDateString('pt-BR') ?? '?'} – ${dataFechamentoFim?.toLocaleDateString('pt-BR') ?? '?'}`, onRemove: () => { setDataFechamentoInicio(null); setDataFechamentoFim(null); } });
+
+                  departamentoId.forEach(id => {
+                    const d = departamentos.find(x => x.id.toString() === id);
+                    if (d) badges.push({ label: d.name, onRemove: () => setDepartamentoId(departamentoId.filter(x => x !== id)) });
+                  });
+                  topicoAjudaId.forEach(id => {
+                    const t = topicosAjuda.find(x => x.id.toString() === id);
+                    if (t) badges.push({ label: t.nome, onRemove: () => setTopicoAjudaId(topicoAjudaId.filter(x => x !== id)) });
+                  });
+                  statusId.forEach(id => {
+                    const s = statusList.find(x => x.id.toString() === id);
+                    if (s) badges.push({ label: s.nome, onRemove: () => setStatusId(statusId.filter(x => x !== id)) });
+                  });
+                  if (prioridadeId) {
+                    const p = prioridades.find(x => x.id.toString() === prioridadeId);
+                    if (p) badges.push({ label: p.nome, onRemove: () => setPrioridadeId('') });
+                  }
+                  if (assunto) badges.push({ label: `Assunto: ${assunto}`, onRemove: () => setAssunto('') });
+                  if (nomeUsuario) badges.push({ label: `Usuário: ${nomeUsuario}`, onRemove: () => setNomeUsuario('') });
+                  if (nomeResponsavel) badges.push({ label: `Resp.: ${nomeResponsavel}`, onRemove: () => setNomeResponsavel('') });
+                  if (ocultarConcluidos) badges.push({ label: 'Ocultando chamados concluídos', onRemove: () => setOcultarConcluidos(false) });
+
+                  if (badges.length === 0) return null;
+
+                  return (
+                    <div className="flex flex-wrap gap-1.5 pt-2">
+                      {badges.map((badge, i) => (
+                        <span
+                          key={i}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium"
+                          style={{ backgroundColor: badgeBg, color: badgeColor, border: `1px solid ${badgeBorder}` }}
+                        >
+                          {badge.label}
+                          <button
+                            type="button"
+                            onClick={badge.onRemove}
+                            className="leading-none hover:opacity-70 transition-opacity"
+                            style={{ color: badgeColor }}
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  );
+                })()}
+
               </div>
-              
-            {/* botoes de acoes dos filtros */}
-            <div className="flex gap-3 mt-6 justify-end flex-nowrap overflow-x-auto whitespace-nowrap pb-2">
-              <button
-                onClick={limparFiltros}
-                className="px-6 py-2 rounded transition-all font-medium text-sm hover:shadow-md active:scale-95"
-                style={{
-                  backgroundColor: theme.background.hover,
-                  color: theme.text.primary
-                }}
-              >
-                Limpar Filtros
-              </button>
-              <button
-                onClick={() => pesquisarChamados(1, ocultarConcluidos, getEffectivePageSize())}
-                disabled={loading}
-                className="px-6 py-2 text-white rounded font-medium text-sm transition-all hover:shadow-md active:scale-95"
-                style={{
-                  backgroundColor: loading ? theme.buttonsExclusivos.btLight : theme.buttonsExclusivos.btDark,
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                  opacity: loading ? 0.6 : 1
-                }}
-              >
-                {loading ? 'Pesquisando...' : 'Pesquisar'}
-              </button>
-            </div>
-          </div>
-              </motion.div>
+            </motion.div>
           )}
 
-          {/* pequena setinha que oculta os filtros no modo tabela */}
+          {/* chevron de toggle de visibilidade */}
           {viewMode === 'table' && (
-       <div className="flex justify-center" style={{
-          backgroundColor: theme.background.modal,
-          borderBottomColor: theme.border.secondary,
-          borderBottomWidth: '0px'
-        }}>
-          <button
-            type="button"
-            onClick={() => setFiltrosVisiveis(!filtrosVisiveis)}
-            className="flex items-center transition-colors space-x-1 py-2" style={{ color: theme.text.tertiary }}>
-            <span className="select-none">.............</span>
-
-            <HiOutlineChevronDown
-              className={`w-4 h-4 transition-transform duration-300 ${filtrosVisiveis ? 'rotate-180' : ''}`}
-            />
-
-            <span className="select-none">.............</span>
-          </button>
-        </div>
+            <div className="flex justify-center" style={{ backgroundColor: theme.background.modal }}>
+              <button
+                type="button"
+                onClick={() => setFiltrosVisiveis(!filtrosVisiveis)}
+                className="flex items-center gap-1 py-1.5 transition-colors"
+                style={{ color: theme.text.tertiary }}
+              >
+                <span className="select-none text-xs text-gray-500">·········</span>
+                <HiOutlineChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${filtrosVisiveis ? 'rotate-180' : ''}`} />
+                <span className="select-none text-xs text-gray-500">·········</span>
+              </button>
+            </div>
           )}
 
           {/* acao em multiplos registros - Visível apenas no modo tabela */}
           {chamados.length > 0 && viewMode === 'table' && (
-            <div className="px-3 py-2 border-b flex gap-3 items-center flex-nowrap overflow-x-auto whitespace-nowrap" style={{
+            <div className="px-3 py-1.5 border-b flex gap-2 items-center flex-nowrap overflow-x-auto whitespace-nowrap" style={{
               backgroundColor: theme.background.surface,
               borderBottomColor: theme.border.secondary
             }}>
               <button
                 onClick={marcarComoResolvido}
                 disabled={chamadosSelecionados.length === 0}
-                className="action-button px-5 py-2 rounded transition-all font-medium text-sm hover:shadow-md active:scale-95"
+                className="action-button px-3 h-7 rounded text-[11px] transition-all font-medium hover:shadow-md active:scale-95"
                 style={{
                   backgroundColor: chamadosSelecionados.length === 0 ? theme.background.hover : theme.buttonsExclusivos.btDark,
                   color: chamadosSelecionados.length === 0 ? theme.text.tertiary : 'white',
@@ -1535,7 +1397,7 @@ export default function GerenciarChamados() {
               <button
                 onClick={editarMultiplos}
                 disabled={chamadosSelecionados.length === 0}
-                className="action-button px-5 py-2 rounded transition-all font-medium text-sm hover:shadow-md active:scale-95"
+                className="action-button px-3 h-7 rounded text-[11px] transition-all font-medium hover:shadow-md active:scale-95"
                 style={{
                   backgroundColor: chamadosSelecionados.length === 0 ? theme.background.hover : theme.buttonsExclusivos.btDark,
                   color: chamadosSelecionados.length === 0 ? theme.text.tertiary : 'white',
@@ -1549,7 +1411,7 @@ export default function GerenciarChamados() {
               <button
                 onClick={atribuirAMim}
                 disabled={chamadosSelecionados.length === 0 || submittingEdicao}
-                className="action-button px-5 py-2 rounded transition-all font-medium text-sm hover:shadow-md active:scale-95"
+                className="action-button px-3 h-7 rounded text-[11px] transition-all font-medium hover:shadow-md active:scale-95"
                 style={{
                   backgroundColor: chamadosSelecionados.length === 0 || submittingEdicao ? theme.background.hover : theme.buttonsExclusivos.btDark,
                   color: chamadosSelecionados.length === 0 || submittingEdicao ? theme.text.tertiary : 'white',
@@ -1561,7 +1423,7 @@ export default function GerenciarChamados() {
                 Atribuir a mim
               </button>
               {chamadosSelecionados.length > 0 && (
-                <span className="text-sm flex items-center ml-2" style={{ color: theme.text.secondary }}>
+                <span className="text-xs flex items-center ml-1" style={{ color: theme.text.secondary }}>
                   {chamadosSelecionados.length} selecionado(s)
                 </span>
               )}
@@ -1674,12 +1536,11 @@ export default function GerenciarChamados() {
                       </tr>
                       <tr style={{ backgroundColor: theme.background.surface, position: 'sticky', top: '2px', zIndex: 10 }}>
                        
-                        <th className="pl-4 pr-2 py-3 text-left w-8">
-                          <input
-                            type="checkbox"
+                        <th className="pl-4 pr-2 py-3 text-center w-8">
+                          <Checkbox
                             checked={todosChecados}
                             onChange={handleCheckAll}
-                            className="theme-checkbox"
+                            indeterminate={chamadosSelecionados.length > 0 && !todosChecados}
                           />
                         </th>
                         {/* helper para renderizar th ordenável */}
@@ -1719,7 +1580,7 @@ export default function GerenciarChamados() {
                         <tr
                           key={chamado.id}
                           onClick={(e) => {
-                            if ((e.target as HTMLElement).closest('input[type="checkbox"]')) return;
+                            if ((e.target as HTMLElement).closest('[role="checkbox"]')) return;
                             const xPct = (e.clientX / window.innerWidth) * 100;
                             const yPct = (e.clientY / window.innerHeight) * 100;
                             try { sessionStorage.setItem('detailOrigin', JSON.stringify({ x: `${xPct}%`, y: `${yPct}%` })); } catch {}
@@ -1735,11 +1596,9 @@ export default function GerenciarChamados() {
                           onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                         >
                           <td className="px-2 py-2" onClick={(e) => e.stopPropagation()}>
-                            <input
-                              type="checkbox"
+                            <Checkbox
                               checked={chamadosSelecionados.includes(chamado.id)}
                               onChange={() => handleCheckChamado(chamado.id)}
-                              className="theme-checkbox"
                             />
                           </td>
 
@@ -1891,7 +1750,7 @@ export default function GerenciarChamados() {
                     <div
                       key={chamado.id}
                       onClick={(e) => {
-                        if ((e.target as HTMLElement).closest('input[type="checkbox"]')) {
+                        if ((e.target as HTMLElement).closest('[role="checkbox"]')) {
                           return;
                         }
                         const xPct = (e.clientX / window.innerWidth) * 100;
@@ -1927,11 +1786,9 @@ export default function GerenciarChamados() {
                           </p>
                         </div>
                         <div onClick={(e) => e.stopPropagation()} className="ml-2">
-                          <input
-                            type="checkbox"
+                          <Checkbox
                             checked={chamadosSelecionados.includes(chamado.id)}
                             onChange={() => handleCheckChamado(chamado.id)}
-                            className="theme-checkbox"
                           />
                         </div>
                       </div>

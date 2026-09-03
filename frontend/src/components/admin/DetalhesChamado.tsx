@@ -18,6 +18,7 @@ import { Toaster, toast } from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { FiChevronLeft } from "react-icons/fi";
+import { ThemedSelect } from '@/components/ui/ThemedSelect';
 
 interface Anexo {
   id: number;
@@ -137,6 +138,13 @@ export default function DetalhesChamado({ chamadoId, onVoltar }: DetalhesChamado
   const [modalEmailAberto, setModalEmailAberto] = useState(false);
   // Estado do modal de edição de chamado
   const [modalEditarAberto, setModalEditarAberto] = useState(false);
+  // Estado do alterar status inline
+  const [alterandoStatus, setAlterandoStatus] = useState(false);
+  const [statusSelecionadoInline, setStatusSelecionadoInline] = useState('');
+  const [salvandoStatus, setSalvandoStatus] = useState(false);
+  const [statuses, setStatuses] = useState<Array<{ id: number; nome: string }>>([]);
+  // Estado do botão Pendente Usuário
+  const [salvandoPendenteUsuario, setSalvandoPendenteUsuario] = useState(false);
   // Estado para animação de saída
   const [animandoSaida, setAnimandoSaida] = useState(false);
   // Estado para animação de entrada (slide-in)
@@ -189,6 +197,7 @@ export default function DetalhesChamado({ chamadoId, onVoltar }: DetalhesChamado
       ];
       if (!silent) {
         requests.push(api.get('/tipo_prioridade'));
+        requests.push(api.get('/status'));
       }
 
       const results = await Promise.all(requests);
@@ -197,7 +206,10 @@ export default function DetalhesChamado({ chamadoId, onVoltar }: DetalhesChamado
       setChamado(chamadoRes.data);
       setMensagens(mensagensRes.data);
       setHistorico(historicoRes.data);
-      if (!silent) setPrioridades(results[3].data);
+      if (!silent) {
+        setPrioridades(results[3].data);
+        setStatuses(results[4].data);
+      }
     } catch (error) {
   
       toast.error('Erro ao carregar chamado', {
@@ -695,6 +707,52 @@ export default function DetalhesChamado({ chamadoId, onVoltar }: DetalhesChamado
     setModalRedirecionarAberto(true);
   };
 
+  const confirmarAlterarStatus = async () => {
+    if (!statusSelecionadoInline || !chamado) return;
+    setSalvandoStatus(true);
+    try {
+      const res = await api.put(`/chamados/${chamadoId}/alterar-status`, {
+        statusId: Number(statusSelecionadoInline),
+      });
+      setChamado(res.data.chamado);
+      setAlterandoStatus(false);
+      setStatusSelecionadoInline('');
+      toast.success('Status alterado com sucesso!', {
+        style: { background: '#fff', color: '#16a34a', fontWeight: 'bold', fontSize: '1rem', borderRadius: '0.75rem', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' },
+        iconTheme: { primary: '#16a34a', secondary: '#fff' },
+      });
+      await carregarDados(true);
+    } catch (error: any) {
+      toast.error(error.response?.data?.mensagem || 'Erro ao alterar status', {
+        style: { background: '#fff', color: '#dc2626', fontWeight: 'bold', fontSize: '1rem', borderRadius: '0.75rem', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' },
+        iconTheme: { primary: '#dc2626', secondary: '#fff' },
+      });
+    } finally {
+      setSalvandoStatus(false);
+    }
+  };
+
+  const marcarPendenteUsuario = async () => {
+    if (!chamado || chamado.status.id === 6) return;
+    setSalvandoPendenteUsuario(true);
+    try {
+      const res = await api.put(`/chamados/${chamadoId}/alterar-status`, { statusId: 6 });
+      setChamado(res.data.chamado);
+      toast.success('Status alterado para Pendente Usuário!', {
+        style: { background: '#fff', color: '#7c3aed', fontWeight: 'bold', fontSize: '1rem', borderRadius: '0.75rem', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' },
+        iconTheme: { primary: '#7c3aed', secondary: '#fff' },
+      });
+      await carregarDados(true);
+    } catch (error: any) {
+      toast.error(error.response?.data?.mensagem || 'Erro ao alterar status', {
+        style: { background: '#fff', color: '#dc2626', fontWeight: 'bold', fontSize: '1rem', borderRadius: '0.75rem', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' },
+        iconTheme: { primary: '#dc2626', secondary: '#fff' },
+      });
+    } finally {
+      setSalvandoPendenteUsuario(false);
+    }
+  };
+
   const fecharModalRedirecionar = () => {
     setModalRedirecionarAberto(false);
   };
@@ -1186,6 +1244,68 @@ export default function DetalhesChamado({ chamadoId, onVoltar }: DetalhesChamado
           >
             Reabrir Chamado
           </button>
+
+          {/* ── Alterar Status inline ── */}
+          {!alterandoStatus ? (
+            <button
+              onClick={() => {
+                setStatusSelecionadoInline(String(chamado.status.id));
+                setAlterandoStatus(true);
+              }}
+              className="px-3 md:px-5 py-2 bg-transparent border rounded-lg transition-all duration-200 transform hover:scale-104 font-medium text-xs md:text-sm whitespace-nowrap active:scale-95 focus:outline-none shrink-0"
+              style={{ borderColor: '#6366f1', color: '#6366f1' }}
+              onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#6366f1'; e.currentTarget.style.color = 'white'; }}
+              onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#6366f1'; }}
+            >
+              Alterar Status
+            </button>
+          ) : (
+            <div className="flex items-center gap-1.5 shrink-0">
+              <div className="w-44">
+                <ThemedSelect
+                  value={statusSelecionadoInline}
+                  onChange={setStatusSelecionadoInline}
+                  compact
+                  fullWidth
+                  options={statuses
+                    .filter((s) => s.id !== chamado.status.id)
+                    .map((s) => ({ value: String(s.id), label: s.nome }))}
+                  placeholder="Selecione..."
+                />
+              </div>
+              {/* Confirmar */}
+              <button
+                onClick={confirmarAlterarStatus}
+                disabled={!statusSelecionadoInline || salvandoStatus}
+                title="Confirmar"
+                className="flex items-center justify-center w-7 h-7 rounded-md transition-colors disabled:opacity-40"
+                style={{ backgroundColor: '#16a34a', color: '#fff', flexShrink: 0 }}
+              >
+                {salvandoStatus ? (
+                  <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="32" strokeLinecap="round" />
+                  </svg>
+                ) : (
+                  <svg width="14" height="14" viewBox="0 0 12 10" fill="none">
+                    <polyline points="1,5 4.5,8.5 11,1.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                )}
+              </button>
+              {/* Cancelar */}
+              <button
+                onClick={() => { setAlterandoStatus(false); setStatusSelecionadoInline(''); }}
+                disabled={salvandoStatus}
+                title="Cancelar"
+                className="flex items-center justify-center w-7 h-7 rounded-md transition-colors disabled:opacity-40"
+                style={{ backgroundColor: '#dc2626', color: '#fff', flexShrink: 0 }}
+              >
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <line x1="1" y1="1" x2="11" y2="11" stroke="white" strokeWidth="2" strokeLinecap="round" />
+                  <line x1="11" y1="1" x2="1" y2="11" stroke="white" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -1405,39 +1525,77 @@ export default function DetalhesChamado({ chamadoId, onVoltar }: DetalhesChamado
                       {chamado.anexos && chamado.anexos.length > 0 && (
                         <div className="mt-3 pt-3" style={{ borderColor: theme.detalhesChamado.BalaoMsgInicial, borderTopWidth: '1px' }}>
                           <p className="text-base font-medium mb-2" style={{ color: theme.text.secondary }}>Anexos:</p>
-                          <div className="flex flex-wrap gap-2">
-                            {chamado.anexos.map((anexo) => {
-                              const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(anexo.filename);
-                              const fileUrl = anexo.signedUrl || '#';
-                              
-                              return (
-                                <a
-                                  key={anexo.id}
-                                  href={fileUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="flex items-center gap-2 px-3 py-2 border rounded transition text-sm group hover:opacity-80"
-                                  style={{
-                                    backgroundColor: theme.detalhesChamado.bgBranco,
-                                    borderColor: theme.border.primary
-                                  }}
-                                >
-                                  {isImage ? (
-                                    <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: theme.detalhesChamado.redirecionar }}>
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                    </svg>
-                                  ) : (
-                                    <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: theme.text.secondary }}>
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                    </svg>
-                                  )}
-                                  <span className="max-w-50 truncate flex-1" style={{ color: theme.text.primary }}>
-                                    {anexo.filename}
-                                  </span>
-                                </a>
-                              );
-                            })}
-                          </div>
+                          {(() => {
+                            const images = chamado.anexos!.filter((a) => /\.(jpg|jpeg|png|gif|webp)$/i.test(a.filename));
+                            const files  = chamado.anexos!.filter((a) => !/\.(jpg|jpeg|png|gif|webp)$/i.test(a.filename));
+                            return (
+                              <>
+                                {/* Thumbnails de imagens */}
+                                {images.length > 0 && (
+                                  <div className="flex flex-wrap gap-2 mb-2">
+                                    {images.map((anexo) => {
+                                      const fileUrl = anexo.signedUrl || '#';
+                                      return (
+                                        <a
+                                          key={anexo.id}
+                                          href={fileUrl}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="group relative overflow-hidden rounded-lg border-2 transition-all hover:shadow-lg hover:scale-105"
+                                          style={{ borderColor: theme.border.primary, width: '72px', height: '72px', flexShrink: 0 }}
+                                          title={anexo.filename}
+                                        >
+                                          <img
+                                            src={fileUrl}
+                                            alt={anexo.filename}
+                                            className="w-full h-full object-cover"
+                                          />
+                                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
+                                            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                            </svg>
+                                          </div>
+                                        </a>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+
+                                {/* Arquivos não-imagem */}
+                                {files.length > 0 && (
+                                  <div className="space-y-1">
+                                    {files.map((anexo) => {
+                                      const fileUrl = anexo.signedUrl || '#';
+                                      return (
+                                        <a
+                                          key={anexo.id}
+                                          href={fileUrl}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="flex items-center gap-2 px-2.5 py-1.5 rounded hover:transition text-xs group"
+                                          style={{
+                                            backgroundColor: theme.detalhesChamado.bgBranco,
+                                            borderColor: theme.border.primary,
+                                            borderWidth: '1px'
+                                          }}
+                                        >
+                                          <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: theme.text.secondary }}>
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                          </svg>
+                                          <span className="truncate flex-1" style={{ color: theme.text.primary }}>
+                                            {anexo.filename}
+                                          </span>
+                                          <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: theme.text.secondary }}>
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                          </svg>
+                                        </a>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                              </>
+                            );
+                          })()}
                         </div>
                       )}
                     </div>
@@ -1760,7 +1918,28 @@ export default function DetalhesChamado({ chamadoId, onVoltar }: DetalhesChamado
                       }}>
                       {enviandoMensagem ? 'Enviando...' : 'Atualização por Email'}
                     </button>
-  
+
+                    {/* Botão Pendente Usuário — atalho rápido ao lado do email */}
+                    <button
+                      onClick={marcarPendenteUsuario}
+                      disabled={salvandoPendenteUsuario || chamado.status.id === 6 || chamado.status.id === 3}
+                      title="Alterar status para Pendente Usuário"
+                      className="px-4 py-2 border rounded transition font-medium text-sm whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed"
+                      style={{ borderColor: '#9400FF', color: '#9400FF' }}
+                      onMouseOver={(e) => {
+                        if (!e.currentTarget.disabled) {
+                          e.currentTarget.style.backgroundColor = '#9400FF';
+                          e.currentTarget.style.color = 'white';
+                        }
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                        e.currentTarget.style.color = '#9400FF';
+                      }}
+                    >
+                      {salvandoPendenteUsuario ? '...' : 'Pendente Usuário'}
+                    </button>
+
                     <button
                       onClick={enviarMensagem}
                       disabled={enviandoMensagem || !novaMensagem.trim()}

@@ -39,6 +39,196 @@ function isEmailValido(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 }
 
+//badge tipo
+function BadgeTipo({ tipo, mode }: { tipo: 'to' | 'cc' | 'bcc'; mode: string }) {
+  const styles: Record<'to' | 'cc' | 'bcc', { bg: string; color: string; border: string; label: string }> = {
+    to: {
+      bg:     mode === 'dark' ? '#0f172a' : '#dcfce7',
+      color:  mode === 'dark' ? '#4ade80' : '#15803d',
+      border: mode === 'dark' ? '#4ade80' : '#86efac',
+      label: 'Para',
+    },
+    cc: {
+      bg:     mode === 'dark' ? '#0f172a' : '#dbeafe',
+      color:  mode === 'dark' ? '#93c5fd' : '#1d4ed8',
+      border: mode === 'dark' ? '#93c5fd' : '#93c5fd',
+      label: 'CC',
+    },
+    bcc: {
+      bg:     mode === 'dark' ? '#0f172a' : '#f3e8ff',
+      color:  mode === 'dark' ? '#d8b4fe' : '#7c3aed',
+      border: mode === 'dark' ? '#d8b4fe' : '#c4b5fd',
+      label: 'BCC',
+    },
+  };
+  const s = styles[tipo];
+  return (
+    <span
+      className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold border"
+      style={{ backgroundColor: s.bg, color: s.color, borderColor: s.border }}
+    >
+      {s.label}
+    </span>
+  );
+}
+
+//sucesso animação
+function SucessoAnimacao({ mensagem }: { mensagem: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-12 gap-4">
+      <div
+        className="w-16 h-16 rounded-full flex items-center justify-center"
+        style={{ backgroundColor: '#dcfce7' }}
+      >
+        <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="10" fill="#16a34a" />
+          <path
+            d="M7 13l3 3 7-7"
+            stroke="white"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </div>
+      <p className="text-base font-semibold" style={{ color: '#16a34a' }}>
+        {mensagem}
+      </p>
+    </div>
+  );
+}
+
+//FormDestinatarios
+interface FormDestinatariosProps {
+  lista: Destinatario[];
+  emailInput: string;
+  setEmailInput: (v: string) => void;
+  tipoInput: 'to' | 'cc' | 'bcc';
+  setTipoInput: (v: 'to' | 'cc' | 'bcc') => void;
+  erro: string;
+  setErro: (v: string) => void;
+  onAdicionar: () => void;
+  onRemover: (idx: number) => void;
+  disabled?: boolean;
+  theme: ReturnType<typeof import('@/contexts/ThemeContext').useTheme>['theme'];
+  mode: string;
+}
+
+function FormDestinatarios({
+  lista,
+  emailInput,
+  setEmailInput,
+  tipoInput,
+  setTipoInput,
+  erro,
+  setErro,
+  onAdicionar,
+  onRemover,
+  disabled,
+  theme,
+  mode,
+}: FormDestinatariosProps) {
+  const inputStyle = {
+    borderColor: theme.border.secondary,
+    backgroundColor: theme.background.card,
+    color: theme.text.primary,
+  };
+
+  return (
+    <div>
+      <label className="block text-sm font-medium mb-2" style={{ color: theme.text.primary }}>
+        Destinatários *
+      </label>
+
+      {/* Campo de adição */}
+      <div className="flex gap-2 mb-2">
+        <input
+          type="email"
+          value={emailInput}
+          onChange={(e) => { setEmailInput(e.target.value); setErro(''); }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              onAdicionar();
+            }
+          }}
+          placeholder="nome@empresa.com"
+          disabled={disabled}
+          className="flex-1 px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-1"
+          style={inputStyle}
+        />
+        <ThemedSelect
+          value={tipoInput}
+          onChange={(v) => setTipoInput(v as 'to' | 'cc' | 'bcc')}
+          disabled={disabled}
+          options={[
+            { value: 'to',  label: 'Destinatário' },
+            { value: 'cc',  label: 'CC — Cópia' },
+            { value: 'bcc', label: 'BCC — Cópia oculta' },
+          ]}
+        />
+        <button
+          type="button"
+          onClick={onAdicionar}
+          disabled={disabled}
+          className="flex items-center gap-1 px-3 py-2 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+          style={{ backgroundColor: theme.brand.subHeader }}
+        >
+          <FiPlus size={15} />
+          Adicionar
+        </button>
+      </div>
+
+      {/* Mensagem de erro */}
+      {erro && (
+        <p className="text-xs mb-2" style={{ color: theme.indicators.erro }}>
+          {erro}
+        </p>
+      )}
+
+      {/* Lista de destinatários */}
+      {lista.length > 0 ? (
+        <div
+          className="rounded-lg border overflow-hidden"
+          style={{ borderColor: theme.border.secondary }}
+        >
+          {lista.map((dest, idx) => (
+            <div
+              key={idx}
+              className="flex items-center justify-between px-3 py-2"
+              style={{ backgroundColor: theme.background.surface }}
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <FiMail size={14} style={{ color: theme.text.secondary, flexShrink: 0 }} />
+                <span className="text-sm truncate" style={{ color: theme.text.primary }}>
+                  {dest.email}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 ml-3 flex-shrink-0">
+                <BadgeTipo tipo={dest.tipo} mode={mode} />
+                {!disabled && (
+                  <button
+                    type="button"
+                    onClick={() => onRemover(idx)}
+                    className="p-1 rounded transition-colors hover:bg-red-100"
+                    title="Remover destinatário"
+                  >
+                    <FiX size={14} style={{ color: theme.indicators.erro }} />
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-xs italic py-2" style={{ color: theme.text.secondary }}>
+          Nenhum destinatário adicionado. Pressione Enter ou clique em "Adicionar".
+        </p>
+      )}
+    </div>
+  );
+}
+
 // ─── Componente principal ─────────────────────────────────────────────────────
 
 export default function GerenciarNotificacoesTopico() {
@@ -326,186 +516,6 @@ export default function GerenciarNotificacoesTopico() {
     color: theme.text.primary,
   };
 
-  // ─── Badge de tipo de destinatário ───────────────────────────────────────
-
-  const BadgeTipo = ({ tipo }: { tipo: 'to' | 'cc' | 'bcc' }) => {
-    const styles: Record<'to' | 'cc' | 'bcc', { bg: string; color: string; border: string; label: string }> = {
-      to: {
-        bg:     mode === 'dark' ? '#0f172a' : '#dcfce7',
-        color:  mode === 'dark' ? '#4ade80' : '#15803d',
-        border: mode === 'dark' ? '#4ade80' : '#86efac',
-        label: 'Para',
-      },
-      cc: {
-        bg:     mode === 'dark' ? '#0f172a' : '#dbeafe',
-        color:  mode === 'dark' ? '#93c5fd' : '#1d4ed8',
-        border: mode === 'dark' ? '#93c5fd' : '#93c5fd',
-        label: 'CC',
-      },
-      bcc: {
-        bg:     mode === 'dark' ? '#0f172a' : '#f3e8ff',
-        color:  mode === 'dark' ? '#d8b4fe' : '#7c3aed',
-        border: mode === 'dark' ? '#d8b4fe' : '#c4b5fd',
-        label: 'BCC',
-      },
-    };
-    const s = styles[tipo];
-    return (
-      <span
-        className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold border"
-        style={{ backgroundColor: s.bg, color: s.color, borderColor: s.border }}
-      >
-        {s.label}
-      </span>
-    );
-  };
-
-  // ─── Subcomponente: formulário de destinatários ──────────────────────────
-
-  const FormDestinatarios = ({
-    lista,
-    setLista,
-    emailInput,
-    setEmailInput,
-    tipoInput,
-    setTipoInput,
-    erro,
-    setErro,
-    disabled,
-  }: {
-    lista: Destinatario[];
-    setLista: (d: Destinatario[]) => void;
-    emailInput: string;
-    setEmailInput: (v: string) => void;
-    tipoInput: 'to' | 'cc' | 'bcc';
-    setTipoInput: (v: 'to' | 'cc' | 'bcc') => void;
-    erro: string;
-    setErro: (v: string) => void;
-    disabled?: boolean;
-  }) => (
-    <div>
-      <label className="block text-sm font-medium mb-2" style={{ color: theme.text.primary }}>
-        Destinatários *
-      </label>
-
-      {/* Campo de adição */}
-      <div className="flex gap-2 mb-2">
-        <input
-          type="email"
-          value={emailInput}
-          onChange={(e) => { setEmailInput(e.target.value); setErro(''); }}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault();
-              adicionarDestinatario(emailInput, tipoInput, lista, setLista, setErro, setEmailInput);
-            }
-          }}
-          placeholder="nome@empresa.com"
-          disabled={disabled}
-          className="flex-1 px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-1"
-          style={inputStyle}
-        />
-        <ThemedSelect
-          value={tipoInput}
-          onChange={(v) => setTipoInput(v as 'to' | 'cc' | 'bcc')}
-          disabled={disabled}
-          options={[
-            { value: 'to',  label: 'Destinatário' },
-            { value: 'cc',  label: 'CC - Cópia' },
-            { value: 'bcc', label: 'BCC - Cópia oculta' },
-          ]}
-        />
-        <button
-          type="button"
-          onClick={() =>
-            adicionarDestinatario(emailInput, tipoInput, lista, setLista, setErro, setEmailInput)
-          }
-          disabled={disabled}
-          className="flex items-center gap-1 px-3 py-2 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
-          style={{ backgroundColor: theme.brand.subHeader }}
-        >
-          <FiPlus size={15} />
-          Adicionar
-        </button>
-      </div>
-
-      {/* Mensagem de erro de e-mail */}
-      {erro && (
-        <p className="text-xs mb-2" style={{ color: theme.indicators.erro }}>
-          {erro}
-        </p>
-      )}
-
-      {/* Lista de destinatários adicionados */}
-      {lista.length > 0 ? (
-        <div
-          className="rounded-lg border overflow-hidden"
-          style={{ borderColor: theme.background.hover }}
-        >
-          {lista.map((dest, idx) => (
-            <div
-              key={idx}
-              className="flex items-center justify-between px-3 py-2"
-              style={{ backgroundColor: theme.background.surface }}
-            >
-              <div className="flex items-center gap-2 min-w-0">
-                <FiMail size={14} style={{ color: theme.text.secondary, flexShrink: 0 }} />
-                <span
-                  className="text-sm truncate"
-                  style={{ color: theme.text.primary }}
-                >
-                  {dest.email}
-                </span>
-              </div>
-              <div className="flex items-center gap-2 ml-3 flex-shrink-0">
-                <BadgeTipo tipo={dest.tipo} />
-                {!disabled && (
-                  <button
-                    type="button"
-                    onClick={() => removerDestinatario(idx, lista, setLista)}
-                    className="p-1 rounded transition-colors hover:bg-red-100"
-                    title="Remover destinatário"
-                  >
-                    <FiX size={14} style={{ color: theme.indicators.erro }} />
-                  </button>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <p className="text-xs italic py-2" style={{ color: theme.text.secondary }}>
-          Nenhum destinatário adicionado. Pressione Enter ou clique em "Adicionar".
-        </p>
-      )}
-    </div>
-  );
-
-  // ─── Subcomponente: animação de sucesso ───────────────────────────────────
-
-  const SucessoAnimacao = ({ mensagem }: { mensagem: string }) => (
-    <div className="flex flex-col items-center justify-center py-12 gap-4">
-      <div
-        className="w-16 h-16 rounded-full flex items-center justify-center"
-        style={{ backgroundColor: '#dcfce7' }}
-      >
-        <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none">
-          <circle cx="12" cy="12" r="10" fill="#16a34a" />
-          <path
-            d="M7 13l3 3 7-7"
-            stroke="white"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      </div>
-      <p className="text-base font-semibold" style={{ color: '#16a34a' }}>
-        {mensagem}
-      </p>
-    </div>
-  );
-
   // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
@@ -715,7 +725,7 @@ export default function GerenciarNotificacoesTopico() {
                                 >
                                   {dest.email}
                                 </span>
-                                <BadgeTipo tipo={dest.tipo} />
+                                <BadgeTipo tipo={dest.tipo} mode={mode} />
                                 {i < config.destinatarios.length - 1 && (
                                   <span style={{ color: theme.border.secondary }}>·</span>
                                 )}
@@ -858,14 +868,21 @@ export default function GerenciarNotificacoesTopico() {
                   {/* Destinatários */}
                   <FormDestinatarios
                     lista={novosDestinatarios}
-                    setLista={setNovosDestinatarios}
                     emailInput={novoEmail}
                     setEmailInput={setNovoEmail}
                     tipoInput={novoTipo}
                     setTipoInput={setNovoTipo}
                     erro={emailErro}
                     setErro={setEmailErro}
+                    onAdicionar={() =>
+                      adicionarDestinatario(novoEmail, novoTipo, novosDestinatarios, setNovosDestinatarios, setEmailErro, setNovoEmail)
+                    }
+                    onRemover={(idx) =>
+                      removerDestinatario(idx, novosDestinatarios, setNovosDestinatarios)
+                    }
                     disabled={submittingCadastro}
+                    theme={theme}
+                    mode={mode}
                   />
                 </div>
               ) : (
@@ -987,14 +1004,21 @@ export default function GerenciarNotificacoesTopico() {
                   {/* Destinatários */}
                   <FormDestinatarios
                     lista={editandoDestinatarios}
-                    setLista={setEditandoDestinatarios}
                     emailInput={editandoEmail}
                     setEmailInput={setEditandoEmail}
                     tipoInput={editandoTipo}
                     setTipoInput={setEditandoTipo}
                     erro={editEmailErro}
                     setErro={setEditEmailErro}
+                    onAdicionar={() =>
+                      adicionarDestinatario(editandoEmail, editandoTipo, editandoDestinatarios, setEditandoDestinatarios, setEditEmailErro, setEditandoEmail)
+                    }
+                    onRemover={(idx) =>
+                      removerDestinatario(idx, editandoDestinatarios, setEditandoDestinatarios)
+                    }
                     disabled={submittingEdicao}
+                    theme={theme}
+                    mode={mode}
                   />
                 </div>
               ) : (

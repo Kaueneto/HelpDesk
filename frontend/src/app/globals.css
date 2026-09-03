@@ -478,6 +478,16 @@ select:hover,
   border-color: rgb(var(--input-focus-ring));
 }
 
+/* portal do DatePicker — renderizado no body via portalId, precisa ficar acima de tudo */
+#datepicker-portal {
+  position: relative;
+  z-index: 9999;
+}
+
+#datepicker-portal .react-datepicker-popper {
+  z-index: 9999 !important;
+}
+
 .action-button {
   transition: all 0.2s ease-in-out;
 }

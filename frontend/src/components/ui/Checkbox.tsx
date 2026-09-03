@@ -1,7 +1,5 @@
 'use client';
 
-import { useTheme } from '@/contexts/ThemeContext';
-
 interface CheckboxProps {
   checked: boolean;
   onChange: () => void;
@@ -17,15 +15,7 @@ export default function Checkbox({
   disabled = false,
   size = 18,
 }: CheckboxProps) {
-  const { mode } = useTheme();
-  const isDark = mode === 'dark';
-
   const isActive = checked || indeterminate;
-
-  // Cores vibrantes por estado
-  const bg     = isActive  ? '#3B82F6'                            : (isDark ? '#1e293b' : '#ffffff');
-  const border  = isActive  ? '#3B82F6'                            : (isDark ? '#475569' : '#cbd5e1');
-  const shadow  = isActive  ? '0 0 0 3px rgb(59 130 246 / 0.20)' : 'none';
 
   return (
     <div
@@ -42,58 +32,35 @@ export default function Checkbox({
       style={{
         width: size,
         height: size,
-        flexShrink: 0,
-        display: 'inline-flex',
+        minWidth: size,
+        minHeight: size,
+        borderRadius: 4,
+        border: `1px solid ${isActive ? '#3f6ce7' : '#94a3b8'}`,
+        backgroundColor: isActive ? '#1d51e0' : 'transparent',
+        display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        borderRadius: 5,
-        border: `1.75px solid ${border}`,
-        backgroundColor: bg,
-        boxShadow: shadow,
         cursor: disabled ? 'not-allowed' : 'pointer',
-        opacity: disabled ? 0.45 : 1,
-        transition: 'background 140ms ease, border-color 140ms ease, box-shadow 140ms ease',
-        outline: 'none',
-        userSelect: 'none',
+        opacity: disabled ? 0.4 : 1,
+        transition: 'background-color 120ms ease, border-color 120ms ease',
+        flexShrink: 0,
+        boxSizing: 'border-box',
       }}
     >
-      {/* Checkmark */}
       {checked && !indeterminate && (
-        <svg
-          width={size * 0.62}
-          height={size * 0.62}
-          viewBox="0 0 12 10"
-          fill="none"
-          style={{ display: 'block', flexShrink: 0 }}
-        >
+        <svg width={size * 0.6} height={size * 0.6} viewBox="0 0 12 10" fill="none">
           <polyline
             points="1.5,5 4.5,8.5 10.5,1.5"
-            stroke="#ffffff"
-            strokeWidth="1.9"
+            stroke="white"
+            strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
           />
         </svg>
       )}
-
-      {/* Indeterminate (traço) */}
       {indeterminate && (
-        <svg
-          width={size * 0.55}
-          height={size * 0.55}
-          viewBox="0 0 10 10"
-          fill="none"
-          style={{ display: 'block', flexShrink: 0 }}
-        >
-          <line
-            x1="2"
-            y1="5"
-            x2="8"
-            y2="5"
-            stroke="#ffffff"
-            strokeWidth="2"
-            strokeLinecap="round"
-          />
+        <svg width={size * 0.55} height={size * 0.55} viewBox="0 0 10 4" fill="none">
+          <line x1="1" y1="2" x2="9" y2="2" stroke="white" strokeWidth="2" strokeLinecap="round" />
         </svg>
       )}
     </div>

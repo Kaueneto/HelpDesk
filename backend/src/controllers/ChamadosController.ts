@@ -1352,6 +1352,103 @@ router.put("/chamados/:id/reabrir", verifyToken, async (req: AuthenticatedReques
   }
 });
 
+// alterar status do chamado diretamente (admin/supervisor)
+router.put("/chamados/:id/alterar-status", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { statusId } = req.body;
+    const usuarioId = req.userId;
+    const roleId = req.userRoleId;
+
+    if (!statusId) {
+      return res.status(400).json({ mensagem: "O status é obrigatório." });
+    }
+
+    // apenas administradores (1) e supervisores (3) podem alterar status diretamente
+    if (roleId !== 1 && roleId !== 3) {
+      return res.status(403).json({ mensagem: "Acesso negado." });
+    }
+
+    const chamadoRepository = AppDataSource.getRepository(Chamados);
+    const historicoRepository = AppDataSource.getRepository(ChamadoHistorico);
+    const statusRepository = AppDataSource.getRepository(StatusChamado);
+    const userRepository = AppDataSource.getRepository(Users);
+
+    const chamado = await chamadoRepository.findOne({
+      where: { id: Number(id) },
+      relations: ["status", "usuario", "userResponsavel"],
+    });
+
+    if (!chamado) {
+      return res.status(404).json({ mensagem: "Chamado não encontrado." });
+    }
+
+    const novoStatus = await statusRepository.findOne({ where: { id: Number(statusId) } });
+    if (!novoStatus) {
+      return res.status(404).json({ mensagem: "Status não encontrado." });
+    }
+
+    // não permitir alterar para o mesmo status atual
+    if (chamado.status?.id === Number(statusId)) {
+      return res.status(400).json({ mensagem: "O chamado já está com este status." });
+    }
+
+    const statusAnterior = chamado.status;
+    const usuario = await userRepository.findOne({ where: { id: usuarioId }, select: ["id", "name"] });
+    const nomeUsuario = usuario?.name || "Usuário";
+
+    // regras de negócio ao alterar status
+    if (Number(statusId) === 3) {
+      // encerrar: preencher dataFechamento
+      chamado.dataFechamento = new Date();
+      chamado.userFechamento = { id: usuarioId } as Users;
+    } else if (chamado.status?.id === 3) {
+      // saindo de encerrado: limpar dataFechamento
+      chamado.dataFechamento = null;
+      chamado.userFechamento = null;
+    }
+
+    chamado.status = novoStatus;
+    await chamadoRepository.save(chamado);
+
+    await historicoRepository.save({
+      chamado,
+      usuario: { id: usuarioId },
+      acao: `${nomeUsuario} alterou o status para: ${novoStatus.nome}`,
+      statusAnterior,
+      statusNovo: novoStatus,
+      dataMov: new Date(),
+    });
+
+    const chamadoAtualizado = await chamadoRepository.findOne({
+      where: { id: Number(id) },
+      relations: ["usuario", "userResponsavel", "userFechamento", "tipoPrioridade", "departamento", "topicoAjuda", "status"],
+    });
+
+    // notificar via WebSocket
+    try {
+      const realtimeService = RealtimeService.getInstance();
+      realtimeService.notifyNovoHistorico(Number(id), {
+        acao: `${nomeUsuario} alterou o status para: ${novoStatus.nome}`,
+        statusNovo: novoStatus,
+        dataMov: new Date(),
+      });
+    } catch (wsError) {
+      // não-fatal
+    }
+
+    return res.status(200).json({
+      mensagem: "Status alterado com sucesso!",
+      chamado: chamadoAtualizado,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      mensagem: "Erro ao alterar status",
+      error: error instanceof Error ? error.message : "Erro desconhecido",
+    });
+  }
+});
+
 // editar chamado (apenas usuário criador e apenas se status = ABERTO)
 router.put("/chamados/:id/editar", verifyToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
